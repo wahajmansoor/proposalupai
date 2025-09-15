@@ -26,6 +26,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { getPortfolioCollections } from '@/lib/firebase/portfolio';
+import { Slider } from '@/components/ui/slider';
 
 type TemplateSuggestion = {
   template: 'standard' | 'video';
@@ -107,7 +108,7 @@ export default function DashboardPage() {
   const [closingCta, setClosingCta] = useState('looking-forward');
   const [closingCta2, setClosingCta2] = useState('best-regards');
   const [tone, setTone] = useState('professional');
-  const [wordLimit, setWordLimit] = useState('');
+  const [wordLimit, setWordLimit] = useState([100]);
   
   const [clientQuestions, setClientQuestions] = useState<ClientQuestion[]>([{ id: 1, question: '', answer: '' }]);
   
@@ -277,7 +278,7 @@ export default function DashboardPage() {
         closingCta: selectedClosing,
         closingCta2: selectedClosing2,
         tone,
-        wordLimit,
+        wordLimit: wordLimit[0].toString(),
     });
 
     if (result.error) {
@@ -528,9 +529,18 @@ export default function DashboardPage() {
                             </SelectContent>
                         </Select>
                     </div>
-                    <div>
-                        <Label>Word Limit (Optional)</Label>
-                        <Input type="number" placeholder="100" value={wordLimit} onChange={handleInputChange(setWordLimit)} />
+                    <div className="md:col-span-2">
+                        <div className="flex justify-between items-center mb-2">
+                          <Label>Word Limit (Optional)</Label>
+                          <span className="text-sm font-medium text-muted-foreground">{wordLimit[0]} words</span>
+                        </div>
+                        <Slider 
+                          value={wordLimit}
+                          onValueChange={setWordLimit}
+                          min={50}
+                          max={500}
+                          step={10}
+                        />
                     </div>
                   </CardContent>
                 </Card>
@@ -623,5 +633,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
