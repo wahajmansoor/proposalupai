@@ -1,11 +1,9 @@
 import {
-  getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
   onAuthStateChanged,
-  type Auth,
   type User,
 } from 'firebase/auth';
 import { auth, db } from './config';
