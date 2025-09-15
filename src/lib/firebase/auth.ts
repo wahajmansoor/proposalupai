@@ -7,7 +7,6 @@ import {
   type User,
 } from 'firebase/auth';
 import { auth } from './config';
-import { createUserDocument } from './firestore';
 
 export { onAuthStateChanged, type User };
 
@@ -20,9 +19,6 @@ export const signUpUser = async (email: string, password: string, displayName: s
     
     // Update the user's profile in Firebase Auth
     await updateProfile(user, { displayName });
-
-    // Create a corresponding document in Firestore
-    await createUserDocument(user);
     
     result = userCredential;
 

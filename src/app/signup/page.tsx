@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { ProposalProLogo } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { signUpUser } from '@/lib/firebase/auth';
+import { createUserDocument } from '@/lib/firebase/firestore';
 import { Loader2 } from 'lucide-react';
 
 export default function SignupPage() {
@@ -32,8 +33,21 @@ export default function SignupPage() {
         description: (error as Error).message,
         variant: 'destructive',
       });
-    } else {
-      router.push('/dashboard');
+      setIsLoading(false);
+      return;
+    }
+
+    if (result?.user) {
+      try {
+        await createUserDocument(result.user);
+        router.push('/dashboard');
+      } catch (dbError) {
+         toast({
+            title: 'Database Error',
+            description: 'Could not save user information.',
+            variant: 'destructive',
+          });
+      }
     }
     
     setIsLoading(false);
@@ -101,5 +115,3 @@ export default function SignupPage() {
     </div>
   );
 }
-
-    
