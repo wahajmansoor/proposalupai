@@ -374,7 +374,7 @@ export default function DashboardPage() {
                       <Rocket className="h-5 w-5 text-primary" />
                       <CardTitle className="text-lg">Opening Strategy</CardTitle>
                     </div>
-                    <CardDescription>Choose a proven opening approach, or leave it as "None" to use the standard greeting.</CardDescription>
+                    <CardDescription>Choose a proven opening approach, or leave it as "None", AI will customize it for you.</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <RadioGroup value={openingStrategy} onValueChange={setOpeningStrategy} className="space-y-2">
