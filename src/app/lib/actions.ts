@@ -8,6 +8,7 @@ import { suggestIntroductionStrategies } from '@/ai/flows/suggest-introduction-s
 import { answerClientQuestions } from '@/ai/flows/answer-client-questions';
 import { generateProposal } from '@/ai/flows/generate-proposal-from-job-analysis';
 import { suggestProposalTemplate } from '@/ai/flows/suggest-proposal-template';
+import { suggestOpeningStrategy } from '@/ai/flows/suggest-opening-strategy';
 
 const projectDetailsSchema = z.object({
   projectTitle: z.string().min(1, 'Project title is required.'),
@@ -33,19 +34,32 @@ export async function analyzeJobAction(prevState: any, formData: FormData) {
   }
 }
 
-export async function suggestProposalTemplateAction(input: z.infer<typeof projectDetailsSchema>) {
-    const validatedFields = projectDetailsSchema.safeParse(input);
+const analyzeAndSuggestSchema = z.object({
+  projectDetails: projectDetailsSchema,
+  strategies: z.record(z.string()),
+});
+
+export async function analyzeAndSuggestAction(input: z.infer<typeof analyzeAndSuggestSchema>) {
+    const validatedFields = analyzeAndSuggestSchema.safeParse(input);
     if (!validatedFields.success) {
-        return { error: 'Invalid input for template suggestion.' };
+        return { error: 'Invalid input for analysis and suggestions.' };
     }
     try {
-        const result = await suggestProposalTemplate(validatedFields.data);
-        return { data: result };
+        const [templateResult, strategyResult] = await Promise.all([
+            suggestProposalTemplate(validatedFields.data.projectDetails),
+            suggestOpeningStrategy({
+                ...validatedFields.data.projectDetails,
+                strategies: validatedFields.data.strategies,
+            }),
+        ]);
+        
+        return { data: { template: templateResult, strategy: strategyResult } };
     } catch (error) {
-        console.error(error);
-        return { error: 'Failed to suggest proposal template.' };
+        console.error("Error in analyzeAndSuggestAction:", error);
+        return { error: 'Failed to get AI suggestions.' };
     }
 }
+
 
 const autofillSkillsSchema = z.object({
   projectTitle: z.string(),

@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import {
   generateProposalAction,
-  suggestProposalTemplateAction,
+  analyzeAndSuggestAction,
   autofillSkillsAction,
 } from '@/app/lib/actions';
 import { Header } from '@/components/header';
@@ -92,6 +92,8 @@ export default function DashboardPage() {
   
   const [proposalTemplate, setProposalTemplate] = useState<'standard' | 'video'>('standard');
   const [openingStrategy, setOpeningStrategy] = useState('none');
+  const [strategySuggestionReasoning, setStrategySuggestionReasoning] = useState('');
+
 
   const [profileName, setProfileName] = useState('Jane Doe');
   const [clientName, setClientName] = useState('');
@@ -203,14 +205,32 @@ export default function DashboardPage() {
     setTemplateSuggestion(null);
 
     try {
-      const result = await suggestProposalTemplateAction(projectDetails);
+      const strategiesMap = openingStrategies.reduce((acc, str) => {
+        acc[str.id] = str.description;
+        return acc;
+      }, {} as Record<string, string>);
+
+      const result = await analyzeAndSuggestAction({
+        projectDetails,
+        strategies: strategiesMap,
+      });
 
       if (result.error) {
         toast({ title: 'Analysis Error', description: result.error, variant: 'destructive' });
       } else if (result.data) {
-        setTemplateSuggestion(result.data);
-        setProposalTemplate(result.data.template);
-        toast({ title: 'Analysis Complete!', description: 'We\'ve suggested a proposal template for you.' });
+        const { template, strategy } = result.data;
+        setTemplateSuggestion(template);
+        setProposalTemplate(template.template);
+        
+        if (strategy) {
+            setOpeningStrategy(strategy.strategyId);
+            setStrategySuggestionReasoning(strategy.reasoning);
+        }
+
+        toast({ 
+          title: 'Analysis Complete!', 
+          description: `Suggested Template: ${template.template}. Suggested Opening: ${openingStrategies.find(s => s.id === strategy?.strategyId)?.title || 'Default'}` 
+        });
       }
     } catch (e: any) {
         toast({ title: 'Analysis Failed', description: e.message || 'An unexpected error occurred.', variant: 'destructive' });
@@ -567,6 +587,11 @@ export default function DashboardPage() {
                         </Label>
                       ))}
                     </RadioGroup>
+                     {strategySuggestionReasoning && openingStrategy !== 'none' && (
+                        <div className="mt-4 p-3 bg-green-50 border-l-4 border-green-400 text-green-800 rounded-r-lg">
+                            <p><span className="font-bold">AI Suggestion: </span>{strategySuggestionReasoning}</p>
+                        </div>
+                    )}
                   </CardContent>
                 </Card>
               </div>
