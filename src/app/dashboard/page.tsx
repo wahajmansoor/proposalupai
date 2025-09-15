@@ -20,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
+import { ProTips } from '@/components/pro-tips';
 
 type TemplateSuggestion = {
   template: 'standard' | 'video';
@@ -367,35 +368,33 @@ export default function DashboardPage() {
           </div>
           
           <div className="space-y-6 sticky top-24">
-            <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>Generated Proposal</CardTitle>
-                <Button variant="ghost" size="sm" onClick={() => copyToClipboard(generatedProposal)} disabled={!generatedProposal}>
-                    <Clipboard className="mr-2 h-4 w-4" /> Copy
-                </Button>
-              </CardHeader>
-              <CardContent className="min-h-[400px]">
-                {isGenerating ? (
-                    <div className="space-y-2 pt-4">
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-5/6" />
-                        <Skeleton className="h-4 w-full mt-4" />
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-2/3" />
-                    </div>
-                ) : generatedProposal ? (
-                    <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
-                        {generatedProposal}
-                    </div>
-                ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8 border-2 border-dashed rounded-lg">
-                        <Wand2 className="h-12 w-12 mb-4 text-gray-300" />
-                        <p>Your AI-generated proposal will appear here.</p>
-                        <p className="text-xs mt-2">Fill in the details on the left to get started.</p>
-                    </div>
-                )}
-              </CardContent>
-            </Card>
+            {isGenerating || generatedProposal ? (
+              <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                  <CardTitle>Generated Proposal</CardTitle>
+                  <Button variant="ghost" size="sm" onClick={() => copyToClipboard(generatedProposal)} disabled={!generatedProposal}>
+                      <Clipboard className="mr-2 h-4 w-4" /> Copy
+                  </Button>
+                </CardHeader>
+                <CardContent className="min-h-[400px]">
+                  {isGenerating ? (
+                      <div className="space-y-2 pt-4">
+                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-4 w-5/6" />
+                          <Skeleton className="h-4 w-full mt-4" />
+                          <Skeleton className="h-4 w-full" />
+                          <Skeleton className="h-4 w-2/3" />
+                      </div>
+                  ) : (
+                      <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
+                          {generatedProposal}
+                      </div>
+                  )}
+                </CardContent>
+              </Card>
+            ) : (
+              <ProTips />
+            )}
           </div>
         </div>
       </main>
