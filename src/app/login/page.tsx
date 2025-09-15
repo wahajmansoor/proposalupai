@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ProposalProLogo } from '@/components/icons';
+import { AIProposalUpLogo } from '@/components/icons';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { signInWithEmailAndPassword } from 'firebase/auth';
@@ -42,7 +42,7 @@ export default function LoginPage() {
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <Card className="mx-auto max-w-sm">
         <CardHeader className="text-center">
-          <ProposalProLogo className="h-12 w-12 mx-auto text-primary" />
+          <AIProposalUpLogo className="h-12 w-12 mx-auto text-primary" />
           <CardTitle className="text-2xl">Login</CardTitle>
           <CardDescription>Enter your email below to login to your account</CardDescription>
         </CardHeader>

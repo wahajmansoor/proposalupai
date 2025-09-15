@@ -11,7 +11,7 @@ const inter = Inter({
 });
 
 export const metadata: Metadata = {
-  title: 'ProposalPro AI',
+  title: 'AI Proposal Up',
   description: 'Generate tailored proposals with the power of AI',
 };
 
