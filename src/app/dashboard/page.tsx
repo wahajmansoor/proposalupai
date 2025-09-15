@@ -8,17 +8,16 @@ import {
 } from '@/app/lib/actions';
 import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, Lightbulb, Save, CheckCircle2, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight } from 'lucide-react';
 import type { ClientQuestion } from '@/app/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { ProTips } from '@/components/pro-tips';
@@ -29,6 +28,17 @@ type TemplateSuggestion = {
   reasoning: string;
 }
 
+const openingStrategies = [
+  { id: 'none', title: 'None', description: 'The AI will customize it for you.' },
+  { id: 'helpWithTask', title: 'Help with Specific Task', description: "Hi, [CLIENT'S NAME]! I see that you need help with [SPECIFIC TASK]. I'd love to take some of the workload off your plate." },
+  { id: 'extensiveExperience', title: 'Extensive Experience', description: "Hi, [CLIENT'S NAME]! While viewing your job details, it really jumped out at me. I have extensive experience in [SPECIFIC SKILL], and I can start immediately." },
+  { id: 'upworkDiscount', title: 'New to Upwork Discount', description: "Hello, [CLIENT'S NAME]! I'm new to Upwork and looking to land a few clients. If you're interested, I'll offer a 10% discount on this project." },
+  { id: 'similarProject', title: 'Similar Project Experience', description: "Hey, [CLIENT'S NAME]! Your job description caught my attention because I recently completed a similar project. Here's the link: [INSERT LINK]." },
+  { id: 'congratulations', title: 'Congratulations Approach', description: "Hi, [CLIENT'S NAME]! Congratulations on [SPECIFIC MILESTONE OR ACHIEVEMENT]. I'd love to help you take it even further." },
+  { id: 'freeSample', title: 'Free Sample Offer', description: "Hi, [CLIENT'S NAME]! I'd be happy to provide a free sample of my work to show you what I can do. Let's start there." },
+  { id: 'strategicQuestions', title: 'Strategic Questions', description: "Hi, [CLIENT'S NAME]! Your job description sparked a couple of questions in my mind: 1. [QUESTION 1] 2. [QUESTION 2]" },
+];
+
 export default function DashboardPage() {
   const { toast } = useToast();
   
@@ -37,7 +47,7 @@ export default function DashboardPage() {
 
   const [jobDetails, setJobDetails] = useState({ jobTitle: '', jobDescription: '' });
   
-  const [proposalTemplate, setProposalTemplate] = useState('standard');
+  const [proposalTemplate, setProposalTemplate] = useState<'standard' | 'video'>('standard');
   const [openingStrategy, setOpeningStrategy] = useState('none');
 
   const [profileName, setProfileName] = useState('Jane Doe');
@@ -368,11 +378,12 @@ export default function DashboardPage() {
                   </CardHeader>
                   <CardContent>
                     <RadioGroup value={openingStrategy} onValueChange={setOpeningStrategy} className="space-y-2">
-                      {['none', 'helpWithTask', 'extensiveExperience', 'upworkDiscount', 'similarProject', 'congratulations', 'freeSample', 'strategicQuestions'].map(strategy => (
-                        <Label key={strategy} htmlFor={`strategy-${strategy}`} className={cn("flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-all", openingStrategy === strategy && "border-primary ring-2 ring-primary")}>
-                          <RadioGroupItem value={strategy} id={`strategy-${strategy}`} className="mt-1" />
+                      {openingStrategies.map(strategy => (
+                        <Label key={strategy.id} htmlFor={`strategy-${strategy.id}`} className={cn("flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-all", openingStrategy === strategy.id && "border-primary ring-2 ring-primary")}>
+                          <RadioGroupItem value={strategy.id} id={`strategy-${strategy.id}`} className="mt-1" />
                           <div className="grid gap-1.5">
-                            <span className="font-semibold capitalize">{strategy.replace(/([A-Z])/g, ' $1').replace('none', 'None').replace('helpWithTask', 'Help with Specific Task')}</span>
+                            <span className="font-semibold">{strategy.title}</span>
+                            <span className="text-sm text-muted-foreground">{strategy.description}</span>
                           </div>
                         </Label>
                       ))}
