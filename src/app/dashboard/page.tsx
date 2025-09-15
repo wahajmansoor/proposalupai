@@ -91,7 +91,7 @@ export default function DashboardPage() {
 
   const [greeting, setGreeting] = useState('hi');
   const [closingCta, setClosingCta] = useState('best-regards');
-  const [closingCta2, setClosingCta2] = useState('');
+  const [closingCta2, setClosingCta2] = useState('none');
   const [tone, setTone] = useState('professional');
   const [wordLimit, setWordLimit] = useState('');
   
@@ -208,7 +208,7 @@ export default function DashboardPage() {
 
     const selectedGreeting = greetings.find(g => g.value === greeting)?.label || greeting;
     const selectedClosing = closingCtas.find(c => c.value === closingCta)?.label || closingCta;
-    const selectedClosing2 = closingCtas.find(c => c.value === closingCta2)?.label || closingCta2;
+    const selectedClosing2 = closingCta2 === 'none' ? undefined : closingCtas.find(c => c.value === closingCta2)?.label || closingCta2;
 
     const result = await generateProposalAction({
         jobTitle: jobDetails.jobTitle,
@@ -413,7 +413,7 @@ export default function DashboardPage() {
                         <Select value={closingCta2} onValueChange={setClosingCta2}>
                             <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="">None</SelectItem>
+                                <SelectItem value="none">None</SelectItem>
                                 {closingCtas.map(c => (
                                     <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
                                 ))}
