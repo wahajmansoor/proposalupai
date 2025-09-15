@@ -379,6 +379,10 @@ export default function DashboardPage() {
                             <SelectContent>
                                 <SelectItem value="professional">Professional</SelectItem>
                                 <SelectItem value="friendly">Friendly</SelectItem>
+                                <SelectItem value="assertive">Assertive</SelectItem>
+                                <SelectItem value="persuasive">Persuasive</SelectItem>
+                                <SelectItem value="creative">Creative</SelectItem>
+                                <SelectItem value="concise">Concise</SelectItem>
                                 <SelectItem value="formal">Formal</SelectItem>
                             </SelectContent>
                         </Select>
