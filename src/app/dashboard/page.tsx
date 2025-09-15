@@ -325,7 +325,7 @@ export default function DashboardPage() {
                     <Textarea id="jobDescription" value={jobDetails.jobDescription} onChange={(e) => setJobDetails({...jobDetails, jobDescription: e.target.value})} placeholder="Paste the job description from Upwork or another platform here..." className="min-h-[150px]" />
                   </div>
                    <Button onClick={handleAnalyzeJob} disabled={isAnalyzing} className="w-full">
-                    {isAnalyzing ? "Analyzing..." : <><Sparkles className="mr-2"/>Analyze Job Description & AI Guide</>}
+                    {isAnalyzing ? "Analyzing..." : <><Sparkles className="mr-2"/>Analyze & Get Suggestions</>}
                   </Button>
                   
                   {isAnalyzing && (
@@ -633,3 +633,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
