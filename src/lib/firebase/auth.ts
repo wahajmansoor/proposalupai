@@ -17,12 +17,13 @@ export async function signUpUser(fullName: string, email: string, password: stri
       uid: user.uid,
       email: user.email,
       displayName: fullName,
+      createdAt: new Date(),
     });
 
     return user;
   } catch (error) {
     console.error("Error signing up:", error);
-    // Re-throw the error to be caught by the calling function
+    // Re-throw the error to be caught by the calling function and displayed to the user
     throw error;
   }
 }

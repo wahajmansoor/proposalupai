@@ -1,4 +1,4 @@
-import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
+import { initializeApp, getApps, getApp } from 'firebase/app';
 import { getAuth } from 'firebase/auth';
 import { getFirestore } from 'firebase/firestore';
 
@@ -13,9 +13,9 @@ const firebaseConfig = {
 };
 
 
-// Initialize Firebase
+// Initialize Firebase for SSR
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const auth = getAuth(app);
 const db = getFirestore(app);
+const auth = getAuth(app);
 
-export { app, auth, db };
+export { app, db, auth };
