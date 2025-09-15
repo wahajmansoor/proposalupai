@@ -82,6 +82,7 @@ Portfolio Links: {{{portfolioLinks}}}
 {{#if closingCta2}}- **Sign-off:** After the closing sentence, add two line breaks and then write the sign-off phrase: "{{{closingCta2}}}".{{/if}}
 - **Signature:** After the sign-off phrase (or the closing sentence if no sign-off is provided), add one line break and then write the user's name, which you can find in the Profile Summary.
 - **Tone:** Use a "{{{tone}}}" tone throughout the proposal.
+- **Terminology**: Always use the word "website" instead of "site".
 {{#if wordLimit}}- **Word Count:** The proposal should be between {{{wordLimit}}} words.{{/if}}
 
 Compose a proposal that addresses the key requirements of the job, highlights the user's relevant skills and experiences, and answers any client questions. Focus on how the user can provide value to the client. Ensure the final output is well-structured and professional.
