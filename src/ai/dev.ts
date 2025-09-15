@@ -1,6 +1,7 @@
 import { config } from 'dotenv';
 config();
 
+import '@/ai/genkit';
 import '@/ai/flows/suggest-introduction-strategies.ts';
 import '@/ai/flows/generate-proposal-from-job-analysis.ts';
 import '@/ai/flows/analyze-job-for-proposal.ts';

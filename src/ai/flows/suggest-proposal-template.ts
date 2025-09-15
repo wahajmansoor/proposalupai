@@ -71,7 +71,7 @@ const suggestProposalTemplateFlow = ai.defineFlow(
     for (let i = 0; i < 3; i++) {
       try {
         const {output} = await prompt(input);
-        if (output) {
+        if (output && (output.template === 'standard' || output.template === 'video')) {
           return output;
         }
       } catch (e: any) {
