@@ -54,10 +54,6 @@ const greetings = [
 ];
 
 const closingCtas = [
-    { value: 'best-regards', label: 'Best regards' },
-    { value: 'sincerely', label: 'Sincerely' },
-    { value: 'kind-regards', label: 'Kind regards' },
-    { value: 'warm-regards', label: 'Warm regards' },
     { value: 'looking-forward', label: 'Looking forward to hearing from you' },
     { value: 'excited-to-work', label: 'Excited to work with you' },
     { value: 'ready-to-start', label: 'Ready to start immediately' },
@@ -70,6 +66,13 @@ const closingCtas = [
     { value: 'im-ready-to-start', label: "I'm ready to get started" },
     { value: 'create-amazing', label: "Let's create something amazing together" },
     { value: 'talk-soon', label: 'Talk soon' },
+];
+
+const signOffCtas = [
+    { value: 'best-regards', label: 'Best regards' },
+    { value: 'sincerely', label: 'Sincerely' },
+    { value: 'kind-regards', label: 'Kind regards' },
+    { value: 'warm-regards', label: 'Warm regards' },
 ];
 
 export default function DashboardPage() {
@@ -90,8 +93,8 @@ export default function DashboardPage() {
   const [portfolioLinks, setPortfolioLinks] = useState('');
 
   const [greeting, setGreeting] = useState('hi');
-  const [closingCta, setClosingCta] = useState('best-regards');
-  const [closingCta2, setClosingCta2] = useState('none');
+  const [closingCta, setClosingCta] = useState('looking-forward');
+  const [closingCta2, setClosingCta2] = useState('best-regards');
   const [tone, setTone] = useState('professional');
   const [wordLimit, setWordLimit] = useState('');
   
@@ -208,7 +211,7 @@ export default function DashboardPage() {
 
     const selectedGreeting = greetings.find(g => g.value === greeting)?.label || greeting;
     const selectedClosing = closingCtas.find(c => c.value === closingCta)?.label || closingCta;
-    const selectedClosing2 = closingCta2 === 'none' ? undefined : closingCtas.find(c => c.value === closingCta2)?.label || closingCta2;
+    const selectedClosing2 = closingCta2 === 'none' ? undefined : signOffCtas.find(c => c.value === closingCta2)?.label || closingCta2;
 
     const result = await generateProposalAction({
         jobTitle: jobDetails.jobTitle,
@@ -399,7 +402,7 @@ export default function DashboardPage() {
                         </Select>
                     </div>
                     <div>
-                        <Label>Closing CTA 1</Label>
+                        <Label>Closing CTA</Label>
                         <Select value={closingCta} onValueChange={setClosingCta}>
                             <SelectTrigger><SelectValue/></SelectTrigger>
                             <SelectContent>
@@ -410,12 +413,12 @@ export default function DashboardPage() {
                         </Select>
                     </div>
                     <div>
-                        <Label>Closing CTA 2 (Optional)</Label>
+                        <Label>Sign-off (Optional)</Label>
                         <Select value={closingCta2} onValueChange={setClosingCta2}>
                             <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="none">None</SelectItem>
-                                {closingCtas.map(c => (
+                                {signOffCtas.map(c => (
                                     <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
                                 ))}
                             </SelectContent>

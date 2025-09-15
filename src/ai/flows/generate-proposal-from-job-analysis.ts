@@ -74,8 +74,8 @@ Portfolio Links: {{{portfolioLinks}}}
 - **Body:** The main body of the proposal is the most important part. It MUST be broken into multiple paragraphs for readability. DO NOT output a single block of text. Use line breaks to separate paragraphs.
 {{#if portfolioLinks}}- **Portfolio:** If portfolio links are provided, introduce them naturally within the proposal body. For example, "Here are some examples of my work:" or "You can view my portfolio here:". Then list each link on a new line.{{/if}}
 - **Closing:** End the proposal by intelligently integrating the closing phrase "{{{closingCta}}}" into a natural-sounding final sentence.
-{{#if closingCta2}}- **Secondary Closing:** If a second closing phrase is provided ("{{{closingCta2}}}"), you must also weave this into the closing paragraph or a final sentence in a natural and intelligent way. For example if the phrases are "Best regards" and "Looking forward to hearing from you", you could combine them into "I look forward to hearing from you. Best regards,".{{/if}}
-- **Signature:** After the closing sentence, add two line breaks and then write the user's name, which you can find in the Profile Summary.
+{{#if closingCta2}}- **Sign-off:** After the closing sentence, add two line breaks and then write the sign-off phrase: "{{{closingCta2}}}".{{/if}}
+- **Signature:** After the sign-off phrase (or the closing sentence if no sign-off is provided), add one line break and then write the user's name, which you can find in the Profile Summary.
 - **Tone:** Use a "{{{tone}}}" tone throughout the proposal.
 {{#if wordLimit}}- **Word Count:** The proposal should be approximately {{{wordLimit}}} words.{{/if}}
 
