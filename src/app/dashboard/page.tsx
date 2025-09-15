@@ -3,7 +3,8 @@
 import { useState } from 'react';
 import {
   generateProposalAction,
-  suggestProposalTemplateAction
+  suggestProposalTemplateAction,
+  autofillSkillsAction,
 } from '@/app/lib/actions';
 import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
@@ -53,6 +54,7 @@ export default function DashboardPage() {
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
+  const [isSuggestingSkills, setIsSuggestingSkills] = useState(false);
 
   const nextStep = () => {
     if (currentStep < totalSteps) {
@@ -70,7 +72,7 @@ export default function DashboardPage() {
 
   const prevStep = () => {
     if (currentStep > 1) {
-      setCurrentStep(prev => prev + 1);
+      setCurrentStep(prev => prev - 1);
     }
   };
 
@@ -108,6 +110,28 @@ export default function DashboardPage() {
       toast({ title: 'Analysis Complete!', description: 'We\'ve suggested a proposal template for you.' });
     }
     setIsAnalyzing(false);
+  };
+
+  const handleAutofillSkills = async () => {
+    if (!jobDetails.jobTitle || !jobDetails.jobDescription) {
+      toast({ title: 'Missing Information', description: 'Please fill out the job details on Step 1 first.', variant: 'destructive' });
+      setCurrentStep(1);
+      return;
+    }
+    setIsSuggestingSkills(true);
+    const result = await autofillSkillsAction({
+      jobTitle: jobDetails.jobTitle,
+      jobDescription: jobDetails.jobDescription,
+      profileInformation: relevantExperience,
+    });
+
+    if (result.error) {
+      toast({ title: 'Error suggesting skills', description: result.error, variant: 'destructive' });
+    } else if (result.data) {
+      setSkillsAndExpertise(result.data.skillsAndExpertise.join(', '));
+      toast({ title: 'Skills Suggested!', description: 'Relevant skills have been added based on the job description.' });
+    }
+    setIsSuggestingSkills(false);
   };
   
   const handleGenerateProposal = async () => {
@@ -235,7 +259,12 @@ export default function DashboardPage() {
                     </div>
                   </div>
                   <div>
-                    <Label htmlFor="skillsAndExpertise">Skills and Expertise</Label>
+                    <div className="flex justify-between items-center mb-1">
+                      <Label htmlFor="skillsAndExpertise">Skills and Expertise</Label>
+                      <Button variant="outline" size="sm" onClick={handleAutofillSkills} disabled={isSuggestingSkills}>
+                        {isSuggestingSkills ? 'Thinking...' : <><Sparkles className="mr-2 h-4 w-4" /> Auto-suggest</>}
+                      </Button>
+                    </div>
                     <Input id="skillsAndExpertise" value={skillsAndExpertise} onChange={handleInputChange(setSkillsAndExpertise)} placeholder="Enter skills separated by commas (e.g., React, Node.js)" />
                     {skillsAndExpertise.trim() && (
                       <div className="mt-2 flex flex-wrap gap-2">
@@ -409,3 +438,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
