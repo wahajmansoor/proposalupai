@@ -60,10 +60,11 @@ Relevant Skills: {{{relevantSkills}}}
 Past Successes: {{{pastSuccesses}}}
 Client Questions: {{{clientQuestions}}}
 
-**Instructions for the proposal format:**
-- **Greeting:** Start with the greeting: "{{{greeting}}}". Capitalize the first letter. Follow it with two line breaks.
-- **Body:** The main body of the proposal should be broken into multiple paragraphs for readability. Do not output a single block of text.
-- **Closing:** End with the closing: "{{{closingCta}}}". Ensure there are two line breaks before the closing. After the closing, add another line break and then the user's name from the profile summary.
+**CRITICAL INSTRUCTIONS - YOU MUST FOLLOW THESE FORMATTING RULES:**
+- **Greeting:** Start with the exact greeting provided: "{{{greeting}}}". Capitalize the first letter. This MUST be followed by two line breaks.
+- **Body:** The main body of the proposal is the most important part. It MUST be broken into multiple paragraphs for readability. DO NOT output a single block of text. Use line breaks to separate paragraphs.
+- **Closing:** End with the exact closing provided: "{{{closingCta}}}". There MUST be two line breaks before the closing text.
+- **Signature:** After the closing text, add a single line break and then write the user's name, which you can find in the Profile Summary.
 - **Tone:** Use a "{{{tone}}}" tone throughout the proposal.
 {{#if wordLimit}}- **Word Count:** The proposal should be approximately {{{wordLimit}}} words.{{/if}}
 
