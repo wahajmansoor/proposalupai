@@ -40,7 +40,7 @@ export default function DashboardPage() {
   const [proposalTemplate, setProposalTemplate] = useState('standard');
   const [openingStrategy, setOpeningStrategy] = useState('none');
 
-  const [profileName, setProfileName] = useState('');
+  const [profileName, setProfileName] = useState('Jane Doe');
   const [clientName, setClientName] = useState('');
   const [skillsAndExpertise, setSkillsAndExpertise] = useState('');
   const [relevantExperience, setRelevantExperience] = useState('');
