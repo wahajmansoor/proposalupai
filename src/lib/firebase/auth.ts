@@ -9,6 +9,8 @@ import {
   type User,
 } from 'firebase/auth';
 import { app } from './config';
+import { doc, setDoc } from 'firebase/firestore';
+import { db } from './firestore';
 
 // Ensure Firebase is initialized before getting auth
 export const auth: Auth = getAuth(app);
@@ -22,6 +24,12 @@ export const signUpUser = async (email: string, password: string, displayName: s
     result = await createUserWithEmailAndPassword(auth, email, password);
     if (result.user) {
       await updateProfile(result.user, { displayName });
+      // Create a document in the 'users' collection
+      await setDoc(doc(db, 'users', result.user.uid), {
+        uid: result.user.uid,
+        displayName,
+        email,
+      });
     }
   } catch (e) {
     error = e;
