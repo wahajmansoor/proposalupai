@@ -22,6 +22,7 @@ export const signUpUser = async (email: string, password: string, displayName: s
     await updateProfile(user, { displayName });
     
     // Then create a document in Firestore for the user
+    // This now happens after the user is created and authenticated
     await setDoc(doc(db, 'users', user.uid), {
       uid: user.uid,
       displayName,
