@@ -355,7 +355,20 @@ export default function DashboardPage() {
                             <SelectContent>
                                 <SelectItem value="best-regards">Best regards</SelectItem>
                                 <SelectItem value="sincerely">Sincerely</SelectItem>
-                                <SelectItem value="looking-forward">Looking forward</SelectItem>
+                                <SelectItem value="kind-regards">Kind regards</SelectItem>
+                                <SelectItem value="warm-regards">Warm regards</SelectItem>
+                                <SelectItem value="looking-forward">Looking forward to hearing from you</SelectItem>
+                                <SelectItem value="excited-to-work">Excited to work with you</SelectItem>
+                                <SelectItem value="ready-to-start">Ready to start immediately</SelectItem>
+                                <SelectItem value="discuss-further">Let's discuss your project further</SelectItem>
+                                <SelectItem value="schedule-call">Let's schedule a quick call to discuss</SelectItem>
+                                <SelectItem value="thank-you">Thank you for your consideration</SelectItem>
+                                <SelectItem value="any-questions">Let me know if you have any questions</SelectItem>
+                                <SelectItem value="hope-to-hear">Hope to hear from you soon</SelectItem>
+                                <SelectItem value="make-it-happen">Let's make this happen</SelectItem>
+                                <SelectItem value="im-ready-to-start">I'm ready to get started</SelectItem>
+                                <SelectItem value="create-amazing">Let's create something amazing together</SelectItem>
+                                <SelectItem value="talk-soon">Talk soon</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
