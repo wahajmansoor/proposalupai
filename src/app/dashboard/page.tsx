@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
   generateProposalAction,
   analyzeAndSuggestAction,
@@ -117,6 +117,8 @@ export default function DashboardPage() {
   const [generatedProposal, setGeneratedProposal] = useState('');
   const [wordCount, setWordCount] = useState(0);
 
+  const summaryTextareaRef = useRef<HTMLTextAreaElement>(null);
+
   useEffect(() => {
     if (generatedProposal) {
       setWordCount(generatedProposal.trim().split(/\s+/).filter(Boolean).length);
@@ -150,6 +152,13 @@ export default function DashboardPage() {
       fetchCollections();
     }
   }, [user]);
+  
+  useEffect(() => {
+    if (summaryTextareaRef.current) {
+        summaryTextareaRef.current.style.height = 'auto';
+        summaryTextareaRef.current.style.height = `${summaryTextareaRef.current.scrollHeight}px`;
+    }
+  }, [projectDetails.summary]);
 
 
   if (loading || !user) {
@@ -345,7 +354,15 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <Label htmlFor="summary">Summary</Label>
-                    <Textarea id="summary" value={projectDetails.summary} onChange={(e) => setProjectDetails({...projectDetails, summary: e.target.value})} placeholder="Paste the project summary from Upwork or another platform here..." className="min-h-[150px]" />
+                    <Textarea 
+                      ref={summaryTextareaRef}
+                      id="summary" 
+                      value={projectDetails.summary} 
+                      onChange={(e) => setProjectDetails({...projectDetails, summary: e.target.value})} 
+                      placeholder="Paste the project summary from Upwork or another platform here..." 
+                      className="resize-none overflow-hidden" 
+                      rows={1}
+                    />
                   </div>
                    <Button onClick={handleAnalyzeJob} disabled={isAnalyzing} className="w-full">
                     {isAnalyzing ? "Analyzing..." : <><Sparkles className="mr-2"/>Analyze & Get Suggestions</>}
