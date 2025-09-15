@@ -77,7 +77,7 @@ Portfolio Links: {{{portfolioLinks}}}
 - **Opening Paragraph:** After the greeting, use the following "Opening Strategy" as the first paragraph. You MUST adapt the strategy to the job by intelligently replacing placeholders like [CLIENT'S NAME], [SPECIFIC TASK], or [SPECIFIC SKILL] with relevant information from the job description and user profile. Do not leave the placeholders in the final output. The opening strategy is: "{{{openingStrategy}}}" This MUST be followed by two line breaks.
 {{/if}}
 - **Body:** The main body of the proposal is the most important part. It MUST be broken into multiple paragraphs for readability. DO NOT output a single block of text. Use line breaks to separate paragraphs.
-{{#if portfolioLinks}}- **Portfolio:** If portfolio links are provided, introduce them naturally within the proposal body. For example, "Here are some examples of my work:" or "You can view my portfolio here:". Then list each link on a new line.{{/if}}
+{{#if portfolioLinks}}- **Portfolio:** If portfolio links are provided, you must introduce them on a new line. For example, "Here are some examples of my work:". Then, you MUST list each link on its own new line.{{/if}}
 - **Closing:** End the proposal by intelligently integrating the closing phrase "{{{closingCta}}}" into a natural-sounding final sentence.
 {{#if closingCta2}}- **Sign-off:** After the closing sentence, add two line breaks and then write the sign-off phrase: "{{{closingCta2}}}".{{/if}}
 - **Signature:** After the sign-off phrase (or the closing sentence if no sign-off is provided), add one line break and then write the user's name, which you can find in the Profile Summary.
