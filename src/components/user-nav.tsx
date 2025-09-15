@@ -11,7 +11,8 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/context/auth-context';
-import { signOutUser } from '@/lib/firebase/auth';
+import { signOut } from 'firebase/auth';
+import { auth } from '@/lib/firebase/config';
 import Link from 'next/link';
 
 export function UserNav() {
@@ -19,7 +20,7 @@ export function UserNav() {
   const userAvatar = PlaceHolderImages.find((img) => img.id === 'user-avatar');
 
   const handleLogout = async () => {
-    await signOutUser();
+    await signOut(auth);
     // The AuthProvider will handle redirecting the user
   };
 

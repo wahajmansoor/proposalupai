@@ -9,9 +9,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ProposalProLogo } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
-import { signUpUser } from '@/lib/firebase/auth';
-import { createUserDocument } from '@/lib/firebase/firestore';
 import { Loader2 } from 'lucide-react';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, db } from '@/lib/firebase/config';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -25,32 +26,33 @@ export default function SignupPage() {
     event.preventDefault();
     setIsLoading(true);
 
-    const { result, error } = await signUpUser(email, password, fullName);
-    
-    if (error) {
+    try {
+      // 1. Create user in Firebase Auth
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+      const user = userCredential.user;
+
+      // 2. Update the user's profile in Firebase Auth
+      await updateProfile(user, { displayName: fullName });
+
+      // 3. Create user document in Firestore
+      const userRef = doc(db, 'users', user.uid);
+      await setDoc(userRef, {
+        uid: user.uid,
+        email: user.email,
+        displayName: fullName,
+      });
+
+      router.push('/dashboard');
+
+    } catch (error: any) {
       toast({
         title: 'Sign Up Failed',
-        description: (error as Error).message,
+        description: error.message,
         variant: 'destructive',
       });
+    } finally {
       setIsLoading(false);
-      return;
     }
-
-    if (result?.user) {
-      try {
-        await createUserDocument(result.user);
-        router.push('/dashboard');
-      } catch (dbError) {
-         toast({
-            title: 'Database Error',
-            description: 'Could not save user information.',
-            variant: 'destructive',
-          });
-      }
-    }
-    
-    setIsLoading(false);
   };
 
   return (

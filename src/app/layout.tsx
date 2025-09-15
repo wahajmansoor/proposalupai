@@ -3,12 +3,6 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Inter } from 'next/font/google';
 import { AuthProvider } from '@/context/auth-context';
-import { getFirebaseApp } from '@/lib/firebase/config';
-
-// Initialize Firebase on the client side
-if (typeof window !== 'undefined') {
-  getFirebaseApp();
-}
 
 const inter = Inter({
   subsets: ['latin'],

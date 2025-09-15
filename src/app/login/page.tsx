@@ -10,7 +10,8 @@ import { Label } from '@/components/ui/label';
 import { ProposalProLogo } from '@/components/icons';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { signInUser } from '@/lib/firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/lib/firebase/config';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -23,19 +24,18 @@ export default function LoginPage() {
     event.preventDefault();
     setIsLoading(true);
     
-    const { result, error } = await signInUser(email, password);
-
-    if (error) {
+    try {
+      await signInWithEmailAndPassword(auth, email, password);
+      router.push('/dashboard');
+    } catch (error: any) {
       toast({
         title: 'Login Failed',
-        description: (error as Error).message,
+        description: error.message,
         variant: 'destructive',
       });
-    } else {
-      router.push('/dashboard');
+    } finally {
+      setIsLoading(false);
     }
-    
-    setIsLoading(false);
   };
 
   return (
@@ -94,5 +94,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    

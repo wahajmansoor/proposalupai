@@ -12,7 +12,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, Dialog
 import { Plus, Trash2, Edit, Loader2, Link as LinkIcon, Briefcase } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Skeleton } from '@/components/ui/skeleton';
-import { addCategory, getCategories, deleteCategory, addPortfolioItem, getPortfolioItems, deletePortfolioItem, updatePortfolioItem } from '@/lib/firebase/firestore';
+import { addDoc, collection, deleteDoc, doc, getDocs, query, where, writeBatch, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
 import type { PortfolioCategory, PortfolioItem } from '@/app/lib/types';
 
 export default function PortfolioPage() {
@@ -54,6 +55,59 @@ export default function PortfolioPage() {
   useEffect(() => {
     fetchData();
   }, [user]);
+
+  // Firestore Functions
+  const addCategory = async (userId: string, name: string) => {
+    try {
+      const docRef = await addDoc(collection(db, 'portfolioCategories'), { userId, name });
+      return docRef.id;
+    } catch (e) { console.error('Error adding category: ', e); return null; }
+  };
+  const getCategories = async (userId: string): Promise<PortfolioCategory[]> => {
+    try {
+      const q = query(collection(db, 'portfolioCategories'), where('userId', '==', userId));
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PortfolioCategory));
+    } catch (e) { console.error('Error getting categories: ', e); return []; }
+  };
+  const deleteCategory = async (categoryId: string) => {
+    try {
+      const batch = writeBatch(db);
+      const itemsQuery = query(collection(db, 'portfolioItems'), where('categoryId', '==', categoryId));
+      const itemsSnapshot = await getDocs(itemsQuery);
+      itemsSnapshot.forEach(itemDoc => batch.delete(doc(db, 'portfolioItems', itemDoc.id)));
+      const categoryRef = doc(db, 'portfolioCategories', categoryId);
+      batch.delete(categoryRef);
+      await batch.commit();
+      return true;
+    } catch (e) { console.error('Error deleting category: ', e); return false; }
+  };
+  const addPortfolioItem = async (item: Omit<PortfolioItem, 'id'>) => {
+    try {
+      const docRef = await addDoc(collection(db, 'portfolioItems'), item);
+      return docRef.id;
+    } catch (e) { console.error('Error adding portfolio item: ', e); return null; }
+  };
+  const getPortfolioItems = async (userId: string): Promise<PortfolioItem[]> => {
+    try {
+      const q = query(collection(db, 'portfolioItems'), where('userId', '==', userId));
+      const querySnapshot = await getDocs(q);
+      return querySnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as PortfolioItem));
+    } catch (e) { console.error('Error getting portfolio items: ', e); return []; }
+  };
+  const updatePortfolioItem = async (itemId: string, data: Partial<PortfolioItem>) => {
+    try {
+      await updateDoc(doc(db, 'portfolioItems', itemId), data);
+      return true;
+    } catch (e) { console.error('Error updating item: ', e); return false; }
+  };
+  const deletePortfolioItem = async (itemId: string) => {
+    try {
+      await deleteDoc(doc(db, 'portfolioItems', itemId));
+      return true;
+    } catch (e) { console.error('Error deleting item: ', e); return false; }
+  };
+
 
   const handleAddCategory = async () => {
     if (!newCategoryName.trim() || !user) return;
