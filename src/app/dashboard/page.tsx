@@ -22,6 +22,8 @@ import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { ProTips } from '@/components/pro-tips';
 import { Badge } from '@/components/ui/badge';
+import { useAuth } from '@/context/auth-context';
+import { useRouter } from 'next/navigation';
 
 type TemplateSuggestion = {
   template: 'standard' | 'video';
@@ -76,6 +78,8 @@ const signOffCtas = [
 ];
 
 export default function DashboardPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
   const { toast } = useToast();
   
   const [currentStep, setCurrentStep] = useState(1);
@@ -116,6 +120,27 @@ export default function DashboardPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSuggestingSkills, setIsSuggestingSkills] = useState(false);
+
+  useEffect(() => {
+    if (!loading && !user) {
+      router.push('/login');
+    }
+  }, [user, loading, router]);
+
+  useEffect(() => {
+    if (user?.displayName) {
+      setProfileName(user.displayName);
+    }
+  }, [user]);
+
+
+  if (loading || !user) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <Skeleton className="h-20 w-20 rounded-full" />
+      </div>
+    );
+  }
 
   const nextStep = () => {
     if (currentStep < totalSteps) {
@@ -534,3 +559,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
