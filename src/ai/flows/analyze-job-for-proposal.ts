@@ -11,8 +11,8 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const AnalyzeJobForProposalInputSchema = z.object({
-  jobTitle: z.string().describe('The title of the job posting.'),
-  jobDescription: z.string().describe('The full text of the job description.'),
+  projectTitle: z.string().describe('The title of the job posting.'),
+  summary: z.string().describe('The full text of the job description.'),
 });
 export type AnalyzeJobForProposalInput = z.infer<
   typeof AnalyzeJobForProposalInputSchema
@@ -44,8 +44,8 @@ const analyzeJobForProposalPrompt = ai.definePrompt({
 
   Analyze the following job description and extract the key requirements and themes.
 
-  Job Title: {{{jobTitle}}}
-  Job Description: {{{jobDescription}}}
+  Project Title: {{{projectTitle}}}
+  Summary: {{{summary}}}
 
   Output the key requirements as a list of strings, and the key themes as a list of strings.
   Themes are higher level concepts, for example "project management" or "software development".

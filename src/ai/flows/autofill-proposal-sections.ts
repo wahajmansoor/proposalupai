@@ -11,8 +11,8 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const AutofillProposalSectionsInputSchema = z.object({
-  jobTitle: z.string().describe('The title of the job being applied for.'),
-  jobDescription: z.string().describe('The full job description text.'),
+  projectTitle: z.string().describe('The title of the project being applied for.'),
+  summary: z.string().describe('The full project summary text.'),
   profileInformation: z.string().describe('Information about the user profile, including skills and experience.'),
 });
 export type AutofillProposalSectionsInput = z.infer<typeof AutofillProposalSectionsInputSchema>;
@@ -30,13 +30,13 @@ const prompt = ai.definePrompt({
   name: 'autofillProposalSectionsPrompt',
   input: {schema: AutofillProposalSectionsInputSchema},
   output: {schema: AutofillProposalSectionsOutputSchema},
-  prompt: `You are an AI expert in proposal writing. Your task is to analyze the job description and the user's profile information to automatically extract relevant skills.
+  prompt: `You are an AI expert in proposal writing. Your task is to analyze the project summary and the user's profile information to automatically extract relevant skills.
 
-Job Title: {{{jobTitle}}}
-Job Description: {{{jobDescription}}}
+Project Title: {{{projectTitle}}}
+Summary: {{{summary}}}
 Profile Information: {{{profileInformation}}}
 
-Based on the job description, identify the key skills and expertise required. Cross-reference these requirements with the user's profile information.
+Based on the project summary, identify the key skills and expertise required. Cross-reference these requirements with the user's profile information.
 Output a list of the most relevant skills as short, one or two-word tags (e.g., "React", "Project Management").
 `,
 });

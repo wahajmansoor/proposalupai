@@ -9,15 +9,15 @@ import { answerClientQuestions } from '@/ai/flows/answer-client-questions';
 import { generateProposal } from '@/ai/flows/generate-proposal-from-job-analysis';
 import { suggestProposalTemplate } from '@/ai/flows/suggest-proposal-template';
 
-const jobDetailsSchema = z.object({
-  jobTitle: z.string().min(1, 'Job title is required.'),
-  jobDescription: z.string().min(1, 'Job description is required.'),
+const projectDetailsSchema = z.object({
+  projectTitle: z.string().min(1, 'Project title is required.'),
+  summary: z.string().min(1, 'Summary is required.'),
 });
 
 export async function analyzeJobAction(prevState: any, formData: FormData) {
-  const validatedFields = jobDetailsSchema.safeParse({
-    jobTitle: formData.get('jobTitle'),
-    jobDescription: formData.get('jobDescription'),
+  const validatedFields = projectDetailsSchema.safeParse({
+    projectTitle: formData.get('projectTitle'),
+    summary: formData.get('summary'),
   });
 
   if (!validatedFields.success) {
@@ -29,12 +29,12 @@ export async function analyzeJobAction(prevState: any, formData: FormData) {
     return { data: result };
   } catch (error) {
     console.error(error);
-    return { error: 'Failed to analyze job details.' };
+    return { error: 'Failed to analyze project details.' };
   }
 }
 
-export async function suggestProposalTemplateAction(input: z.infer<typeof jobDetailsSchema>) {
-    const validatedFields = jobDetailsSchema.safeParse(input);
+export async function suggestProposalTemplateAction(input: z.infer<typeof projectDetailsSchema>) {
+    const validatedFields = projectDetailsSchema.safeParse(input);
     if (!validatedFields.success) {
         return { error: 'Invalid input for template suggestion.' };
     }
@@ -48,8 +48,8 @@ export async function suggestProposalTemplateAction(input: z.infer<typeof jobDet
 }
 
 const autofillSkillsSchema = z.object({
-  jobTitle: z.string(),
-  jobDescription: z.string(),
+  projectTitle: z.string(),
+  summary: z.string(),
   profileInformation: z.string(),
 });
 
@@ -68,8 +68,8 @@ export async function autofillSkillsAction(input: z.infer<typeof autofillSkillsS
 }
 
 const suggestIntroductionsSchema = z.object({
-  jobTitle: z.string(),
-  jobDescription: z.string(),
+  projectTitle: z.string(),
+  summary: z.string(),
   profileSummary: z.string(),
   pastSuccesses: z.array(z.string()),
 });
@@ -110,8 +110,8 @@ export async function answerQuestionsAction(input: z.infer<typeof answerQuestion
 }
 
 const generateProposalSchema = z.object({
-    jobTitle: z.string(),
-    jobDescription: z.string(),
+    projectTitle: z.string(),
+    summary: z.string(),
     profileSummary: z.string(),
     relevantSkills: z.string(),
     pastSuccesses: z.string(),

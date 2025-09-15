@@ -12,8 +12,8 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const GenerateProposalInputSchema = z.object({
-  jobTitle: z.string().describe('The title of the job.'),
-  jobDescription: z.string().describe('The description of the job.'),
+  projectTitle: z.string().describe('The title of the project.'),
+  summary: z.string().describe('The summary of the project.'),
   profileSummary: z.string().describe('A summary of the user profile.'),
   relevantSkills: z
     .string()
@@ -61,10 +61,10 @@ const proposalPrompt = ai.definePrompt({
   name: 'proposalPrompt',
   input: {schema: GenerateProposalInputSchema},
   output: {schema: GenerateProposalOutputSchema},
-  prompt: `You are an expert proposal writer. Based on the job details and the user's profile, create a compelling proposal.
+  prompt: `You are an expert proposal writer. Based on the project details and the user's profile, create a compelling proposal.
 
-Job Title: {{{jobTitle}}}
-Job Description: {{{jobDescription}}}
+Project Title: {{{projectTitle}}}
+Project Summary: {{{summary}}}
 Profile Summary: {{{profileSummary}}}
 Relevant Skills: {{{relevantSkills}}}
 Past Successes: {{{pastSuccesses}}}

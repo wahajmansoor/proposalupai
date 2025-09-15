@@ -12,8 +12,8 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const SuggestIntroductionStrategiesInputSchema = z.object({
-  jobTitle: z.string().describe('The title of the job being applied for.'),
-  jobDescription: z.string().describe('The description of the job.'),
+  projectTitle: z.string().describe('The title of the project being applied for.'),
+  summary: z.string().describe('The summary of the project.'),
   profileSummary: z.string().describe('A summary of the applicant\s profile.'),
   pastSuccesses: z.array(z.string()).describe('A list of past successes of the applicant.'),
 });
@@ -43,10 +43,10 @@ const prompt = ai.definePrompt({
   input: {schema: SuggestIntroductionStrategiesInputSchema},
   output: {schema: SuggestIntroductionStrategiesOutputSchema},
   prompt: `You are an AI assistant that helps users craft compelling introductions for job applications.
-  Given the job details and the applicant's profile, suggest a few personalized introduction strategies.
+  Given the project details and the applicant's profile, suggest a few personalized introduction strategies.
 
-  Job Title: {{{jobTitle}}}
-  Job Description: {{{jobDescription}}}
+  Project Title: {{{projectTitle}}}
+  Summary: {{{summary}}}
   Profile Summary: {{{profileSummary}}}
   Past Successes: {{#each pastSuccesses}}- {{{this}}}
   {{/each}}

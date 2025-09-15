@@ -88,7 +88,7 @@ export default function DashboardPage() {
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 4;
 
-  const [jobDetails, setJobDetails] = useState({ jobTitle: '', jobDescription: '' });
+  const [projectDetails, setProjectDetails] = useState({ projectTitle: '', summary: '' });
   
   const [proposalTemplate, setProposalTemplate] = useState<'standard' | 'video'>('standard');
   const [openingStrategy, setOpeningStrategy] = useState('none');
@@ -100,7 +100,7 @@ export default function DashboardPage() {
   
   const [portfolioCollections, setPortfolioCollections] = useState<PortfolioCollection[]>([]);
   const [selectedPortfolio, setSelectedPortfolio] = useState<string>('none');
-  const [portfolioLinkOption, setPortfolioLinkOption] = useState<'collection' | 'manual'>('manual');
+  const [portfolioLinkOption, setPortfolioLinkOption] = useState<'manual' | 'collection'>('manual');
   const [manualPortfolioLinks, setManualPortfolioLinks] = useState('');
 
 
@@ -160,12 +160,12 @@ export default function DashboardPage() {
 
   const nextStep = () => {
     if (currentStep < totalSteps) {
-      if (currentStep === 1 && (!jobDetails.jobTitle || !jobDetails.jobDescription)) {
-        toast({ title: 'Missing Information', description: 'Please provide both Job Title and Description.', variant: 'destructive' });
+      if (currentStep === 1 && (!projectDetails.projectTitle || !projectDetails.summary)) {
+        toast({ title: 'Missing Information', description: 'Please provide both Project Title and Summary.', variant: 'destructive' });
         return;
       }
        if (currentStep === 1 && !templateSuggestion) {
-        toast({ title: 'Analysis Required', description: 'Please analyze the job description before proceeding.', variant: 'destructive' });
+        toast({ title: 'Analysis Required', description: 'Please analyze the project summary before proceeding.', variant: 'destructive' });
         return;
       }
       setCurrentStep(prev => prev + 1);
@@ -195,15 +195,15 @@ export default function DashboardPage() {
   };
   
   const handleAnalyzeJob = async () => {
-    if (!jobDetails.jobTitle || !jobDetails.jobDescription) {
-      toast({ title: 'Missing Information', description: 'Please provide Job Title and Description to analyze.', variant: 'destructive' });
+    if (!projectDetails.projectTitle || !projectDetails.summary) {
+      toast({ title: 'Missing Information', description: 'Please provide Project Title and Summary to analyze.', variant: 'destructive' });
       return;
     }
     setIsAnalyzing(true);
     setTemplateSuggestion(null);
 
     try {
-      const result = await suggestProposalTemplateAction(jobDetails);
+      const result = await suggestProposalTemplateAction(projectDetails);
 
       if (result.error) {
         toast({ title: 'Analysis Error', description: result.error, variant: 'destructive' });
@@ -220,15 +220,15 @@ export default function DashboardPage() {
   };
 
   const handleAutofillSkills = async () => {
-    if (!jobDetails.jobTitle || !jobDetails.jobDescription) {
-      toast({ title: 'Missing Information', description: 'Please fill out the job details on Step 1 first.', variant: 'destructive' });
+    if (!projectDetails.projectTitle || !projectDetails.summary) {
+      toast({ title: 'Missing Information', description: 'Please fill out the project details on Step 1 first.', variant: 'destructive' });
       setCurrentStep(1);
       return;
     }
     setIsSuggestingSkills(true);
     const result = await autofillSkillsAction({
-      jobTitle: jobDetails.jobTitle,
-      jobDescription: jobDetails.jobDescription,
+      projectTitle: projectDetails.projectTitle,
+      summary: projectDetails.summary,
       profileInformation: relevantExperience,
     });
 
@@ -236,14 +236,14 @@ export default function DashboardPage() {
       toast({ title: 'Error filling skills', description: result.error, variant: 'destructive' });
     } else if (result.data) {
       setSkillsAndExpertise(result.data.skillsAndExpertise.join(', '));
-      toast({ title: 'Skills Auto-filled!', description: 'Relevant skills have been added based on the job description.' });
+      toast({ title: 'Skills Auto-filled!', description: 'Relevant skills have been added based on the project summary.' });
     }
     setIsSuggestingSkills(false);
   };
   
   const handleGenerateProposal = async () => {
-    if (!jobDetails.jobDescription || !jobDetails.jobTitle) {
-        toast({ title: 'Missing Information', description: 'Please provide job title and description first.', variant: 'destructive' });
+    if (!projectDetails.summary || !projectDetails.projectTitle) {
+        toast({ title: 'Missing Information', description: 'Please provide project title and summary first.', variant: 'destructive' });
         setCurrentStep(1);
         return;
     }
@@ -269,8 +269,8 @@ export default function DashboardPage() {
     }
       
     const result = await generateProposalAction({
-        jobTitle: jobDetails.jobTitle,
-        jobDescription: jobDetails.jobDescription,
+        projectTitle: projectDetails.projectTitle,
+        summary: projectDetails.summary,
         profileSummary: `Name: ${profileName}\nRelevant Experience: ${relevantExperience}`,
         relevantSkills: skillsAndExpertise,
         pastSuccesses: '',
@@ -297,7 +297,7 @@ export default function DashboardPage() {
     toast({ title: 'Copied!', description: 'Content copied to clipboard.' });
   };
   
-  const stepTitles = ["Job Details", "Your Profile", "Client Questions", "Preferences & Strategy"];
+  const stepTitles = ["Project Details", "Your Profile", "Client Questions", "Preferences & Strategy"];
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -320,12 +320,12 @@ export default function DashboardPage() {
               <Card>
                 <CardContent className="p-6 space-y-4">
                   <div>
-                    <Label htmlFor="jobTitle">Job Title</Label>
-                    <Input id="jobTitle" value={jobDetails.jobTitle} onChange={(e) => setJobDetails({...jobDetails, jobTitle: e.target.value})} placeholder="e.g., Senior Frontend Developer" />
+                    <Label htmlFor="projectTitle">Project Title</Label>
+                    <Input id="projectTitle" value={projectDetails.projectTitle} onChange={(e) => setProjectDetails({...projectDetails, projectTitle: e.target.value})} placeholder="e.g., Senior Frontend Developer" />
                   </div>
                   <div>
-                    <Label htmlFor="jobDescription">Job Description</Label>
-                    <Textarea id="jobDescription" value={jobDetails.jobDescription} onChange={(e) => setJobDetails({...jobDetails, jobDescription: e.target.value})} placeholder="Paste the job description from Upwork or another platform here..." className="min-h-[150px]" />
+                    <Label htmlFor="summary">Summary</Label>
+                    <Textarea id="summary" value={projectDetails.summary} onChange={(e) => setProjectDetails({...projectDetails, summary: e.target.value})} placeholder="Paste the project summary from Upwork or another platform here..." className="min-h-[150px]" />
                   </div>
                    <Button onClick={handleAnalyzeJob} disabled={isAnalyzing} className="w-full">
                     {isAnalyzing ? "Analyzing..." : <><Sparkles className="mr-2"/>Analyze & Get Suggestions</>}

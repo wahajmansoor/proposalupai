@@ -11,8 +11,8 @@ import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
 const SuggestProposalTemplateInputSchema = z.object({
-  jobTitle: z.string().describe('The title of the job being applied for.'),
-  jobDescription: z.string().describe('The description of the job.'),
+  projectTitle: z.string().describe('The title of the project being applied for.'),
+  summary: z.string().describe('The summary of the project.'),
 });
 
 export type SuggestProposalTemplateInput = z.infer<
@@ -53,8 +53,8 @@ const prompt = ai.definePrompt({
 
   Provide a short, one-sentence reason for your choice.
 
-  Job Title: {{{jobTitle}}}
-  Job Description: {{{jobDescription}}}
+  Project Title: {{{projectTitle}}}
+  Summary: {{{summary}}}
 
   CRITICAL: You MUST respond in the format defined by the output schema. The 'template' field must be either 'standard' or 'video'.
   `,
