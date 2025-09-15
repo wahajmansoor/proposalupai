@@ -10,9 +10,7 @@ import { Label } from '@/components/ui/label';
 import { ProposalProLogo } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
-import { auth, db } from '@/lib/firebase/config';
+import { signUpUser } from '@/lib/firebase/auth';
 
 export default function SignupPage() {
   const router = useRouter();
@@ -24,30 +22,25 @@ export default function SignupPage() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!fullName || !email || !password) {
+      toast({
+        title: 'Missing Fields',
+        description: 'Please fill out all fields.',
+        variant: 'destructive',
+      });
+      return;
+    }
     setIsLoading(true);
 
     try {
-      // 1. Create user in Firebase Auth
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const user = userCredential.user;
-
-      // 2. Update the user's profile in Firebase Auth
-      await updateProfile(user, { displayName: fullName });
-
-      // 3. Create user document in Firestore
-      const userRef = doc(db, 'users', user.uid);
-      await setDoc(userRef, {
-        uid: user.uid,
-        email: user.email,
-        displayName: fullName,
-      });
-
+      await signUpUser(fullName, email, password);
       router.push('/dashboard');
-
     } catch (error: any) {
+      // Firebase errors have a `message` property
+      const errorMessage = error.message || 'An unexpected error occurred.';
       toast({
         title: 'Sign Up Failed',
-        description: error.message,
+        description: errorMessage,
         variant: 'destructive',
       });
     } finally {
