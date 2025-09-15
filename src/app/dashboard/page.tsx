@@ -35,13 +35,13 @@ type TemplateSuggestion = {
 
 const openingStrategies = [
   { id: 'none', title: 'None', description: 'The AI will customize it for you.' },
-  { id: 'helpWithTask', title: 'Help with Specific Task', description: "Hi, [CLIENT'S NAME]! I see that you need help with [SPECIFIC TASK]. I'd love to take some of the workload off your plate." },
-  { id: 'extensiveExperience', title: 'Extensive Experience', description: "Hi, [CLIENT'S NAME]! While viewing your job details, it really jumped out at me. I have extensive experience in [SPECIFIC SKILL], and I can start immediately." },
-  { id: 'upworkDiscount', title: 'New to Upwork Discount', description: "Hello, [CLIENT'S NAME]! I'm new to Upwork and looking to land a few clients. If you're interested, I'll offer a 10% discount on this project." },
-  { id: 'similarProject', title: 'Similar Project Experience', description: "Hey, [CLIENT'S NAME]! Your job description caught my attention because I recently completed a similar project. Here's the link: [INSERT LINK]." },
-  { id: 'congratulations', title: 'Congratulations Approach', description: "Hi, [CLIENT'S NAME]! Congratulations on [SPECIFIC MILESTONE OR ACHIEVEMENT]. I'd love to help you take it even further." },
-  { id: 'freeSample', title: 'Free Sample Offer', description: "Hi, [CLIENT'S NAME]! I'd be happy to provide a free sample of my work to show you what I can do. Let's start there." },
-  { id: 'strategicQuestions', title: 'Strategic Questions', description: "Hi, [CLIENT'S NAME]! Your job description sparked a couple of questions in my mind: 1. [QUESTION 1] 2. [QUESTION 2]" },
+  { id: 'helpWithTask', title: 'Help with Specific Task', description: "I see that you need help with [SPECIFIC TASK]. I'd love to take some of the workload off your plate." },
+  { id: 'extensiveExperience', title: 'Extensive Experience', description: "While viewing your job details, it really jumped out at me. I have extensive experience in [SPECIFIC SKILL], and I can start immediately." },
+  { id: 'upworkDiscount', title: 'New to Upwork Discount', description: "I'm new to Upwork and looking to land a few clients. If you're interested, I'll offer a 10% discount on this project." },
+  { id: 'similarProject', title: 'Similar Project Experience', description: "Your job description caught my attention because I recently completed a similar project. Here's the link: [INSERT LINK]." },
+  { id: 'congratulations', title: 'Congratulations Approach', description: "Congratulations on [SPECIFIC MILESTONE OR ACHIEVEMENT]. I'd love to help you take it even further." },
+  { id: 'freeSample', title: 'Free Sample Offer', description: "I'd be happy to provide a free sample of my work to show you what I can do. Let's start there." },
+  { id: 'strategicQuestions', title: 'Strategic Questions', description: "Your job description sparked a couple of questions in my mind: 1. [QUESTION 1] 2. [QUESTION 2]" },
 ];
 
 const greetings = [
