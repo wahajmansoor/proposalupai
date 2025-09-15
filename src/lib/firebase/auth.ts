@@ -1,5 +1,5 @@
-import { createUserWithEmailAndPassword, updateProfile, User, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, getDoc } from 'firebase/auth';
-import { doc, setDoc } from 'firebase/firestore';
+import { createUserWithEmailAndPassword, updateProfile, User, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { doc, setDoc, getDoc } from 'firebase/firestore';
 import { auth, db } from './config';
 
 export async function signUpUser(fullName: string, email: string, password: string): Promise<User> {
