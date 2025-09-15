@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -71,10 +72,10 @@ const closingCtas = [
 ];
 
 const signOffCtas = [
-    { value: 'best-regards', label: 'Best regards' },
-    { value: 'sincerely', label: 'Sincerely' },
-    { value: 'kind-regards', label: 'Kind regards' },
-    { value: 'warm-regards', label: 'Warm regards' },
+    { value: 'best-regards', label: 'Best regards,' },
+    { value: 'sincerely', label: 'Sincerely,' },
+    { value: 'kind-regards', label: 'Kind regards,' },
+    { value: 'warm-regards', label: 'Warm regards,' },
 ];
 
 export default function DashboardPage() {
@@ -559,5 +560,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
