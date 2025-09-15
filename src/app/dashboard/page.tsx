@@ -373,8 +373,8 @@ export default function DashboardPage() {
                     <div className="flex items-center gap-2">
                       <Rocket className="h-5 w-5 text-primary" />
                       <CardTitle className="text-lg">Opening Strategy</CardTitle>
-                      <CardDescription>Choose a proven opening approach, or leave it as "None" to use the standard greeting.</CardDescription>
                     </div>
+                    <CardDescription>Choose a proven opening approach, or leave it as "None" to use the standard greeting.</CardDescription>
                   </CardHeader>
                   <CardContent>
                     <RadioGroup value={openingStrategy} onValueChange={setOpeningStrategy} className="space-y-2">
