@@ -8,12 +8,8 @@ import {
   type Auth,
   type User,
 } from 'firebase/auth';
-import { app } from './config';
+import { auth, db } from './config';
 import { doc, setDoc } from 'firebase/firestore';
-import { db } from './firestore';
-
-// Ensure Firebase is initialized before getting auth
-export const auth: Auth = getAuth(app);
 
 export { onAuthStateChanged, type User };
 

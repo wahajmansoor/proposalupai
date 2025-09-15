@@ -1,5 +1,4 @@
 import {
-  getFirestore,
   collection,
   addDoc,
   getDocs,
@@ -10,10 +9,8 @@ import {
   deleteDoc,
   writeBatch,
 } from 'firebase/firestore';
-import { app } from './config';
+import { db } from './config';
 import type { PortfolioCategory, PortfolioItem } from '@/app/lib/types';
-
-export const db = getFirestore(app);
 
 // Categories
 export const addCategory = async (userId: string, name: string) => {
