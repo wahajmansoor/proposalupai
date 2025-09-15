@@ -115,6 +115,7 @@ const generateProposalSchema = z.object({
     relevantSkills: z.string(),
     pastSuccesses: z.string(),
     clientQuestions: z.string(),
+    portfolioLinks: z.string().optional(),
     greeting: z.string(),
     closingCta: z.string(),
     closingCta2: z.string().optional(),

@@ -25,6 +25,10 @@ const GenerateProposalInputSchema = z.object({
     .describe(
       'Any questions from the client that need answering in the proposal.'
     ),
+  portfolioLinks: z
+    .string()
+    .optional()
+    .describe('A comma-separated list of portfolio links.'),
   greeting: z.string().describe('The desired greeting for the proposal.'),
   closingCta: z
     .string()
@@ -63,10 +67,12 @@ Profile Summary: {{{profileSummary}}}
 Relevant Skills: {{{relevantSkills}}}
 Past Successes: {{{pastSuccesses}}}
 Client Questions: {{{clientQuestions}}}
+Portfolio Links: {{{portfolioLinks}}}
 
 **CRITICAL INSTRUCTIONS - YOU MUST FOLLOW THESE FORMATTING RULES:**
 - **Greeting:** Start with the exact greeting provided: "{{{greeting}}}". Capitalize the first letter. This MUST be followed by two line breaks.
 - **Body:** The main body of the proposal is the most important part. It MUST be broken into multiple paragraphs for readability. DO NOT output a single block of text. Use line breaks to separate paragraphs.
+{{#if portfolioLinks}}- **Portfolio:** If portfolio links are provided, introduce them naturally within the proposal body. For example, "Here are some examples of my work:" or "You can view my portfolio here:". Then list each link on a new line.{{/if}}
 - **Closing:** End the proposal by intelligently integrating the closing phrase "{{{closingCta}}}" into a natural-sounding final sentence.
 {{#if closingCta2}}- **Secondary Closing:** If a second closing phrase is provided ("{{{closingCta2}}}"), you must also weave this into the closing paragraph or a final sentence in a natural and intelligent way. For example if the phrases are "Best regards" and "Looking forward to hearing from you", you could combine them into "I look forward to hearing from you. Best regards,".{{/if}}
 - **Signature:** After the closing sentence, add two line breaks and then write the user's name, which you can find in the Profile Summary.

@@ -217,6 +217,7 @@ export default function DashboardPage() {
         relevantSkills: skillsAndExpertise,
         pastSuccesses: '',
         clientQuestions: clientQA,
+        portfolioLinks: portfolioLinks,
         greeting: selectedGreeting,
         closingCta: selectedClosing,
         closingCta2: selectedClosing2,
