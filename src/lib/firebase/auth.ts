@@ -1,4 +1,4 @@
-import { createUserWithEmailAndPassword, updateProfile, User } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, User, sendPasswordResetEmail } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from './config';
 
@@ -24,6 +24,41 @@ export async function signUpUser(fullName: string, email: string, password: stri
   } catch (error) {
     console.error("Error signing up:", error);
     // Re-throw the error to be caught by the calling function and displayed to the user
+    throw error;
+  }
+}
+
+export async function updateUserProfile(user: User, profileData: { displayName?: string; photoURL?: string }) {
+  if (!user) throw new Error('You must be logged in to update your profile.');
+
+  try {
+    // Update Firebase Auth profile
+    await updateProfile(user, profileData);
+
+    // Update Firestore user document
+    const userRef = doc(db, 'users', user.uid);
+    const dataToUpdate: { displayName?: string; photoURL?: string } = {};
+    if (profileData.displayName) {
+      dataToUpdate.displayName = profileData.displayName;
+    }
+     if (profileData.photoURL) {
+      dataToUpdate.photoURL = profileData.photoURL;
+    }
+
+    if (Object.keys(dataToUpdate).length > 0) {
+      await setDoc(userRef, dataToUpdate, { merge: true });
+    }
+  } catch (error) {
+     console.error("Error updating profile:", error);
+     throw error;
+  }
+}
+
+export async function sendPasswordReset(email: string) {
+  try {
+    await sendPasswordResetEmail(auth, email);
+  } catch (error) {
+    console.error("Error sending password reset email:", error);
     throw error;
   }
 }
