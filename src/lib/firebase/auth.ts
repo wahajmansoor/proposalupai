@@ -6,8 +6,8 @@ import {
   onAuthStateChanged,
   type User,
 } from 'firebase/auth';
-import { auth, db } from './config';
-import { doc, setDoc } from 'firebase/firestore';
+import { auth } from './config';
+import { createUserDocument } from './firestore';
 
 export { onAuthStateChanged, type User };
 
@@ -17,17 +17,12 @@ export const signUpUser = async (email: string, password: string, displayName: s
   try {
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
-
-    // After user is created, update their profile
-    await updateProfile(user, { displayName });
     
-    // Then create a document in Firestore for the user
-    // This now happens after the user is created and authenticated
-    await setDoc(doc(db, 'users', user.uid), {
-      uid: user.uid,
-      displayName,
-      email,
-    });
+    // Update the user's profile in Firebase Auth
+    await updateProfile(user, { displayName });
+
+    // Create a corresponding document in Firestore
+    await createUserDocument(user, { displayName, email });
     
     result = userCredential;
 

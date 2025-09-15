@@ -8,9 +8,32 @@ import {
   updateDoc,
   deleteDoc,
   writeBatch,
+  setDoc,
 } from 'firebase/firestore';
 import { db } from './config';
 import type { PortfolioCategory, PortfolioItem } from '@/app/lib/types';
+import type { User } from 'firebase/auth';
+
+// User Management
+export const createUserDocument = async (user: User, additionalData: { displayName: string; email: string | null }) => {
+  if (!user) return;
+
+  const userRef = doc(db, 'users', user.uid);
+  const data = {
+    uid: user.uid,
+    email: user.email || additionalData.email,
+    displayName: user.displayName || additionalData.displayName,
+  };
+
+  try {
+    await setDoc(userRef, data);
+  } catch (error) {
+    console.error("Error creating user document:", error);
+    // Optionally re-throw or handle the error as needed
+    throw error;
+  }
+};
+
 
 // Categories
 export const addCategory = async (userId: string, name: string) => {
