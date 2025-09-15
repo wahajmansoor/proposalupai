@@ -1,4 +1,4 @@
-import { createUserWithEmailAndPassword, updateProfile, User, sendPasswordResetEmail } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, User, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, getDoc } from 'firebase/auth';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from './config';
 
@@ -27,6 +27,34 @@ export async function signUpUser(fullName: string, email: string, password: stri
     throw error;
   }
 }
+
+export async function signInWithGoogle(): Promise<User> {
+  const provider = new GoogleAuthProvider();
+  try {
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+
+    // Check if user document already exists
+    const userRef = doc(db, 'users', user.uid);
+    const docSnap = await getDoc(userRef);
+
+    if (!docSnap.exists()) {
+      // Create user document in Firestore for new Google sign-in
+      await setDoc(userRef, {
+        uid: user.uid,
+        email: user.email,
+        displayName: user.displayName,
+        photoURL: user.photoURL,
+        createdAt: new Date(),
+      });
+    }
+    return user;
+  } catch (error) {
+    console.error("Error signing in with Google:", error);
+    throw error;
+  }
+}
+
 
 export async function updateUserProfile(user: User, profileData: { displayName?: string; photoURL?: string }) {
   if (!user) throw new Error('You must be logged in to update your profile.');
