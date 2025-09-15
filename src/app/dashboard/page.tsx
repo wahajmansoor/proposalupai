@@ -474,38 +474,41 @@ export default function DashboardPage() {
           </div>
           
           <div className="space-y-6 sticky top-24">
-            {isGenerating || generatedProposal ? (
-              <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                   <div className="flex items-center gap-2">
-                    <CardTitle>Generated Proposal</CardTitle>
-                    {wordCount > 0 && (
-                      <Badge variant="secondary">{wordCount} words</Badge>
-                    )}
-                  </div>
-                  <Button variant="ghost" size="sm" onClick={() => copyToClipboard(generatedProposal)} disabled={!generatedProposal}>
-                      <Clipboard className="mr-2 h-4 w-4" /> Copy
-                  </Button>
-                </CardHeader>
-                <CardContent className="min-h-[400px]">
-                  {isGenerating ? (
-                      <div className="space-y-2 pt-4">
-                          <Skeleton className="h-4 w-full" />
-                          <Skeleton className="h-4 w-5/6" />
-                          <Skeleton className="h-4 w-full mt-4" />
-                          <Skeleton className="h-4 w-full" />
-                          <Skeleton className="h-4 w-2/3" />
-                      </div>
-                  ) : (
-                      <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
-                          {generatedProposal}
-                      </div>
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <CardTitle>Generated Proposal</CardTitle>
+                  {wordCount > 0 && (
+                    <Badge variant="secondary">{wordCount} words</Badge>
                   )}
-                </CardContent>
-              </Card>
-            ) : (
-              <ProTips />
-            )}
+                </div>
+                <Button variant="ghost" size="sm" onClick={() => copyToClipboard(generatedProposal)} disabled={!generatedProposal}>
+                    <Clipboard className="mr-2 h-4 w-4" /> Copy
+                </Button>
+              </CardHeader>
+              <CardContent className={cn("min-h-[400px]", { 'min-h-[200px]': !generatedProposal && !isGenerating })}>
+                {isGenerating ? (
+                    <div className="space-y-2 pt-4">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-5/6" />
+                        <Skeleton className="h-4 w-full mt-4" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-2/3" />
+                    </div>
+                ) : generatedProposal ? (
+                    <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
+                        {generatedProposal}
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+                      <FileText className="h-12 w-12 mb-4" />
+                      <p className="font-medium">Your proposal will appear here.</p>
+                      <p className="text-sm">Fill out the details on the left and click "Generate Proposal".</p>
+                    </div>
+                )}
+              </CardContent>
+            </Card>
+            <ProTips />
           </div>
         </div>
       </main>
