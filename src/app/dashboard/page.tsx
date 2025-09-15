@@ -1,7 +1,6 @@
 "use client";
 
-import { useState, useTransition, useRef } from 'react';
-import { useFormState } from 'react-dom';
+import { useState, useTransition, useRef, useActionState } from 'react';
 import {
   analyzeJobAction,
   autofillSkillsAction,
@@ -36,7 +35,7 @@ const initialState = {
 
 export default function DashboardPage() {
   const { toast } = useToast();
-  const [analysisState, formAction] = useFormState(analyzeJobAction, initialState);
+  const [analysisState, formAction] = useActionState(analyzeJobAction, initialState);
   
   const [jobDetails, setJobDetails] = useState({ jobTitle: '', jobDescription: '' });
   const [analysis, setAnalysis] = useState<JobAnalysis | null>(null);
