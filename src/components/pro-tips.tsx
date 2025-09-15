@@ -1,4 +1,4 @@
-import { Lightbulb, Video, Phone, Zap, ShieldCheck, CreditCard, Star } from 'lucide-react';
+import { Lightbulb, Video, Phone, Zap, ShieldCheck, CreditCard, Star, TrendingUp } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const tips = [
@@ -16,6 +16,11 @@ const tips = [
     icon: Zap,
     title: 'Structuring your calls is essential',
     text: 'Plan your call agenda to cover project goals, your approach, and next steps.',
+  },
+   {
+    icon: TrendingUp,
+    title: 'Target Low-Proposal Projects',
+    text: 'Send offers to projects with less than 10 proposals to increase your chances.',
   },
   {
     icon: ShieldCheck,
