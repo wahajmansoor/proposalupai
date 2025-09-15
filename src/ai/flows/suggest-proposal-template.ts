@@ -22,10 +22,10 @@ export type SuggestProposalTemplateInput = z.infer<
 const SuggestProposalTemplateOutputSchema = z.object({
   template: z
     .enum(['standard', 'video'])
-    .describe('The suggested proposal template.'),
+    .describe("The suggested proposal template. MUST be either 'standard' or 'video'."),
   reasoning: z
     .string()
-    .describe('A brief explanation for the template suggestion.'),
+    .describe('A brief, one-sentence explanation for the template suggestion.'),
 });
 
 export type SuggestProposalTemplateOutput = z.infer<
@@ -55,6 +55,8 @@ const prompt = ai.definePrompt({
 
   Job Title: {{{jobTitle}}}
   Job Description: {{{jobDescription}}}
+
+  CRITICAL: You MUST respond in the format defined by the output schema. The 'template' field must be either 'standard' or 'video'.
   `,
 });
 
@@ -64,8 +66,19 @@ const suggestProposalTemplateFlow = ai.defineFlow(
     inputSchema: SuggestProposalTemplateInputSchema,
     outputSchema: SuggestProposalTemplateOutputSchema,
   },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  async (input, streamingCallback) => {
+    let lastError: Error | undefined;
+    for (let i = 0; i < 3; i++) {
+      try {
+        const {output} = await prompt(input);
+        if (output) {
+          return output;
+        }
+      } catch (e: any) {
+        lastError = e;
+        console.warn(`Attempt ${i + 1} failed for suggestProposalTemplateFlow`, e);
+      }
+    }
+    throw new Error(`Failed to suggest proposal template after multiple retries: ${lastError?.message}`);
   }
 );
