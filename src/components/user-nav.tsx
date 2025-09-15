@@ -65,7 +65,6 @@ export function UserNav() {
           <DropdownMenuItem asChild>
             <Link href="/dashboard/profile">Profile</Link>
           </DropdownMenuItem>
-          <DropdownMenuItem>Billing</DropdownMenuItem>
           <DropdownMenuItem>Settings</DropdownMenuItem>
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
