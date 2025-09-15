@@ -63,8 +63,8 @@ Client Questions: {{{clientQuestions}}}
 **CRITICAL INSTRUCTIONS - YOU MUST FOLLOW THESE FORMATTING RULES:**
 - **Greeting:** Start with the exact greeting provided: "{{{greeting}}}". Capitalize the first letter. This MUST be followed by two line breaks.
 - **Body:** The main body of the proposal is the most important part. It MUST be broken into multiple paragraphs for readability. DO NOT output a single block of text. Use line breaks to separate paragraphs.
-- **Closing:** End with the exact closing provided: "{{{closingCta}}}". There MUST be two line breaks before the closing text.
-- **Signature:** After the closing text, add a single line break and then write the user's name, which you can find in the Profile Summary.
+- **Closing:** End the proposal by intelligently integrating the closing phrase "{{{closingCta}}}" into a natural-sounding final sentence. For example, if the CTA is "Ready to start immediately", you could write "I am ready to start immediately." or "I'm excited by this opportunity and ready to start immediately."
+- **Signature:** After the closing sentence, add a single line break and then write the user's name, which you can find in the Profile Summary.
 - **Tone:** Use a "{{{tone}}}" tone throughout the proposal.
 {{#if wordLimit}}- **Word Count:** The proposal should be approximately {{{wordLimit}}} words.{{/if}}
 

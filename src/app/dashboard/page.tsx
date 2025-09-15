@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import {
   generateProposalAction,
   suggestProposalTemplateAction,
@@ -97,6 +97,15 @@ export default function DashboardPage() {
   const [clientQuestions, setClientQuestions] = useState<ClientQuestion[]>([{ id: 1, question: '', answer: '' }]);
   
   const [generatedProposal, setGeneratedProposal] = useState('');
+  const [wordCount, setWordCount] = useState(0);
+
+  useEffect(() => {
+    if (generatedProposal) {
+      setWordCount(generatedProposal.trim().split(/\s+/).filter(Boolean).length);
+    } else {
+      setWordCount(0);
+    }
+  }, [generatedProposal]);
   
   const [templateSuggestion, setTemplateSuggestion] = useState<TemplateSuggestion | null>(null);
 
@@ -468,7 +477,12 @@ export default function DashboardPage() {
             {isGenerating || generatedProposal ? (
               <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
-                  <CardTitle>Generated Proposal</CardTitle>
+                   <div className="flex items-center gap-2">
+                    <CardTitle>Generated Proposal</CardTitle>
+                    {wordCount > 0 && (
+                      <Badge variant="secondary">{wordCount} words</Badge>
+                    )}
+                  </div>
                   <Button variant="ghost" size="sm" onClick={() => copyToClipboard(generatedProposal)} disabled={!generatedProposal}>
                       <Clipboard className="mr-2 h-4 w-4" /> Copy
                   </Button>
