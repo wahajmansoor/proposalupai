@@ -1,5 +1,4 @@
 import {
-  getFirestore,
   collection,
   addDoc,
   getDocs,
@@ -10,16 +9,10 @@ import {
   deleteDoc,
   writeBatch,
   setDoc,
-  type Firestore,
 } from 'firebase/firestore';
-import { getFirebaseApp } from './config';
+import { db } from './config';
 import type { PortfolioCategory, PortfolioItem } from '@/app/lib/types';
 import type { User } from 'firebase/auth';
-
-// Initialize the Firebase app
-const app = getFirebaseApp();
-// Get the Firestore service
-const db: Firestore = getFirestore(app);
 
 // User Management
 export const createUserDocument = async (user: User) => {

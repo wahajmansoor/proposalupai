@@ -1,19 +1,12 @@
 import {
-  getAuth,
   createUserWithEmailAndPassword,
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
   onAuthStateChanged,
-  type Auth,
   type User,
 } from 'firebase/auth';
-import { getFirebaseApp } from './config';
-
-// Initialize the Firebase app
-const app = getFirebaseApp();
-// Get the Auth service
-const auth: Auth = getAuth(app);
+import { auth } from './config';
 
 // Export the onAuthStateChanged function and User type for use in components
 export { onAuthStateChanged, type User };
