@@ -13,8 +13,7 @@ export const firebaseConfig = {
   appId: "1:791256189022:web:212affb37fb34165d14ccf",
 };
 
-
-// Initialize Firebase for client-side
+// Initialize Firebase for client-side using a singleton pattern
 const app: FirebaseApp = !getApps().length ? initializeApp(firebaseConfig) : getApp();
 const auth: Auth = getAuth(app);
 const db: Firestore = getFirestore(app);

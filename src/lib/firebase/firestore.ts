@@ -15,17 +15,18 @@ import type { PortfolioCategory, PortfolioItem } from '@/app/lib/types';
 import type { User } from 'firebase/auth';
 
 // User Management
-export const createUserDocument = async (user: User, additionalData: { displayName: string; email: string | null }) => {
+export const createUserDocument = async (user: User) => {
   if (!user) return;
 
   const userRef = doc(db, 'users', user.uid);
   const data = {
     uid: user.uid,
-    email: user.email || additionalData.email,
-    displayName: user.displayName || additionalData.displayName,
+    email: user.email,
+    displayName: user.displayName,
   };
 
   try {
+    // Use setDoc to create the document with the user's UID as the document ID
     await setDoc(userRef, data);
   } catch (error) {
     console.error("Error creating user document:", error);

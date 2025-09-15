@@ -22,7 +22,7 @@ export const signUpUser = async (email: string, password: string, displayName: s
     await updateProfile(user, { displayName });
 
     // Create a corresponding document in Firestore
-    await createUserDocument(user, { displayName, email });
+    await createUserDocument(user);
     
     result = userCredential;
 
