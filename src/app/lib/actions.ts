@@ -117,6 +117,7 @@ const generateProposalSchema = z.object({
     clientQuestions: z.string(),
     greeting: z.string(),
     closingCta: z.string(),
+    closingCta2: z.string().optional(),
     tone: z.string(),
     wordLimit: z.string().optional(),
 });

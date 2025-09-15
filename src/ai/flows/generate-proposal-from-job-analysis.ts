@@ -28,7 +28,11 @@ const GenerateProposalInputSchema = z.object({
   greeting: z.string().describe('The desired greeting for the proposal.'),
   closingCta: z
     .string()
-    .describe('The desired closing call-to-action for the proposal.'),
+    .describe('The primary desired closing call-to-action for the proposal.'),
+  closingCta2: z
+    .string()
+    .optional()
+    .describe('An optional secondary closing call-to-action.'),
   tone: z.string().describe('The desired tone for the proposal.'),
   wordLimit: z.string().optional().describe('An optional word limit for the proposal.'),
 });
@@ -63,7 +67,8 @@ Client Questions: {{{clientQuestions}}}
 **CRITICAL INSTRUCTIONS - YOU MUST FOLLOW THESE FORMATTING RULES:**
 - **Greeting:** Start with the exact greeting provided: "{{{greeting}}}". Capitalize the first letter. This MUST be followed by two line breaks.
 - **Body:** The main body of the proposal is the most important part. It MUST be broken into multiple paragraphs for readability. DO NOT output a single block of text. Use line breaks to separate paragraphs.
-- **Closing:** End the proposal by intelligently integrating the closing phrase "{{{closingCta}}}" into a natural-sounding final sentence. For example, if the CTA is "Ready to start immediately", you could write "I am ready to start immediately." or "I'm excited by this opportunity and ready to start immediately."
+- **Closing:** End the proposal by intelligently integrating the closing phrase "{{{closingCta}}}" into a natural-sounding final sentence.
+{{#if closingCta2}}- **Secondary Closing:** If a second closing phrase is provided ("{{{closingCta2}}}"), you must also weave this into the closing paragraph or a final sentence in a natural and intelligent way. For example if the phrases are "Best regards" and "Looking forward to hearing from you", you could combine them into "I look forward to hearing from you. Best regards,".{{/if}}
 - **Signature:** After the closing sentence, add two line breaks and then write the user's name, which you can find in the Profile Summary.
 - **Tone:** Use a "{{{tone}}}" tone throughout the proposal.
 {{#if wordLimit}}- **Word Count:** The proposal should be approximately {{{wordLimit}}} words.{{/if}}
