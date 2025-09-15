@@ -126,10 +126,10 @@ export default function DashboardPage() {
     });
 
     if (result.error) {
-      toast({ title: 'Error suggesting skills', description: result.error, variant: 'destructive' });
+      toast({ title: 'Error filling skills', description: result.error, variant: 'destructive' });
     } else if (result.data) {
       setSkillsAndExpertise(result.data.skillsAndExpertise.join(', '));
-      toast({ title: 'Skills Suggested!', description: 'Relevant skills have been added based on the job description.' });
+      toast({ title: 'Skills Auto-filled!', description: 'Relevant skills have been added based on the job description.' });
     }
     setIsSuggestingSkills(false);
   };
@@ -262,7 +262,7 @@ export default function DashboardPage() {
                     <div className="flex justify-between items-center mb-1">
                       <Label htmlFor="skillsAndExpertise">Skills and Expertise</Label>
                       <Button variant="outline" size="sm" onClick={handleAutofillSkills} disabled={isSuggestingSkills}>
-                        {isSuggestingSkills ? 'Thinking...' : <><Sparkles className="mr-2 h-4 w-4" /> Auto-suggest</>}
+                        {isSuggestingSkills ? 'Thinking...' : <><Sparkles className="mr-2 h-4 w-4" /> Auto Fill</>}
                       </Button>
                     </div>
                     <Input id="skillsAndExpertise" value={skillsAndExpertise} onChange={handleInputChange(setSkillsAndExpertise)} placeholder="Enter skills separated by commas (e.g., React, Node.js)" />
@@ -438,5 +438,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
