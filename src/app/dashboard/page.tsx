@@ -2,8 +2,8 @@
 
 import { useState } from 'react';
 import {
-  analyzeJobAction,
-  generateProposalAction
+  generateProposalAction,
+  suggestProposalTemplateAction
 } from '@/app/lib/actions';
 import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
@@ -20,6 +20,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
+
+type TemplateSuggestion = {
+  template: 'standard' | 'video';
+  reasoning: string;
+}
 
 export default function DashboardPage() {
   const { toast } = useToast();
@@ -41,13 +46,20 @@ export default function DashboardPage() {
   const [clientQuestions, setClientQuestions] = useState<ClientQuestion[]>([{ id: 1, question: '', answer: '' }]);
   
   const [generatedProposal, setGeneratedProposal] = useState('');
+  
+  const [templateSuggestion, setTemplateSuggestion] = useState<TemplateSuggestion | null>(null);
 
   const [isGenerating, setIsGenerating] = useState(false);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   const nextStep = () => {
     if (currentStep < totalSteps) {
       if (currentStep === 1 && (!jobDetails.jobTitle || !jobDetails.jobDescription)) {
         toast({ title: 'Missing Information', description: 'Please provide both Job Title and Description.', variant: 'destructive' });
+        return;
+      }
+       if (currentStep === 1 && !templateSuggestion) {
+        toast({ title: 'Analysis Required', description: 'Please analyze the job description before proceeding.', variant: 'destructive' });
         return;
       }
       setCurrentStep(prev => prev + 1);
@@ -74,6 +86,26 @@ export default function DashboardPage() {
 
    const handleClientQuestionChange = (id: number, field: 'question' | 'answer', value: string) => {
     setClientQuestions(prev => prev.map(q => q.id === id ? { ...q, [field]: value } : q));
+  };
+  
+  const handleAnalyzeJob = async () => {
+    if (!jobDetails.jobTitle || !jobDetails.jobDescription) {
+      toast({ title: 'Missing Information', description: 'Please provide Job Title and Description to analyze.', variant: 'destructive' });
+      return;
+    }
+    setIsAnalyzing(true);
+    setTemplateSuggestion(null);
+
+    const result = await suggestProposalTemplateAction(jobDetails);
+
+    if (result.error) {
+      toast({ title: 'Analysis Error', description: result.error, variant: 'destructive' });
+    } else if (result.data) {
+      setTemplateSuggestion(result.data);
+      setProposalTemplate(result.data.template);
+      toast({ title: 'Analysis Complete!', description: 'We\'ve suggested a proposal template for you.' });
+    }
+    setIsAnalyzing(false);
   };
   
   const handleGenerateProposal = async () => {
@@ -142,6 +174,41 @@ export default function DashboardPage() {
                     <Label htmlFor="jobDescription">Job Description</Label>
                     <Textarea id="jobDescription" value={jobDetails.jobDescription} onChange={(e) => setJobDetails({...jobDetails, jobDescription: e.target.value})} placeholder="Paste the job description from Upwork or another platform here..." className="min-h-[150px]" />
                   </div>
+                   <Button onClick={handleAnalyzeJob} disabled={isAnalyzing} className="w-full">
+                    {isAnalyzing ? "Analyzing..." : <><Sparkles className="mr-2"/>Analyze Job Description & AI Guide</>}
+                  </Button>
+                  
+                  {isAnalyzing && (
+                    <div className="space-y-2 pt-4">
+                      <Skeleton className="h-6 w-1/3" />
+                      <Skeleton className="h-4 w-full" />
+                    </div>
+                  )}
+
+                  {templateSuggestion && (
+                    <div className="pt-4">
+                      <h3 className="font-semibold text-lg mb-2">Proposal Template</h3>
+                      <RadioGroup value={proposalTemplate} onValueChange={(val) => setProposalTemplate(val as 'standard' | 'video')} className="space-y-2">
+                        <Label htmlFor="template-standard" className={cn("flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-all", proposalTemplate === 'standard' && "border-primary ring-2 ring-primary")}>
+                          <RadioGroupItem value="standard" id="template-standard" className="mt-1" />
+                          <div className="grid gap-1.5">
+                            <span className="font-semibold">Standard Proposal</span>
+                            <span className="text-sm text-muted-foreground">A classic, professional proposal structure. The AI will customize it for you.</span>
+                          </div>
+                        </Label>
+                         <Label htmlFor="template-video" className={cn("flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-all", proposalTemplate === 'video' && "border-primary ring-2 ring-primary")}>
+                          <RadioGroupItem value="video" id="template-video" className="mt-1" />
+                          <div className="grid gap-1.5">
+                            <span className="font-semibold">Video Intro Proposal</span>
+                            <span className="text-sm text-muted-foreground">A template that includes a Loom video to introduce yourself.</span>
+                          </div>
+                        </Label>
+                      </RadioGroup>
+                      <div className="mt-4 p-3 bg-green-50 border-l-4 border-green-400 text-green-800 rounded-r-lg">
+                        <p><span className="font-bold">AI Suggestion: </span>{templateSuggestion.reasoning}</p>
+                      </div>
+                    </div>
+                  )}
                 </CardContent>
               </Card>
             )}
@@ -335,4 +402,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-    

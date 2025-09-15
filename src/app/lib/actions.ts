@@ -6,6 +6,7 @@ import { autofillProposalSections } from '@/ai/flows/autofill-proposal-sections'
 import { suggestIntroductionStrategies } from '@/ai/flows/suggest-introduction-strategies';
 import { answerClientQuestions } from '@/ai/flows/answer-client-questions';
 import { generateProposal } from '@/ai/flows/generate-proposal-from-job-analysis';
+import { suggestProposalTemplate } from '@/ai/flows/suggest-proposal-template';
 
 const jobDetailsSchema = z.object({
   jobTitle: z.string().min(1, 'Job title is required.'),
@@ -29,6 +30,20 @@ export async function analyzeJobAction(prevState: any, formData: FormData) {
     console.error(error);
     return { error: 'Failed to analyze job details.' };
   }
+}
+
+export async function suggestProposalTemplateAction(input: z.infer<typeof jobDetailsSchema>) {
+    const validatedFields = jobDetailsSchema.safeParse(input);
+    if (!validatedFields.success) {
+        return { error: 'Invalid input for template suggestion.' };
+    }
+    try {
+        const result = await suggestProposalTemplate(validatedFields.data);
+        return { data: result };
+    } catch (error) {
+        console.error(error);
+        return { error: 'Failed to suggest proposal template.' };
+    }
 }
 
 const autofillSkillsSchema = z.object({
