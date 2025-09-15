@@ -99,6 +99,8 @@ export default function DashboardPage() {
   
   const [portfolioCollections, setPortfolioCollections] = useState<PortfolioCollection[]>([]);
   const [selectedPortfolio, setSelectedPortfolio] = useState<string>('none');
+  const [portfolioLinkOption, setPortfolioLinkOption] = useState<'collection' | 'manual'>('collection');
+  const [manualPortfolioLinks, setManualPortfolioLinks] = useState('');
 
 
   const [greeting, setGreeting] = useState('hi');
@@ -255,10 +257,13 @@ export default function DashboardPage() {
     const selectedGreeting = greetings.find(g => g.value === greeting)?.label || greeting;
     const selectedClosing = closingCtas.find(c => c.value === closingCta)?.label || closingCta;
     const selectedClosing2 = closingCta2 === 'none' ? undefined : signOffCtas.find(c => c.value === closingCta2)?.label || closingCta2;
-
-    const portfolioLinks = selectedPortfolio !== 'none' 
-      ? portfolioCollections.find(c => c.id === selectedPortfolio)?.links.join(', ') || ''
-      : '';
+    
+    let portfolioLinks = '';
+    if (portfolioLinkOption === 'collection' && selectedPortfolio !== 'none') {
+      portfolioLinks = portfolioCollections.find(c => c.id === selectedPortfolio)?.links.join(', ') || '';
+    } else if (portfolioLinkOption === 'manual') {
+      portfolioLinks = manualPortfolioLinks;
+    }
       
     const result = await generateProposalAction({
         jobTitle: jobDetails.jobTitle,
@@ -397,24 +402,46 @@ export default function DashboardPage() {
                     <Textarea id="relevantExperience" value={relevantExperience} onChange={handleInputChange(setRelevantExperience)} placeholder="Briefly describe your relevant experience or paste a sample of your writing. The AI will adapt to your style." className="min-h-[120px]" />
                   </div>
                    <div>
-                    <Label>Portfolio Collection</Label>
-                    <Select value={selectedPortfolio} onValueChange={setSelectedPortfolio}>
-                      <SelectTrigger>
-                        <SelectValue placeholder="Select a collection" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="none">None</SelectItem>
-                        {portfolioCollections.map(collection => (
-                          <SelectItem key={collection.id} value={collection.id}>
-                            {collection.name}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                     <p className="text-sm text-muted-foreground mt-2">
-                      Manage your collections on the <a href="/dashboard/portfolio" className="underline">Portfolio page</a>.
-                    </p>
-                  </div>
+                      <Label>Portfolio / Relevant Links</Label>
+                      <RadioGroup value={portfolioLinkOption} onValueChange={(value) => setPortfolioLinkOption(value as 'collection' | 'manual')} className="flex items-center space-x-4 mb-2">
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="collection" id="r1" />
+                          <Label htmlFor="r1">Portfolio Collection</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="manual" id="r2" />
+                          <Label htmlFor="r2">Manual Links</Label>
+                        </div>
+                      </RadioGroup>
+
+                      {portfolioLinkOption === 'collection' ? (
+                        <div>
+                          <Select value={selectedPortfolio} onValueChange={setSelectedPortfolio}>
+                            <SelectTrigger>
+                              <SelectValue placeholder="Select a collection" />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="none">None</SelectItem>
+                              {portfolioCollections.map(collection => (
+                                <SelectItem key={collection.id} value={collection.id}>
+                                  {collection.name}
+                                </SelectItem>
+                              ))}
+                            </SelectContent>
+                          </Select>
+                          <p className="text-sm text-muted-foreground mt-2">
+                            Manage your collections on the <a href="/dashboard/portfolio" className="underline">Portfolio page</a>.
+                          </p>
+                        </div>
+                      ) : (
+                        <Textarea 
+                          value={manualPortfolioLinks}
+                          onChange={handleInputChange(setManualPortfolioLinks)}
+                          placeholder="Paste relevant links, one per line."
+                          className="min-h-[100px]"
+                        />
+                      )}
+                    </div>
                 </CardContent>
               </Card>
             )}
@@ -596,3 +623,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
