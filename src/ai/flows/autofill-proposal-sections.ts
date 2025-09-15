@@ -18,7 +18,7 @@ const AutofillProposalSectionsInputSchema = z.object({
 export type AutofillProposalSectionsInput = z.infer<typeof AutofillProposalSectionsInputSchema>;
 
 const AutofillProposalSectionsOutputSchema = z.object({
-  skillsAndExpertise: z.string().describe('A detailed section with relevant skills and expertise extracted from the job description and matched with the user profile.'),
+  skillsAndExpertise: z.array(z.string()).describe('A list of relevant skills and expertise as short, one or two-word tags.'),
 });
 export type AutofillProposalSectionsOutput = z.infer<typeof AutofillProposalSectionsOutputSchema>;
 
@@ -30,15 +30,14 @@ const prompt = ai.definePrompt({
   name: 'autofillProposalSectionsPrompt',
   input: {schema: AutofillProposalSectionsInputSchema},
   output: {schema: AutofillProposalSectionsOutputSchema},
-  prompt: `You are an AI expert in proposal writing. Your task is to analyze the job description and the user's profile information to automatically fill the Skills & Expertise section of a proposal.
+  prompt: `You are an AI expert in proposal writing. Your task is to analyze the job description and the user's profile information to automatically extract relevant skills.
 
 Job Title: {{{jobTitle}}}
 Job Description: {{{jobDescription}}}
 Profile Information: {{{profileInformation}}}
 
-Based on the job description, identify the key skills and expertise required. Then, cross-reference these requirements with the user's profile information to create a compelling Skills & Expertise section for the proposal. Focus on highlighting the skills and experiences that directly address the job requirements.
-
-Skills & Expertise:
+Based on the job description, identify the key skills and expertise required. Cross-reference these requirements with the user's profile information.
+Output a list of the most relevant skills as short, one or two-word tags (e.g., "React", "Project Management").
 `,
 });
 

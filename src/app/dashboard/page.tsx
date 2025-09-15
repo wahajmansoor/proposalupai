@@ -21,6 +21,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { cn } from '@/lib/utils';
 import { Progress } from '@/components/ui/progress';
 import { ProTips } from '@/components/pro-tips';
+import { Badge } from '@/components/ui/badge';
 
 type TemplateSuggestion = {
   template: 'standard' | 'video';
@@ -69,7 +70,7 @@ export default function DashboardPage() {
 
   const prevStep = () => {
     if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1);
+      setCurrentStep(prev => prev + 1);
     }
   };
 
@@ -235,7 +236,14 @@ export default function DashboardPage() {
                   </div>
                   <div>
                     <Label htmlFor="skillsAndExpertise">Skills and Expertise</Label>
-                    <Textarea id="skillsAndExpertise" value={skillsAndExpertise} onChange={handleInputChange(setSkillsAndExpertise)} placeholder="List your relevant skills, separated by commas." className="min-h-[80px]" />
+                    <Input id="skillsAndExpertise" value={skillsAndExpertise} onChange={handleInputChange(setSkillsAndExpertise)} placeholder="Enter skills separated by commas (e.g., React, Node.js)" />
+                    {skillsAndExpertise.trim() && (
+                      <div className="mt-2 flex flex-wrap gap-2">
+                        {skillsAndExpertise.split(',').map(skill => skill.trim()).filter(Boolean).map((skill, index) => (
+                          <Badge key={index} variant="secondary" className="font-normal">{skill}</Badge>
+                        ))}
+                      </div>
+                    )}
                   </div>
                   <div>
                     <Label htmlFor="relevantExperience">My Style / Relevant Experience</Label>
