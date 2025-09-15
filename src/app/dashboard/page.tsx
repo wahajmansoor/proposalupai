@@ -258,6 +258,8 @@ export default function DashboardPage() {
     const selectedGreeting = greetings.find(g => g.value === greeting)?.label || greeting;
     const selectedClosing = closingCtas.find(c => c.value === closingCta)?.label || closingCta;
     const selectedClosing2 = closingCta2 === 'none' ? undefined : signOffCtas.find(c => c.value === closingCta2)?.label || closingCta2;
+    const selectedOpeningStrategy = openingStrategies.find(s => s.id === openingStrategy)?.description;
+
     
     let portfolioLinks = '';
     if (portfolioLinkOption === 'collection' && selectedPortfolio !== 'none') {
@@ -274,7 +276,8 @@ export default function DashboardPage() {
         pastSuccesses: '',
         clientQuestions: clientQA,
         portfolioLinks: portfolioLinks,
-        greeting: selectedGreeting,
+        greeting: clientName ? `${selectedGreeting} ${clientName}` : selectedGreeting,
+        openingStrategy: openingStrategy !== 'none' ? selectedOpeningStrategy : undefined,
         closingCta: selectedClosing,
         closingCta2: selectedClosing2,
         tone,
@@ -633,5 +636,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    

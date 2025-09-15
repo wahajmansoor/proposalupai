@@ -1,3 +1,4 @@
+
 "use server";
 
 import { z } from 'zod';
@@ -117,6 +118,7 @@ const generateProposalSchema = z.object({
     clientQuestions: z.string(),
     portfolioLinks: z.string().optional(),
     greeting: z.string(),
+    openingStrategy: z.string().optional(),
     closingCta: z.string(),
     closingCta2: z.string().optional(),
     tone: z.string(),

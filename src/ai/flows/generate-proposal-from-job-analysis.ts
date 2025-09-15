@@ -31,6 +31,7 @@ const GenerateProposalInputSchema = z.object({
     .optional()
     .describe('A comma-separated list of portfolio links.'),
   greeting: z.string().describe('The desired greeting for the proposal.'),
+  openingStrategy: z.string().optional().describe('An optional opening paragraph template.'),
   closingCta: z
     .string()
     .describe('The primary desired closing call-to-action for the proposal.'),
@@ -72,6 +73,9 @@ Portfolio Links: {{{portfolioLinks}}}
 
 **CRITICAL INSTRUCTIONS - YOU MUST FOLLOW THESE FORMATTING RULES:**
 - **Greeting:** Start with the exact greeting provided: "{{{greeting}}}". Capitalize the first letter. This MUST be followed by two line breaks.
+{{#if openingStrategy}}
+- **Opening Paragraph:** Use the following "Opening Strategy" as the first paragraph. You MUST adapt it to the job by intelligently replacing placeholders like [CLIENT'S NAME], [SPECIFIC TASK], or [SPECIFIC SKILL] with relevant information from the job description and user profile. Do not leave the placeholders in the final output. The opening strategy is: "{{{openingStrategy}}}"
+{{/if}}
 - **Body:** The main body of the proposal is the most important part. It MUST be broken into multiple paragraphs for readability. DO NOT output a single block of text. Use line breaks to separate paragraphs.
 {{#if portfolioLinks}}- **Portfolio:** If portfolio links are provided, introduce them naturally within the proposal body. For example, "Here are some examples of my work:" or "You can view my portfolio here:". Then list each link on a new line.{{/if}}
 - **Closing:** End the proposal by intelligently integrating the closing phrase "{{{closingCta}}}" into a natural-sounding final sentence.
