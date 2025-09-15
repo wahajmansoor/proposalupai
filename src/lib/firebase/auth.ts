@@ -4,11 +4,16 @@ import {
   signInWithEmailAndPassword,
   signOut,
   updateProfile,
-  Auth,
+  onAuthStateChanged,
+  type Auth,
+  type User,
 } from 'firebase/auth';
 import { app } from './config';
 
+// Ensure Firebase is initialized before getting auth
 export const auth: Auth = getAuth(app);
+
+export { onAuthStateChanged, type User };
 
 export const signUpUser = async (email: string, password: string, displayName: string) => {
   let result = null,
@@ -40,5 +45,3 @@ export const signInUser = async (email: string, password: string) => {
 export const signOutUser = () => {
   return signOut(auth);
 };
-
-    
