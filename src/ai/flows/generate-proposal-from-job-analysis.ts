@@ -60,13 +60,14 @@ Relevant Skills: {{{relevantSkills}}}
 Past Successes: {{{pastSuccesses}}}
 Client Questions: {{{clientQuestions}}}
 
-Instructions for the proposal:
-- Start with the greeting: "{{{greeting}}}"
-- End with the closing: "{{{closingCta}}}"
-- Use a "{{{tone}}}" tone throughout the proposal.
-{{#if wordLimit}}- The proposal should be approximately {{{wordLimit}}} words.{{/if}}
+**Instructions for the proposal format:**
+- **Greeting:** Start with the greeting: "{{{greeting}}}". Capitalize the first letter. Follow it with two line breaks.
+- **Body:** The main body of the proposal should be broken into multiple paragraphs for readability. Do not output a single block of text.
+- **Closing:** End with the closing: "{{{closingCta}}}". Ensure there are two line breaks before the closing.
+- **Tone:** Use a "{{{tone}}}" tone throughout the proposal.
+{{#if wordLimit}}- **Word Count:** The proposal should be approximately {{{wordLimit}}} words.{{/if}}
 
-Compose a proposal that addresses the key requirements of the job, highlights the user's relevant skills and experiences, and answers any client questions. Focus on how the user can provide value to the client.
+Compose a proposal that addresses the key requirements of the job, highlights the user's relevant skills and experiences, and answers any client questions. Focus on how the user can provide value to the client. Ensure the final output is well-structured and professional.
 `,
 });
 
