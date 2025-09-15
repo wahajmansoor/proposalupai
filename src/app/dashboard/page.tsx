@@ -39,6 +39,39 @@ const openingStrategies = [
   { id: 'strategicQuestions', title: 'Strategic Questions', description: "Hi, [CLIENT'S NAME]! Your job description sparked a couple of questions in my mind: 1. [QUESTION 1] 2. [QUESTION 2]" },
 ];
 
+const greetings = [
+    { value: 'hi', label: 'Hi' },
+    { value: 'hello', label: 'Hello' },
+    { value: 'hey', label: 'Hey' },
+    { value: 'good-morning', label: 'Good morning' },
+    { value: 'good-afternoon', label: 'Good afternoon' },
+    { value: 'good-evening', label: 'Good evening' },
+    { value: 'greetings', label: 'Greetings' },
+    { value: 'dear', label: 'Dear' },
+    { value: 'hi-there', label: 'Hi there' },
+    { value: 'hello-there', label: 'Hello there' },
+    { value: 'hey-there', label: 'Hey there' },
+];
+
+const closingCtas = [
+    { value: 'best-regards', label: 'Best regards' },
+    { value: 'sincerely', label: 'Sincerely' },
+    { value: 'kind-regards', label: 'Kind regards' },
+    { value: 'warm-regards', label: 'Warm regards' },
+    { value: 'looking-forward', label: 'Looking forward to hearing from you' },
+    { value: 'excited-to-work', label: 'Excited to work with you' },
+    { value: 'ready-to-start', label: 'Ready to start immediately' },
+    { value: 'discuss-further', label: "Let's discuss your project further" },
+    { value: 'schedule-call', label: "Let's schedule a quick call to discuss" },
+    { value: 'thank-you', label: 'Thank you for your consideration' },
+    { value: 'any-questions', label: 'Let me know if you have any questions' },
+    { value: 'hope-to-hear', label: 'Hope to hear from you soon' },
+    { value: 'make-it-happen', label: "Let's make this happen" },
+    { value: 'im-ready-to-start', label: "I'm ready to get started" },
+    { value: 'create-amazing', label: "Let's create something amazing together" },
+    { value: 'talk-soon', label: 'Talk soon' },
+];
+
 export default function DashboardPage() {
   const { toast } = useToast();
   
@@ -163,6 +196,9 @@ export default function DashboardPage() {
       .map(q => `Q: ${q.question}`)
       .join('\n\n');
 
+    const selectedGreeting = greetings.find(g => g.value === greeting)?.label || greeting;
+    const selectedClosing = closingCtas.find(c => c.value === closingCta)?.label || closingCta;
+
     const result = await generateProposalAction({
         jobTitle: jobDetails.jobTitle,
         jobDescription: jobDetails.jobDescription,
@@ -170,8 +206,8 @@ export default function DashboardPage() {
         relevantSkills: skillsAndExpertise,
         pastSuccesses: '',
         clientQuestions: clientQA,
-        greeting,
-        closingCta,
+        greeting: selectedGreeting,
+        closingCta: selectedClosing,
         tone,
         wordLimit,
     });
@@ -343,17 +379,9 @@ export default function DashboardPage() {
                         <Select value={greeting} onValueChange={setGreeting}>
                             <SelectTrigger><SelectValue/></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="hi">Hi</SelectItem>
-                                <SelectItem value="hello">Hello</SelectItem>
-                                <SelectItem value="hey">Hey</SelectItem>
-                                <SelectItem value="good-morning">Good morning</SelectItem>
-                                <SelectItem value="good-afternoon">Good afternoon</SelectItem>
-                                <SelectItem value="good-evening">Good evening</SelectItem>
-                                <SelectItem value="greetings">Greetings</SelectItem>
-                                <SelectItem value="dear">Dear</SelectItem>
-                                <SelectItem value="hi-there">Hi there</SelectItem>
-                                <SelectItem value="hello-there">Hello there</SelectItem>
-                                <SelectItem value="hey-there">Hey there</SelectItem>
+                                {greetings.map(g => (
+                                    <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>
@@ -362,22 +390,9 @@ export default function DashboardPage() {
                         <Select value={closingCta} onValueChange={setClosingCta}>
                             <SelectTrigger><SelectValue/></SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="best-regards">Best regards</SelectItem>
-                                <SelectItem value="sincerely">Sincerely</SelectItem>
-                                <SelectItem value="kind-regards">Kind regards</SelectItem>
-                                <SelectItem value="warm-regards">Warm regards</SelectItem>
-                                <SelectItem value="looking-forward">Looking forward to hearing from you</SelectItem>
-                                <SelectItem value="excited-to-work">Excited to work with you</SelectItem>
-                                <SelectItem value="ready-to-start">Ready to start immediately</SelectItem>
-                                <SelectItem value="discuss-further">Let's discuss your project further</SelectItem>
-                                <SelectItem value="schedule-call">Let's schedule a quick call to discuss</SelectItem>
-                                <SelectItem value="thank-you">Thank you for your consideration</SelectItem>
-                                <SelectItem value="any-questions">Let me know if you have any questions</SelectItem>
-                                <SelectItem value="hope-to-hear">Hope to hear from you soon</SelectItem>
-                                <SelectItem value="make-it-happen">Let's make this happen</SelectItem>
-                                <SelectItem value="im-ready-to-start">I'm ready to get started</SelectItem>
-                                <SelectItem value="create-amazing">Let's create something amazing together</SelectItem>
-                                <SelectItem value="talk-soon">Talk soon</SelectItem>
+                                {closingCtas.map(c => (
+                                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>
