@@ -100,7 +100,7 @@ export default function DashboardPage() {
   
   const [portfolioCollections, setPortfolioCollections] = useState<PortfolioCollection[]>([]);
   const [selectedPortfolio, setSelectedPortfolio] = useState<string>('none');
-  const [portfolioLinkOption, setPortfolioLinkOption] = useState<'collection' | 'manual'>('collection');
+  const [portfolioLinkOption, setPortfolioLinkOption] = useState<'collection' | 'manual'>('manual');
   const [manualPortfolioLinks, setManualPortfolioLinks] = useState('');
 
 
@@ -406,15 +406,15 @@ export default function DashboardPage() {
                     <Textarea id="relevantExperience" value={relevantExperience} onChange={handleInputChange(setRelevantExperience)} placeholder="Briefly describe your relevant experience or paste a sample of your writing. The AI will adapt to your style." className="min-h-[120px]" />
                   </div>
                    <div>
-                      <Label>Portfolio / Relevant Links</Label>
+                      <Label className="mb-2 block">Portfolio / Relevant Links</Label>
                       <RadioGroup value={portfolioLinkOption} onValueChange={(value) => setPortfolioLinkOption(value as 'collection' | 'manual')} className="flex items-center space-x-4 mb-2">
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="collection" id="r1" />
-                          <Label htmlFor="r1">Portfolio Collection</Label>
-                        </div>
                         <div className="flex items-center space-x-2">
                           <RadioGroupItem value="manual" id="r2" />
                           <Label htmlFor="r2">Manual Links</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <RadioGroupItem value="collection" id="r1" />
+                          <Label htmlFor="r1">Portfolio Collection</Label>
                         </div>
                       </RadioGroup>
 
