@@ -336,7 +336,15 @@ export default function DashboardPage() {
                             <SelectContent>
                                 <SelectItem value="hi">Hi</SelectItem>
                                 <SelectItem value="hello">Hello</SelectItem>
+                                <SelectItem value="hey">Hey</SelectItem>
+                                <SelectItem value="good-morning">Good morning</SelectItem>
+                                <SelectItem value="good-afternoon">Good afternoon</SelectItem>
+                                <SelectItem value="good-evening">Good evening</SelectItem>
+                                <SelectItem value="greetings">Greetings</SelectItem>
                                 <SelectItem value="dear">Dear</SelectItem>
+                                <SelectItem value="hi-there">Hi there</SelectItem>
+                                <SelectItem value="hello-there">Hello there</SelectItem>
+                                <SelectItem value="hey-there">Hey there</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
