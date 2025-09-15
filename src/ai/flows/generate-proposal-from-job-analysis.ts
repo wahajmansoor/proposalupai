@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Generates a proposal based on job analysis and user profile.
@@ -38,7 +39,7 @@ const GenerateProposalInputSchema = z.object({
     .optional()
     .describe('An optional secondary closing call-to-action.'),
   tone: z.string().describe('The desired tone for the proposal.'),
-  wordLimit: z.string().optional().describe('An optional word limit for the proposal.'),
+  wordLimit: z.string().optional().describe('An optional word limit for the proposal, can be a range e.g. "100-150".'),
 });
 export type GenerateProposalInput = z.infer<typeof GenerateProposalInputSchema>;
 
@@ -77,7 +78,7 @@ Portfolio Links: {{{portfolioLinks}}}
 {{#if closingCta2}}- **Sign-off:** After the closing sentence, add two line breaks and then write the sign-off phrase: "{{{closingCta2}}}".{{/if}}
 - **Signature:** After the sign-off phrase (or the closing sentence if no sign-off is provided), add one line break and then write the user's name, which you can find in the Profile Summary.
 - **Tone:** Use a "{{{tone}}}" tone throughout the proposal.
-{{#if wordLimit}}- **Word Count:** The proposal should be approximately {{{wordLimit}}} words.{{/if}}
+{{#if wordLimit}}- **Word Count:** The proposal should be between {{{wordLimit}}} words.{{/if}}
 
 Compose a proposal that addresses the key requirements of the job, highlights the user's relevant skills and experiences, and answers any client questions. Focus on how the user can provide value to the client. Ensure the final output is well-structured and professional.
 `,

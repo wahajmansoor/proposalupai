@@ -108,7 +108,7 @@ export default function DashboardPage() {
   const [closingCta, setClosingCta] = useState('looking-forward');
   const [closingCta2, setClosingCta2] = useState('best-regards');
   const [tone, setTone] = useState('professional');
-  const [wordLimit, setWordLimit] = useState([100]);
+  const [wordLimit, setWordLimit] = useState([100, 150]);
   
   const [clientQuestions, setClientQuestions] = useState<ClientQuestion[]>([{ id: 1, question: '', answer: '' }]);
   
@@ -278,7 +278,7 @@ export default function DashboardPage() {
         closingCta: selectedClosing,
         closingCta2: selectedClosing2,
         tone,
-        wordLimit: wordLimit[0].toString(),
+        wordLimit: `${wordLimit[0]}-${wordLimit[1]}`,
     });
 
     if (result.error) {
@@ -532,7 +532,7 @@ export default function DashboardPage() {
                     <div className="md:col-span-2">
                         <div className="flex justify-between items-center mb-2">
                           <Label>Word Limit (Optional)</Label>
-                          <span className="text-sm font-medium text-muted-foreground">{wordLimit[0]} words</span>
+                          <span className="text-sm font-medium text-muted-foreground">{wordLimit[0]} - {wordLimit[1]} words</span>
                         </div>
                         <Slider 
                           value={wordLimit}
