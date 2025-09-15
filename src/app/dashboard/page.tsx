@@ -15,7 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight } from 'lucide-react';
-import type { ClientQuestion } from '@/app/lib/types';
+import type { ClientQuestion, PortfolioCollection } from '@/app/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -25,6 +25,7 @@ import { ProTips } from '@/components/pro-tips';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
+import { getPortfolioCollections } from '@/lib/firebase/portfolio';
 
 type TemplateSuggestion = {
   template: 'standard' | 'video';
@@ -95,7 +96,10 @@ export default function DashboardPage() {
   const [clientName, setClientName] = useState('');
   const [skillsAndExpertise, setSkillsAndExpertise] = useState('');
   const [relevantExperience, setRelevantExperience] = useState('');
-  const [portfolioLinks, setPortfolioLinks] = useState('');
+  
+  const [portfolioCollections, setPortfolioCollections] = useState<PortfolioCollection[]>([]);
+  const [selectedPortfolio, setSelectedPortfolio] = useState<string>('none');
+
 
   const [greeting, setGreeting] = useState('hi');
   const [closingCta, setClosingCta] = useState('looking-forward');
@@ -129,8 +133,16 @@ export default function DashboardPage() {
   }, [user, loading, router]);
 
   useEffect(() => {
-    if (user?.displayName) {
-      setProfileName(user.displayName);
+    if (user) {
+      if (user.displayName) {
+        setProfileName(user.displayName);
+      }
+      // Fetch portfolio collections
+      const fetchCollections = async () => {
+        const collections = await getPortfolioCollections(user.uid);
+        setPortfolioCollections(collections);
+      };
+      fetchCollections();
     }
   }, [user]);
 
@@ -187,16 +199,21 @@ export default function DashboardPage() {
     setIsAnalyzing(true);
     setTemplateSuggestion(null);
 
-    const result = await suggestProposalTemplateAction(jobDetails);
+    try {
+      const result = await suggestProposalTemplateAction(jobDetails);
 
-    if (result.error) {
-      toast({ title: 'Analysis Error', description: result.error, variant: 'destructive' });
-    } else if (result.data) {
-      setTemplateSuggestion(result.data);
-      setProposalTemplate(result.data.template);
-      toast({ title: 'Analysis Complete!', description: 'We\'ve suggested a proposal template for you.' });
+      if (result.error) {
+        toast({ title: 'Analysis Error', description: result.error, variant: 'destructive' });
+      } else if (result.data) {
+        setTemplateSuggestion(result.data);
+        setProposalTemplate(result.data.template);
+        toast({ title: 'Analysis Complete!', description: 'We\'ve suggested a proposal template for you.' });
+      }
+    } catch (e: any) {
+        toast({ title: 'Analysis Failed', description: e.message || 'An unexpected error occurred.', variant: 'destructive' });
+    } finally {
+        setIsAnalyzing(false);
     }
-    setIsAnalyzing(false);
   };
 
   const handleAutofillSkills = async () => {
@@ -239,6 +256,10 @@ export default function DashboardPage() {
     const selectedClosing = closingCtas.find(c => c.value === closingCta)?.label || closingCta;
     const selectedClosing2 = closingCta2 === 'none' ? undefined : signOffCtas.find(c => c.value === closingCta2)?.label || closingCta2;
 
+    const portfolioLinks = selectedPortfolio !== 'none' 
+      ? portfolioCollections.find(c => c.id === selectedPortfolio)?.links.join(', ') || ''
+      : '';
+      
     const result = await generateProposalAction({
         jobTitle: jobDetails.jobTitle,
         jobDescription: jobDetails.jobDescription,
@@ -375,9 +396,24 @@ export default function DashboardPage() {
                     <Label htmlFor="relevantExperience">My Style / Relevant Experience</Label>
                     <Textarea id="relevantExperience" value={relevantExperience} onChange={handleInputChange(setRelevantExperience)} placeholder="Briefly describe your relevant experience or paste a sample of your writing. The AI will adapt to your style." className="min-h-[120px]" />
                   </div>
-                  <div>
-                    <Label htmlFor="portfolioLinks">Portfolio Links</Label>
-                    <Textarea id="portfolioLinks" value={portfolioLinks} onChange={handleInputChange(setPortfolioLinks)} placeholder="Add your portfolio links, previous work examples, or relevant project URLs, separated by commas." className="min-h-[80px]" />
+                   <div>
+                    <Label>Portfolio Collection</Label>
+                    <Select value={selectedPortfolio} onValueChange={setSelectedPortfolio}>
+                      <SelectTrigger>
+                        <SelectValue placeholder="Select a collection" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="none">None</SelectItem>
+                        {portfolioCollections.map(collection => (
+                          <SelectItem key={collection.id} value={collection.id}>
+                            {collection.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                     <p className="text-sm text-muted-foreground mt-2">
+                      Manage your collections on the <a href="/dashboard/portfolio" className="underline">Portfolio page</a>.
+                    </p>
                   </div>
                 </CardContent>
               </Card>

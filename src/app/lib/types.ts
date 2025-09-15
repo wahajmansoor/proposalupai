@@ -8,3 +8,9 @@ export interface JobAnalysis {
     question: string;
     answer: string;
   }
+
+  export interface PortfolioCollection {
+    id: string;
+    name: string;
+    links: string[];
+  }
