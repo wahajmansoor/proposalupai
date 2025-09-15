@@ -15,16 +15,18 @@ export const signUpUser = async (email: string, password: string, displayName: s
   let result = null,
     error = null;
   try {
-    result = await createUserWithEmailAndPassword(auth, email, password);
-    if (result.user) {
-      await updateProfile(result.user, { displayName });
-      // Create a document in the 'users' collection
-      await setDoc(doc(db, 'users', result.user.uid), {
-        uid: result.user.uid,
-        displayName,
-        email,
-      });
-    }
+    const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+    result = userCredential;
+    const user = userCredential.user;
+
+    // After user is created, update their profile and create a document in Firestore
+    await updateProfile(user, { displayName });
+    await setDoc(doc(db, 'users', user.uid), {
+      uid: user.uid,
+      displayName,
+      email,
+    });
+
   } catch (e) {
     error = e;
   }
