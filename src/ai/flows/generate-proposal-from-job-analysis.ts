@@ -14,18 +14,36 @@ const GenerateProposalInputSchema = z.object({
   jobTitle: z.string().describe('The title of the job.'),
   jobDescription: z.string().describe('The description of the job.'),
   profileSummary: z.string().describe('A summary of the user profile.'),
-  relevantSkills: z.string().describe('A comma separated list of relevant skills for the job'),
-  pastSuccesses: z.string().describe('Description of past successes relevant to the job.'),
-  clientQuestions: z.string().describe('Any questions from the client that need answering in the proposal.'),
+  relevantSkills: z
+    .string()
+    .describe('A comma separated list of relevant skills for the job'),
+  pastSuccesses: z
+    .string()
+    .describe('Description of past successes relevant to the job.'),
+  clientQuestions: z
+    .string()
+    .describe(
+      'Any questions from the client that need answering in the proposal.'
+    ),
+  greeting: z.string().describe('The desired greeting for the proposal.'),
+  closingCta: z
+    .string()
+    .describe('The desired closing call-to-action for the proposal.'),
+  tone: z.string().describe('The desired tone for the proposal.'),
+  wordLimit: z.string().optional().describe('An optional word limit for the proposal.'),
 });
 export type GenerateProposalInput = z.infer<typeof GenerateProposalInputSchema>;
 
 const GenerateProposalOutputSchema = z.object({
   proposal: z.string().describe('The generated proposal.'),
 });
-export type GenerateProposalOutput = z.infer<typeof GenerateProposalOutputSchema>;
+export type GenerateProposalOutput = z.infer<
+  typeof GenerateProposalOutputSchema
+>;
 
-export async function generateProposal(input: GenerateProposalInput): Promise<GenerateProposalOutput> {
+export async function generateProposal(
+  input: GenerateProposalInput
+): Promise<GenerateProposalOutput> {
   return generateProposalFlow(input);
 }
 
@@ -42,7 +60,13 @@ Relevant Skills: {{{relevantSkills}}}
 Past Successes: {{{pastSuccesses}}}
 Client Questions: {{{clientQuestions}}}
 
-Compose a proposal that addresses the key requirements of the job, highlights the user's relevant skills and experiences, and answers any client questions. Focus on how the user can provide value to the client. Use a professional tone.
+Instructions for the proposal:
+- Start with the greeting: "{{{greeting}}}"
+- End with the closing: "{{{closingCta}}}"
+- Use a "{{{tone}}}" tone throughout the proposal.
+{{#if wordLimit}}- The proposal should be approximately {{{wordLimit}}} words.{{/if}}
+
+Compose a proposal that addresses the key requirements of the job, highlights the user's relevant skills and experiences, and answers any client questions. Focus on how the user can provide value to the client.
 `,
 });
 

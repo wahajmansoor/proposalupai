@@ -115,6 +115,10 @@ const generateProposalSchema = z.object({
     relevantSkills: z.string(),
     pastSuccesses: z.string(),
     clientQuestions: z.string(),
+    greeting: z.string(),
+    closingCta: z.string(),
+    tone: z.string(),
+    wordLimit: z.string().optional(),
 });
 
 export async function generateProposalAction(input: z.infer<typeof generateProposalSchema>) {

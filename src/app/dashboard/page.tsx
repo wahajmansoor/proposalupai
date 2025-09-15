@@ -55,6 +55,11 @@ export default function DashboardPage() {
   const [skillsAndExpertise, setSkillsAndExpertise] = useState('');
   const [relevantExperience, setRelevantExperience] = useState('');
   const [portfolioLinks, setPortfolioLinks] = useState('');
+
+  const [greeting, setGreeting] = useState('hi');
+  const [closingCta, setClosingCta] = useState('best-regards');
+  const [tone, setTone] = useState('professional');
+  const [wordLimit, setWordLimit] = useState('');
   
   const [clientQuestions, setClientQuestions] = useState<ClientQuestion[]>([{ id: 1, question: '', answer: '' }]);
   
@@ -165,6 +170,10 @@ export default function DashboardPage() {
         relevantSkills: skillsAndExpertise,
         pastSuccesses: '',
         clientQuestions: clientQA,
+        greeting,
+        closingCta,
+        tone,
+        wordLimit,
     });
 
     if (result.error) {
@@ -331,7 +340,7 @@ export default function DashboardPage() {
                   <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                         <Label>Greeting</Label>
-                        <Select defaultValue="hi">
+                        <Select value={greeting} onValueChange={setGreeting}>
                             <SelectTrigger><SelectValue/></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="hi">Hi</SelectItem>
@@ -350,7 +359,7 @@ export default function DashboardPage() {
                     </div>
                     <div>
                         <Label>Closing CTA</Label>
-                        <Select defaultValue="best-regards">
+                        <Select value={closingCta} onValueChange={setClosingCta}>
                             <SelectTrigger><SelectValue/></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="best-regards">Best regards</SelectItem>
@@ -374,7 +383,7 @@ export default function DashboardPage() {
                     </div>
                     <div>
                         <Label>Tone</Label>
-                        <Select defaultValue="professional">
+                        <Select value={tone} onValueChange={setTone}>
                             <SelectTrigger><SelectValue /></SelectTrigger>
                             <SelectContent>
                                 <SelectItem value="professional">Professional</SelectItem>
@@ -389,7 +398,7 @@ export default function DashboardPage() {
                     </div>
                     <div>
                         <Label>Word Limit (Optional)</Label>
-                        <Input type="number" placeholder="100" />
+                        <Input type="number" placeholder="100" value={wordLimit} onChange={handleInputChange(setWordLimit)} />
                     </div>
                   </CardContent>
                 </Card>
