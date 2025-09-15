@@ -1,0 +1,117 @@
+"use server";
+
+import { z } from 'zod';
+import { analyzeJobForProposal } from '@/ai/flows/analyze-job-for-proposal';
+import { autofillProposalSections } from '@/ai/flows/autofill-proposal-sections';
+import { suggestIntroductionStrategies } from '@/ai/flows/suggest-introduction-strategies';
+import { answerClientQuestions } from '@/ai/flows/answer-client-questions';
+import { generateProposal } from '@/ai/flows/generate-proposal-from-job-analysis';
+
+const jobDetailsSchema = z.object({
+  jobTitle: z.string().min(1, 'Job title is required.'),
+  jobDescription: z.string().min(1, 'Job description is required.'),
+});
+
+export async function analyzeJobAction(prevState: any, formData: FormData) {
+  const validatedFields = jobDetailsSchema.safeParse({
+    jobTitle: formData.get('jobTitle'),
+    jobDescription: formData.get('jobDescription'),
+  });
+
+  if (!validatedFields.success) {
+    return { error: 'Invalid input.' };
+  }
+
+  try {
+    const result = await analyzeJobForProposal(validatedFields.data);
+    return { data: result };
+  } catch (error) {
+    console.error(error);
+    return { error: 'Failed to analyze job details.' };
+  }
+}
+
+const autofillSkillsSchema = z.object({
+  jobTitle: z.string(),
+  jobDescription: z.string(),
+  profileInformation: z.string(),
+});
+
+export async function autofillSkillsAction(input: z.infer<typeof autofillSkillsSchema>) {
+   const validatedFields = autofillSkillsSchema.safeParse(input);
+    if (!validatedFields.success) {
+        return { error: 'Invalid input for autofill.' };
+    }
+  try {
+    const result = await autofillProposalSections(validatedFields.data);
+    return { data: result };
+  } catch (error) {
+    console.error(error);
+    return { error: 'Failed to autofill skills.' };
+  }
+}
+
+const suggestIntroductionsSchema = z.object({
+  jobTitle: z.string(),
+  jobDescription: z.string(),
+  profileSummary: z.string(),
+  pastSuccesses: z.array(z.string()),
+});
+
+export async function suggestIntroductionsAction(input: z.infer<typeof suggestIntroductionsSchema>) {
+    const validatedFields = suggestIntroductionsSchema.safeParse(input);
+    if (!validatedFields.success) {
+        return { error: 'Invalid input for suggestions.' };
+    }
+  try {
+    const result = await suggestIntroductionStrategies(validatedFields.data);
+    return { data: result };
+  } catch (error) {
+    console.error(error);
+    return { error: 'Failed to suggest introductions.' };
+  }
+}
+
+
+const answerQuestionsSchema = z.object({
+  jobDescription: z.string(),
+  clientQuestions: z.array(z.string()).min(1),
+  profileInformation: z.string(),
+});
+
+export async function answerQuestionsAction(input: z.infer<typeof answerQuestionsSchema>) {
+    const validatedFields = answerQuestionsSchema.safeParse(input);
+    if (!validatedFields.success) {
+        return { error: 'Invalid input for answering questions.' };
+    }
+  try {
+    const result = await answerClientQuestions(validatedFields.data);
+    return { data: result };
+  } catch (error) {
+    console.error(error);
+    return { error: 'Failed to answer client questions.' };
+  }
+}
+
+const generateProposalSchema = z.object({
+    jobTitle: z.string(),
+    jobDescription: z.string(),
+    profileSummary: z.string(),
+    relevantSkills: z.string(),
+    pastSuccesses: z.string(),
+    clientQuestions: z.string(),
+});
+
+export async function generateProposalAction(input: z.infer<typeof generateProposalSchema>) {
+    const validatedFields = generateProposalSchema.safeParse(input);
+    if (!validatedFields.success) {
+        return { error: 'Invalid input for generating proposal.' };
+    }
+  try {
+    const result = await generateProposal(validatedFields.data);
+    return { data: result };
+  } catch (error) {
+    console.error(error);
+    return { error: 'Failed to generate proposal.' };
+  }
+}
