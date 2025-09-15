@@ -302,8 +302,8 @@ export default function DashboardPage() {
                   <div className="flex items-center gap-2">
                     <Bot className="h-5 w-5 text-primary" />
                     <CardTitle className="text-lg">Client Questions</CardTitle>
-                    <CardDescription>If the job posting asks specific questions, add them here.</CardDescription>
                   </div>
+                  <CardDescription>If the job posting asks specific questions, add them here.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {clientQuestions.map((q, index) => (
