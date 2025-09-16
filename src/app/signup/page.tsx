@@ -15,7 +15,7 @@ import { cn } from '@/lib/utils';
 
 const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => {
   return (
-    <div className={cn("flex items-center text-sm", met ? "text-green-500" : "text-red-500")}>
+    <div className={cn("flex items-center text-sm", met ? "text-green-600" : "text-red-500")}>
       {met ? <CheckCircle2 className="mr-2 h-4 w-4" /> : <XCircle className="mr-2 h-4 w-4" />}
       {text}
     </div>
@@ -108,7 +108,7 @@ export default function SignupPage() {
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <Card className="mx-auto max-w-sm">
         <CardHeader className="text-center">
-          <ProposalUpLogo className="h-12 w-12 mx-auto text-primary" />
+          <ProposalUpLogo className="h-12 w-12 mx-auto" />
           <CardTitle className="text-2xl">Sign Up</CardTitle>
           <CardDescription>Enter your information to create an account</CardDescription>
         </CardHeader>
