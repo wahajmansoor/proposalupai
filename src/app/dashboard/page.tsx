@@ -34,6 +34,7 @@ type TemplateSuggestion = {
 }
 
 const openingStrategies = [
+  { id: 'video', title: 'Video Introduction', description: 'A brief, engaging introduction leading with a personal video.' },
   { id: 'none', title: 'None', description: 'The AI will customize it for you.' },
   { id: 'helpWithTask', title: 'Help with Specific Task', description: "I see that you need help with [SPECIFIC TASK]. I'd love to take some of the workload off your plate." },
   { id: 'extensiveExperience', title: 'Extensive Experience', description: "While viewing your job details, it really jumped out at me. I have extensive experience in [SPECIFIC SKILL], and I can start immediately." },
@@ -160,6 +161,17 @@ export default function DashboardPage() {
     }
   }, [projectDetails.summary]);
 
+  useEffect(() => {
+    if (proposalTemplate === 'video') {
+      setOpeningStrategy('video');
+    } else {
+      // If the user switches back from video, don't leave 'video' selected.
+      if (openingStrategy === 'video') {
+        setOpeningStrategy('none');
+      }
+    }
+  }, [proposalTemplate, openingStrategy]);
+
 
   if (loading || !user) {
     return (
@@ -215,7 +227,9 @@ export default function DashboardPage() {
 
     try {
       const strategiesMap = openingStrategies.reduce((acc, str) => {
-        acc[str.id] = str.description;
+        if (str.id !== 'video') { // Don't include video in what the AI can choose from
+          acc[str.id] = str.description;
+        }
         return acc;
       }, {} as Record<string, string>);
 
@@ -306,7 +320,7 @@ export default function DashboardPage() {
         clientQuestions: clientQA,
         portfolioLinks: portfolioLinks,
         greeting: clientName ? `${selectedGreeting} ${clientName}` : selectedGreeting,
-        openingStrategy: openingStrategy !== 'none' ? selectedOpeningStrategy : undefined,
+        openingStrategy: (openingStrategy !== 'none' && openingStrategy !== 'video') ? selectedOpeningStrategy : undefined,
         closingCta: selectedClosing,
         closingCta2: selectedClosing2,
         tone,
@@ -594,10 +608,10 @@ export default function DashboardPage() {
                     <CardDescription>Choose a proven opening approach, or leave it as "None", AI will customize it for you.</CardDescription>
                   </CardHeader>
                   <CardContent>
-                    <RadioGroup value={openingStrategy} onValueChange={setOpeningStrategy} className="space-y-2">
+                    <RadioGroup value={openingStrategy} onValueChange={setOpeningStrategy} className="space-y-2" disabled={proposalTemplate === 'video'}>
                       {openingStrategies.map(strategy => (
-                        <Label key={strategy.id} htmlFor={`strategy-${strategy.id}`} className={cn("flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-all", openingStrategy === strategy.id && "border-primary ring-2 ring-primary")}>
-                          <RadioGroupItem value={strategy.id} id={`strategy-${strategy.id}`} className="mt-1" />
+                        <Label key={strategy.id} htmlFor={`strategy-${strategy.id}`} className={cn("flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-all", openingStrategy === strategy.id && "border-primary ring-2 ring-primary", (proposalTemplate === 'video' && strategy.id !== 'video') && "opacity-50 cursor-not-allowed")}>
+                          <RadioGroupItem value={strategy.id} id={`strategy-${strategy.id}`} className="mt-1" disabled={proposalTemplate === 'video' && strategy.id !== 'video'} />
                           <div className="grid gap-1.5">
                             <span className="font-semibold">{strategy.title}</span>
                             <span className="text-sm text-muted-foreground">{strategy.description}</span>

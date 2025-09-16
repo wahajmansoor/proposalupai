@@ -143,6 +143,7 @@ const generateProposalSchema = z.object({
 export async function generateProposalAction(input: z.infer<typeof generateProposalSchema>) {
     const validatedFields = generateProposalSchema.safeParse(input);
     if (!validatedFields.success) {
+        console.log(validatedFields.error.flatten());
         return { error: 'Invalid input for generating proposal.' };
     }
   try {
