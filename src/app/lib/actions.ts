@@ -137,6 +137,7 @@ const generateProposalSchema = z.object({
     closingCta2: z.string().optional(),
     tone: z.string(),
     wordLimit: z.string().optional(),
+    proposalTemplate: z.enum(['standard', 'video']).optional(),
 });
 
 export async function generateProposalAction(input: z.infer<typeof generateProposalSchema>) {

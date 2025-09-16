@@ -311,6 +311,7 @@ export default function DashboardPage() {
         closingCta2: selectedClosing2,
         tone,
         wordLimit: `${wordLimit[0]}-${wordLimit[1]}`,
+        proposalTemplate,
     });
 
     if (result.error) {
