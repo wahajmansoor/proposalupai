@@ -18,7 +18,7 @@ const AutofillProposalSectionsInputSchema = z.object({
 export type AutofillProposalSectionsInput = z.infer<typeof AutofillProposalSectionsInputSchema>;
 
 const AutofillProposalSectionsOutputSchema = z.object({
-  skillsAndExpertise: z.array(z.string()).describe('A list of relevant skills and expertise as short, one or two-word tags.'),
+  skillsAndExpertise: z.array(z.string()).describe('A list of relevant skills and expertise.'),
 });
 export type AutofillProposalSectionsOutput = z.infer<typeof AutofillProposalSectionsOutputSchema>;
 
