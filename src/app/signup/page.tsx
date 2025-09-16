@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -9,9 +9,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ProposalUpLogo, GoogleIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2 } from 'lucide-react';
+import { Loader2, XCircle, CheckCircle2 } from 'lucide-react';
 import { signUpUser, signInWithGoogle } from '@/lib/firebase/auth';
-import { Separator } from '@/components/ui/separator';
+import { cn } from '@/lib/utils';
+
+const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => {
+  return (
+    <div className={cn("flex items-center text-sm", met ? "text-green-500" : "text-red-500")}>
+      {met ? <CheckCircle2 className="mr-2 h-4 w-4" /> : <XCircle className="mr-2 h-4 w-4" />}
+      {text}
+    </div>
+  );
+};
 
 export default function SignupPage() {
   const router = useRouter();
@@ -21,6 +30,26 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  
+  const [passwordValidation, setPasswordValidation] = useState({
+    length: false,
+    uppercase: false,
+    lowercase: false,
+    number: false,
+    special: false,
+  });
+
+  const allRequirementsMet = Object.values(passwordValidation).every(Boolean);
+
+  useEffect(() => {
+    setPasswordValidation({
+      length: password.length >= 8,
+      uppercase: /[A-Z]/.test(password),
+      lowercase: /[a-z]/.test(password),
+      number: /[0-9]/.test(password),
+      special: /[!@#$%^&*(),.?":{}|<>]/.test(password),
+    });
+  }, [password]);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -32,13 +61,22 @@ export default function SignupPage() {
       });
       return;
     }
+
+    if (!allRequirementsMet) {
+      toast({
+        title: 'Weak Password',
+        description: 'Please ensure your password meets all the requirements.',
+        variant: 'destructive',
+      });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       await signUpUser(fullName, email, password);
       router.push('/dashboard');
     } catch (error: any) {
-      // Firebase errors have a `message` property
       const errorMessage = error.message || 'An unexpected error occurred.';
       toast({
         title: 'Sign Up Failed',
@@ -110,8 +148,17 @@ export default function SignupPage() {
                   onChange={(e) => setPassword(e.target.value)}
                   disabled={isLoading || isGoogleLoading}
                 />
+                 {password && (
+                  <div className="mt-2 space-y-1">
+                      <PasswordRequirement met={passwordValidation.length} text="At least 8 characters long" />
+                      <PasswordRequirement met={passwordValidation.uppercase} text="Contains an uppercase letter" />
+                      <PasswordRequirement met={passwordValidation.lowercase} text="Contains a lowercase letter" />
+                      <PasswordRequirement met={passwordValidation.number} text="Contains a number" />
+                      <PasswordRequirement met={passwordValidation.special} text="Contains a special character" />
+                  </div>
+                )}
               </div>
-              <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading}>
+              <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading || (password.length > 0 && !allRequirementsMet)}>
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Create an account
               </Button>
