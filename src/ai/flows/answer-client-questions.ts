@@ -1,3 +1,4 @@
+
 'use server';
 
 /**
@@ -49,6 +50,10 @@ You will be provided with a job description, some information about the user cre
 
 Your job is to answer each of the client's questions using the job description and the user's profile information to tailor the answers to the specific job and the user's skills and experience.
 
+**CRITICAL INSTRUCTIONS:**
+1.  **Be Concise:** Each answer must be **under 100 words**.
+2.  **Identify Missing Information:** If an answer requires specific information not available in the provided context (e.g., a link to a specific past project, a precise timeline), you MUST include the phrase **"[User input required]"** in your answer so the user knows they need to add it manually.
+
 Job Description: {{{jobDescription}}}
 
 Profile Information: {{{profileInformation}}}
@@ -58,7 +63,6 @@ Client Questions:
 - {{{this}}}
 {{/each}}
 
-Answers:
 `,
 });
 
@@ -70,14 +74,12 @@ const answerClientQuestionsFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    // Split the string by newlines to create the array of answers.
-    const answers = output?.answers;
 
-    if (!answers) {
+    if (!output?.answers) {
       console.warn('No answers generated.');
       return { answers: [] };
     }
 
-    return {answers};
+    return {answers: output.answers};
   }
 );

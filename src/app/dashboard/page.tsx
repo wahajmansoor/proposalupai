@@ -136,7 +136,7 @@ export default function DashboardPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSuggestingSkills, setIsSuggestingSkills] = useState(false);
-  const [isAnsweringQuestionId, setIsAnsweringQuestionId] = useState<number | null>(null);
+  const [isAnsweringQuestions, setIsAnsweringQuestions] = useState(false);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -284,10 +284,10 @@ export default function DashboardPage() {
     setIsSuggestingSkills(false);
   };
   
-  const handleAnswerQuestion = async (questionId: number) => {
-    const questionToAnswer = clientQuestions.find(q => q.id === questionId);
-    if (!questionToAnswer || !questionToAnswer.question) {
-      toast({ title: 'Missing Question', description: 'Please enter a question to get an answer.', variant: 'destructive' });
+  const handleAnswerAllQuestions = async () => {
+    const questionsToAnswer = clientQuestions.filter(q => q.question && !q.answer);
+    if (questionsToAnswer.length === 0) {
+      toast({ title: 'No New Questions', description: 'Please enter a question or all questions have been answered.', variant: 'destructive' });
       return;
     }
     if (!projectDetails.summary) {
@@ -296,20 +296,30 @@ export default function DashboardPage() {
       return;
     }
     
-    setIsAnsweringQuestionId(questionId);
+    setIsAnsweringQuestions(true);
     const result = await answerQuestionsAction({
       jobDescription: projectDetails.summary,
-      clientQuestions: [questionToAnswer.question],
+      clientQuestions: questionsToAnswer.map(q => q.question),
       profileInformation: `My name is ${profileName}. My skills are ${skillsAndExpertise}. My experience is: ${relevantExperience}`,
     });
     
     if (result.error) {
-      toast({ title: 'Error Getting Answer', description: result.error, variant: 'destructive' });
-    } else if (result.data?.answers && result.data.answers[0]) {
-      handleClientQuestionChange(questionId, 'answer', result.data.answers[0]);
-      toast({ title: 'Answer Generated!', description: 'The AI has provided an answer to your question.' });
+      toast({ title: 'Error Getting Answers', description: result.error, variant: 'destructive' });
+    } else if (result.data?.answers) {
+      const newClientQuestions = [...clientQuestions];
+      let answerIndex = 0;
+      for(let i=0; i < newClientQuestions.length; i++) {
+        if(newClientQuestions[i].question && !newClientQuestions[i].answer) {
+          if(result.data.answers[answerIndex]) {
+            newClientQuestions[i].answer = result.data.answers[answerIndex];
+            answerIndex++;
+          }
+        }
+      }
+      setClientQuestions(newClientQuestions);
+      toast({ title: 'Answers Generated!', description: 'The AI has provided answers to your questions.' });
     }
-    setIsAnsweringQuestionId(null);
+    setIsAnsweringQuestions(false);
   }
 
   const handleGenerateProposal = async () => {
@@ -371,6 +381,7 @@ export default function DashboardPage() {
   
   const stepTitles = ["Project Details", "Your Profile", "Client Questions", "Preferences & Strategy"];
   const hasAnsweredQuestions = clientQuestions.some(q => q.answer);
+  const hasUnansweredQuestions = clientQuestions.some(q => q.question && !q.answer);
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -550,28 +561,30 @@ export default function DashboardPage() {
                             onChange={(e) => handleClientQuestionChange(q.id, 'question', e.target.value)} 
                             className="flex-1" 
                           />
-                          <div className="flex flex-col gap-1">
-                            <Button 
-                              variant="outline" 
-                              size="sm" 
-                              onClick={() => handleAnswerQuestion(q.id)}
-                              disabled={isAnsweringQuestionId === q.id || !q.question}
-                            >
-                               {isAnsweringQuestionId === q.id ? 'Answering...' : <><Sparkles className="mr-2 h-4 w-4" /> Get Answer</>}
-                            </Button>
-                            <Button 
-                              variant="ghost" 
-                              size="icon" 
-                              onClick={() => removeClientQuestion(q.id)} 
-                              className="text-muted-foreground hover:text-destructive h-8 w-8 self-center"
-                            >
-                                <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
+                          <Button 
+                            variant="ghost" 
+                            size="icon" 
+                            onClick={() => removeClientQuestion(q.id)} 
+                            className="text-muted-foreground hover:text-destructive h-8 w-8 self-center"
+                          >
+                              <Trash2 className="h-4 w-4" />
+                          </Button>
                         </div>
+                         {q.answer && (
+                            <Textarea 
+                                value={q.answer} 
+                                onChange={(e) => handleClientQuestionChange(q.id, 'answer', e.target.value)}
+                                className="border-green-300 focus-visible:ring-green-400"
+                            />
+                         )}
                       </div>
                   ))}
-                  <Button variant="outline" size="sm" onClick={addClientQuestion}><Plus className="mr-2 h-4 w-4" /> Add Question</Button>
+                  <div className="flex gap-2">
+                    <Button variant="outline" size="sm" onClick={addClientQuestion}><Plus className="mr-2 h-4 w-4" /> Add Question</Button>
+                    <Button variant="outline" size="sm" onClick={handleAnswerAllQuestions} disabled={isAnsweringQuestions || !hasUnansweredQuestions}>
+                       {isAnsweringQuestions ? 'Answering...' : <><Sparkles className="mr-2 h-4 w-4" /> Get All Answers</>}
+                    </Button>
+                  </div>
                 </CardContent>
               </Card>
             )}
