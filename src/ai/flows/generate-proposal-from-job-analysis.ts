@@ -28,6 +28,7 @@ const GenerateProposalInputSchema = z.object({
     ),
   portfolioLinks: z
     .string()
+
     .optional()
     .describe('A comma-separated list of portfolio links.'),
   greeting: z.string().describe('The desired greeting for the proposal.'),
@@ -89,7 +90,6 @@ Template: {{{proposalTemplate}}}
         - 2. We’ll schedule a call to discuss the details
         - 3. On the call, we’ll dive deeper into your project and plan the next steps
     9.  End the proposal by intelligently integrating the closing phrase "{{{closingCta}}}" into a natural-sounding final sentence.
-
 {{else}}
 - **Standard Template:**
     {{#if openingStrategy}}
@@ -98,10 +98,10 @@ Template: {{{proposalTemplate}}}
     - **Body:** The main body of the proposal is the most important part. It MUST be broken into multiple paragraphs for readability. DO NOT output a single block of text. Use line breaks to separate paragraphs. Compose a proposal that addresses the key requirements of the job, highlights the user's relevant skills and experiences, and answers any client questions. Focus on how the user can provide value to the client.
     {{#if portfolioLinks}}- **Portfolio:** If portfolio links are provided, you must introduce them on a new line. For example, "Here are some examples of my work:". Then, you MUST list each link on its own new line.{{/if}}
     - **Closing:** End the proposal by intelligently integrating the closing phrase "{{{closingCta}}}" into a natural-sounding final sentence.
+    {{#if closingCta2}}- **Sign-off:** After the closing sentence, add two line breaks and then write the sign-off phrase: "{{{closingCta2}}}".{{/if}}
+    - **Signature:** After the sign-off phrase (or the closing sentence if no sign-off is provided), add one line break and then write the user's name, which you can find in the Profile Summary.
 {{/if}}
 
-{{#if closingCta2}}- **Sign-off:** After the closing sentence, add two line breaks and then write the sign-off phrase: "{{{closingCta2}}}".{{/if}}
-- **Signature:** After the sign-off phrase (or the closing sentence if no sign-off is provided), add one line break and then write the user's name, which you can find in the Profile Summary.
 - **Tone:** Use a "{{{tone}}}" tone throughout the proposal.
 - **Terminology**: Always use the word "website" instead of "site".
 {{#if wordLimit}}- **Word Count:** The proposal should be between {{{wordLimit}}} words.{{/if}}
