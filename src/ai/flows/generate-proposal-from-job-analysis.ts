@@ -61,7 +61,11 @@ export async function generateProposal(
 
 const proposalPrompt = ai.definePrompt({
   name: 'proposalPrompt',
-  input: {schema: GenerateProposalInputSchema},
+  input: {schema: GenerateProposalInputSchema.extend({
+    // Add flags for handlebars
+    video: z.boolean().optional(),
+    standard: z.boolean().optional(),
+  })},
   output: {schema: GenerateProposalOutputSchema},
   prompt: `You are an expert proposal writer. Based on the project details and the user's profile, create a compelling proposal.
 
@@ -72,12 +76,11 @@ Relevant Skills: {{{relevantSkills}}}
 Past Successes: {{{pastSuccesses}}}
 Client Questions: {{{clientQuestions}}}
 Portfolio Links: {{{portfolioLinks}}}
-Template: {{{proposalTemplate}}}
 
 **CRITICAL INSTRUCTIONS - YOU MUST FOLLOW THESE FORMATTING RULES:**
 - **Greeting:** Always start with the exact greeting provided: "{{{greeting}}}". Capitalize the first letter. This MUST be followed by two line breaks.
 
-{{#if (eq proposalTemplate "video")}}
+{{#if video}}
 - **Video Template:** The user has selected the Video Intro template. You MUST follow this structure:
     1.  Start with the line: "Hey! I recorded a quick Loom video for you to check out:"
     2.  On the next line, add a placeholder for the URL: "[ENTER URL]"
@@ -91,7 +94,9 @@ Template: {{{proposalTemplate}}}
         - 2. We’ll schedule a call to discuss the details
         - 3. On the call, we’ll dive deeper into your project and plan the next steps
     9.  End the proposal by intelligently integrating the closing phrase "{{{closingCta}}}" into a natural-sounding final sentence.
-{{else}}
+{{/if}}
+
+{{#if standard}}
 - **Standard Template:**
     {{#if openingStrategy}}
     - **Opening Paragraph:** After the greeting, use the following "Opening Strategy" as the first paragraph. You MUST adapt the strategy to the job by intelligently replacing placeholders like [CLIENT'S NAME], [SPECIFIC TASK], or [SPECIFIC SKILL] with relevant information from the job description and user profile. Do not leave the placeholders in the final output. The opening strategy is: "{{{openingStrategy}}}" This MUST be followed by two line breaks.
@@ -118,7 +123,13 @@ const generateProposalFlow = ai.defineFlow(
     outputSchema: GenerateProposalOutputSchema,
   },
   async input => {
-    const {output} = await proposalPrompt(input);
+    // Reshape the input for Handlebars to work correctly.
+    const promptInput = {
+      ...input,
+      video: input.proposalTemplate === 'video',
+      standard: input.proposalTemplate === 'standard' || !input.proposalTemplate,
+    };
+    const {output} = await proposalPrompt(promptInput);
     return output!;
   }
 );
