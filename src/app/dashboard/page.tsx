@@ -6,6 +6,7 @@ import {
   generateProposalAction,
   analyzeAndSuggestAction,
   autofillSkillsAction,
+  answerQuestionsAction,
 } from '@/app/lib/actions';
 import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight } from 'lucide-react';
+import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, Lightbulb } from 'lucide-react';
 import type { ClientQuestion, PortfolioCollection } from '@/app/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -135,6 +136,7 @@ export default function DashboardPage() {
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSuggestingSkills, setIsSuggestingSkills] = useState(false);
+  const [isAnsweringQuestionId, setIsAnsweringQuestionId] = useState<number | null>(null);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -282,6 +284,34 @@ export default function DashboardPage() {
     setIsSuggestingSkills(false);
   };
   
+  const handleAnswerQuestion = async (questionId: number) => {
+    const questionToAnswer = clientQuestions.find(q => q.id === questionId);
+    if (!questionToAnswer || !questionToAnswer.question) {
+      toast({ title: 'Missing Question', description: 'Please enter a question to get an answer.', variant: 'destructive' });
+      return;
+    }
+    if (!projectDetails.summary) {
+      toast({ title: 'Missing Project Summary', description: 'Please provide the project summary on Step 1 first.', variant: 'destructive' });
+      setCurrentStep(1);
+      return;
+    }
+    
+    setIsAnsweringQuestionId(questionId);
+    const result = await answerQuestionsAction({
+      jobDescription: projectDetails.summary,
+      clientQuestions: [questionToAnswer.question],
+      profileInformation: `My name is ${profileName}. My skills are ${skillsAndExpertise}. My experience is: ${relevantExperience}`,
+    });
+    
+    if (result.error) {
+      toast({ title: 'Error Getting Answer', description: result.error, variant: 'destructive' });
+    } else if (result.data?.answers && result.data.answers[0]) {
+      handleClientQuestionChange(questionId, 'answer', result.data.answers[0]);
+      toast({ title: 'Answer Generated!', description: 'The AI has provided an answer to your question.' });
+    }
+    setIsAnsweringQuestionId(null);
+  }
+
   const handleGenerateProposal = async () => {
     if (!projectDetails.summary || !projectDetails.projectTitle) {
         toast({ title: 'Missing Information', description: 'Please provide project title and summary first.', variant: 'destructive' });
@@ -292,8 +322,8 @@ export default function DashboardPage() {
     setGeneratedProposal('');
 
     const clientQA = clientQuestions
-      .filter(q => q.question)
-      .map(q => `Q: ${q.question}`)
+      .filter(q => q.question && q.answer)
+      .map(q => `Q: ${q.question}\nA: ${q.answer}`)
       .join('\n\n');
 
     const selectedGreeting = greetings.find(g => g.value === greeting)?.label || greeting;
@@ -340,6 +370,7 @@ export default function DashboardPage() {
   };
   
   const stepTitles = ["Project Details", "Your Profile", "Client Questions", "Preferences & Strategy"];
+  const hasAnsweredQuestions = clientQuestions.some(q => q.answer);
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -507,15 +538,37 @@ export default function DashboardPage() {
                     <Bot className="h-5 w-5 text-primary" />
                     <CardTitle className="text-lg">Client Questions</CardTitle>
                   </div>
-                  <CardDescription>If the job posting asks specific questions, add them here.</CardDescription>
+                  <CardDescription>If the job posting asks specific questions, add them here and get AI-powered answers.</CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {clientQuestions.map((q, index) => (
-                      <div key={q.id} className="flex items-start gap-2">
-                        <Textarea placeholder={`Question ${index + 1}`} value={q.question} onChange={(e) => handleClientQuestionChange(q.id, 'question', e.target.value)} className="flex-1" />
-                        <Button variant="ghost" size="icon" onClick={() => removeClientQuestion(q.id)} className="text-muted-foreground hover:text-destructive mt-1">
-                            <Trash2 className="h-4 w-4" />
-                        </Button>
+                      <div key={q.id} className="space-y-2">
+                        <div className="flex items-start gap-2">
+                          <Textarea 
+                            placeholder={`Question ${index + 1}`} 
+                            value={q.question} 
+                            onChange={(e) => handleClientQuestionChange(q.id, 'question', e.target.value)} 
+                            className="flex-1" 
+                          />
+                          <div className="flex flex-col gap-1">
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              onClick={() => handleAnswerQuestion(q.id)}
+                              disabled={isAnsweringQuestionId === q.id || !q.question}
+                            >
+                               {isAnsweringQuestionId === q.id ? 'Answering...' : <><Sparkles className="mr-2 h-4 w-4" /> Get Answer</>}
+                            </Button>
+                            <Button 
+                              variant="ghost" 
+                              size="icon" 
+                              onClick={() => removeClientQuestion(q.id)} 
+                              className="text-muted-foreground hover:text-destructive h-8 w-8 self-center"
+                            >
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
                   ))}
                   <Button variant="outline" size="sm" onClick={addClientQuestion}><Plus className="mr-2 h-4 w-4" /> Add Question</Button>
@@ -684,6 +737,26 @@ export default function DashboardPage() {
                 )}
               </CardContent>
             </Card>
+
+            {hasAnsweredQuestions && (
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2">
+                    <Lightbulb className="h-5 w-5 text-primary" />
+                    Client Questions / Answers
+                  </CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {clientQuestions.filter(q => q.answer).map(q => (
+                    <div key={q.id} className="prose prose-sm max-w-none">
+                      <p className="font-semibold text-gray-800">{q.question}</p>
+                      <p className="text-gray-600 whitespace-pre-wrap">{q.answer}</p>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
             <ProTips />
           </div>
         </div>
