@@ -76,6 +76,7 @@ Template: {{{proposalTemplate}}}
 
 **CRITICAL INSTRUCTIONS - YOU MUST FOLLOW THESE FORMATTING RULES:**
 - **Greeting:** Always start with the exact greeting provided: "{{{greeting}}}". Capitalize the first letter. This MUST be followed by two line breaks.
+
 {{#if (eq proposalTemplate "video")}}
 - **Video Template:** The user has selected the Video Intro template. You MUST follow this structure:
     1.  Start with the line: "Hey! I recorded a quick Loom video for you to check out:"
