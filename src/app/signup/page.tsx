@@ -15,8 +15,8 @@ import { cn } from '@/lib/utils';
 
 const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => {
   return (
-    <div className={cn("flex items-center text-sm", met ? "text-green-600" : "text-red-500")}>
-      {met ? <CheckCircle2 className="mr-2 h-4 w-4" /> : <XCircle className="mr-2 h-4 w-4" />}
+    <div className={cn("flex items-center text-sm", met ? "text-green-600" : "text-muted-foreground")}>
+      {met ? <CheckCircle2 className="mr-2 h-4 w-4" /> : <XCircle className="mr-2 h-4 w-4 text-red-500" />}
       {text}
     </div>
   );
@@ -143,6 +143,7 @@ export default function SignupPage() {
                 <Input 
                   id="password" 
                   type="password" 
+                  placeholder="••••••••"
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
