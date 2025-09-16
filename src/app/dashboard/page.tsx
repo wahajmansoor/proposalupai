@@ -110,7 +110,7 @@ export default function DashboardPage() {
   const [closingCta, setClosingCta] = useState('looking-forward');
   const [closingCta2, setClosingCta2] = useState('best-regards');
   const [tone, setTone] = useState('professional');
-  const [wordLimit, setWordLimit] = useState([100, 150]);
+  const [wordLimit, setWordLimit] = useState([50, 120]);
   
   const [clientQuestions, setClientQuestions] = useState<ClientQuestion[]>([{ id: 1, question: '', answer: '' }]);
   
