@@ -61,7 +61,7 @@ export async function generateProposal(
 
 const proposalPrompt = ai.definePrompt({
   name: 'proposalPrompt',
-  input: {schema: GenerateProposalInputSchema.extend({
+  input: {schema: GenerateProposalInputSchema.omit({ clientQuestions: true }).extend({
     // Add flags for handlebars
     video: z.boolean().optional(),
     standard: z.boolean().optional(),
@@ -74,7 +74,6 @@ Project Summary: {{{summary}}}
 Profile Summary: {{{profileSummary}}}
 Relevant Skills: {{{relevantSkills}}}
 Past Successes: {{{pastSuccesses}}}
-Client Questions: {{{clientQuestions}}}
 Portfolio Links: {{{portfolioLinks}}}
 
 **CRITICAL INSTRUCTIONS - YOU MUST FOLLOW THESE FORMATTING RULES:**
@@ -101,7 +100,7 @@ Portfolio Links: {{{portfolioLinks}}}
     {{#if openingStrategy}}
     - **Opening Paragraph:** After the greeting, use the following "Opening Strategy" as the first paragraph. You MUST adapt the strategy to the job by intelligently replacing placeholders like [CLIENT'S NAME], [SPECIFIC TASK], or [SPECIFIC SKILL] with relevant information from the job description and user profile. Do not leave the placeholders in the final output. The opening strategy is: "{{{openingStrategy}}}" This MUST be followed by two line breaks.
     {{/if}}
-    - **Body:** The main body of the proposal is the most important part. It MUST be broken into multiple paragraphs for readability. DO NOT output a single block of text. Use line breaks to separate paragraphs. Compose a proposal that addresses the key requirements of the job, highlights the user's relevant skills and experiences, and answers any client questions. Focus on how the user can provide value to the client.
+    - **Body:** The main body of the proposal is the most important part. It MUST be broken into multiple paragraphs for readability. DO NOT output a single block of text. Use line breaks to separate paragraphs. Compose a proposal that addresses the key requirements of the job and highlights the user's relevant skills and experiences. Focus on how the user can provide value to the client. Do NOT answer any specific client questions in this section.
     {{#if portfolioLinks}}- **Portfolio:** If portfolio links are provided, you must introduce them on a new line. For example, "Here are some examples of my work:". Then, you MUST list each link on its own new line.{{/if}}
     - **Closing:** End the proposal by intelligently integrating the closing phrase "{{{closingCta}}}" into a natural-sounding final sentence.
     {{#if closingCta2}}- **Sign-off:** After the closing sentence, add two line breaks and then write the sign-off phrase: "{{{closingCta2}}}".{{/if}}
