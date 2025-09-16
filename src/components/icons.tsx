@@ -1,20 +1,53 @@
 import type { SVGProps } from 'react';
 
-export function AIProposalUpLogo(props: SVGProps<SVGSVGElement>) {
+export function ProposalUpLogo(props: SVGProps<SVGSVGElement>) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="currentColor"
-      strokeWidth="2"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      viewBox="0 0 100 100"
+      width="100"
+      height="100"
       {...props}
     >
-      <path d="M12 19V5" />
-      <path d="m5 12 7-7 7 7" />
-      <path d="M12 22h6a2 2 0 0 0 2-2V4a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v16" />
+      <defs>
+        <linearGradient id="yolkGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+          <stop offset="0%" style={{ stopColor: '#FFD180' }} />
+          <stop offset="100%" style={{ stopColor: '#FF8F00' }} />
+        </linearGradient>
+      </defs>
+      
+      {/* Green Outline */}
+      <path
+        d="M89.7,65.8c-4.8,11.5-17.3,23.5-31.5,25.4c-14.1,1.9-29-5.2-38.3-15.4C9.5,65.7,2.8,51.1,5.9,36.5 C9.1,21.9,21.9,8.5,36.7,5.4C51.5,2.2,68.4,7.8,79.5,19.3C90.6,30.8,96.3,49,89.7,65.8z"
+        fill="#14A800"
+      />
+      
+      {/* White egg part */}
+      <path
+        d="M85.5,63.9c-4.4,10.6-15.9,21.6-28.9,23.4c-13,1.7-26.7-4.8-35.2-14.2C12.9,63.9,4.9,50,7.7,36.4 C10.6,22.8,22.3,10.5,35.6,7.7C48.8,5,64.2,10.1,74.3,20.6C84.4,31.1,89.5,48.1,85.5,63.9z"
+        fill="#FFFFFF"
+        stroke="#F5F5F5"
+        strokeWidth="1"
+      />
+
+      {/* Yolk */}
+      <ellipse
+        cx="57"
+        cy="45"
+        rx="18"
+        ry="15"
+        transform="rotate(-20 57 45)"
+        fill="url(#yolkGradient)"
+      />
+      
+      {/* Yolk Highlight */}
+       <path
+        d="M52,38 a10,7 0 0,1 12,2"
+        fill="none"
+        stroke="rgba(255,255,255,0.7)"
+        strokeWidth="2.5"
+        strokeLinecap="round"
+      />
     </svg>
   );
 }

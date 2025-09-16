@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { AIProposalUpLogo, GoogleIcon } from '@/components/icons';
+import { ProposalUpLogo, GoogleIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { signUpUser, signInWithGoogle } from '@/lib/firebase/auth';
@@ -70,7 +70,7 @@ export default function SignupPage() {
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <Card className="mx-auto max-w-sm">
         <CardHeader className="text-center">
-          <AIProposalUpLogo className="h-12 w-12 mx-auto text-primary" />
+          <ProposalUpLogo className="h-12 w-12 mx-auto text-primary" />
           <CardTitle className="text-2xl">Sign Up</CardTitle>
           <CardDescription>Enter your information to create an account</CardDescription>
         </CardHeader>
