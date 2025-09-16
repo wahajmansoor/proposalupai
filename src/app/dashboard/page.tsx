@@ -28,9 +28,11 @@ import { useRouter } from 'next/navigation';
 import { getPortfolioCollections } from '@/lib/firebase/portfolio';
 import { Slider } from '@/components/ui/slider';
 
-type TemplateSuggestion = {
+type Suggestion = {
   template: 'standard' | 'video';
-  reasoning: string;
+  templateReasoning: string;
+  strategyId: string;
+  strategyReasoning: string;
 }
 
 const openingStrategies = [
@@ -128,7 +130,7 @@ export default function DashboardPage() {
     }
   }, [generatedProposal]);
   
-  const [templateSuggestion, setTemplateSuggestion] = useState<TemplateSuggestion | null>(null);
+  const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -187,7 +189,7 @@ export default function DashboardPage() {
         toast({ title: 'Missing Information', description: 'Please provide both Project Title and Summary.', variant: 'destructive' });
         return;
       }
-       if (currentStep === 1 && !templateSuggestion) {
+       if (currentStep === 1 && !suggestion) {
         toast({ title: 'Analysis Required', description: 'Please analyze the project summary before proceeding.', variant: 'destructive' });
         return;
       }
@@ -223,7 +225,7 @@ export default function DashboardPage() {
       return;
     }
     setIsAnalyzing(true);
-    setTemplateSuggestion(null);
+    setSuggestion(null);
 
     try {
       const strategiesMap = openingStrategies.reduce((acc, str) => {
@@ -241,18 +243,14 @@ export default function DashboardPage() {
       if (result.error) {
         toast({ title: 'Analysis Error', description: result.error, variant: 'destructive' });
       } else if (result.data) {
-        const { template, strategy } = result.data;
-        setTemplateSuggestion(template);
-        setProposalTemplate(template.template);
-        
-        if (strategy) {
-            setOpeningStrategy(strategy.strategyId);
-            setStrategySuggestionReasoning(strategy.reasoning);
-        }
+        setSuggestion(result.data);
+        setProposalTemplate(result.data.template);
+        setOpeningStrategy(result.data.strategyId);
+        setStrategySuggestionReasoning(result.data.strategyReasoning);
 
         toast({ 
           title: 'Analysis Complete!', 
-          description: `Suggested Template: ${template.template}. Suggested Opening: ${openingStrategies.find(s => s.id === strategy?.strategyId)?.title || 'Default'}` 
+          description: `Suggestions are ready!` 
         });
       }
     } catch (e: any) {
@@ -390,7 +388,7 @@ export default function DashboardPage() {
                     </div>
                   )}
 
-                  {templateSuggestion && (
+                  {suggestion && (
                     <div className="pt-4">
                       <h3 className="font-semibold text-lg mb-2">Proposal Template</h3>
                       <RadioGroup value={proposalTemplate} onValueChange={(val) => setProposalTemplate(val as 'standard' | 'video')} className="space-y-2">
@@ -410,7 +408,7 @@ export default function DashboardPage() {
                         </Label>
                       </RadioGroup>
                       <div className="mt-4 p-3 bg-green-50 border-l-4 border-green-400 text-green-800 rounded-r-lg">
-                        <p><span className="font-bold">AI Suggestion: </span>{templateSuggestion.reasoning}</p>
+                        <p><span className="font-bold">AI Suggestion: </span>{suggestion.templateReasoning}</p>
                       </div>
                     </div>
                   )}

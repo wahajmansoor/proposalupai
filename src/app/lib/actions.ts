@@ -7,8 +7,7 @@ import { autofillProposalSections } from '@/ai/flows/autofill-proposal-sections'
 import { suggestIntroductionStrategies } from '@/ai/flows/suggest-introduction-strategies';
 import { answerClientQuestions } from '@/ai/flows/answer-client-questions';
 import { generateProposal } from '@/ai/flows/generate-proposal-from-job-analysis';
-import { suggestProposalTemplate } from '@/ai/flows/suggest-proposal-template';
-import { suggestOpeningStrategy } from '@/ai/flows/suggest-opening-strategy';
+import { suggestTemplateAndStrategy } from '@/ai/flows/suggest-template-and-strategy';
 
 const projectDetailsSchema = z.object({
   projectTitle: z.string().min(1, 'Project title is required.'),
@@ -45,15 +44,12 @@ export async function analyzeAndSuggestAction(input: z.infer<typeof analyzeAndSu
         return { error: 'Invalid input for analysis and suggestions.' };
     }
     try {
-        const [templateResult, strategyResult] = await Promise.all([
-            suggestProposalTemplate(validatedFields.data.projectDetails),
-            suggestOpeningStrategy({
-                ...validatedFields.data.projectDetails,
-                strategies: validatedFields.data.strategies,
-            }),
-        ]);
+        const result = await suggestTemplateAndStrategy({
+            ...validatedFields.data.projectDetails,
+            strategies: validatedFields.data.strategies,
+        });
         
-        return { data: { template: templateResult, strategy: strategyResult } };
+        return { data: result };
     } catch (error) {
         console.error("Error in analyzeAndSuggestAction:", error);
         return { error: 'Failed to get AI suggestions.' };
