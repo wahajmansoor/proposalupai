@@ -29,7 +29,7 @@ export async function autofillProposalSections(input: AutofillProposalSectionsIn
 const prompt = ai.definePrompt({
   name: 'autofillProposalSectionsPrompt',
   input: {schema: AutofillProposalSectionsInputSchema},
-  output: {schema: AutofillProposalSectionsOutputSchema},
+  output: {schema: z.object({ skills: z.string().describe('A comma-separated string of relevant skills.') })},
   prompt: `You are an AI expert in proposal writing. Your task is to analyze the project summary and the user's profile information to automatically extract relevant skills.
 
 Project Title: {{{projectTitle}}}
@@ -37,7 +37,7 @@ Summary: {{{summary}}}
 Profile Information: {{{profileInformation}}}
 
 Based on the project summary, identify the key skills and expertise required. Cross-reference these requirements with the user's profile information.
-Output a list of the most relevant skills as short, one or two-word tags (e.g., "React", "Project Management").
+Output a comma-separated string of the most relevant skills (e.g., "React, Project Management, Node.js").
 `,
 });
 
@@ -49,6 +49,10 @@ const autofillProposalSectionsFlow = ai.defineFlow(
   },
   async input => {
     const {output} = await prompt(input);
-    return output!;
+    if (!output?.skills) {
+      return { skillsAndExpertise: [] };
+    }
+    const skillsArray = output.skills.split(',').map(skill => skill.trim()).filter(Boolean);
+    return { skillsAndExpertise: skillsArray };
   }
 );
