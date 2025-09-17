@@ -208,7 +208,7 @@ export default function DashboardPage() {
 
   const prevStep = () => {
     if (currentStep > 1) {
-      setCurrentStep(prev => prev + 1);
+      setCurrentStep(prev => prev - 1);
     }
   };
 
@@ -777,7 +777,7 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
           </div>
-          <Card className="md:col-span-2 border-green-200">
+          <Card className="md:col-span-2">
             <CardContent className="p-6">
                <div className="flex items-center gap-4 mb-4">
                 <Image 
@@ -863,7 +863,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
-    
-
-    
