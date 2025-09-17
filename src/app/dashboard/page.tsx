@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuote, CheckCircle, Phone, Globe } from 'lucide-react';
+import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuote, CheckCircle, Phone, Globe, Users, Calendar, BarChart, ShoppingCart, Code, Search, Lightbulb, Mail, BarChart2 } from 'lucide-react';
 import type { ClientQuestion, PortfolioCollection } from '@/app/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -31,6 +31,7 @@ import { Slider } from '@/components/ui/slider';
 import { ProposalUpLogo } from '@/components/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
+import { Separator } from '@/components/ui/separator';
 
 type Suggestion = {
   template: 'standard' | 'video';
@@ -768,43 +769,82 @@ export default function DashboardPage() {
         </div>
 
         <div className="mt-16 grid grid-cols-1 md:grid-cols-5 gap-8 items-start">
-          <Card className="md:col-span-3">
-            <CardContent className="p-6">
-              <ProTips />
-            </CardContent>
-          </Card>
+          <div className="md:col-span-3">
+             <Card>
+                <CardContent className="p-6">
+                  <ProTips />
+                </CardContent>
+              </Card>
+          </div>
           <Card className="md:col-span-2 border-green-200">
             <CardContent className="p-6">
-              <div className="flex items-center gap-4 mb-6">
+               <div className="flex items-center gap-4 mb-4">
                 <Image 
                   src="https://wahajmansoor.com/storage/2025/07/Wahaj-Mansoor-Wordpress-Expert-Profile-Picture-New-1.png"
                   alt="Wahaj Mansoor"
-                  width={96}
-                  height={96}
+                  width={80}
+                  height={80}
                   className="rounded-full border-4 border-green-100"
                 />
                 <div>
                   <h3 className="text-xl font-bold">Wahaj Mansoor</h3>
-                  <p className="text-muted-foreground">WordPress & GoHighLevel Expert</p>
+                  <p className="text-sm text-muted-foreground font-semibold">WordPress Developer & Brand Strategist</p>
                 </div>
               </div>
+              <p className="text-xs text-muted-foreground mb-4">
+                I design high-converting WordPress websites that consistently capture leads. With 1,500+ verified 5-star reviews, I'm recognized as a Preferred Freelancer on freelancer.com and a Level 2 Seller on fiverr.com.
+              </p>
               
-              <ul className="space-y-3 text-sm">
-                <li className="flex items-center gap-3">
-                  <div className="bg-primary/10 p-2 rounded-full"><CheckCircle className="h-4 w-4 text-primary" /></div>
-                  <span>Custom WordPress Development</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="bg-primary/10 p-2 rounded-full"><Globe className="h-4 w-4 text-primary" /></div>
-                  <span>GoHighLevel Funnel Building</span>
-                </li>
-                <li className="flex items-center gap-3">
-                  <div className="bg-primary/10 p-2 rounded-full"><Phone className="h-4 w-4 text-primary" /></div>
-                  <span>Technical SEO & Automation</span>
-                </li>
-              </ul>
+              <div className="grid grid-cols-3 gap-4 text-center mb-6">
+                <div>
+                  <p className="text-lg font-bold">1500+</p>
+                  <p className="text-xs text-muted-foreground">Happy Customers</p>
+                </div>
+                <div>
+                  <p className="text-lg font-bold">10</p>
+                  <p className="text-xs text-muted-foreground">Years Experience</p>
+                </div>
+                <div>
+                  <p className="text-lg font-bold">6500+</p>
+                  <p className="text-xs text-muted-foreground">LinkedIn Community</p>
+                </div>
+              </div>
 
-              <Button className="bg-black text-white hover:bg-gray-800 w-full mt-6">
+              <Separator className="my-4"/>
+
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm mb-6">
+                  <div className="flex items-center gap-2">
+                    <div className="bg-primary/10 p-1 rounded-full"><Code className="h-3 w-3 text-primary" /></div>
+                    <span>Web Development</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="bg-primary/10 p-1 rounded-full"><ShoppingCart className="h-3 w-3 text-primary" /></div>
+                    <span>eCommerce Solution</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="bg-primary/10 p-1 rounded-full"><Search className="h-3 w-3 text-primary" /></div>
+                    <span>On-Page SEO</span>
+                  </div>
+                   <div className="flex items-center gap-2">
+                    <div className="bg-primary/10 p-1 rounded-full"><Lightbulb className="h-3 w-3 text-primary" /></div>
+                    <span>Landing Page</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="bg-primary/10 p-1 rounded-full"><Globe className="h-3 w-3 text-primary" /></div>
+                    <span>Web Designing</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="bg-primary/10 p-1 rounded-full"><Mail className="h-3 w-3 text-primary" /></div>
+                    <span>Email Marketing</span>
+                  </div>
+                   <div className="flex items-center gap-2 col-span-2">
+                    <div className="bg-primary/10 p-1 rounded-full"><BarChart2 className="h-3 w-3 text-primary" /></div>
+                    <span>GoHighLevel Funnels</span>
+                  </div>
+              </div>
+
+
+              <Button className="bg-black text-white hover:bg-gray-800 w-full mt-4">
                 Book 1:1 Discovery Call
               </Button>
             </CardContent>
@@ -814,4 +854,3 @@ export default function DashboardPage() {
     </div>
   );
 }
-
