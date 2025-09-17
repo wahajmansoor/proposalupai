@@ -6,8 +6,8 @@ import {
   analyzeAndSuggestAction,
   autofillSkillsAction,
   answerQuestionsAction,
-  saveProposalAction,
 } from '@/app/lib/actions';
+import { addSavedProposal } from '@/lib/firebase/proposals';
 import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -209,7 +209,7 @@ export default function DashboardPage() {
 
   const prevStep = () => {
     if (currentStep > 1) {
-      setCurrentStep(prev => prev + 1);
+      setCurrentStep(prev => prev - 1);
     }
   };
 
@@ -383,17 +383,13 @@ export default function DashboardPage() {
       return;
     }
     setIsSaving(true);
-    const result = await saveProposalAction({
-      userId: user.uid,
-      title: projectDetails.projectTitle.trim(),
-      content: generatedProposal,
-    });
-    setIsSaving(false);
-
-    if (result.error) {
-      toast({ title: 'Error Saving Proposal', description: result.error, variant: 'destructive' });
-    } else {
+    try {
+      await addSavedProposal(user.uid, projectDetails.projectTitle.trim(), generatedProposal);
       toast({ title: 'Proposal Saved!', description: 'You can view it on the Saved Proposals page.' });
+    } catch (error: any) {
+      toast({ title: 'Error Saving Proposal', description: error.message || 'Failed to save proposal.', variant: 'destructive' });
+    } finally {
+      setIsSaving(false);
     }
   };
 
