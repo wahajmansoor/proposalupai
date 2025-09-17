@@ -120,7 +120,6 @@ export function ProposalUpLogo(props: SVGProps<SVGSVGElement>) {
           <stop stopOpacity="1" stopColor="rgb(100%, 73.748779%, 3.123474%)" offset="0.867188" />
           <stop stopOpacity="1" stopColor="rgb(100%, 74.08905%, 2.954102%)" offset="0.875" />
           <stop stopOpacity="1" stopColor="rgb(100%, 74.427795%, 2.783203%)" offset="0.882812" />
-          <stop stopOpacity="1" stopColor="rgb(100%, 74.768066%, 2.613831%)" offset="0.890625" />
           <stop stopOpacity="1" stopColor="rgb(100%, 75.108337%, 2.444458%)" offset="0.898438" />
           <stop stopOpacity="1" stopColor="rgb(100%, 75.447083%, 2.275085%)" offset="0.90625" />
           <stop stopOpacity="1" stopColor="rgb(100%, 75.787354%, 2.104187%)" offset="0.914062" />
@@ -226,4 +225,14 @@ export function LinkedInIcon(props: SVGProps<SVGSVGElement>) {
       <path fill="#0a66c2" d="M34 2.5v29a2.5 2.5 0 0 1-2.5 2.5h-29A2.5 2.5 0 0 1 0 31.5v-29A2.5 2.5 0 0 1 2.5 0h29A2.5 2.5 0 0 1 34 2.5M10 13H5v16h5zm.45-5.5a2.88 2.88 0 0 0-2.86-2.9H7.5a2.9 2.9 0 0 0 0 5.8 2.88 2.88 0 0 0 2.95-2.81zM29 19.28c0-4.81-3.06-6.68-6.1-6.68a5.7 5.7 0 0 0-5.06 2.58h-.14V13H13v16h5v-8.51a3.32 3.32 0 0 1 3-3.58h.19c1.59 0 2.77 1 2.77 3.52V29h5z"></path>
     </svg>
   )
+}
+
+export function ProfilePic(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg width="80" height="80" viewBox="0 0 80 80" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+      <circle cx="40" cy="40" r="40" fill="#E0E0E0"/>
+      <path d="M60 70C60 58.9543 51.0457 50 40 50C28.9543 50 20 58.9543 20 70" fill="#BDBDBD"/>
+      <circle cx="40" cy="35" r="15" fill="#BDBDBD"/>
+    </svg>
+  );
 }

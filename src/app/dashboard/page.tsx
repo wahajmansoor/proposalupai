@@ -28,7 +28,7 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { getPortfolioCollections } from '@/lib/firebase/portfolio';
 import { Slider } from '@/components/ui/slider';
-import { ProposalUpLogo, LinkedInIcon } from '@/components/icons';
+import { ProposalUpLogo, LinkedInIcon, ProfilePic } from '@/components/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -777,13 +777,7 @@ export default function DashboardPage() {
           <Card className="md:col-span-2">
             <CardContent className="p-6">
                <div className="flex items-center gap-4 mb-4">
-                <img 
-                  src="https://proposalup.wahajmansoor.com/wahaj-mansoor.png"
-                  alt="Wahaj Mansoor"
-                  width={80}
-                  height={80}
-                  className="rounded-full"
-                />
+                <ProfilePic className="h-20 w-20 rounded-full" />
                 <div>
                   <Link href="https://www.linkedin.com/in/wahajmansoor/" target="_blank" className="flex items-center gap-2 hover:underline">
                     <h3 className="text-xl font-bold">Wahaj Mansoor</h3>
