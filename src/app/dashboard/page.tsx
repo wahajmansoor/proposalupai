@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -29,7 +28,6 @@ import { useRouter } from 'next/navigation';
 import { getPortfolioCollections } from '@/lib/firebase/portfolio';
 import { Slider } from '@/components/ui/slider';
 import { ProposalUpLogo, LinkedInIcon } from '@/components/icons';
-import { wahajMansoorProfilePic } from '@/components/image-data';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
 import Link from 'next/link';
@@ -778,7 +776,7 @@ export default function DashboardPage() {
           <Card className="md:col-span-2">
             <CardContent className="p-6">
                <div className="flex items-center gap-4 mb-4">
-                <img src={wahajMansoorProfilePic} alt="Wahaj Mansoor" className="h-20 w-20 rounded-full" />
+                <Image src="/wahaj-mansoor.png" alt="Wahaj Mansoor" width={80} height={80} className="rounded-full" />
                 <div>
                   <Link href="https://www.linkedin.com/in/wahajmansoor/" target="_blank" className="flex items-center gap-2 hover:underline">
                     <h3 className="text-xl font-bold">Wahaj Mansoor</h3>
@@ -807,7 +805,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="border-t pt-4 mt-6">
-                <h4 className="font-semibold mb-4 text-left">My Services</h4>
+                <h4 className="font-semibold mb-4">My Services</h4>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                     <div className="flex items-center gap-2">
                       <div className="bg-primary/10 p-1 rounded-full"><Code className="h-3 w-3 text-primary" /></div>
