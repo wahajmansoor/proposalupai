@@ -1,4 +1,3 @@
-
 'use server';
 
 /**
@@ -8,9 +7,8 @@
  * - AnswerClientQuestionsInput - The input type for the answerClientQuestions function.
  * - AnswerClientQuestionsOutput - The return type for the answerClientQuestions function.
  */
-
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { openai } from '@/lib/openai';
+import { z } from 'zod';
 
 const AnswerClientQuestionsInputSchema = z.object({
   jobDescription: z.string().describe('The job description for the proposal.'),
@@ -37,14 +35,7 @@ export type AnswerClientQuestionsOutput = z.infer<
 export async function answerClientQuestions(
   input: AnswerClientQuestionsInput
 ): Promise<AnswerClientQuestionsOutput> {
-  return answerClientQuestionsFlow(input);
-}
-
-const prompt = ai.definePrompt({
-  name: 'answerClientQuestionsPrompt',
-  input: {schema: AnswerClientQuestionsInputSchema},
-  output: {schema: AnswerClientQuestionsOutputSchema},
-  prompt: `You are an AI assistant helping to create proposals.
+  const prompt = `You are an AI assistant helping to create proposals.
 
 You will be provided with a job description, some information about the user creating the proposal, and a series of questions from the client.
 
@@ -54,32 +45,40 @@ Your job is to answer each of the client's questions using the job description a
 1.  **Be Concise:** Each answer must be **under 100 words**.
 2.  **Identify Missing Information:** If an answer requires specific information not available in the provided context (e.g., a link to a specific past project, a precise timeline), you MUST include the phrase **"[User input required]"** in your answer so the user knows they need to add it manually.
 
-Job Description: {{{jobDescription}}}
+Job Description: ${input.jobDescription}
 
-Profile Information: {{{profileInformation}}}
+Profile Information: ${input.profileInformation}
 
 Client Questions:
-{{#each clientQuestions}}
-- {{{this}}}
-{{/each}}
+${input.clientQuestions.map((q) => `- ${q}`).join('\n')}
+`;
 
-`,
-});
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{ role: 'user', content: prompt }],
+    response_format: { type: 'json_object' },
+    tools: [
+      {
+        type: 'function',
+        function: {
+          name: 'provide_answers_to_client_questions',
+          description: 'Provides answers to a list of client questions.',
+          parameters:
+            AnswerClientQuestionsOutputSchema.openapi('ClientAnswers'),
+        },
+      },
+    ],
+    tool_choice: {
+      type: 'function',
+      function: { name: 'provide_answers_to_client_questions' },
+    },
+  });
 
-const answerClientQuestionsFlow = ai.defineFlow(
-  {
-    name: 'answerClientQuestionsFlow',
-    inputSchema: AnswerClientQuestionsInputSchema,
-    outputSchema: AnswerClientQuestionsOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-
-    if (!output?.answers) {
-      console.warn('No answers generated.');
-      return { answers: [] };
-    }
-
-    return {answers: output.answers};
+  const toolCall = completion.choices[0].message.tool_calls?.[0];
+  if (toolCall?.function.arguments) {
+    const args = JSON.parse(toolCall.function.arguments);
+    return AnswerClientQuestionsOutputSchema.parse(args);
   }
-);
+  
+  return { answers: [] };
+}

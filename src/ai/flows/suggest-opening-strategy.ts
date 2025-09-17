@@ -6,9 +6,8 @@
  * - SuggestOpeningStrategyInput - Input type for the function.
  * - SuggestOpeningStrategyOutput - Output type for the function.
  */
-
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { openai } from '@/lib/openai';
+import { z } from 'zod';
 
 const SuggestOpeningStrategyInputSchema = z.object({
   projectTitle: z.string().describe('The title of the project being applied for.'),
@@ -36,50 +35,54 @@ export type SuggestOpeningStrategyOutput = z.infer<
 export async function suggestOpeningStrategy(
   input: SuggestOpeningStrategyInput
 ): Promise<SuggestOpeningStrategyOutput> {
-  return suggestOpeningStrategyFlow(input);
-}
+  const availableStrategies = Object.entries(input.strategies).map(([id, desc]) => `- ID: ${id}, Description: ${desc}`).join('\n');
 
-const prompt = ai.definePrompt({
-  name: 'suggestOpeningStrategyPrompt',
-  input: {schema: SuggestOpeningStrategyInputSchema},
-  output: {schema: SuggestOpeningStrategyOutputSchema},
-  config: {
-    temperature: 0.3,
-  },
-  prompt: `You are an AI assistant that helps freelancers choose the best opening strategy for a proposal.
+  const prompt = `You are an AI assistant that helps freelancers choose the best opening strategy for a proposal.
   Given the job details and a list of available strategies, suggest the most effective one.
 
-  Project Title: {{{projectTitle}}}
-  Summary: {{{summary}}}
+  Project Title: ${input.projectTitle}
+  Summary: ${input.summary}
 
   Available Strategies:
-  {{#each strategies}}
-  - ID: {{@key}}, Description: {{{this}}}
-  {{/each}}
+  ${availableStrategies}
 
   Analyze the project title and summary and choose the strategy ID that would create the most compelling opening hook.
   Provide a short, one-sentence reason for your choice.
 
   CRITICAL: You MUST respond in the format defined by the output schema. The 'strategyId' field must be one of the provided strategy IDs.
-  `,
-});
+  `;
 
-const suggestOpeningStrategyFlow = ai.defineFlow(
-  {
-    name: 'suggestOpeningStrategyFlow',
-    inputSchema: SuggestOpeningStrategyInputSchema,
-    outputSchema: SuggestOpeningStrategyOutputSchema,
-  },
-  async (input) => {
-    try {
-      const {output} = await prompt(input);
-      if (output && Object.keys(input.strategies).includes(output.strategyId)) {
-        return output;
-      }
-    } catch (e) {
-      console.warn(`Error in suggestOpeningStrategyFlow, falling back to default.`, e);
+  try {
+    const completion = await openai.chat.completions.create({
+        model: 'gpt-4o-mini',
+        messages: [{ role: 'user', content: prompt }],
+        response_format: { type: 'json_object' },
+        temperature: 0.3,
+        tools: [
+            {
+                type: 'function',
+                function: {
+                    name: 'suggest_opening_strategy',
+                    description: 'Suggests an opening strategy for a proposal.',
+                    parameters: SuggestOpeningStrategyOutputSchema.openapi("OpeningStrategySuggestion"),
+                }
+            }
+        ],
+        tool_choice: { type: 'function', function: { name: 'suggest_opening_strategy' } },
+    });
+
+    const toolCall = completion.choices[0].message.tool_calls?.[0];
+    if (toolCall?.function.arguments) {
+        const args = JSON.parse(toolCall.function.arguments);
+        const result = SuggestOpeningStrategyOutputSchema.parse(args);
+        if (Object.keys(input.strategies).includes(result.strategyId)) {
+            return result;
+        }
     }
-    // Fallback in case of error or invalid ID
-    return { strategyId: 'none', reasoning: 'AI could not determine a specific strategy, a custom opening will be generated.' };
+  } catch (e) {
+      console.warn(`Error in suggestOpeningStrategy, falling back to default.`, e);
   }
-);
+  
+  // Fallback in case of error or invalid ID
+  return { strategyId: 'none', reasoning: 'AI could not determine a specific strategy, a custom opening will be generated.' };
+}

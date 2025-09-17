@@ -6,9 +6,8 @@
  * - AnalyzeJobForProposalInput - The input type for the analyzeJobForProposal function.
  * - AnalyzeJobForProposalOutput - The return type for the analyzeJobForProposal function.
  */
-
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { openai } from '@/lib/openai';
+import { z } from 'zod';
 
 const AnalyzeJobForProposalInputSchema = z.object({
   projectTitle: z.string().describe('The title of the job posting.'),
@@ -33,33 +32,42 @@ export type AnalyzeJobForProposalOutput = z.infer<
 export async function analyzeJobForProposal(
   input: AnalyzeJobForProposalInput
 ): Promise<AnalyzeJobForProposalOutput> {
-  return analyzeJobForProposalFlow(input);
-}
-
-const analyzeJobForProposalPrompt = ai.definePrompt({
-  name: 'analyzeJobForProposalPrompt',
-  input: {schema: AnalyzeJobForProposalInputSchema},
-  output: {schema: AnalyzeJobForProposalOutputSchema},
-  prompt: `You are an AI assistant helping users write better proposals.
+  const prompt = `You are an AI assistant helping users write better proposals.
 
   Analyze the following job description and extract the key requirements and themes.
 
-  Project Title: {{{projectTitle}}}
-  Summary: {{{summary}}}
+  Project Title: ${input.projectTitle}
+  Summary: ${input.summary}
 
-  Output the key requirements as a list of strings, and the key themes as a list of strings.
   Themes are higher level concepts, for example "project management" or "software development".
-  Requirements are more granular, for example "experience with React" or "strong communication skills".`,
-});
+  Requirements are more granular, for example "experience with React" or "strong communication skills".`;
 
-const analyzeJobForProposalFlow = ai.defineFlow(
-  {
-    name: 'analyzeJobForProposalFlow',
-    inputSchema: AnalyzeJobForProposalInputSchema,
-    outputSchema: AnalyzeJobForProposalOutputSchema,
-  },
-  async input => {
-    const {output} = await analyzeJobForProposalPrompt(input);
-    return output!;
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{ role: 'user', content: prompt }],
+    response_format: { type: 'json_object' },
+    tools: [
+      {
+        type: 'function',
+        function: {
+          name: 'extract_job_analysis',
+          description:
+            'Extracts key requirements and themes from a job description.',
+          parameters: AnalyzeJobForProposalOutputSchema.openapi('JobAnalysis'),
+        },
+      },
+    ],
+    tool_choice: {
+      type: 'function',
+      function: { name: 'extract_job_analysis' },
+    },
+  });
+
+  const toolCall = completion.choices[0].message.tool_calls?.[0];
+  if (toolCall?.function.arguments) {
+    const args = JSON.parse(toolCall.function.arguments);
+    return AnalyzeJobForProposalOutputSchema.parse(args);
   }
-);
+
+  throw new Error('Failed to analyze job for proposal.');
+}

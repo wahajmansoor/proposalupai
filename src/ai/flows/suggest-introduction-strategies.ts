@@ -7,9 +7,8 @@
  * - SuggestIntroductionStrategiesInput - Input type for the function.
  * - SuggestIntroductionStrategiesOutput - Output type for the function.
  */
-
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { openai } from '@/lib/openai';
+import { z } from 'zod';
 
 const SuggestIntroductionStrategiesInputSchema = z.object({
   projectTitle: z.string().describe('The title of the project being applied for.'),
@@ -35,34 +34,39 @@ export type SuggestIntroductionStrategiesOutput = z.infer<
 export async function suggestIntroductionStrategies(
   input: SuggestIntroductionStrategiesInput
 ): Promise<SuggestIntroductionStrategiesOutput> {
-  return suggestIntroductionStrategiesFlow(input);
-}
-
-const prompt = ai.definePrompt({
-  name: 'suggestIntroductionStrategiesPrompt',
-  input: {schema: SuggestIntroductionStrategiesInputSchema},
-  output: {schema: SuggestIntroductionStrategiesOutputSchema},
-  prompt: `You are an AI assistant that helps users craft compelling introductions for job applications.
+  const prompt = `You are an AI assistant that helps users craft compelling introductions for job applications.
   Given the project details and the applicant's profile, suggest a few personalized introduction strategies.
 
-  Project Title: {{{projectTitle}}}
-  Summary: {{{summary}}}
-  Profile Summary: {{{profileSummary}}}
-  Past Successes: {{#each pastSuccesses}}- {{{this}}}
-  {{/each}}
+  Project Title: ${input.projectTitle}
+  Summary: ${input.summary}
+  Profile Summary: ${input.profileSummary}
+  Past Successes: ${input.pastSuccesses.map(s => `- ${s}`).join('\n')}
 
-  Suggest 3 different introduction strategies that would be most effective for this job application. Return each suggestion in a separate line.
-  `,
-});
+  Suggest 3 different introduction strategies that would be most effective for this job application.
+  `;
+  
+  const completion = await openai.chat.completions.create({
+    model: 'gpt-4o-mini',
+    messages: [{ role: 'user', content: prompt }],
+    response_format: { type: 'json_object' },
+    tools: [
+        {
+            type: 'function',
+            function: {
+                name: 'provide_introduction_suggestions',
+                description: 'Provides a list of introduction suggestions.',
+                parameters: SuggestIntroductionStrategiesOutputSchema.openapi("IntroductionSuggestions"),
+            }
+        }
+    ],
+    tool_choice: { type: 'function', function: { name: 'provide_introduction_suggestions' } },
+  });
 
-const suggestIntroductionStrategiesFlow = ai.defineFlow(
-  {
-    name: 'suggestIntroductionStrategiesFlow',
-    inputSchema: SuggestIntroductionStrategiesInputSchema,
-    outputSchema: SuggestIntroductionStrategiesOutputSchema,
-  },
-  async input => {
-    const {output} = await prompt(input);
-    return output!;
+  const toolCall = completion.choices[0].message.tool_calls?.[0];
+  if (toolCall?.function.arguments) {
+    const args = JSON.parse(toolCall.function.arguments);
+    return SuggestIntroductionStrategiesOutputSchema.parse(args);
   }
-);
+
+  throw new Error('Failed to suggest introduction strategies.');
+}

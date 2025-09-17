@@ -6,9 +6,8 @@
  * - SuggestProposalTemplateInput - Input type for the function.
  * - SuggestProposalTemplateOutput - Output type for the function.
  */
-
-import {ai} from '@/ai/genkit';
-import {z} from 'genkit';
+import { openai } from '@/lib/openai';
+import { z } from 'zod';
 
 const SuggestProposalTemplateInputSchema = z.object({
   projectTitle: z.string().describe('The title of the project being applied for.'),
@@ -35,17 +34,7 @@ export type SuggestProposalTemplateOutput = z.infer<
 export async function suggestProposalTemplate(
   input: SuggestProposalTemplateInput
 ): Promise<SuggestProposalTemplateOutput> {
-  return suggestProposalTemplateFlow(input);
-}
-
-const prompt = ai.definePrompt({
-  name: 'suggestProposalTemplatePrompt',
-  input: {schema: SuggestProposalTemplateInputSchema},
-  output: {schema: SuggestProposalTemplateOutputSchema},
-  config: {
-    temperature: 0.3,
-  },
-  prompt: `You are an AI assistant that helps freelancers choose the best proposal template.
+  const prompt = `You are an AI assistant that helps freelancers choose the best proposal template.
   Given the job details, suggest either a 'standard' or 'video' proposal template.
 
   - Use 'video' if the job requires strong communication skills, a personal connection, is for a creative role, or if the description is informal and friendly.
@@ -53,32 +42,54 @@ const prompt = ai.definePrompt({
 
   Provide a short, one-sentence reason for your choice.
 
-  Project Title: {{{projectTitle}}}
-  Summary: {{{summary}}}
+  Project Title: ${input.projectTitle}
+  Summary: ${input.summary}
 
   CRITICAL: You MUST respond in the format defined by the output schema. The 'template' field must be either 'standard' or 'video'.
-  `,
-});
+  `;
 
-const suggestProposalTemplateFlow = ai.defineFlow(
-  {
-    name: 'suggestProposalTemplateFlow',
-    inputSchema: SuggestProposalTemplateInputSchema,
-    outputSchema: SuggestProposalTemplateOutputSchema,
-  },
-  async (input) => {
-    try {
-      const {output} = await prompt(input);
-      if (output && (output.template === 'standard' || output.template === 'video')) {
-        return output;
+  try {
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4o-mini',
+      messages: [{ role: 'user', content: prompt }],
+      response_format: { type: 'json_object' },
+      temperature: 0.3,
+      tools: [
+        {
+          type: 'function',
+          function: {
+            name: 'suggest_proposal_template',
+            description: 'Suggests a proposal template.',
+            parameters:
+              SuggestProposalTemplateOutputSchema.openapi('TemplateSuggestion'),
+          },
+        },
+      ],
+      tool_choice: {
+        type: 'function',
+        function: { name: 'suggest_proposal_template' },
+      },
+    });
+
+    const toolCall = completion.choices[0].message.tool_calls?.[0];
+    if (toolCall?.function.arguments) {
+      const args = JSON.parse(toolCall.function.arguments);
+      const result = SuggestProposalTemplateOutputSchema.parse(args);
+      if (result.template === 'standard' || result.template === 'video') {
+        return result;
       }
-    } catch (e) {
-      console.warn(`Error in suggestProposalTemplateFlow, falling back to default.`, e);
     }
-    // Fallback in case of error or invalid output
-    return {
-      template: 'standard',
-      reasoning: 'AI could not determine a specific template, defaulting to standard.',
-    };
+  } catch (e) {
+    console.warn(
+      `Error in suggestProposalTemplate, falling back to default.`,
+      e
+    );
   }
-);
+
+  // Fallback in case of error or invalid output
+  return {
+    template: 'standard',
+    reasoning:
+      'AI could not determine a specific template, defaulting to standard.',
+  };
+}
