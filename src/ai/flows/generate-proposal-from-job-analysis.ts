@@ -71,6 +71,7 @@ Portfolio Links: ${input.portfolioLinks}
 
 **CRITICAL INSTRUCTIONS - YOU MUST FOLLOW THESE FORMATTING RULES:**
 - **Greeting:** Always start with the exact greeting provided: "${input.greeting}". Capitalize the first letter. This should be followed by a single line break (\\n).
+- **Tone:** You MUST adopt a "${input.tone}" tone throughout the entire proposal.
 `;
 
   if (isVideo) {
@@ -88,11 +89,9 @@ Portfolio Links: ${input.portfolioLinks}
         - 2. We’ll schedule a call to discuss the details
         - 3. On the call, we’ll dive deeper into your project and plan the next steps
     9.  End the proposal by intelligently integrating the closing phrase "${input.closingCta}" into a natural-sounding final sentence.
+    10. **Sign-off:** After the closing sentence, add a single line break (\\n) and then write the sign-off phrase: "${input.closingCta2}".
+    11. **Signature:** After the sign-off phrase (or the closing sentence if no sign-off is provided), add one line break and then write the user's name, which you can find in the Profile Summary.
 `;
-    if (input.closingCta2) {
-      prompt += `    10. **Sign-off:** After the closing sentence, add a single line break (\\n) and then write the sign-off phrase: "${input.closingCta2}".\n`;
-    }
-    prompt += `    11. **Signature:** After the sign-off phrase (or the closing sentence if no sign-off is provided), add one line break and then write the user's name, which you can find in the Profile Summary.\n`;
   }
 
   if (isStandard) {
@@ -114,7 +113,6 @@ Portfolio Links: ${input.portfolioLinks}
   }
 
   prompt += `
-- **Tone:** Use a "${input.tone}" tone throughout the proposal.
 - **Terminology**: Always use the word "website" instead of "site".
 `;
 
