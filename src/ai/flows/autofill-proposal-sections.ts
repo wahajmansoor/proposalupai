@@ -73,7 +73,10 @@ Output a comma-separated string of the most relevant skills (e.g., "React, Proje
     const parsedSkills = SkillsSchema.parse(args);
     const skillsArray = parsedSkills.skills
       .split(',')
-      .map((skill) => skill.trim())
+      .map((skill) => {
+          const trimmedSkill = skill.trim();
+          return trimmedSkill.charAt(0).toUpperCase() + trimmedSkill.slice(1);
+      })
       .filter(Boolean);
     return { skillsAndExpertise: skillsArray };
   }
