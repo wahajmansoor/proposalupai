@@ -7,8 +7,13 @@
  * - SuggestIntroductionStrategiesInput - Input type for the function.
  * - SuggestIntroductionStrategiesOutput - Output type for the function.
  */
-import { openai } from '@/lib/openai';
+import OpenAI from 'openai';
 import { z } from 'zod';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
 
 const SuggestIntroductionStrategiesInputSchema = z.object({
   projectTitle: z.string().describe('The title of the project being applied for.'),
