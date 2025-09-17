@@ -66,19 +66,19 @@ const suggestProposalTemplateFlow = ai.defineFlow(
     inputSchema: SuggestProposalTemplateInputSchema,
     outputSchema: SuggestProposalTemplateOutputSchema,
   },
-  async (input, streamingCallback) => {
-    let lastError: Error | undefined;
-    for (let i = 0; i < 3; i++) {
-      try {
-        const {output} = await prompt(input);
-        if (output && (output.template === 'standard' || output.template === 'video')) {
-          return output;
-        }
-      } catch (e: any) {
-        lastError = e;
-        console.warn(`Attempt ${i + 1} failed for suggestProposalTemplateFlow`, e);
+  async (input) => {
+    try {
+      const {output} = await prompt(input);
+      if (output && (output.template === 'standard' || output.template === 'video')) {
+        return output;
       }
+    } catch (e) {
+      console.warn(`Error in suggestProposalTemplateFlow, falling back to default.`, e);
     }
-    throw new Error(`Failed to suggest proposal template after multiple retries: ${lastError?.message}`);
+    // Fallback in case of error or invalid output
+    return {
+      template: 'standard',
+      reasoning: 'AI could not determine a specific template, defaulting to standard.',
+    };
   }
 );
