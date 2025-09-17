@@ -12,6 +12,7 @@ import { updateUserProfile, sendPasswordReset } from '@/lib/firebase/auth';
 import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
 import { Header } from '@/components/header';
+import { ProposalUpLogo } from '@/components/icons';
 
 export default function ProfilePage() {
   const { user, loading } = useAuth();
@@ -25,7 +26,7 @@ export default function ProfilePage() {
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-12 w-12 animate-spin" />
+        <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />
       </div>
     );
   }

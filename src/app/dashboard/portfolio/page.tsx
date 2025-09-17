@@ -30,6 +30,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
+import { ProposalUpLogo } from '@/components/icons';
 
 export default function PortfolioPage() {
   const { user, loading: authLoading } = useAuth();
@@ -153,7 +154,7 @@ export default function PortfolioPage() {
   if (authLoading || isLoading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-12 w-12 animate-spin" />
+        <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />
       </div>
     );
   }

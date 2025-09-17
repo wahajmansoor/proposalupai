@@ -3,6 +3,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Inter } from 'next/font/google';
 import { AuthProvider } from '@/context/auth-context';
+import { ProposalUpLogo } from '@/components/icons';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -22,6 +23,9 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={inter.variable}>
+      <head>
+        <link rel="icon" href="/logo.svg" type="image/svg+xml" />
+      </head>
       <body className="font-sans antialiased">
         <AuthProvider>
           {children}
