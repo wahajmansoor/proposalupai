@@ -79,6 +79,7 @@ export async function suggestOpeningStrategy(
     if (toolCall?.function.arguments) {
         const args = JSON.parse(toolCall.function.arguments);
         const result = SuggestOpeningStrategyOutputSchema.parse(args);
+        // Validate that the returned ID is one of the available strategies
         if (Object.keys(input.strategies).includes(result.strategyId)) {
             return result;
         }
