@@ -44,7 +44,7 @@ const prompt = ai.definePrompt({
   input: {schema: SuggestOpeningStrategyInputSchema},
   output: {schema: SuggestOpeningStrategyOutputSchema},
   config: {
-    temperature: 0,
+    temperature: 0.3,
   },
   prompt: `You are an AI assistant that helps freelancers choose the best opening strategy for a proposal.
   Given the job details and a list of available strategies, suggest the most effective one.

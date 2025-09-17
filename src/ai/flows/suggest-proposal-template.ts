@@ -43,7 +43,7 @@ const prompt = ai.definePrompt({
   input: {schema: SuggestProposalTemplateInputSchema},
   output: {schema: SuggestProposalTemplateOutputSchema},
   config: {
-    temperature: 0,
+    temperature: 0.3,
   },
   prompt: `You are an AI assistant that helps freelancers choose the best proposal template.
   Given the job details, suggest either a 'standard' or 'video' proposal template.
