@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuote, CheckCircle, Phone, Globe, Users, Calendar, BarChart, ShoppingCart, Code, Search, Lightbulb, Mail, BarChart2, ExternalLink } from 'lucide-react';
+import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuote, CheckCircle, Phone, Globe, Users, Calendar, BarChart, ShoppingCart, Code, Search, Lightbulb, Mail, BarChart2, ExternalLink, LayoutDashboard, FolderKanban } from 'lucide-react';
 import type { ClientQuestion, PortfolioCollection } from '@/app/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -778,7 +778,7 @@ export default function DashboardPage() {
             <CardContent className="p-6">
                <div className="flex items-center gap-4 mb-4">
                 <Image 
-                  src="/wahaj-mansoor.png"
+                  src="https://proposalup.wahajmansoor.com/wahaj-mansoor.png"
                   alt="Wahaj Mansoor"
                   width={80}
                   height={80}
@@ -812,7 +812,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="border-t pt-4 mt-6">
-                <h4 className="font-semibold mb-4">My Services</h4>
+                <h4 className="font-semibold mb-4 text-left">My Services</h4>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                     <div className="flex items-center gap-2">
                       <div className="bg-primary/10 p-1 rounded-full"><Code className="h-3 w-3 text-primary" /></div>
