@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuote, CheckCircle, Phone, Globe, Users, Calendar, BarChart, ShoppingCart, Code, Search, Lightbulb, Mail, BarChart2, ExternalLink, Linkedin } from 'lucide-react';
+import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuote, CheckCircle, Phone, Globe, Users, Calendar, BarChart, ShoppingCart, Code, Search, Lightbulb, Mail, BarChart2, ExternalLink } from 'lucide-react';
 import type { ClientQuestion, PortfolioCollection } from '@/app/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -28,10 +28,9 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { getPortfolioCollections } from '@/lib/firebase/portfolio';
 import { Slider } from '@/components/ui/slider';
-import { ProposalUpLogo } from '@/components/icons';
+import { ProposalUpLogo, LinkedInIcon } from '@/components/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
-import { Separator } from '@/components/ui/separator';
 import Link from 'next/link';
 
 type Suggestion = {
@@ -208,7 +207,7 @@ export default function DashboardPage() {
 
   const prevStep = () => {
     if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1);
+      setCurrentStep(prev => prev + 1);
     }
   };
 
@@ -788,7 +787,7 @@ export default function DashboardPage() {
                 <div>
                   <Link href="https://www.linkedin.com/in/wahajmansoor/" target="_blank" className="flex items-center gap-2 hover:underline">
                     <h3 className="text-xl font-bold">Wahaj Mansoor</h3>
-                    <Linkedin className="h-4 w-4 text-blue-700" />
+                    <LinkedInIcon className="h-5 w-5" />
                   </Link>
                   <p className="text-sm text-muted-foreground font-semibold">WordPress Developer & Brand Strategist</p>
                 </div>
@@ -811,8 +810,6 @@ export default function DashboardPage() {
                   <p className="text-xs text-muted-foreground">LinkedIn Community</p>
                 </div>
               </div>
-
-              <Separator className="my-4"/>
 
               <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm mb-6">
                   <div className="flex items-center gap-2">
