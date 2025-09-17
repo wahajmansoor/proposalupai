@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuestion } from 'lucide-react';
+import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuote } from 'lucide-react';
 import type { ClientQuestion, PortfolioCollection } from '@/app/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -381,7 +381,7 @@ export default function DashboardPage() {
   const hasQuestions = clientQuestions.some(q => q.question);
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen bg-[#f9f9f9]">
       <Header />
       <main className="flex-1 p-4 md:p-8 container mx-auto">
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
@@ -754,7 +754,7 @@ export default function DashboardPage() {
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
-                    <MessageSquareQuestion className="h-5 w-5 text-primary" />
+                    <MessageSquareQuote className="h-5 w-5 text-primary" />
                     Answers to Client Questions
                   </CardTitle>
                 </CardHeader>
