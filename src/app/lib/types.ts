@@ -14,3 +14,10 @@ export interface JobAnalysis {
     name: string;
     links: string[];
   }
+
+  export interface SavedProposal {
+    id: string;
+    title: string;
+    content: string;
+    createdAt: string;
+  }

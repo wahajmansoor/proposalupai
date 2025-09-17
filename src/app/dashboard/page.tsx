@@ -6,6 +6,7 @@ import {
   analyzeAndSuggestAction,
   autofillSkillsAction,
   answerQuestionsAction,
+  saveProposalAction,
 } from '@/app/lib/actions';
 import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
@@ -14,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuote, CheckCircle, Phone, Globe, Users, Calendar, BarChart, ShoppingCart, Code, Search, Lightbulb, Mail, BarChart2, ExternalLink, LayoutDashboard, FolderKanban } from 'lucide-react';
+import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuote, CheckCircle, Phone, Globe, Users, Calendar, BarChart, ShoppingCart, Code, Search, Lightbulb, Mail, BarChart2, ExternalLink, LayoutDashboard, FolderKanban, Save } from 'lucide-react';
 import type { ClientQuestion, PortfolioCollection } from '@/app/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -28,9 +29,9 @@ import { useRouter } from 'next/navigation';
 import { getPortfolioCollections } from '@/lib/firebase/portfolio';
 import { Slider } from '@/components/ui/slider';
 import { ProposalUpLogo, LinkedInIcon } from '@/components/icons';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import Image from 'next/image';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
 
 type Suggestion = {
   template: 'standard' | 'video';
@@ -123,6 +124,10 @@ export default function DashboardPage() {
   
   const [generatedProposal, setGeneratedProposal] = useState('');
   const [wordCount, setWordCount] = useState(0);
+
+  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
+  const [saveProposalTitle, setSaveProposalTitle] = useState('');
+  const [isSaving, setIsSaving] = useState(false);
 
   const summaryTextareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -370,8 +375,31 @@ export default function DashboardPage() {
         toast({ title: 'Error', description: result.error, variant: 'destructive' });
     } else if (result.data) {
         setGeneratedProposal(result.data.proposal);
+        setSaveProposalTitle(projectDetails.projectTitle); // Pre-fill title
     }
     setIsGenerating(false);
+  };
+
+  const handleSaveProposal = async () => {
+    if (!user || !saveProposalTitle.trim() || !generatedProposal) {
+      toast({ title: 'Missing Information', description: 'Please provide a title and generate a proposal first.', variant: 'destructive' });
+      return;
+    }
+    setIsSaving(true);
+    const result = await saveProposalAction({
+      userId: user.uid,
+      title: saveProposalTitle.trim(),
+      content: generatedProposal,
+    });
+    setIsSaving(false);
+
+    if (result.error) {
+      toast({ title: 'Error Saving Proposal', description: result.error, variant: 'destructive' });
+    } else {
+      toast({ title: 'Proposal Saved!', description: 'You can view it on the Saved Proposals page.' });
+      setIsSaveDialogOpen(false);
+      setSaveProposalTitle('');
+    }
   };
 
   const copyToClipboard = (text: string) => {
@@ -719,9 +747,14 @@ export default function DashboardPage() {
                     <Badge variant="secondary">{wordCount} words</Badge>
                   )}
                 </div>
-                <Button variant="ghost" size="sm" onClick={() => copyToClipboard(generatedProposal)} disabled={!generatedProposal}>
-                    <Clipboard className="mr-2 h-4 w-4" /> Copy
-                </Button>
+                <div className="flex items-center gap-1">
+                    <Button variant="outline" size="sm" onClick={() => setIsSaveDialogOpen(true)} disabled={!generatedProposal}>
+                        <Save className="mr-2 h-4 w-4" /> Save
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => copyToClipboard(generatedProposal)} disabled={!generatedProposal}>
+                        <Clipboard className="mr-2 h-4 w-4" /> Copy
+                    </Button>
+                </div>
               </CardHeader>
               <CardContent className={cn("min-h-[400px]", { 'min-h-[200px]': !generatedProposal && !isGenerating })}>
                 {isGenerating ? (
@@ -745,6 +778,40 @@ export default function DashboardPage() {
                 )}
               </CardContent>
             </Card>
+
+            <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
+              <DialogContent>
+                <DialogHeader>
+                  <DialogTitle>Save Proposal</DialogTitle>
+                  <DialogDescription>
+                    Give your proposal a title to save it for later.
+                  </DialogDescription>
+                </DialogHeader>
+                <div className="grid gap-4 py-4">
+                  <div className="grid grid-cols-4 items-center gap-4">
+                    <Label htmlFor="proposal-title" className="text-right">
+                      Title
+                    </Label>
+                    <Input
+                      id="proposal-title"
+                      value={saveProposalTitle}
+                      onChange={(e) => setSaveProposalTitle(e.target.value)}
+                      className="col-span-3"
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <DialogClose asChild>
+                    <Button type="button" variant="secondary">
+                      Cancel
+                    </Button>
+                  </DialogClose>
+                  <Button onClick={handleSaveProposal} disabled={isSaving}>
+                    {isSaving ? 'Saving...' : 'Save'}
+                  </Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
 
             {generatedProposal && hasAnsweredQuestions && (
               <Card>
@@ -776,7 +843,7 @@ export default function DashboardPage() {
           <Card className="md:col-span-2">
             <CardContent className="p-6">
                <div className="flex items-center gap-4 mb-4">
-                <Image src="/wahaj-mansoor.png" alt="Wahaj Mansoor" width={80} height={80} className="rounded-full" />
+                <img src="/wahaj-mansoor.png" alt="Wahaj Mansoor" width={80} height={80} className="rounded-full" />
                 <div>
                   <Link href="https://www.linkedin.com/in/wahajmansoor/" target="_blank" className="flex items-center gap-2 hover:underline">
                     <h3 className="text-xl font-bold">Wahaj Mansoor</h3>

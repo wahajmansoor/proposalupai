@@ -1,9 +1,8 @@
-
 import { ProposalUpLogo } from '@/components/icons';
 import { UserNav } from '@/components/user-nav';
 import Link from 'next/link';
 import { Button } from './ui/button';
-import { LayoutDashboard, FolderKanban, MoreVertical } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, MoreVertical, Archive } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -29,6 +28,12 @@ export function Header() {
                 Dashboard
               </Link>
             </Button>
+             <Button variant="ghost" asChild>
+              <Link href="/dashboard/proposals">
+                <Archive className="mr-2" />
+                Saved Proposals
+              </Link>
+            </Button>
             <Button variant="ghost" asChild>
               <Link href="/dashboard/portfolio">
                 <FolderKanban className="mr-2" />
@@ -51,6 +56,12 @@ export function Header() {
                   <Link href="/dashboard">
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     <span>Dashboard</span>
+                  </Link>
+                </DropdownMenuItem>
+                 <DropdownMenuItem asChild>
+                  <Link href="/dashboard/proposals">
+                    <Archive className="mr-2 h-4 w-4" />
+                    <span>Saved Proposals</span>
                   </Link>
                 </DropdownMenuItem>
                 <DropdownMenuItem asChild>

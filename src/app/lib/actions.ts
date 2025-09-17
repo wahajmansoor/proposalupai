@@ -8,6 +8,7 @@ import { answerClientQuestions } from '@/ai/flows/answer-client-questions';
 import { generateProposal } from '@/ai/flows/generate-proposal-from-job-analysis';
 import { suggestProposalTemplate } from '@/ai/flows/suggest-proposal-template';
 import { suggestOpeningStrategy } from '@/ai/flows/suggest-opening-strategy';
+import { addSavedProposal } from '@/lib/firebase/proposals';
 
 const projectDetailsSchema = z.object({
   projectTitle: z.string().min(1, 'Project title is required.'),
@@ -135,5 +136,26 @@ export async function generateProposalAction(input: z.infer<typeof generatePropo
   } catch (error) {
     console.error(error);
     return { error: 'Failed to generate proposal.' };
+  }
+}
+
+const saveProposalSchema = z.object({
+  userId: z.string().min(1, 'User ID is required.'),
+  title: z.string().min(1, 'Title is required.'),
+  content: z.string().min(1, 'Proposal content is required.'),
+});
+
+export async function saveProposalAction(input: z.infer<typeof saveProposalSchema>) {
+  const validatedFields = saveProposalSchema.safeParse(input);
+  if (!validatedFields.success) {
+    return { error: 'Invalid input for saving proposal.' };
+  }
+
+  try {
+    await addSavedProposal(validatedFields.data.userId, validatedFields.data.title, validatedFields.data.content);
+    return { success: true };
+  } catch (error) {
+    console.error('Error saving proposal:', error);
+    return { error: 'Failed to save proposal.' };
   }
 }
