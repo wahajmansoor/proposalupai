@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuote } from 'lucide-react';
+import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuote, CheckCircle, Phone, Globe } from 'lucide-react';
 import type { ClientQuestion, PortfolioCollection } from '@/app/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -29,6 +29,7 @@ import { useRouter } from 'next/navigation';
 import { getPortfolioCollections } from '@/lib/firebase/portfolio';
 import { Slider } from '@/components/ui/slider';
 import { ProposalUpLogo } from '@/components/icons';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 
 type Suggestion = {
   template: 'standard' | 'video';
@@ -204,7 +205,7 @@ export default function DashboardPage() {
 
   const prevStep = () => {
     if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1);
+      setCurrentStep(prev => prev + 1);
     }
   };
 
@@ -765,8 +766,37 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="mt-16 bg-card p-8 rounded-lg border shadow-sm">
+        <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8 items-start bg-card p-8 rounded-lg border shadow-sm">
           <ProTips />
+          <Card className="border-green-200">
+            <CardContent className="p-6 text-center flex flex-col items-center">
+              <Avatar className="h-24 w-24 mb-4 border-4 border-green-100">
+                <AvatarImage src="https://picsum.photos/seed/1/200/200" alt="Wahaj Mansoor" data-ai-hint="professional portrait" />
+                <AvatarFallback>WM</AvatarFallback>
+              </Avatar>
+              <h3 className="text-xl font-bold">Wahaj Mansoor</h3>
+              <p className="text-muted-foreground mb-4">WordPress & GoHighLevel Expert</p>
+              
+              <ul className="space-y-2 text-left mb-6">
+                <li className="flex items-center gap-3">
+                  <CheckCircle className="h-5 w-5 text-primary" />
+                  <span>Custom WordPress Development</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Globe className="h-5 w-5 text-primary" />
+                  <span>GoHighLevel Funnel Building</span>
+                </li>
+                <li className="flex items-center gap-3">
+                  <Phone className="h-5 w-5 text-primary" />
+                  <span>Technical SEO & Automation</span>
+                </li>
+              </ul>
+
+              <Button className="bg-black text-white hover:bg-gray-800 w-full">
+                Book 1:1 Discovery Call
+              </Button>
+            </CardContent>
+          </Card>
         </div>
       </main>
     </div>

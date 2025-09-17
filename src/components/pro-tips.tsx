@@ -1,5 +1,4 @@
 import { Lightbulb, Video, Phone, ShieldCheck, CreditCard, Star, TrendingUp, Sparkles, Target, MessageCircle, FileText, CalendarCheck, PocketKnife } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const tips = [
   {
@@ -52,21 +51,19 @@ const tips = [
 export function ProTips() {
   return (
     <div className="w-full">
-      <div className="text-center mb-8">
-        <div className="flex items-center justify-center gap-2">
-            <Lightbulb className="h-5 w-5 text-primary" />
-            <h2 className="text-xl font-bold tracking-tight">Pro Tips for Winning Projects</h2>
-        </div>
+      <div className="flex items-center gap-2 mb-4">
+          <Lightbulb className="h-5 w-5 text-primary" />
+          <h2 className="text-lg font-bold tracking-tight">Pro Tips for Winning Projects</h2>
       </div>
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="space-y-4">
         {tips.map((tip, index) => (
-          <div key={index} className="flex items-start gap-4">
-            <div className="bg-primary/10 p-2 rounded-full">
-              <tip.icon className="h-5 w-5 text-primary shrink-0" />
+          <div key={index} className="flex items-start gap-3">
+            <div className="bg-primary/10 p-2 rounded-full mt-1">
+              <tip.icon className="h-4 w-4 text-primary shrink-0" />
             </div>
             <div>
-              <h4 className="font-semibold text-md mb-1">{tip.title}</h4>
-              <p className="text-sm text-muted-foreground">{tip.text}</p>
+              <h4 className="font-semibold text-sm">{tip.title}</h4>
+              <p className="text-xs text-muted-foreground">{tip.text}</p>
             </div>
           </div>
         ))}
