@@ -63,7 +63,15 @@ export async function analyzeAndSuggestAction(input: z.infer<typeof analyzeAndSu
         };
     } catch (error) {
         console.error("Error in analyzeAndSuggestAction:", error);
-        return { error: 'Failed to get AI suggestions.' };
+        // Fallback in case of any promise rejection or unexpected error
+        return { 
+          data: {
+            template: 'standard',
+            templateReasoning: 'AI could not determine a specific template, defaulting to standard.',
+            strategyId: 'none',
+            strategyReasoning: 'AI could not determine a specific strategy, a custom opening will be generated.',
+          } 
+        };
     }
 }
 
