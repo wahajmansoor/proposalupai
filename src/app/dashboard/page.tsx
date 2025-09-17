@@ -208,7 +208,7 @@ export default function DashboardPage() {
 
   const prevStep = () => {
     if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1);
+      setCurrentStep(prev => prev + 1);
     }
   };
 
@@ -781,7 +781,7 @@ export default function DashboardPage() {
             <CardContent className="p-6">
                <div className="flex items-center gap-4 mb-4">
                 <Image 
-                  src="https://wahajmansoor.com/storage/2025/07/Wahaj-Mansoor-Wordpress-Expert-Profile-Picture-New-1.png"
+                  src="/wahaj-mansoor.png"
                   alt="Wahaj Mansoor"
                   width={80}
                   height={80}
@@ -863,5 +863,7 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
 
     

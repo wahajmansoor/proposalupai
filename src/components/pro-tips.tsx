@@ -38,12 +38,12 @@ const tips = [
   },
   {
     icon: Phone,
-    title: 'Your Focus Is to Get Them on a Call',
+    title: 'Your Focus is to get them on a Call',
     text: 'The proposal’s main goal is not to explain everything—it’s to start a conversation and book a call.',
   },
   {
     icon: CalendarCheck,
-    title: 'Structure Your Calls Smartly',
+    title: 'Structure your Calls Smartly',
     text: 'When you land a call, prepare an agenda: project goals, your approach, timeline, and next steps.',
   },
 ];
