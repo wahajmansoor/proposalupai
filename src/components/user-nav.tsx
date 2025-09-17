@@ -14,6 +14,7 @@ import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import Link from 'next/link';
 import { Skeleton } from './ui/skeleton';
+import { ChevronDown } from 'lucide-react';
 
 export function UserNav() {
   const { user, loading } = useAuth();
@@ -26,8 +27,11 @@ export function UserNav() {
   if (loading) {
     return (
         <div className="flex items-center gap-2">
-            <Skeleton className="h-8 w-20" />
             <Skeleton className="h-9 w-9 rounded-full" />
+            <div className="flex flex-col gap-1">
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-3 w-28" />
+            </div>
         </div>
     );
   }
@@ -53,16 +57,17 @@ export function UserNav() {
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
         <Button variant="ghost" className="relative flex items-center gap-2 p-1 h-auto rounded-full">
-          <div className="hidden sm:flex flex-col text-right">
-              <span className="font-semibold text-sm leading-tight">{user.displayName}</span>
-              <span className="text-xs text-muted-foreground leading-tight">{user.email}</span>
-          </div>
           <Avatar className="h-9 w-9">
             {user.photoURL && (
               <AvatarImage src={user.photoURL} alt={user.displayName || 'User avatar'} />
             )}
             <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
           </Avatar>
+           <div className="hidden sm:flex flex-col text-left">
+              <span className="font-semibold text-sm leading-tight">{user.displayName}</span>
+              <span className="text-xs text-muted-foreground leading-tight">{user.email}</span>
+          </div>
+          <ChevronDown className="h-4 w-4 text-muted-foreground hidden sm:block" />
         </Button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="w-56" align="end" forceMount>
