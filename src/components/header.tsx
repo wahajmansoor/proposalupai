@@ -37,7 +37,7 @@ export function Header() {
             <Button variant="ghost" asChild>
               <Link href="/dashboard/portfolio">
                 <FolderKanban className="mr-2" />
-                Portfolio
+                Portfolio Collection
               </Link>
             </Button>
           </nav>
@@ -67,7 +67,7 @@ export function Header() {
                 <DropdownMenuItem asChild>
                   <Link href="/dashboard/portfolio">
                     <FolderKanban className="mr-2 h-4 w-4" />
-                    <span>Portfolio</span>
+                    <span>Portfolio Collection</span>
                   </Link>
                 </DropdownMenuItem>
               </DropdownMenuContent>
