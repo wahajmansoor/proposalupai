@@ -71,11 +71,15 @@ const suggestOpeningStrategyFlow = ai.defineFlow(
     outputSchema: SuggestOpeningStrategyOutputSchema,
   },
   async (input) => {
-    const {output} = await prompt(input);
-    if (output && Object.keys(input.strategies).includes(output.strategyId)) {
-      return output;
+    try {
+      const {output} = await prompt(input);
+      if (output && Object.keys(input.strategies).includes(output.strategyId)) {
+        return output;
+      }
+    } catch (e) {
+      console.warn(`Error in suggestOpeningStrategyFlow, falling back to default.`, e);
     }
-    // Fallback in case of invalid ID
+    // Fallback in case of error or invalid ID
     return { strategyId: 'none', reasoning: 'AI could not determine a specific strategy, a custom opening will be generated.' };
   }
 );
