@@ -331,11 +331,6 @@ export default function DashboardPage() {
     setIsGenerating(true);
     setGeneratedProposal('');
 
-    const clientQA = clientQuestions
-      .filter(q => q.question && q.answer)
-      .map(q => `Q: ${q.question}\nA: ${q.answer}`)
-      .join('\n\n');
-
     const selectedGreeting = greetings.find(g => g.value === greeting)?.label || greeting;
     const selectedClosing = closingCtas.find(c => c.value === closingCta)?.label || closingCta;
     const selectedClosing2 = closingCta2 === 'none' ? undefined : signOffCtas.find(c => c.value === closingCta2)?.label || closingCta2;
@@ -355,7 +350,6 @@ export default function DashboardPage() {
         profileSummary: `Name: ${profileName}\nRelevant Experience: ${relevantExperience}`,
         relevantSkills: skillsAndExpertise,
         pastSuccesses: '',
-        clientQuestions: clientQA,
         portfolioLinks: portfolioLinks,
         greeting: clientName ? `${selectedGreeting} ${clientName}` : selectedGreeting,
         openingStrategy: (openingStrategy !== 'none' && openingStrategy !== 'video') ? selectedOpeningStrategy : undefined,
@@ -751,7 +745,7 @@ export default function DashboardPage() {
               </CardContent>
             </Card>
 
-            {hasAnsweredQuestions && (
+            {generatedProposal && hasAnsweredQuestions && (
               <Card>
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">

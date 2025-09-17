@@ -113,7 +113,6 @@ const generateProposalSchema = z.object({
     profileSummary: z.string(),
     relevantSkills: z.string(),
     pastSuccesses: z.string(),
-    clientQuestions: z.string(),
     portfolioLinks: z.string().optional(),
     greeting: z.string(),
     openingStrategy: z.string().optional(),

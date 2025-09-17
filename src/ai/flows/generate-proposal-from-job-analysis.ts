@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Generates a proposal based on job analysis and user profile.
@@ -23,11 +24,6 @@ const GenerateProposalInputSchema = z.object({
   pastSuccesses: z
     .string()
     .describe('Description of past successes relevant to the job.'),
-  clientQuestions: z
-    .string()
-    .describe(
-      'Any questions from the client that need answering in the proposal.'
-    ),
   portfolioLinks: z
     .string()
     .optional()
@@ -101,7 +97,7 @@ Portfolio Links: ${input.portfolioLinks}
     if (input.openingStrategy) {
       prompt += `    - **Opening Paragraph:** After the greeting, use the following "Opening Strategy" as the first paragraph. You MUST adapt the strategy to the job by intelligently replacing placeholders like [CLIENT'S NAME], [SPECIFIC TASK], or [SPECIFIC SKILL] with relevant information from the job description and user profile. Do not leave the placeholders in the final output. The opening strategy is: "${input.openingStrategy}" This should be followed by a single line break (\\n).\n`;
     }
-    prompt += `    - **Body:** The main body of the proposal is the most important part. It MUST be broken into multiple paragraphs for readability. Use a single line break (\\n) to separate paragraphs. DO NOT output a single block of text. Compose a proposal that addresses the key requirements of the job and highlights the user's relevant skills and experiences. Focus on how the user can provide value to the client. Do NOT answer any specific client questions in this section.\n`;
+    prompt += `    - **Body:** The main body of the proposal is the most important part. It MUST be broken into multiple paragraphs for readability. Use a single line break (\\n) to separate paragraphs. DO NOT output a single block of text. Compose a proposal that addresses the key requirements of the job and highlights the user's relevant skills and experiences. Focus on how the user can provide value to the client. DO NOT answer any specific client questions in this section.\n`;
     if (input.portfolioLinks) {
       prompt += `    - **Portfolio:** If portfolio links are provided, you must introduce them on a new line. For example, "Here are some examples of my work:". Then, you MUST list each link on its own new line.\n`;
     }
