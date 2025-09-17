@@ -137,6 +137,8 @@ export default function DashboardPage() {
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isSuggestingSkills, setIsSuggestingSkills] = useState(false);
   const [isAnsweringQuestions, setIsAnsweringQuestions] = useState(false);
+  const [answersGenerated, setAnswersGenerated] = useState(false);
+
 
   useEffect(() => {
     if (!loading && !user) {
@@ -285,9 +287,9 @@ export default function DashboardPage() {
   };
   
   const handleAnswerAllQuestions = async () => {
-    const questionsToAnswer = clientQuestions.filter(q => q.question && !q.answer);
+    const questionsToAnswer = clientQuestions.filter(q => q.question);
     if (questionsToAnswer.length === 0) {
-      toast({ title: 'No New Questions', description: 'Please enter a question or all questions have been answered.', variant: 'destructive' });
+      toast({ title: 'No Questions', description: 'Please enter at least one question.', variant: 'destructive' });
       return;
     }
     if (!projectDetails.summary) {
@@ -309,7 +311,7 @@ export default function DashboardPage() {
       const newClientQuestions = [...clientQuestions];
       let answerIndex = 0;
       for(let i=0; i < newClientQuestions.length; i++) {
-        if(newClientQuestions[i].question && !newClientQuestions[i].answer) {
+        if(newClientQuestions[i].question) {
           if(result.data.answers[answerIndex]) {
             newClientQuestions[i].answer = result.data.answers[answerIndex];
             answerIndex++;
@@ -317,7 +319,8 @@ export default function DashboardPage() {
         }
       }
       setClientQuestions(newClientQuestions);
-      toast({ title: 'Answers Generated!', description: 'The AI has provided answers to your questions.' });
+      setAnswersGenerated(true);
+      toast({ title: 'Answers Ready!', description: 'Your answers will be available after the proposal is generated.' });
     }
     setIsAnsweringQuestions(false);
   }
@@ -375,7 +378,7 @@ export default function DashboardPage() {
   
   const stepTitles = ["Project Details", "Your Profile", "Client Questions", "Preferences & Strategy"];
   const hasAnsweredQuestions = clientQuestions.some(q => q.answer);
-  const hasUnansweredQuestions = clientQuestions.some(q => q.question && !q.answer);
+  const hasQuestions = clientQuestions.some(q => q.question);
 
   return (
     <div className="flex flex-col min-h-screen bg-gray-50">
@@ -553,18 +556,20 @@ export default function DashboardPage() {
                             placeholder={`Question ${index + 1}`} 
                             value={q.question} 
                             onChange={(e) => handleClientQuestionChange(q.id, 'question', e.target.value)} 
-                            className="flex-1" 
+                            className="flex-1"
+                            disabled={answersGenerated}
                           />
                           <Button 
                             variant="ghost" 
                             size="icon" 
                             onClick={() => removeClientQuestion(q.id)} 
                             className="text-muted-foreground hover:text-destructive h-8 w-8 self-center"
+                            disabled={answersGenerated}
                           >
                               <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
-                         {q.answer && (
+                         {q.answer && !answersGenerated && (
                             <Textarea 
                                 value={q.answer} 
                                 onChange={(e) => handleClientQuestionChange(q.id, 'answer', e.target.value)}
@@ -574,8 +579,8 @@ export default function DashboardPage() {
                       </div>
                   ))}
                   <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={addClientQuestion}><Plus className="mr-2 h-4 w-4" /> Add Question</Button>
-                    <Button variant="outline" size="sm" onClick={handleAnswerAllQuestions} disabled={isAnsweringQuestions || !hasUnansweredQuestions}>
+                    <Button variant="outline" size="sm" onClick={addClientQuestion} disabled={answersGenerated}><Plus className="mr-2 h-4 w-4" /> Add Question</Button>
+                    <Button variant="outline" size="sm" onClick={handleAnswerAllQuestions} disabled={isAnsweringQuestions || !hasQuestions || answersGenerated}>
                        {isAnsweringQuestions ? 'Answering...' : <><Sparkles className="mr-2 h-4 w-4" /> Get All Answers</>}
                     </Button>
                   </div>
