@@ -13,14 +13,24 @@ import { useAuth } from '@/context/auth-context';
 import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import Link from 'next/link';
+import { Skeleton } from './ui/skeleton';
 
 export function UserNav() {
-  const { user } = useAuth();
-  
+  const { user, loading } = useAuth();
+
   const handleLogout = async () => {
     await signOut(auth);
     // The AuthProvider will handle redirecting the user
   };
+
+  if (loading) {
+    return (
+        <div className="flex items-center gap-2">
+            <Skeleton className="h-8 w-20" />
+            <Skeleton className="h-9 w-9 rounded-full" />
+        </div>
+    );
+  }
 
   if (!user) {
     return (
@@ -42,7 +52,11 @@ export function UserNav() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative h-8 w-8 rounded-full">
+        <Button variant="ghost" className="relative flex items-center gap-2 p-1 h-auto rounded-full">
+          <div className="hidden sm:flex flex-col text-right">
+              <span className="font-semibold text-sm leading-tight">{user.displayName}</span>
+              <span className="text-xs text-muted-foreground leading-tight">{user.email}</span>
+          </div>
           <Avatar className="h-9 w-9">
             {user.photoURL && (
               <AvatarImage src={user.photoURL} alt={user.displayName || 'User avatar'} />
