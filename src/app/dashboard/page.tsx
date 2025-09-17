@@ -778,7 +778,7 @@ export default function DashboardPage() {
             <CardContent className="p-6">
                <div className="flex items-center gap-4 mb-4">
                 <Image 
-                  src="https://proposalup.wahajmansoor.com/wahaj-mansoor.png"
+                  src="/wahaj-mansoor.png"
                   alt="Wahaj Mansoor"
                   width={80}
                   height={80}

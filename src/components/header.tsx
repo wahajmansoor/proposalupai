@@ -2,7 +2,8 @@ import { ProposalUpLogo } from '@/components/icons';
 import { UserNav } from '@/components/user-nav';
 import Link from 'next/link';
 import { Button } from './ui/button';
-import { LayoutDashboard, FolderKanban } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, Menu } from 'lucide-react';
+import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 
 export function Header() {
   return (
@@ -12,8 +13,10 @@ export function Header() {
           <ProposalUpLogo className="h-8 w-8 text-primary" />
           <h1 className="text-xl font-bold tracking-tight">Proposal Up</h1>
         </div>
-        <div className="flex flex-1 items-center justify-end space-x-4">
-          <nav className="flex items-center space-x-2">
+
+        {/* Desktop Navigation */}
+        <div className="hidden md:flex flex-1 items-center justify-end space-x-4">
+          <nav className="flex items-center space-x-1">
             <Button variant="ghost" asChild>
               <Link href="/dashboard">
                 <LayoutDashboard />
@@ -28,6 +31,33 @@ export function Header() {
             </Button>
             <UserNav />
           </nav>
+        </div>
+
+        {/* Mobile Navigation */}
+        <div className="flex md:hidden flex-1 items-center justify-end">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button variant="ghost" size="icon">
+                <Menu />
+                <span className="sr-only">Toggle Menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="right" className="w-[240px]">
+              <nav className="flex flex-col space-y-4 mt-8">
+                <Link href="/dashboard" className="flex items-center gap-2 text-lg font-semibold">
+                  <LayoutDashboard />
+                  Dashboard
+                </Link>
+                <Link href="/dashboard/portfolio" className="flex items-center gap-2 text-lg font-semibold">
+                  <FolderKanban />
+                  Portfolio
+                </Link>
+                 <div className="absolute bottom-4 left-4">
+                  <UserNav />
+                </div>
+              </nav>
+            </SheetContent>
+          </Sheet>
         </div>
       </div>
     </header>
