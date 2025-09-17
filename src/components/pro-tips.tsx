@@ -51,11 +51,11 @@ const tips = [
 export function ProTips() {
   return (
     <div className="w-full">
-      <div className="flex items-center gap-2 mb-4">
-          <Lightbulb className="h-5 w-5 text-primary" />
-          <h2 className="text-lg font-bold tracking-tight">Pro Tips for Winning Projects</h2>
+      <div className="mb-4">
+        <h2 className="text-2xl font-bold tracking-tight">Pro Tips</h2>
+        <p className="text-muted-foreground">for Winning Projects</p>
       </div>
-      <div className="space-y-4">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {tips.map((tip, index) => (
           <div key={index} className="flex items-start gap-3">
             <div className="bg-primary/10 p-2 rounded-full mt-1">
