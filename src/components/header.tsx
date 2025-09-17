@@ -13,7 +13,7 @@ import { cn } from '@/lib/utils';
 
 export function Header() {
 
-  const navLinkClasses = "text-muted-foreground hover:text-primary transition-colors hover:bg-transparent";
+  const navLinkClasses = "text-muted-foreground hover:text-primary transition-colors hover:bg-transparent focus-visible:bg-transparent";
 
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-card">

@@ -56,7 +56,7 @@ export function UserNav() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative flex items-center gap-2 p-1 h-auto rounded-full border border-transparent hover:border-border">
+        <Button variant="ghost" className="relative flex items-center gap-2 p-1 h-auto rounded-full border border-transparent hover:border-border hover:bg-transparent focus-visible:bg-transparent">
           <Avatar className="h-9 w-9">
             {user.photoURL && (
               <AvatarImage src={user.photoURL} alt={user.displayName || 'User avatar'} />
@@ -64,7 +64,7 @@ export function UserNav() {
             <AvatarFallback>{getInitials(user.displayName)}</AvatarFallback>
           </Avatar>
            <div className="hidden sm:flex flex-col text-left">
-              <span className="font-semibold text-sm leading-tight">{user.displayName}</span>
+              <span className="font-semibold text-sm leading-tight text-foreground">{user.displayName}</span>
               <span className="text-xs text-muted-foreground leading-tight">{user.email}</span>
           </div>
           <ChevronDown className="h-4 w-4 text-muted-foreground hidden sm:block" />
