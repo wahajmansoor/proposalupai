@@ -2,6 +2,7 @@ import { ProposalUpLogo } from '@/components/icons';
 import { UserNav } from '@/components/user-nav';
 import Link from 'next/link';
 import { Button } from './ui/button';
+import { LayoutDashboard, FolderKanban } from 'lucide-react';
 
 export function Header() {
   return (
@@ -14,10 +15,16 @@ export function Header() {
         <div className="flex flex-1 items-center justify-end space-x-4">
           <nav className="flex items-center space-x-2">
             <Button variant="ghost" asChild>
-              <Link href="/dashboard">Dashboard</Link>
+              <Link href="/dashboard">
+                <LayoutDashboard />
+                Dashboard
+              </Link>
             </Button>
             <Button variant="ghost" asChild>
-              <Link href="/dashboard/portfolio">Portfolio</Link>
+              <Link href="/dashboard/portfolio">
+                <FolderKanban />
+                Portfolio
+              </Link>
             </Button>
             <UserNav />
           </nav>
