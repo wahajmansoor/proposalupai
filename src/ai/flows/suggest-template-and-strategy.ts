@@ -86,12 +86,18 @@ const suggestTemplateAndStrategyFlow = ai.defineFlow(
     outputSchema: SuggestTemplateAndStrategyOutputSchema,
   },
   async (input) => {
-    const {output} = await prompt(input);
-    if (output && Object.keys(input.strategies).includes(output.strategyId) && (output.template === 'standard' || output.template === 'video')) {
-      return output;
+    for (let i = 0; i < 3; i++) {
+      try {
+        const {output} = await prompt(input);
+        if (output && Object.keys(input.strategies).includes(output.strategyId) && (output.template === 'standard' || output.template === 'video')) {
+          return output;
+        }
+      } catch (e) {
+        console.warn(`Attempt ${i + 1} failed for suggestTemplateAndStrategyFlow`, e);
+      }
     }
-    // Fallback in case of invalid response
-    console.warn("AI returned an invalid suggestion, using fallback.", output);
+    // Fallback in case of invalid response after retries
+    console.warn("AI returned an invalid suggestion after multiple retries, using fallback.");
     return { 
         template: 'standard', 
         templateReasoning: 'AI could not determine a specific template, defaulting to standard.',
