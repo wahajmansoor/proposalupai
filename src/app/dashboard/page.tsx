@@ -771,17 +771,15 @@ export default function DashboardPage() {
 
         <div className="mt-16 grid grid-cols-1 md:grid-cols-5 gap-8 items-start">
           <div className="md:col-span-3">
-             <Card>
-                <CardContent className="p-6">
-                  <ProTips />
-                </CardContent>
-              </Card>
+            <div className="bg-card p-6 rounded-lg border shadow-sm">
+                <ProTips />
+            </div>
           </div>
           <Card className="md:col-span-2">
             <CardContent className="p-6">
                <div className="flex items-center gap-4 mb-4">
                 <Image 
-                  src="/wahaj-mansoor.png"
+                  src="https://wahajmansoor.com/storage/2025/07/Wahaj-Mansoor-Wordpress-Expert-Profile-Picture-New-1.png"
                   alt="Wahaj Mansoor"
                   width={80}
                   height={80}
