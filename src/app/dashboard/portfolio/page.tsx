@@ -159,7 +159,7 @@ export default function PortfolioPage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen bg-gray-50">
+    <div className="flex flex-col min-h-screen">
       <Header />
       <main className="flex-1 p-4 md:p-8 container mx-auto">
         <div className="max-w-4xl mx-auto space-y-8">

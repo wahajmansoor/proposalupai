@@ -58,7 +58,7 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-gray-100">
+    <div className="flex items-center justify-center min-h-screen">
       <Card className="mx-auto max-w-sm">
         <CardHeader className="text-center">
           <ProposalUpLogo className="h-12 w-12 mx-auto text-primary" />
