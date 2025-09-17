@@ -45,14 +45,22 @@ Output a comma-separated string of the most relevant skills (e.g., "React, Proje
   const completion = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [{ role: 'user', content: prompt }],
-    response_format: { type: 'json_object' },
     tools: [
       {
         type: 'function',
         function: {
           name: 'extract_skills',
           description: 'Extracts relevant skills from text.',
-          parameters: SkillsSchema.openapi('Skills'),
+          parameters: {
+            type: 'object',
+            properties: {
+              skills: {
+                type: 'string',
+                description: 'A comma-separated string of relevant skills.',
+              },
+            },
+            required: ['skills'],
+          },
         },
       },
     ],
