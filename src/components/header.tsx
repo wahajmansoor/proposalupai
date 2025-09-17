@@ -2,7 +2,7 @@ import { ProposalUpLogo } from '@/components/icons';
 import { UserNav } from '@/components/user-nav';
 import Link from 'next/link';
 import { Button } from './ui/button';
-import { LayoutDashboard, FolderKanban, Menu } from 'lucide-react';
+import { LayoutDashboard, FolderKanban, PanelRight } from 'lucide-react';
 import { Sheet, SheetContent, SheetTrigger } from './ui/sheet';
 
 export function Header() {
@@ -38,7 +38,7 @@ export function Header() {
           <Sheet>
             <SheetTrigger asChild>
               <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary hover:bg-transparent">
-                <Menu className="h-6 w-6" />
+                <PanelRight className="h-6 w-6" />
                 <span className="sr-only">Toggle Menu</span>
               </Button>
             </SheetTrigger>
