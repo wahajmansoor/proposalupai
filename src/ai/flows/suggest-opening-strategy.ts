@@ -8,6 +8,7 @@
  */
 import OpenAI from 'openai';
 import { z } from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -60,7 +61,6 @@ export async function suggestOpeningStrategy(
     const completion = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
-        response_format: { type: 'json_object' },
         temperature: 0.3,
         tools: [
             {
@@ -68,7 +68,7 @@ export async function suggestOpeningStrategy(
                 function: {
                     name: 'suggest_opening_strategy',
                     description: 'Suggests an opening strategy for a proposal.',
-                    parameters: SuggestOpeningStrategyOutputSchema.openapi("OpeningStrategySuggestion"),
+                    parameters: zodToJsonSchema(SuggestOpeningStrategyOutputSchema),
                 }
             }
         ],
