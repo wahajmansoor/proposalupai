@@ -37,8 +37,8 @@ export function Header() {
         <div className="flex md:hidden flex-1 items-center justify-end">
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon">
-                <Menu />
+              <Button variant="ghost" size="icon" className="text-muted-foreground hover:text-primary hover:bg-transparent">
+                <Menu className="h-6 w-6" />
                 <span className="sr-only">Toggle Menu</span>
               </Button>
             </SheetTrigger>
