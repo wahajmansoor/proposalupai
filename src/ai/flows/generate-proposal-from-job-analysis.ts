@@ -6,8 +6,12 @@
  * - GenerateProposalInput - The input type for the generateProposal function.
  * - GenerateProposalOutput - The return type for the generateProposal function.
  */
-import { openai } from '@/lib/openai';
+import OpenAI from 'openai';
 import { z } from 'zod';
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 const GenerateProposalInputSchema = z.object({
   projectTitle: z.string().describe('The title of the project.'),
