@@ -8,8 +8,7 @@ import {
   query,
   orderBy,
   serverTimestamp,
-  getDoc,
-  setDoc,
+  updateDoc,
 } from 'firebase/firestore';
 import { db } from './config';
 import type { SavedProposal } from '@/app/lib/types';
@@ -44,6 +43,17 @@ export async function addSavedProposal(userId: string, title: string, content: s
     createdAt: serverTimestamp(),
   });
 }
+
+// Update a saved proposal
+export async function updateSavedProposal(
+  userId: string,
+  proposalId: string,
+  data: { title: string; content: string }
+) {
+  const proposalDocRef = doc(db, 'users', userId, 'savedProposals', proposalId);
+  await updateDoc(proposalDocRef, data);
+}
+
 
 // Delete a saved proposal
 export async function deleteSavedProposal(userId: string, proposalId: string) {
