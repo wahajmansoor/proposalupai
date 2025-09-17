@@ -43,8 +43,8 @@ export function ProTips() {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <Lightbulb className="h-6 w-6 text-primary" />
+        <CardTitle className="flex items-center gap-2 text-lg">
+          <Lightbulb className="h-5 w-5 text-primary" />
           <span>Pro Tips</span>
         </CardTitle>
       </CardHeader>
@@ -52,9 +52,9 @@ export function ProTips() {
         <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
           {tips.map((tip, index) => (
             <li key={index} className="flex items-start gap-3">
-              <tip.icon className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />
+              <tip.icon className="h-4 w-4 mt-1 text-primary flex-shrink-0" />
               <div>
-                <h4 className="font-semibold">{tip.title}</h4>
+                <h4 className="font-semibold text-sm">{tip.title}</h4>
                 <p className="text-sm text-muted-foreground">{tip.text}</p>
               </div>
             </li>
