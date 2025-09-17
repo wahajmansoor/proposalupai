@@ -56,7 +56,7 @@ export function UserNav() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative flex items-center gap-2 p-1 h-auto rounded-full border border-transparent hover:border-border hover:bg-transparent focus-visible:bg-transparent">
+        <Button variant="ghost" className="relative group flex items-center gap-2 p-1 h-auto rounded-full border border-transparent hover:border-border hover:bg-transparent focus-visible:bg-transparent">
           <Avatar className="h-9 w-9">
             {user.photoURL && (
               <AvatarImage src={user.photoURL} alt={user.displayName || 'User avatar'} />
