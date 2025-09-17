@@ -30,6 +30,7 @@ import { getPortfolioCollections } from '@/lib/firebase/portfolio';
 import { Slider } from '@/components/ui/slider';
 import { ProposalUpLogo } from '@/components/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import Image from 'next/image';
 
 type Suggestion = {
   template: 'standard' | 'video';
@@ -766,33 +767,44 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-2 gap-8 items-start bg-card p-8 rounded-lg border shadow-sm">
-          <ProTips />
-          <Card className="border-green-200">
-            <CardContent className="p-6 text-center flex flex-col items-center">
-              <Avatar className="h-24 w-24 mb-4 border-4 border-green-100">
-                <AvatarImage src="https://picsum.photos/seed/1/200/200" alt="Wahaj Mansoor" data-ai-hint="professional portrait" />
-                <AvatarFallback>WM</AvatarFallback>
-              </Avatar>
-              <h3 className="text-xl font-bold">Wahaj Mansoor</h3>
-              <p className="text-muted-foreground mb-4">WordPress & GoHighLevel Expert</p>
+        <div className="mt-16 grid grid-cols-1 md:grid-cols-5 gap-8 items-start">
+          <Card className="md:col-span-3">
+            <CardContent className="p-6">
+              <ProTips />
+            </CardContent>
+          </Card>
+          <Card className="md:col-span-2 border-green-200">
+            <CardContent className="p-6">
+              <div className="flex items-center gap-4 mb-6">
+                <Image 
+                  src="https://wahajmansoor.com/storage/2025/07/Wahaj-Mansoor-Wordpress-Expert-Profile-Picture-New-1.png"
+                  alt="Wahaj Mansoor"
+                  width={96}
+                  height={96}
+                  className="rounded-full border-4 border-green-100"
+                />
+                <div>
+                  <h3 className="text-xl font-bold">Wahaj Mansoor</h3>
+                  <p className="text-muted-foreground">WordPress & GoHighLevel Expert</p>
+                </div>
+              </div>
               
-              <ul className="space-y-2 text-left mb-6">
+              <ul className="space-y-3 text-sm">
                 <li className="flex items-center gap-3">
-                  <CheckCircle className="h-5 w-5 text-primary" />
+                  <div className="bg-primary/10 p-2 rounded-full"><CheckCircle className="h-4 w-4 text-primary" /></div>
                   <span>Custom WordPress Development</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Globe className="h-5 w-5 text-primary" />
+                  <div className="bg-primary/10 p-2 rounded-full"><Globe className="h-4 w-4 text-primary" /></div>
                   <span>GoHighLevel Funnel Building</span>
                 </li>
                 <li className="flex items-center gap-3">
-                  <Phone className="h-5 w-5 text-primary" />
+                  <div className="bg-primary/10 p-2 rounded-full"><Phone className="h-4 w-4 text-primary" /></div>
                   <span>Technical SEO & Automation</span>
                 </li>
               </ul>
 
-              <Button className="bg-black text-white hover:bg-gray-800 w-full">
+              <Button className="bg-black text-white hover:bg-gray-800 w-full mt-6">
                 Book 1:1 Discovery Call
               </Button>
             </CardContent>
@@ -802,3 +814,4 @@ export default function DashboardPage() {
     </div>
   );
 }
+
