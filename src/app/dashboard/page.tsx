@@ -207,7 +207,7 @@ export default function DashboardPage() {
 
   const prevStep = () => {
     if (currentStep > 1) {
-      setCurrentStep(prev => prev + 1);
+      setCurrentStep(prev => prev - 1);
     }
   };
 
@@ -811,35 +811,38 @@ export default function DashboardPage() {
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm mb-6">
-                  <div className="flex items-center gap-2">
-                    <div className="bg-primary/10 p-1 rounded-full"><Code className="h-3 w-3 text-primary" /></div>
-                    <span>Web Development</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="bg-primary/10 p-1 rounded-full"><ShoppingCart className="h-3 w-3 text-primary" /></div>
-                    <span>eCommerce Solution</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="bg-primary/10 p-1 rounded-full"><Search className="h-3 w-3 text-primary" /></div>
-                    <span>On-Page SEO</span>
-                  </div>
-                   <div className="flex items-center gap-2">
-                    <div className="bg-primary/10 p-1 rounded-full"><Lightbulb className="h-3 w-3 text-primary" /></div>
-                    <span>Landing Page</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="bg-primary/10 p-1 rounded-full"><Globe className="h-3 w-3 text-primary" /></div>
-                    <span>Web Designing</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <div className="bg-primary/10 p-1 rounded-full"><Mail className="h-3 w-3 text-primary" /></div>
-                    <span>Email Marketing</span>
-                  </div>
-                   <div className="flex items-center gap-2 col-span-2">
-                    <div className="bg-primary/10 p-1 rounded-full"><BarChart2 className="h-3 w-3 text-primary" /></div>
-                    <span>GoHighLevel Funnels</span>
-                  </div>
+              <div className="border-t pt-4 mt-6">
+                <h4 className="font-semibold mb-4 text-center">My Services</h4>
+                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <div className="bg-primary/10 p-1 rounded-full"><Code className="h-3 w-3 text-primary" /></div>
+                      <span>Web Development</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="bg-primary/10 p-1 rounded-full"><ShoppingCart className="h-3 w-3 text-primary" /></div>
+                      <span>eCommerce Solution</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="bg-primary/10 p-1 rounded-full"><Search className="h-3 w-3 text-primary" /></div>
+                      <span>On-Page SEO</span>
+                    </div>
+                     <div className="flex items-center gap-2">
+                      <div className="bg-primary/10 p-1 rounded-full"><Lightbulb className="h-3 w-3 text-primary" /></div>
+                      <span>Landing Page</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="bg-primary/10 p-1 rounded-full"><Globe className="h-3 w-3 text-primary" /></div>
+                      <span>Web Designing</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <div className="bg-primary/10 p-1 rounded-full"><Mail className="h-3 w-3 text-primary" /></div>
+                      <span>Email Marketing</span>
+                    </div>
+                     <div className="flex items-center gap-2 col-span-2">
+                      <div className="bg-primary/10 p-1 rounded-full"><BarChart2 className="h-3 w-3 text-primary" /></div>
+                      <span>GoHighLevel Funnels</span>
+                    </div>
+                </div>
               </div>
 
               <div className="mt-6 flex flex-col gap-2">
