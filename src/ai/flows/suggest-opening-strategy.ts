@@ -8,7 +8,6 @@
  */
 import OpenAI from 'openai';
 import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -68,7 +67,20 @@ export async function suggestOpeningStrategy(
                 function: {
                     name: 'suggest_opening_strategy',
                     description: 'Suggests an opening strategy for a proposal.',
-                    parameters: zodToJsonSchema(SuggestOpeningStrategyOutputSchema),
+                    parameters: {
+                        type: 'object',
+                        properties: {
+                            strategyId: {
+                                type: 'string',
+                                description: "The ID of the suggested opening strategy. MUST be one of the keys from the input strategies."
+                            },
+                            reasoning: {
+                                type: 'string',
+                                description: 'A brief, one-sentence explanation for the strategy suggestion.'
+                            }
+                        },
+                        required: ['strategyId', 'reasoning']
+                    }
                 }
             }
         ],

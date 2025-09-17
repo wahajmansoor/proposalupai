@@ -8,7 +8,6 @@
  */
 import OpenAI from 'openai';
 import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -65,7 +64,21 @@ export async function suggestProposalTemplate(
           function: {
             name: 'suggest_proposal_template',
             description: 'Suggests a proposal template.',
-            parameters: zodToJsonSchema(SuggestProposalTemplateOutputSchema),
+            parameters: {
+                type: 'object',
+                properties: {
+                    template: {
+                        type: 'string',
+                        enum: ['standard', 'video'],
+                        description: "The suggested proposal template. MUST be either 'standard' or 'video'."
+                    },
+                    reasoning: {
+                        type: 'string',
+                        description: 'A brief, one-sentence explanation for the template suggestion.'
+                    }
+                },
+                required: ['template', 'reasoning']
+            }
           },
         },
       ],
