@@ -9,8 +9,12 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import { cn } from '@/lib/utils';
 
 export function Header() {
+
+  const navLinkClasses = "text-muted-foreground hover:text-primary transition-colors";
+
   return (
     <header className="sticky top-0 z-40 w-full border-b bg-card">
       <div className="container flex h-16 items-center space-x-4 sm:justify-between sm:space-x-0">
@@ -22,19 +26,19 @@ export function Header() {
         <div className="flex flex-1 items-center justify-end space-x-2">
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center space-x-1">
-            <Button variant="ghost" asChild>
+            <Button variant="ghost" asChild className={navLinkClasses}>
               <Link href="/dashboard">
                 <LayoutDashboard className="mr-2" />
                 Dashboard
               </Link>
             </Button>
-             <Button variant="ghost" asChild>
+             <Button variant="ghost" asChild className={navLinkClasses}>
               <Link href="/dashboard/proposals">
                 <Archive className="mr-2" />
                 Saved Proposals
               </Link>
             </Button>
-            <Button variant="ghost" asChild>
+            <Button variant="ghost" asChild className={navLinkClasses}>
               <Link href="/dashboard/portfolio">
                 <FolderKanban className="mr-2" />
                 Portfolio Collection
