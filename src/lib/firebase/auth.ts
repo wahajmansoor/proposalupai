@@ -11,12 +11,14 @@ export async function signUpUser(fullName: string, email: string, password: stri
     // 2. Update the user's profile in Firebase Auth
     await updateProfile(user, { displayName: fullName });
 
-    // 3. Create user document in Firestore
+    // 3. Create user document in Firestore *after* auth profile is updated
+    // This ensures displayName is not null
     const userRef = doc(db, 'users', user.uid);
     await setDoc(userRef, {
       uid: user.uid,
       email: user.email,
-      displayName: fullName,
+      displayName: fullName, // Use the provided fullName directly
+      photoURL: user.photoURL,
       createdAt: new Date(),
     });
 
