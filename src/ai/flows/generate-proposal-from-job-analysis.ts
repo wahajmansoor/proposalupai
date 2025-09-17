@@ -89,6 +89,10 @@ Portfolio Links: ${input.portfolioLinks}
         - 3. On the call, we’ll dive deeper into your project and plan the next steps
     9.  End the proposal by intelligently integrating the closing phrase "${input.closingCta}" into a natural-sounding final sentence.
 `;
+    if (input.closingCta2) {
+      prompt += `    10. **Sign-off:** After the closing sentence, add a single line break (\\n) and then write the sign-off phrase: "${input.closingCta2}".\n`;
+    }
+    prompt += `    11. **Signature:** After the sign-off phrase (or the closing sentence if no sign-off is provided), add one line break and then write the user's name, which you can find in the Profile Summary.\n`;
   }
 
   if (isStandard) {
