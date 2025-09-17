@@ -60,15 +60,25 @@ ${input.clientQuestions.map((q) => `- ${q}`).join('\n')}
   const completion = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
     messages: [{ role: 'user', content: prompt }],
-    response_format: { type: 'json_object' },
     tools: [
       {
         type: 'function',
         function: {
           name: 'provide_answers_to_client_questions',
           description: 'Provides answers to a list of client questions.',
-          parameters:
-            AnswerClientQuestionsOutputSchema.openapi('ClientAnswers'),
+          parameters: {
+            type: 'object',
+            properties: {
+              answers: {
+                type: 'array',
+                items: {
+                  type: 'string',
+                },
+                description: 'An array of answers to the client questions.',
+              },
+            },
+            required: ['answers'],
+          },
         },
       },
     ],
