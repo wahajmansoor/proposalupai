@@ -1,3 +1,4 @@
+
 import { ProposalUpLogo } from '@/components/icons';
 import { UserNav } from '@/components/user-nav';
 import Link from 'next/link';
@@ -24,13 +25,13 @@ export function Header() {
           <nav className="hidden md:flex items-center space-x-1">
             <Button variant="ghost" asChild>
               <Link href="/dashboard">
-                <LayoutDashboard />
+                <LayoutDashboard className="mr-2" />
                 Dashboard
               </Link>
             </Button>
             <Button variant="ghost" asChild>
               <Link href="/dashboard/portfolio">
-                <FolderKanban />
+                <FolderKanban className="mr-2" />
                 Portfolio
               </Link>
             </Button>
