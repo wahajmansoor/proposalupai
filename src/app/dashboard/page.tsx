@@ -765,7 +765,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="mt-16">
+        <div className="mt-16 bg-card p-8 rounded-lg border shadow-sm">
           <ProTips />
         </div>
       </main>
