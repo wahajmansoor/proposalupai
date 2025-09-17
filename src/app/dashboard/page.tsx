@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuote, CheckCircle, Phone, Globe, Users, Calendar, BarChart, ShoppingCart, Code, Search, Lightbulb, Mail, BarChart2 } from 'lucide-react';
+import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuote, CheckCircle, Phone, Globe, Users, Calendar, BarChart, ShoppingCart, Code, Search, Lightbulb, Mail, BarChart2, ExternalLink } from 'lucide-react';
 import type { ClientQuestion, PortfolioCollection } from '@/app/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -32,6 +32,7 @@ import { ProposalUpLogo } from '@/components/icons';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import Image from 'next/image';
 import { Separator } from '@/components/ui/separator';
+import Link from 'next/link';
 
 type Suggestion = {
   template: 'standard' | 'video';
@@ -207,7 +208,7 @@ export default function DashboardPage() {
 
   const prevStep = () => {
     if (currentStep > 1) {
-      setCurrentStep(prev => prev + 1);
+      setCurrentStep(prev => prev - 1);
     }
   };
 
@@ -843,10 +844,18 @@ export default function DashboardPage() {
                   </div>
               </div>
 
-
-              <Button className="bg-black text-white hover:bg-gray-800 w-full mt-4">
-                Book 1:1 Discovery Call
-              </Button>
+              <div className="mt-6 flex flex-col gap-2">
+                 <Button asChild className="bg-black text-white hover:bg-gray-800 w-full">
+                  <Link href="https://cal.com/wahajmansoor/website-consultation" target="_blank">
+                    <Calendar className="mr-2" /> Book 1:1 Discovery Call
+                  </Link>
+                </Button>
+                <Button asChild variant="outline" className="w-full">
+                  <Link href="https://wahajmansoor.com/" target="_blank">
+                    <ExternalLink className="mr-2" /> Visit Website
+                  </Link>
+                </Button>
+              </div>
             </CardContent>
           </Card>
         </div>
@@ -854,3 +863,5 @@ export default function DashboardPage() {
     </div>
   );
 }
+
+    
