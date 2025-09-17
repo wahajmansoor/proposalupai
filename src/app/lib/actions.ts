@@ -4,7 +4,6 @@
 import { z } from 'zod';
 import { analyzeJobForProposal } from '@/ai/flows/analyze-job-for-proposal';
 import { autofillProposalSections } from '@/ai/flows/autofill-proposal-sections';
-import { suggestIntroductionStrategies } from '@/ai/flows/suggest-introduction-strategies';
 import { answerClientQuestions } from '@/ai/flows/answer-client-questions';
 import { generateProposal } from '@/ai/flows/generate-proposal-from-job-analysis';
 import { suggestProposalTemplate } from '@/ai/flows/suggest-proposal-template';
@@ -87,28 +86,6 @@ export async function autofillSkillsAction(input: z.infer<typeof autofillSkillsS
     return { error: 'Failed to autofill skills.' };
   }
 }
-
-const suggestIntroductionsSchema = z.object({
-  projectTitle: z.string(),
-  summary: z.string(),
-  profileSummary: z.string(),
-  pastSuccesses: z.array(z.string()),
-});
-
-export async function suggestIntroductionsAction(input: z.infer<typeof suggestIntroductionsSchema>) {
-    const validatedFields = suggestIntroductionsSchema.safeParse(input);
-    if (!validatedFields.success) {
-        return { error: 'Invalid input for suggestions.' };
-    }
-  try {
-    const result = await suggestIntroductionStrategies(validatedFields.data);
-    return { data: result };
-  } catch (error) {
-    console.error(error);
-    return { error: 'Failed to suggest introductions.' };
-  }
-}
-
 
 const answerQuestionsSchema = z.object({
   jobDescription: z.string(),
