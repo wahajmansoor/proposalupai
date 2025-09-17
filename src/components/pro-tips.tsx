@@ -1,4 +1,4 @@
-import { Lightbulb, Video, Phone, Zap, ShieldCheck, CreditCard, Star, TrendingUp, Sparkles, Target, MessageCircle, FileText, CalendarCheck, PocketKnife } from 'lucide-react';
+import { Lightbulb, Video, Phone, ShieldCheck, CreditCard, Star, TrendingUp, Sparkles, Target, MessageCircle, FileText, CalendarCheck, PocketKnife } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
 const tips = [
@@ -51,32 +51,26 @@ const tips = [
 
 export function ProTips() {
   return (
-    <Card className="bg-transparent border-0 shadow-none">
-      <CardHeader className="text-center">
-        <div className="flex items-center justify-center gap-2 mb-2">
-            <Lightbulb className="h-6 w-6 text-primary" />
-            <CardTitle className="text-2xl font-bold">Pro Tips for Winning Projects on Upwork</CardTitle>
+    <div className="w-full">
+      <div className="text-center mb-8">
+        <div className="flex items-center justify-center gap-2">
+            <Lightbulb className="h-5 w-5 text-primary" />
+            <h2 className="text-xl font-bold tracking-tight">Pro Tips for Winning Projects</h2>
         </div>
-      </CardHeader>
-      <CardContent>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {tips.map((tip, index) => (
-            <Card key={index} className="border-green-200 hover:shadow-md transition-shadow">
-                <CardContent className="p-6">
-                    <div className="flex items-start gap-4">
-                        <div className="bg-primary/10 p-2 rounded-full">
-                            <tip.icon className="h-5 w-5 text-primary" />
-                        </div>
-                        <div>
-                            <h4 className="font-semibold text-md mb-1">{tip.title}</h4>
-                            <p className="text-sm text-muted-foreground">{tip.text}</p>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+      </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        {tips.map((tip, index) => (
+          <div key={index} className="flex items-start gap-4">
+            <div className="bg-primary/10 p-2 rounded-full">
+              <tip.icon className="h-5 w-5 text-primary shrink-0" />
+            </div>
+            <div>
+              <h4 className="font-semibold text-md mb-1">{tip.title}</h4>
+              <p className="text-sm text-muted-foreground">{tip.text}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
   );
 }

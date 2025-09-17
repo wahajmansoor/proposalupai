@@ -28,6 +28,7 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { getPortfolioCollections } from '@/lib/firebase/portfolio';
 import { Slider } from '@/components/ui/slider';
+import { ProposalUpLogo } from '@/components/icons';
 
 type Suggestion = {
   template: 'standard' | 'video';
@@ -182,7 +183,7 @@ export default function DashboardPage() {
   if (loading || !user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
-        <Skeleton className="h-20 w-20 rounded-full" />
+        <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />
       </div>
     );
   }
@@ -569,13 +570,6 @@ export default function DashboardPage() {
                               <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
-                         {q.answer && !answersGenerated && (
-                            <Textarea 
-                                value={q.answer} 
-                                onChange={(e) => handleClientQuestionChange(q.id, 'answer', e.target.value)}
-                                className="border-green-300 focus-visible:ring-green-400"
-                            />
-                         )}
                       </div>
                   ))}
                   <div className="flex gap-2">
@@ -771,7 +765,7 @@ export default function DashboardPage() {
           </div>
         </div>
 
-        <div className="mt-12">
+        <div className="mt-16">
           <ProTips />
         </div>
       </main>
