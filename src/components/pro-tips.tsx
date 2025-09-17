@@ -49,7 +49,7 @@ export function ProTips() {
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <ul className="space-y-4">
+        <ul className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
           {tips.map((tip, index) => (
             <li key={index} className="flex items-start gap-3">
               <tip.icon className="h-5 w-5 mt-0.5 text-primary flex-shrink-0" />

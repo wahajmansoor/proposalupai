@@ -768,9 +768,11 @@ export default function DashboardPage() {
                 </CardContent>
               </Card>
             )}
-
-            <ProTips />
           </div>
+        </div>
+
+        <div className="mt-12">
+          <ProTips />
         </div>
       </main>
     </div>
