@@ -1,6 +1,5 @@
 import { ProposalUpLogo } from '@/components/icons';
 import { UserNav } from '@/components/user-nav';
-import { Home } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from './ui/button';
 
@@ -14,11 +13,12 @@ export function Header() {
         </div>
         <div className="flex flex-1 items-center justify-end space-x-4">
           <nav className="flex items-center space-x-2">
-            <Link href="/dashboard" passHref>
-              <Button variant="ghost" size="icon" aria-label="Dashboard">
-                <Home className="h-5 w-5" />
-              </Button>
-            </Link>
+            <Button variant="ghost" asChild>
+              <Link href="/dashboard">Dashboard</Link>
+            </Button>
+            <Button variant="ghost" asChild>
+              <Link href="/dashboard/portfolio">Portfolio</Link>
+            </Button>
             <UserNav />
           </nav>
         </div>
