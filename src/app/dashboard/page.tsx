@@ -779,11 +779,11 @@ export default function DashboardPage() {
             <CardContent className="p-6">
                <div className="flex items-center gap-4 mb-4">
                 <Image 
-                  src="https://wahajmansoor.com/storage/2025/07/Wahaj-Mansoor-Wordpress-Expert-Profile-Picture-New-1.png"
+                  src="https://proposalup.wahajmansoor.com/storage/2025/07/Wahaj-Mansoor-Wordpress-Expert-Profile-Picture-New-1.png"
                   alt="Wahaj Mansoor"
                   width={80}
                   height={80}
-                  className="rounded-full border-4 border-green-100"
+                  className="rounded-full"
                 />
                 <div>
                   <h3 className="text-xl font-bold">Wahaj Mansoor</h3>

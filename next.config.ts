@@ -36,7 +36,7 @@ const nextConfig: NextConfig = {
       },
       {
         protocol: 'https',
-        hostname: 'wahajmansoor.com',
+        hostname: 'proposalup.wahajmansoor.com',
         port: '',
         pathname: '/**',
       },
