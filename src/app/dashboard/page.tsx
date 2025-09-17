@@ -31,7 +31,7 @@ import { Slider } from '@/components/ui/slider';
 import { ProposalUpLogo, LinkedInIcon } from '@/components/icons';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter, DialogClose } from '@/components/ui/dialog';
+import { Loader2 } from 'lucide-react';
 
 type Suggestion = {
   template: 'standard' | 'video';
@@ -125,8 +125,6 @@ export default function DashboardPage() {
   const [generatedProposal, setGeneratedProposal] = useState('');
   const [wordCount, setWordCount] = useState(0);
 
-  const [isSaveDialogOpen, setIsSaveDialogOpen] = useState(false);
-  const [saveProposalTitle, setSaveProposalTitle] = useState('');
   const [isSaving, setIsSaving] = useState(false);
 
   const summaryTextareaRef = useRef<HTMLTextAreaElement>(null);
@@ -211,7 +209,7 @@ export default function DashboardPage() {
 
   const prevStep = () => {
     if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1);
+      setCurrentStep(prev => prev + 1);
     }
   };
 
@@ -375,20 +373,19 @@ export default function DashboardPage() {
         toast({ title: 'Error', description: result.error, variant: 'destructive' });
     } else if (result.data) {
         setGeneratedProposal(result.data.proposal);
-        setSaveProposalTitle(projectDetails.projectTitle); // Pre-fill title
     }
     setIsGenerating(false);
   };
 
   const handleSaveProposal = async () => {
-    if (!user || !saveProposalTitle.trim() || !generatedProposal) {
-      toast({ title: 'Missing Information', description: 'Please provide a title and generate a proposal first.', variant: 'destructive' });
+    if (!user || !projectDetails.projectTitle.trim() || !generatedProposal) {
+      toast({ title: 'Missing Information', description: 'Please provide a project title and generate a proposal first.', variant: 'destructive' });
       return;
     }
     setIsSaving(true);
     const result = await saveProposalAction({
       userId: user.uid,
-      title: saveProposalTitle.trim(),
+      title: projectDetails.projectTitle.trim(),
       content: generatedProposal,
     });
     setIsSaving(false);
@@ -397,8 +394,6 @@ export default function DashboardPage() {
       toast({ title: 'Error Saving Proposal', description: result.error, variant: 'destructive' });
     } else {
       toast({ title: 'Proposal Saved!', description: 'You can view it on the Saved Proposals page.' });
-      setIsSaveDialogOpen(false);
-      setSaveProposalTitle('');
     }
   };
 
@@ -748,8 +743,9 @@ export default function DashboardPage() {
                   )}
                 </div>
                 <div className="flex items-center gap-1">
-                    <Button variant="outline" size="sm" onClick={() => setIsSaveDialogOpen(true)} disabled={!generatedProposal}>
-                        <Save className="mr-2 h-4 w-4" /> Save
+                    <Button variant="outline" size="sm" onClick={handleSaveProposal} disabled={!generatedProposal || isSaving}>
+                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
+                        Save
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => copyToClipboard(generatedProposal)} disabled={!generatedProposal}>
                         <Clipboard className="mr-2 h-4 w-4" /> Copy
@@ -778,40 +774,6 @@ export default function DashboardPage() {
                 )}
               </CardContent>
             </Card>
-
-            <Dialog open={isSaveDialogOpen} onOpenChange={setIsSaveDialogOpen}>
-              <DialogContent>
-                <DialogHeader>
-                  <DialogTitle>Save Proposal</DialogTitle>
-                  <DialogDescription>
-                    Give your proposal a title to save it for later.
-                  </DialogDescription>
-                </DialogHeader>
-                <div className="grid gap-4 py-4">
-                  <div className="grid grid-cols-4 items-center gap-4">
-                    <Label htmlFor="proposal-title" className="text-right">
-                      Title
-                    </Label>
-                    <Input
-                      id="proposal-title"
-                      value={saveProposalTitle}
-                      onChange={(e) => setSaveProposalTitle(e.target.value)}
-                      className="col-span-3"
-                    />
-                  </div>
-                </div>
-                <DialogFooter>
-                  <DialogClose asChild>
-                    <Button type="button" variant="secondary">
-                      Cancel
-                    </Button>
-                  </DialogClose>
-                  <Button onClick={handleSaveProposal} disabled={isSaving}>
-                    {isSaving ? 'Saving...' : 'Save'}
-                  </Button>
-                </DialogFooter>
-              </DialogContent>
-            </Dialog>
 
             {generatedProposal && hasAnsweredQuestions && (
               <Card>
