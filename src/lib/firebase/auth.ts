@@ -1,5 +1,5 @@
 import { createUserWithEmailAndPassword, updateProfile, User, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
-import { doc, setDoc, getDoc } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './config';
 
 export async function signUpUser(fullName: string, email: string, password: string): Promise<User> {
@@ -12,14 +12,14 @@ export async function signUpUser(fullName: string, email: string, password: stri
     await updateProfile(user, { displayName: fullName });
 
     // 3. Create user document in Firestore *after* auth profile is updated
-    // This ensures displayName is not null
+    // This ensures displayName is not null and uses the correct server timestamp
     const userRef = doc(db, 'users', user.uid);
     await setDoc(userRef, {
       uid: user.uid,
       email: user.email,
       displayName: fullName, // Use the provided fullName directly
       photoURL: user.photoURL,
-      createdAt: new Date(),
+      createdAt: serverTimestamp(), // Use serverTimestamp for consistency
     });
 
     return user;
@@ -47,7 +47,7 @@ export async function signInWithGoogle(): Promise<User> {
         email: user.email,
         displayName: user.displayName,
         photoURL: user.photoURL,
-        createdAt: new Date(),
+        createdAt: serverTimestamp(),
       });
     }
     return user;
