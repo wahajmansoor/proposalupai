@@ -812,7 +812,7 @@ export default function DashboardPage() {
               </div>
 
               <div className="border-t pt-4 mt-6">
-                <h4 className="font-semibold mb-4 text-center">My Services</h4>
+                <h4 className="font-semibold mb-4">My Services</h4>
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
                     <div className="flex items-center gap-2">
                       <div className="bg-primary/10 p-1 rounded-full"><Code className="h-3 w-3 text-primary" /></div>
