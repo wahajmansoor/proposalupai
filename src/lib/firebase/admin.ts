@@ -1,16 +1,39 @@
-import "server-only";
+'use server';
+import 'server-only';
 import * as admin from 'firebase-admin';
 
-const serviceAccount = process.env.FIREBASE_SERVICE_ACCOUNT;
+const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
 
-if (!serviceAccount) {
-    throw new Error('Missing FIREBASE_SERVICE_ACCOUNT environment variable');
+if (!serviceAccountString) {
+  throw new Error('Missing FIREBASE_SERVICE_ACCOUNT environment variable');
+}
+
+let serviceAccount: admin.ServiceAccount;
+
+try {
+  const parsedServiceAccount = JSON.parse(serviceAccountString);
+  // The private_key field has newline characters that need to be un-escaped
+  if (parsedServiceAccount.private_key) {
+    parsedServiceAccount.private_key = parsedServiceAccount.private_key.replace(
+      /\\n/g,
+      '\n'
+    );
+  }
+  serviceAccount = parsedServiceAccount;
+} catch (error: any) {
+  console.error(
+    'Failed to parse FIREBASE_SERVICE_ACCOUNT. Make sure it is a valid JSON string.',
+    error
+  );
+  throw new Error(
+    'Failed to parse FIREBASE_SERVICE_ACCOUNT. Check server logs for details.'
+  );
 }
 
 if (!admin.apps.length) {
-    admin.initializeApp({
-        credential: admin.credential.cert(JSON.parse(serviceAccount)),
-    });
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount),
+  });
 }
 
 const adminAuth = admin.auth();
@@ -18,11 +41,11 @@ const adminDb = admin.firestore();
 
 export { adminAuth, adminDb, admin };
 
-export function getAdminAuth() {
-    if (admin.apps.length === 0) {
-        admin.initializeApp({
-            credential: admin.credential.cert(JSON.parse(serviceAccount!)),
-        });
-    }
-    return admin.auth();
+export async function getAdminAuth() {
+  if (admin.apps.length === 0) {
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+  }
+  return admin.auth();
 }
