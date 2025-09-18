@@ -1,5 +1,4 @@
-'use server';
-import 'server-only';
+'server-only';
 import * as admin from 'firebase-admin';
 import dotenv from 'dotenv';
 
