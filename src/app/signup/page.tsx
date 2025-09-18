@@ -10,7 +10,8 @@ import { Label } from '@/components/ui/label';
 import { ProposalUpLogo, GoogleIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, XCircle, CheckCircle2 } from 'lucide-react';
-import { signUpUser, getGoogleAuthUrl } from '@/lib/firebase/auth';
+import { signUpUser } from '@/lib/firebase/auth';
+import { getGoogleAuthUrl } from '@/app/lib/actions';
 import { cn } from '@/lib/utils';
 
 const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => {

@@ -8,7 +8,7 @@ import { answerClientQuestions } from '@/ai/flows/answer-client-questions';
 import { generateProposal } from '@/ai/flows/generate-proposal-from-job-analysis';
 import { suggestProposalTemplate } from '@/ai/flows/suggest-proposal-template';
 import { suggestOpeningStrategy } from '@/ai/flows/suggest-opening-strategy';
-import { getAdminAuth } from '@/lib/firebase/admin';
+import { OAuth2Client } from 'google-auth-library';
 
 const projectDetailsSchema = z.object({
   projectTitle: z.string().min(1, 'Project title is required.'),
@@ -137,4 +137,23 @@ export async function generateProposalAction(input: z.infer<typeof generatePropo
     console.error(error);
     return { error: 'Failed to generate proposal.' };
   }
+}
+
+export async function getGoogleAuthUrl() {
+    const oAuth2Client = new OAuth2Client(
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET,
+        `${process.env.NEXT_PUBLIC_URL}/api/auth/callback`
+    );
+
+    const authorizeUrl = oAuth2Client.generateAuthUrl({
+        access_type: 'offline',
+        scope: [
+            'https://www.googleapis.com/auth/userinfo.profile',
+            'https://www.googleapis.com/auth/userinfo.email',
+        ],
+        prompt: 'consent'
+    });
+    
+    return authorizeUrl;
 }

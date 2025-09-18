@@ -12,7 +12,7 @@ import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
-import { getGoogleAuthUrl } from '@/lib/firebase/auth';
+import { getGoogleAuthUrl } from '@/app/lib/actions';
 import { Separator } from '@/components/ui/separator';
 
 export default function LoginPage() {
