@@ -1,6 +1,7 @@
 import { createUserWithEmailAndPassword, updateProfile, User, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './config';
+import { OAuth2Client } from 'google-auth-library';
 
 export async function signUpUser(fullName: string, email: string, password: string): Promise<User> {
   try {
@@ -30,6 +31,8 @@ export async function signUpUser(fullName: string, email: string, password: stri
   }
 }
 
+// This function is kept for reference but will no longer be used by the UI.
+// The new server-side flow replaces it.
 export async function signInWithGoogle(): Promise<User> {
   const provider = new GoogleAuthProvider();
   try {
@@ -91,4 +94,25 @@ export async function sendPasswordReset(email: string) {
     console.error("Error sending password reset email:", error);
     throw error;
   }
+}
+
+export async function getGoogleAuthUrl() {
+    'use server';
+    
+    const oAuth2Client = new OAuth2Client(
+        process.env.GOOGLE_CLIENT_ID,
+        process.env.GOOGLE_CLIENT_SECRET,
+        `${process.env.NEXT_PUBLIC_URL}/api/auth/callback`
+    );
+
+    const authorizeUrl = oAuth2Client.generateAuthUrl({
+        access_type: 'offline',
+        scope: [
+            'https://www.googleapis.com/auth/userinfo.profile',
+            'https://www.googleapis.com/auth/userinfo.email',
+        ],
+        prompt: 'consent'
+    });
+    
+    return authorizeUrl;
 }

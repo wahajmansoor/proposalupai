@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { ProposalUpLogo, GoogleIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, XCircle, CheckCircle2 } from 'lucide-react';
-import { signUpUser, signInWithGoogle } from '@/lib/firebase/auth';
+import { signUpUser, getGoogleAuthUrl } from '@/lib/firebase/auth';
 import { cn } from '@/lib/utils';
 
 const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => {
@@ -54,16 +54,15 @@ export default function SignupPage() {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     try {
-      await signInWithGoogle();
-      router.push('/dashboard');
+      const googleAuthUrl = await getGoogleAuthUrl();
+      router.push(googleAuthUrl);
     } catch (error: any) {
       toast({
-        title: 'Google Sign-In Failed',
-        description: error.message,
+        title: 'Google Sign-Up Failed',
+        description: "Could not initiate Google Sign-Up. Please try again.",
         variant: 'destructive',
       });
-    } finally {
-      setIsGoogleLoading(false);
+       setIsGoogleLoading(false);
     }
   };
 

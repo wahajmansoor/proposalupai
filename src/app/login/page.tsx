@@ -12,7 +12,7 @@ import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
-import { signInWithGoogle } from '@/lib/firebase/auth';
+import { getGoogleAuthUrl } from '@/lib/firebase/auth';
 import { Separator } from '@/components/ui/separator';
 
 export default function LoginPage() {
@@ -26,15 +26,14 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     try {
-      await signInWithGoogle();
-      router.push('/dashboard');
+      const googleAuthUrl = await getGoogleAuthUrl();
+      router.push(googleAuthUrl);
     } catch (error: any) {
       toast({
         title: 'Google Sign-In Failed',
-        description: error.message,
+        description: "Could not initiate Google Sign-In. Please try again.",
         variant: 'destructive',
       });
-    } finally {
       setIsGoogleLoading(false);
     }
   };
