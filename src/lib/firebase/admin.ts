@@ -2,15 +2,15 @@
 import 'server-only';
 import * as admin from 'firebase-admin';
 
-if (!process.env.FIREBASE_SERVICE_ACCOUNT) {
-  throw new Error('Missing FIREBASE_SERVICE_ACCOUNT environment variable');
+if (!process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
+  throw new Error('Missing FIREBASE_SERVICE_ACCOUNT_KEY environment variable');
 }
 
 let app: admin.app.App;
 
 if (!admin.apps.length) {
   try {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT);
+    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
     // The private_key needs to have its newlines escaped in the environment variable,
     // so we replace them with actual newlines before initializing.
     if (serviceAccount.private_key) {
