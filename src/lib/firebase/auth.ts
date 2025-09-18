@@ -1,4 +1,4 @@
-import { createUserWithEmailAndPassword, updateProfile, User, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, User, sendPasswordResetEmail, GoogleAuthProvider, signInWithPopup, signInWithCustomToken } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './config';
 
@@ -89,6 +89,29 @@ export async function sendPasswordReset(email: string) {
     await sendPasswordResetEmail(auth, email);
   } catch (error) {
     console.error("Error sending password reset email:", error);
+    throw error;
+  }
+}
+
+export async function signInWithGoogleCredential(credential: string): Promise<User> {
+  try {
+    const res = await fetch('/api/auth/google', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ credential }),
+    });
+
+    if (!res.ok) {
+      const error = await res.json();
+      throw new Error(error.message || 'Failed to sign in');
+    }
+
+    const { customToken } = await res.json();
+    const userCredential = await signInWithCustomToken(auth, customToken);
+    return userCredential.user;
+
+  } catch (error) {
+    console.error("Error signing in with Google credential:", error);
     throw error;
   }
 }

@@ -4,6 +4,7 @@ import { Toaster } from '@/components/ui/toaster';
 import { Inter } from 'next/font/google';
 import { AuthProvider } from '@/context/auth-context';
 import { ProposalUpLogo } from '@/components/icons';
+import Script from 'next/script';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -26,7 +27,8 @@ export default function RootLayout({
       <head>
         <link rel="icon" href="/logo.svg" type="image/svg+xml" />
       </head>
-      <body className="font-sans antialiased">
+      <body>
+        <Script src="https://accounts.google.com/gsi/client" async defer />
         <AuthProvider>
           {children}
           <Toaster />

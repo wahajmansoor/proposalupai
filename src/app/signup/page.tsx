@@ -10,8 +10,11 @@ import { Label } from '@/components/ui/label';
 import { ProposalUpLogo, GoogleIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, XCircle, CheckCircle2 } from 'lucide-react';
-import { signUpUser, signInWithGoogle } from '@/lib/firebase/auth';
+import { signUpUser } from '@/lib/firebase/auth';
 import { cn } from '@/lib/utils';
+import { getCustomTokenForGoogleCredential } from '../lib/actions';
+import { signInWithCustomToken } from 'firebase/auth';
+import { auth } from '@/lib/firebase/config';
 
 const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => {
   return (
@@ -51,6 +54,39 @@ export default function SignupPage() {
     });
   }, [password]);
 
+  const handleCredentialResponse = async (response: google.accounts.id.CredentialResponse) => {
+    setIsGoogleLoading(true);
+    try {
+      const result = await getCustomTokenForGoogleCredential(response.credential);
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      await signInWithCustomToken(auth, result.token);
+      router.push('/dashboard');
+    } catch (error: any) {
+       toast({
+        title: 'Google Sign-In Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (window.google) {
+      window.google.accounts.id.initialize({
+        client_id: '791256189022-7711o72vvsl396h2o2k5qkk30fmal3g8.apps.googleusercontent.com',
+        callback: handleCredentialResponse,
+      });
+      window.google.accounts.id.renderButton(
+        document.getElementById("google-button-signup"),
+        { theme: "outline", size: "large", type: 'standard', width: "320" }
+      );
+    }
+  }, []);
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!fullName || !email || !password) {
@@ -87,22 +123,6 @@ export default function SignupPage() {
       setIsLoading(false);
     }
   };
-
-   const handleGoogleSignIn = async () => {
-    setIsGoogleLoading(true);
-    try {
-      await signInWithGoogle();
-      router.push('/dashboard');
-    } catch (error: any) {
-      toast({
-        title: 'Google Sign-In Failed',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsGoogleLoading(false);
-    }
-  }
 
   return (
     <div className="flex items-center justify-center min-h-screen">
@@ -176,14 +196,16 @@ export default function SignupPage() {
             </div>
           </div>
         
-          <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
-             {isGoogleLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-             ) : (
-                <GoogleIcon className="mr-2 h-4 w-4" />
-             )}
-            Google
-          </Button>
+          <div className="flex justify-center">
+            {isGoogleLoading ? (
+              <Button variant="outline" className="w-full" disabled>
+                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                 Signing in...
+              </Button>
+            ) : (
+              <div id="google-button-signup"></div>
+            )}
+          </div>
           <div className="mt-4 text-center text-sm">
             Already have an account?{' '}
             <Link href="/login" className="underline">

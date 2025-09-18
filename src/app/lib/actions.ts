@@ -8,6 +8,7 @@ import { answerClientQuestions } from '@/ai/flows/answer-client-questions';
 import { generateProposal } from '@/ai/flows/generate-proposal-from-job-analysis';
 import { suggestProposalTemplate } from '@/ai/flows/suggest-proposal-template';
 import { suggestOpeningStrategy } from '@/ai/flows/suggest-opening-strategy';
+import { getAdminAuth } from '@/lib/firebase/admin';
 
 const projectDetailsSchema = z.object({
   projectTitle: z.string().min(1, 'Project title is required.'),
@@ -135,5 +136,16 @@ export async function generateProposalAction(input: z.infer<typeof generatePropo
   } catch (error) {
     console.error(error);
     return { error: 'Failed to generate proposal.' };
+  }
+}
+
+export async function getCustomTokenForGoogleCredential(credential: string): Promise<{token: string} | {error: string}> {
+  try {
+    const adminAuth = getAdminAuth();
+    const customToken = await adminAuth.createCustomToken(credential);
+    return { token: customToken };
+  } catch (error: any) {
+    console.error('Error creating custom token:', error);
+    return { error: error.message || 'Failed to create custom token.' };
   }
 }

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -10,10 +10,11 @@ import { Label } from '@/components/ui/label';
 import { ProposalUpLogo, GoogleIcon } from '@/components/icons';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword, signInWithCustomToken } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { signInWithGoogle } from '@/lib/firebase/auth';
 import { Separator } from '@/components/ui/separator';
+import { getCustomTokenForGoogleCredential } from '../lib/actions';
 
 export default function LoginPage() {
   const router = useRouter();
@@ -22,6 +23,39 @@ export default function LoginPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  
+  const handleCredentialResponse = async (response: google.accounts.id.CredentialResponse) => {
+    setIsGoogleLoading(true);
+    try {
+      const result = await getCustomTokenForGoogleCredential(response.credential);
+      if (result.error) {
+        throw new Error(result.error);
+      }
+      await signInWithCustomToken(auth, result.token);
+      router.push('/dashboard');
+    } catch (error: any) {
+       toast({
+        title: 'Google Sign-In Failed',
+        description: error.message,
+        variant: 'destructive',
+      });
+    } finally {
+      setIsGoogleLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (window.google) {
+      window.google.accounts.id.initialize({
+        client_id: '791256189022-7711o72vvsl396h2o2k5qkk30fmal3g8.apps.googleusercontent.com',
+        callback: handleCredentialResponse,
+      });
+      window.google.accounts.id.renderButton(
+        document.getElementById("google-button"),
+        { theme: "outline", size: "large", type: 'standard', width: "320" }
+      );
+    }
+  }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -40,22 +74,6 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
-
-  const handleGoogleSignIn = async () => {
-    setIsGoogleLoading(true);
-    try {
-      await signInWithGoogle();
-      router.push('/dashboard');
-    } catch (error: any) {
-      toast({
-        title: 'Google Sign-In Failed',
-        description: error.message,
-        variant: 'destructive',
-      });
-    } finally {
-      setIsGoogleLoading(false);
-    }
-  }
 
   return (
     <div className="flex items-center justify-center min-h-screen">
@@ -115,14 +133,16 @@ export default function LoginPage() {
             </div>
           </div>
         
-          <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
-             {isGoogleLoading ? (
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-             ) : (
-                <GoogleIcon className="mr-2 h-4 w-4" />
-             )}
-            Google
-          </Button>
+          <div className="flex justify-center">
+            {isGoogleLoading ? (
+              <Button variant="outline" className="w-full" disabled>
+                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                 Signing in...
+              </Button>
+            ) : (
+              <div id="google-button"></div>
+            )}
+          </div>
          
           <div className="mt-4 text-center text-sm">
             Don&apos;t have an account?{' '}
