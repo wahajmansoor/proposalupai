@@ -1,6 +1,9 @@
 'use server';
 import 'server-only';
 import * as admin from 'firebase-admin';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 if (!process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
   throw new Error('Missing FIREBASE_SERVICE_ACCOUNT_KEY environment variable');
@@ -10,8 +13,9 @@ let app: admin.app.App;
 
 if (!admin.apps.length) {
   try {
-    const serviceAccount = JSON.parse(process.env.FIREBASE_SERVICE_ACCOUNT_KEY);
-    // Replace escaped newlines with actual newlines in the private key
+    const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    const serviceAccount = JSON.parse(serviceAccountString);
+    
     if (serviceAccount.private_key) {
       serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
     }
