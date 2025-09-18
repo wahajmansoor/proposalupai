@@ -10,11 +10,8 @@ import { Label } from '@/components/ui/label';
 import { ProposalUpLogo, GoogleIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, XCircle, CheckCircle2 } from 'lucide-react';
-import { signUpUser } from '@/lib/firebase/auth';
+import { signUpUser, signInWithGoogle } from '@/lib/firebase/auth';
 import { cn } from '@/lib/utils';
-import { getCustomTokenForGoogleCredential } from '../lib/actions';
-import { signInWithCustomToken } from 'firebase/auth';
-import { auth } from '@/lib/firebase/config';
 
 const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => {
   return (
@@ -54,17 +51,13 @@ export default function SignupPage() {
     });
   }, [password]);
 
-  const handleCredentialResponse = async (response: google.accounts.id.CredentialResponse) => {
+  const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     try {
-      const result = await getCustomTokenForGoogleCredential(response.credential);
-      if (result.error) {
-        throw new Error(result.error);
-      }
-      await signInWithCustomToken(auth, result.token);
+      await signInWithGoogle();
       router.push('/dashboard');
     } catch (error: any) {
-       toast({
+      toast({
         title: 'Google Sign-In Failed',
         description: error.message,
         variant: 'destructive',
@@ -73,19 +66,6 @@ export default function SignupPage() {
       setIsGoogleLoading(false);
     }
   };
-
-  useEffect(() => {
-    if (window.google) {
-      window.google.accounts.id.initialize({
-        client_id: '791256189022-7711o72vvsl396h2o2k5qkk30fmal3g8.apps.googleusercontent.com',
-        callback: handleCredentialResponse,
-      });
-      window.google.accounts.id.renderButton(
-        document.getElementById("google-button-signup"),
-        { theme: "outline", size: "large", type: 'standard', width: "320" }
-      );
-    }
-  }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -183,29 +163,12 @@ export default function SignupPage() {
                 {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Create an account
               </Button>
+               <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
+                {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
+                Sign up with Google
+              </Button>
             </div>
           </form>
-           <div className="relative my-4">
-            <div className="absolute inset-0 flex items-center">
-                <span className="w-full border-t" />
-            </div>
-            <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-card px-2 text-muted-foreground">
-                Or continue with
-                </span>
-            </div>
-          </div>
-        
-          <div className="flex justify-center">
-            {isGoogleLoading ? (
-              <Button variant="outline" className="w-full" disabled>
-                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                 Signing in...
-              </Button>
-            ) : (
-              <div id="google-button-signup"></div>
-            )}
-          </div>
           <div className="mt-4 text-center text-sm">
             Already have an account?{' '}
             <Link href="/login" className="underline">

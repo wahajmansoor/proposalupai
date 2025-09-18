@@ -138,14 +138,3 @@ export async function generateProposalAction(input: z.infer<typeof generatePropo
     return { error: 'Failed to generate proposal.' };
   }
 }
-
-export async function getCustomTokenForGoogleCredential(credential: string): Promise<{token: string} | {error: string}> {
-  try {
-    const adminAuth = getAdminAuth();
-    const customToken = await adminAuth.createCustomToken(credential);
-    return { token: customToken };
-  } catch (error: any) {
-    console.error('Error creating custom token:', error);
-    return { error: error.message || 'Failed to create custom token.' };
-  }
-}
