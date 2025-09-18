@@ -9,7 +9,6 @@ if (!serviceAccountString) {
 }
 
 let serviceAccount: admin.ServiceAccount;
-
 try {
   const parsedServiceAccount = JSON.parse(serviceAccountString);
   // The private_key field has newline characters that need to be un-escaped
@@ -30,22 +29,22 @@ try {
   );
 }
 
-if (!admin.apps.length) {
-  admin.initializeApp({
-    credential: admin.credential.cert(serviceAccount),
-  });
+function initializeAdminApp() {
+    if (admin.apps.length === 0) {
+        admin.initializeApp({
+            credential: admin.credential.cert(serviceAccount),
+        });
+    }
+    return admin.app();
 }
 
-const adminAuth = admin.auth();
-const adminDb = admin.firestore();
+const adminApp = initializeAdminApp();
+const adminAuth = admin.auth(adminApp);
+const adminDb = admin.firestore(adminApp);
 
 export { adminAuth, adminDb, admin };
 
 export async function getAdminAuth() {
-  if (admin.apps.length === 0) {
-    admin.initializeApp({
-      credential: admin.credential.cert(serviceAccount),
-    });
-  }
-  return admin.auth();
+  // The app is already initialized, just return the auth instance.
+  return adminAuth;
 }
