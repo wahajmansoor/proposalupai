@@ -2,40 +2,31 @@
 import 'server-only';
 import * as admin from 'firebase-admin';
 
-const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
-
-if (!serviceAccountString) {
-  throw new Error('Missing FIREBASE_SERVICE_ACCOUNT environment variable');
-}
-
-let serviceAccount: admin.ServiceAccount;
-try {
-  const parsedServiceAccount = JSON.parse(serviceAccountString);
-  // The private_key field has newline characters that need to be un-escaped
-  if (parsedServiceAccount.private_key) {
-    parsedServiceAccount.private_key = parsedServiceAccount.private_key.replace(
-      /\\n/g,
-      '\n'
-    );
-  }
-  serviceAccount = parsedServiceAccount;
-} catch (error: any) {
-  console.error(
-    'Failed to parse FIREBASE_SERVICE_ACCOUNT. Make sure it is a valid JSON string.',
-    error
-  );
-  throw new Error(
-    'Failed to parse FIREBASE_SERVICE_ACCOUNT. Check server logs for details.'
-  );
-}
-
 function initializeAdminApp() {
-    if (admin.apps.length === 0) {
-        admin.initializeApp({
-            credential: admin.credential.cert(serviceAccount),
-        });
-    }
+  if (admin.apps.length > 0) {
     return admin.app();
+  }
+
+  const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT;
+  if (!serviceAccountString) {
+    throw new Error('Missing FIREBASE_SERVICE_ACCOUNT environment variable');
+  }
+
+  try {
+    const serviceAccount = JSON.parse(serviceAccountString);
+    if (serviceAccount.private_key) {
+      serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+    }
+
+    admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
+    });
+
+    return admin.app();
+  } catch (error: any) {
+     console.error('Failed to parse or initialize Firebase Admin SDK:', error);
+     throw new Error('Failed to initialize Firebase Admin SDK. Check server logs for details.');
+  }
 }
 
 const adminApp = initializeAdminApp();
