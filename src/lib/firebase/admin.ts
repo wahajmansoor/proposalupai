@@ -21,7 +21,9 @@ if (!admin.apps.length) {
     });
   } catch (error: any) {
     console.error('Failed to parse or initialize Firebase Admin SDK:', error);
-    throw new Error('Failed to initialize Firebase Admin SDK. Check server logs for details.');
+    throw new Error(
+      'Failed to initialize Firebase Admin SDK. Check server logs for details.'
+    );
   }
 } else {
   app = admin.app();
