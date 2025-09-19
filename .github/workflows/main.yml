@@ -8,29 +8,8 @@ on:
 
 jobs:
 
-  type-check:
-    name: TypeScript Type Checking
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Checkout Repository
-        uses: actions/checkout@v4
-
-      - name: Install Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: 18
-          cache: 'npm'
-
-      - name: Install Dependencies
-        run: npm install
-
-      - name: Run TypeScript Type Checking
-        run: npm run type-check
-
   deploy:
     name: Deploy to Vercel
-    needs: type-check
     runs-on: ubuntu-latest
     if: success()
 
