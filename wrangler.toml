@@ -1,5 +1,0 @@
-# wrangler.toml
-name = 'proposalup'
-compatibility_date = '2025-09-19'
-compatibility_flags = ['nodejs_compat']
-pages_build_output_dir = '.vercel/output/static'
