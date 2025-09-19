@@ -6,7 +6,7 @@
     "dev": "next dev --turbopack -p 9002",
     "build": "next build",
     "cf:build": "npx @cloudflare/next-on-pages",
-    "cf:deploy": "echo 'Deploy step handled by Cloudflare Pages platform.'",
+    "cf:deploy": "npx wrangler pages deploy .vercel/output/static",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
@@ -60,6 +60,7 @@
   },
   "devDependencies": {
     "@cloudflare/next-on-pages": "^1.13.16",
+    "@cloudflare/workers-types": "^4.20250919.0",
     "@types/gapi": "^0.0.47",
     "@types/node": "^20",
     "@types/react": "^18",
@@ -67,6 +68,7 @@
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "tsx": "^4.16.2",
-    "typescript": "^5"
+    "typescript": "^5",
+    "wrangler": "^4.38.0"
   }
 }
