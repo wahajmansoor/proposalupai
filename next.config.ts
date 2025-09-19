@@ -1,12 +1,10 @@
-import type { NextConfig } from 'next';
-import { setupDevPlatform } from '@cloudflare/next-on-pages/next-dev';
+import type {NextConfig} from 'next';
 
 const nextConfig: NextConfig = {
+  /* config options here */
   experimental: {
     serverActions: {
-      // Optional: Cloudflare-supported options
-      // bodySizeLimit: "2mb",
-      // allowedOrigins: ["https://yourdomain.com"],
+      maxDuration: 120, // Increase timeout to 2 minutes for AI operations
     },
   },
   typescript: {
@@ -45,8 +43,7 @@ const nextConfig: NextConfig = {
   },
 };
 
-if (process.env.NODE_ENV === 'development') {
-  await setupDevPlatform();
-}
+import { initOpenNextCloudflareForDev } from "@opennextjs/cloudflare";
+initOpenNextCloudflareForDev();
 
 export default nextConfig;
