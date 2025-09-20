@@ -4,11 +4,16 @@ import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 
 export async function GET(req: NextRequest) {
+  // Dynamically determine the redirect URI from the request headers
+  const protocol = req.headers.get('x-forwarded-proto') || 'http';
+  const host = req.headers.get('host');
+  const redirectUri = `${protocol}://${host}/api/auth/callback`;
+
   // Initialize the OAuth2Client inside the handler to ensure env vars are loaded.
   const oAuth2Client = new OAuth2Client(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
-    `${process.env.NEXT_PUBLIC_URL}/api/auth/callback`
+    redirectUri
   );
 
   const { searchParams } = new URL(req.url);
@@ -88,6 +93,7 @@ export async function GET(req: NextRequest) {
 
   } catch (err: any) {
     console.error('Failed to exchange code for token:', err.message);
+    console.error('Redirect URI used:', redirectUri);
     return NextResponse.redirect(`${process.env.NEXT_PUBLIC_URL}/login?error=token-exchange-failed`);
   }
 }
