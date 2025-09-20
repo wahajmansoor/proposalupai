@@ -143,6 +143,7 @@ export async function generateProposalAction(input: z.infer<typeof generatePropo
 }
 
 export async function getGoogleAuthUrl() {
+    // Initialize the OAuth2Client inside the action to ensure env vars are loaded.
     const oAuth2Client = new OAuth2Client(
         process.env.GOOGLE_CLIENT_ID,
         process.env.GOOGLE_CLIENT_SECRET,
