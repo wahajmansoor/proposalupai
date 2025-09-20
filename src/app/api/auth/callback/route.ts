@@ -2,14 +2,14 @@ import { NextRequest, NextResponse } from 'next/server';
 import { OAuth2Client } from 'google-auth-library';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { headers } from 'next/headers';
 
 export async function GET(req: NextRequest) {
-  // Dynamically determine the redirect URI from the request headers
-  const protocol = req.headers.get('x-forwarded-proto') || 'http';
-  const host = req.headers.get('host');
+  const headersList = headers();
+  const protocol = headersList.get('x-forwarded-proto') || 'http';
+  const host = headersList.get('host');
   const redirectUri = `${protocol}://${host}/api/auth/callback`;
 
-  // Initialize the OAuth2Client inside the handler to ensure env vars are loaded.
   const oAuth2Client = new OAuth2Client(
     process.env.GOOGLE_CLIENT_ID,
     process.env.GOOGLE_CLIENT_SECRET,
@@ -22,11 +22,11 @@ export async function GET(req: NextRequest) {
 
   if (error) {
     console.error('Error from Google:', error);
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_URL}/login?error=google-auth-failed`);
+    return NextResponse.redirect(new URL('/login?error=google-auth-failed', `${protocol}://${host}`));
   }
 
   if (!code) {
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_URL}/login?error=missing-code`);
+    return NextResponse.redirect(new URL('/login?error=missing-code', `${protocol}://${host}`));
   }
 
   try {
@@ -51,11 +51,9 @@ export async function GET(req: NextRequest) {
     let userRecord;
 
     try {
-      // Use getUser instead of getUserByEmail for a more direct lookup
       userRecord = await adminAuth.getUser(uid);
     } catch (e: any) {
       if (e.code === 'auth/user-not-found') {
-        // User doesn't exist, create them with the Google UID
         userRecord = await adminAuth.createUser({
           uid,
           email,
@@ -64,14 +62,11 @@ export async function GET(req: NextRequest) {
           photoURL: picture,
           disabled: false,
         });
-
       } else {
-        // For other errors, re-throw
         throw e;
       }
     }
     
-    // Ensure Firestore document exists for both new and existing users
     const userRef = doc(adminDb, 'users', userRecord.uid);
     const userDoc = await getDoc(userRef);
     if (!userDoc.exists()) {
@@ -84,9 +79,8 @@ export async function GET(req: NextRequest) {
         });
     }
 
-
     const customToken = await adminAuth.createCustomToken(userRecord.uid);
-    const redirectUrl = new URL('/auth/callback-client', process.env.NEXT_PUBLIC_URL);
+    const redirectUrl = new URL('/auth/callback-client', `${protocol}://${host}`);
     redirectUrl.searchParams.set('token', customToken);
 
     return NextResponse.redirect(redirectUrl.toString());
@@ -94,6 +88,6 @@ export async function GET(req: NextRequest) {
   } catch (err: any) {
     console.error('Failed to exchange code for token:', err.message);
     console.error('Redirect URI used:', redirectUri);
-    return NextResponse.redirect(`${process.env.NEXT_PUBLIC_URL}/login?error=token-exchange-failed`);
+    return NextResponse.redirect(new URL('/login?error=token-exchange-failed', `${protocol}://${host}`));
   }
 }

@@ -9,6 +9,7 @@ import { generateProposal } from '@/ai/flows/generate-proposal-from-job-analysis
 import { suggestProposalTemplate } from '@/ai/flows/suggest-proposal-template';
 import { suggestOpeningStrategy } from '@/ai/flows/suggest-opening-strategy';
 import { OAuth2Client } from 'google-auth-library';
+import { headers } from 'next/headers';
 
 const projectDetailsSchema = z.object({
   projectTitle: z.string().min(1, 'Project title is required.'),
@@ -140,11 +141,15 @@ export async function generateProposalAction(input: z.infer<typeof generatePropo
 }
 
 export async function getGoogleAuthUrl() {
-    // Initialize the OAuth2Client inside the action to ensure env vars are loaded.
+    const headersList = headers();
+    const protocol = headersList.get('x-forwarded-proto') || 'http';
+    const host = headersList.get('host');
+    const redirectUri = `${protocol}://${host}/api/auth/callback`;
+
     const oAuth2Client = new OAuth2Client(
         process.env.GOOGLE_CLIENT_ID,
         process.env.GOOGLE_CLIENT_SECRET,
-        `${process.env.NEXT_PUBLIC_URL}/api/auth/callback`
+        redirectUri
     );
 
     const authorizeUrl = oAuth2Client.generateAuthUrl({
