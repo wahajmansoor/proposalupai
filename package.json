@@ -41,7 +41,7 @@
     "clsx": "^2.1.1",
     "date-fns": "^3.6.0",
     "embla-carousel-react": "^8.1.7",
-    "firebase": "^10.12.4",
+    "firebase": "^12.3.0",
     "firebase-admin": "^12.2.0",
     "google-auth-library": "^9.11.0",
     "lucide-react": "^0.417.0",
