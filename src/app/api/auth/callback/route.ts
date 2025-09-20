@@ -55,7 +55,7 @@ export async function GET(req: NextRequest) {
     
     try {
       userRecord = await adminAuth.getUserByEmail(email);
-      // Update existing user's info
+      // Update existing user's info in Firebase Auth
       await adminAuth.updateUser(userRecord.uid, {
         displayName: name,
         photoURL: picture,
@@ -80,7 +80,7 @@ export async function GET(req: NextRequest) {
     const userRef = adminDb.collection('users').doc(userRecord.uid);
     const userDoc = await userRef.get();
 
-    // Prepare data, ensuring no undefined values are sent to Firestore
+    // Prepare data for Firestore, ensuring no undefined values are sent
     const userData: { [key: string]: any } = {
         uid: userRecord.uid,
         email: userRecord.email,
@@ -88,12 +88,14 @@ export async function GET(req: NextRequest) {
     if (name) userData.displayName = name;
     if (picture) userData.photoURL = picture;
 
+    // This block now correctly handles both creation and updates.
     if (!userDoc.exists) {
-        // If doc doesn't exist, create it with all available data
+        // If doc doesn't exist, create it with all available data + createdAt
         userData.createdAt = new Date();
         await userRef.set(userData);
     } else {
         // If doc exists, update it with the latest info from Google
+        // This ensures the photoURL is always current.
         await userRef.update(userData);
     }
 
