@@ -63,17 +63,12 @@ export default function DashboardLayout({
     );
   }
   
-  const hasActiveSubscription = userProfile.subscriptionStatus === "active";
-  const isTrialActive = userProfile.trialEndDate && new Date() < userProfile.trialEndDate;
-  const isBlocked = !hasActiveSubscription && !isTrialActive && !["/dashboard/pricing", "/dashboard/profile"].includes(pathname);
-
-
   return (
     <div className="flex flex-col min-h-screen bg-[#f9f9f9]">
       <Header />
       <TrialDialog open={showTrialDialog} />
       <main className="flex-1 p-4 md:p-8 container mx-auto">
-        {isBlocked ? null : children}
+        {children}
       </main>
     </div>
   );
