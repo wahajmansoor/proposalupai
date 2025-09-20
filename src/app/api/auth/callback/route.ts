@@ -52,14 +52,19 @@ export async function GET(req: NextRequest) {
 
     const { sub: uid, email, name, picture, email_verified } = payload;
     let userRecord: UserRecord;
-    let isNewUser = false;
-
+    
     try {
       userRecord = await adminAuth.getUserByEmail(email);
+      // Update existing user's info
+      await adminAuth.updateUser(userRecord.uid, {
+        displayName: name,
+        photoURL: picture,
+      });
+
     } catch (e: any) {
       if (e.code === 'auth/user-not-found') {
+        // Create new user if they don't exist
         userRecord = await adminAuth.createUser({
-            // Use email as UID for consistency if possible, but Google sub is safer
             uid: uid, 
             email,
             emailVerified: email_verified,
@@ -67,23 +72,15 @@ export async function GET(req: NextRequest) {
             photoURL: picture,
             disabled: false,
         });
-        isNewUser = true;
       } else {
         throw e;
       }
-    }
-
-    // Ensure Auth profile is up-to-date
-    if (!isNewUser) {
-        await adminAuth.updateUser(userRecord.uid, {
-            displayName: name,
-            photoURL: picture,
-        });
     }
     
     const userRef = adminDb.collection('users').doc(userRecord.uid);
     const userDoc = await userRef.get();
 
+    // Prepare data, ensuring no undefined values are sent to Firestore
     const userData: { [key: string]: any } = {
         uid: userRecord.uid,
         email: userRecord.email,
@@ -92,10 +89,11 @@ export async function GET(req: NextRequest) {
     if (picture) userData.photoURL = picture;
 
     if (!userDoc.exists) {
+        // If doc doesn't exist, create it with all available data
         userData.createdAt = new Date();
         await userRef.set(userData);
     } else {
-        // Always update with the latest info from Google on login
+        // If doc exists, update it with the latest info from Google
         await userRef.update(userData);
     }
 
