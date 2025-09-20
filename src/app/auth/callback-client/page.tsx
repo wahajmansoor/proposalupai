@@ -17,6 +17,10 @@ function AuthCallback() {
     if (token) {
       signInWithCustomToken(auth, token)
         .then(() => {
+          toast({
+            title: 'Successfully signed in!',
+            description: "You will be redirected to your dashboard.",
+          });
           router.push('/dashboard');
         })
         .catch((error) => {

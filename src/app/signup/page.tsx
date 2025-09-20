@@ -91,6 +91,10 @@ export default function SignupPage() {
 
     try {
       await signUpUser(fullName, email, password);
+      toast({
+        title: 'Account Created!',
+        description: "Welcome! We're glad to have you.",
+      });
       router.push('/dashboard');
     } catch (error: any) {
       const errorMessage = error.message || 'An unexpected error occurred.';
