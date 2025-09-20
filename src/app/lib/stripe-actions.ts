@@ -2,21 +2,18 @@
 'use server';
 
 import { stripe } from '@/lib/stripe/config';
-import { auth, db } from '@/lib/firebase/config';
-import { doc, getDoc } from 'firebase/firestore';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
+import { getCurrentUser } from '@/lib/firebase/server-auth';
 
 export async function createCheckoutSession() {
-  const user = auth.currentUser;
-  if (!user) {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
     throw new Error('User not authenticated');
   }
 
-  const userRef = doc(db, 'users', user.uid);
-  const userDoc = await getDoc(userRef);
-  const userData = userDoc.data();
-  const stripeCustomerId = userData?.stripeCustomerId;
+  const { userDoc } = currentUser;
+  const stripeCustomerId = userDoc?.stripeCustomerId;
 
   const headersList = headers();
   const protocol = headersList.get('x-forwarded-proto') || 'http';
@@ -47,15 +44,13 @@ export async function createCheckoutSession() {
 }
 
 export async function createCustomerPortalSession() {
-    const user = auth.currentUser;
-    if (!user) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
         throw new Error('User not authenticated');
     }
 
-    const userRef = doc(db, 'users', user.uid);
-    const userDoc = await getDoc(userRef);
-    const userData = userDoc.data();
-    const stripeCustomerId = userData?.stripeCustomerId;
+    const { userDoc } = currentUser;
+    const stripeCustomerId = userDoc?.stripeCustomerId;
 
     if (!stripeCustomerId) {
         throw new Error('Stripe customer ID not found for user');

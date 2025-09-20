@@ -1,8 +1,10 @@
+
 import { NextRequest, NextResponse } from 'next/server';
 import { OAuth2Client } from 'google-auth-library';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { headers } from 'next/headers';
 import type { UserRecord } from 'firebase-admin/auth';
+import { stripe } from '@/lib/stripe/config';
 
 export async function GET(req: NextRequest) {
   const headersList = headers();
@@ -54,12 +56,10 @@ export async function GET(req: NextRequest) {
     let userRecord: UserRecord;
     
     const displayName = name;
-    // Use the picture from Google, or null if it doesn't exist.
     const photoURL = picture || null;
 
     try {
       userRecord = await adminAuth.getUserByEmail(email);
-      // Update existing user's info in Firebase Auth
       await adminAuth.updateUser(userRecord.uid, {
         displayName: displayName,
         photoURL: photoURL,
@@ -67,7 +67,6 @@ export async function GET(req: NextRequest) {
 
     } catch (e: any) {
       if (e.code === 'auth/user-not-found') {
-        // Create new user if they don't exist
         userRecord = await adminAuth.createUser({
             uid: uid, 
             email,
@@ -84,7 +83,6 @@ export async function GET(req: NextRequest) {
     const userRef = adminDb.collection('users').doc(userRecord.uid);
     const userDoc = await userRef.get();
 
-    // Prepare data for Firestore, ensuring no undefined values are sent
     const userData: { [key: string]: any } = {
         uid: userRecord.uid,
         email: userRecord.email,
@@ -92,21 +90,38 @@ export async function GET(req: NextRequest) {
         photoURL: photoURL,
     };
     
-    // This block now correctly handles both creation and updates.
     if (!userDoc.exists) {
-        // If doc doesn't exist, create it with all available data + createdAt
+        const trialEndDate = new Date();
+        trialEndDate.setDate(trialEndDate.getDate() + 2); // 2-day trial
+        
+        const customer = await stripe.customers.create({
+            email: userRecord.email!,
+            name: userRecord.displayName || undefined,
+        });
+
         userData.createdAt = new Date();
+        userData.stripeCustomerId = customer.id;
+        userData.trialEndDate = trialEndDate;
+
         await userRef.set(userData, { merge: true });
     } else {
-        // If doc exists, update it with the latest info from Google
         await userRef.update(userData);
     }
 
     const customToken = await adminAuth.createCustomToken(userRecord.uid);
+
+    // Create a session cookie
+    const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
+    const sessionCookie = await adminAuth.createSessionCookie(tokens.id_token, { expiresIn });
+    const options = { name: '__session', value: sessionCookie, maxAge: expiresIn, httpOnly: true, secure: true };
+
     const redirectUrl = new URL('/auth/callback-client', `${protocol}://${host}`);
     redirectUrl.searchParams.set('token', customToken);
 
-    return NextResponse.redirect(redirectUrl.toString());
+    const response = NextResponse.redirect(redirectUrl.toString());
+    response.cookies.set(options);
+
+    return response;
 
   } catch (err: any) {
     console.error('Failed to exchange code for token:', err);
