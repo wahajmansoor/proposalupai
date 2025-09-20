@@ -44,6 +44,12 @@ export function TrialDialog({ open }: TrialDialogProps) {
       <DialogContent
         className="max-w-md p-0 overflow-hidden"
         hideCloseButton={true}
+        onInteractOutside={(e) => {
+            e.preventDefault();
+        }}
+        onEscapeKeyDown={(e) => {
+            e.preventDefault();
+        }}
       >
         <div className="bg-[#FF69B4] p-8 text-center text-white">
             <ProposalUpLogo className="h-16 w-16 mx-auto mb-4" />
@@ -92,10 +98,6 @@ const OriginalDialogContent = React.forwardRef<
         className
       )}
       {...props}
-      onInteractOutside={(e) => {
-        // Prevent closing on outside click
-        e.preventDefault();
-      }}
     >
       {children}
       {!hideCloseButton && (
