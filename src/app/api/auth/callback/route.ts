@@ -54,8 +54,8 @@ export async function GET(req: NextRequest) {
     let userRecord: UserRecord;
     
     const displayName = name;
-    // Use the provided picture, or a default placeholder if it doesn't exist.
-    const photoURL = picture || `https://picsum.photos/seed/${uid}/96/96`;
+    // Use the picture from Google, or null if it doesn't exist.
+    const photoURL = picture || null;
 
     try {
       userRecord = await adminAuth.getUserByEmail(email);
@@ -96,10 +96,9 @@ export async function GET(req: NextRequest) {
     if (!userDoc.exists) {
         // If doc doesn't exist, create it with all available data + createdAt
         userData.createdAt = new Date();
-        await userRef.set(userData);
+        await userRef.set(userData, { merge: true });
     } else {
         // If doc exists, update it with the latest info from Google
-        // This ensures the photoURL is always current.
         await userRef.update(userData);
     }
 
