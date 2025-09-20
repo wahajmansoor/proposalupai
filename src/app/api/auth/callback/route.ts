@@ -3,13 +3,13 @@ import { OAuth2Client } from 'google-auth-library';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 
-const oAuth2Client = new OAuth2Client(
-  process.env.GOOGLE_CLIENT_ID,
-  process.env.GOOGLE_CLIENT_SECRET,
-  `${process.env.NEXT_PUBLIC_URL}/api/auth/callback`
-);
-
 export async function GET(req: NextRequest) {
+  const oAuth2Client = new OAuth2Client(
+    process.env.GOOGLE_CLIENT_ID,
+    process.env.GOOGLE_CLIENT_SECRET,
+    `${process.env.NEXT_PUBLIC_URL}/api/auth/callback`
+  );
+
   const { searchParams } = new URL(req.url);
   const code = searchParams.get('code');
   const error = searchParams.get('error');
