@@ -62,7 +62,7 @@ export default function PricingPage() {
     <div className="max-w-md mx-auto">
       <Card className="shadow-lg">
         <CardHeader className="text-center">
-          <CardTitle className="text-3xl font-bold">Upgrade to Pro</CardTitle>
+          <CardTitle className="text-3xl font-bold">Proposal Up Pro</CardTitle>
           <CardDescription>
             {userProfile?.trialEndDate && new Date() < userProfile.trialEndDate 
               ? "Your free trial has ended. Upgrade to continue creating proposals."
