@@ -2,6 +2,9 @@ import { NextRequest, NextResponse } from 'next/server';
 import { OAuth2Client } from 'google-auth-library';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 export async function GET(req: NextRequest) {
   const oAuth2Client = new OAuth2Client(
@@ -45,10 +48,11 @@ export async function GET(req: NextRequest) {
     let userRecord;
 
     try {
-      userRecord = await adminAuth.getUserByEmail(email);
+      // Use getUser instead of getUserByEmail for a more direct lookup
+      userRecord = await adminAuth.getUser(uid);
     } catch (e: any) {
       if (e.code === 'auth/user-not-found') {
-        // User doesn't exist, create them
+        // User doesn't exist, create them with the Google UID
         userRecord = await adminAuth.createUser({
           uid,
           email,
@@ -58,8 +62,16 @@ export async function GET(req: NextRequest) {
           disabled: false,
         });
 
-        // Also create a document in Firestore
-        const userRef = doc(adminDb, 'users', userRecord.uid);
+      } else {
+        // For other errors, re-throw
+        throw e;
+      }
+    }
+    
+    // Ensure Firestore document exists for both new and existing users
+    const userRef = doc(adminDb, 'users', userRecord.uid);
+    const userDoc = await getDoc(userRef);
+    if (!userDoc.exists()) {
         await setDoc(userRef, {
             uid: userRecord.uid,
             email: userRecord.email,
@@ -67,11 +79,8 @@ export async function GET(req: NextRequest) {
             photoURL: userRecord.photoURL,
             createdAt: serverTimestamp(),
         });
-
-      } else {
-        throw e;
-      }
     }
+
 
     const customToken = await adminAuth.createCustomToken(userRecord.uid);
     const redirectUrl = new URL('/auth/callback-client', process.env.NEXT_PUBLIC_URL);
