@@ -4,9 +4,6 @@
 import {
   Dialog,
   DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { createCheckoutSession } from "@/app/lib/stripe-actions";
@@ -14,6 +11,10 @@ import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { Loader2 } from "lucide-react";
 import { ProposalUpLogo } from "./icons";
+import * as React from "react"
+import * as DialogPrimitive from "@radix-ui/react-dialog"
+import { X } from "lucide-react"
+import { cn } from "@/lib/utils"
 
 interface TrialDialogProps {
   open: boolean;
@@ -41,7 +42,7 @@ export function TrialDialog({ open }: TrialDialogProps) {
 
   return (
     <Dialog open={open}>
-      <DialogContent
+      <CustomDialogContent
         className="max-w-md p-0 overflow-hidden"
         hideCloseButton={true}
         onInteractOutside={(e) => {
@@ -55,11 +56,12 @@ export function TrialDialog({ open }: TrialDialogProps) {
             <ProposalUpLogo className="h-16 w-16 mx-auto mb-4" />
           <h2 className="text-2xl font-bold">Start Your Free Trial</h2>
           <p className="text-sm opacity-90">
-            Unlock all features for 2 days. No commitment, cancel anytime.
+            Unlock all features. No commitment, cancel anytime.
           </p>
         </div>
         <div className="p-8 bg-card">
           <div className="text-center mb-6">
+            <p className="font-semibold text-muted-foreground">2 days free trial</p>
             <span className="text-5xl font-extrabold text-foreground">$20</span>
             <span className="text-muted-foreground">/ month</span>
           </div>
@@ -74,18 +76,14 @@ export function TrialDialog({ open }: TrialDialogProps) {
             {isSubmitting ? "Redirecting..." : "Start a 2-day free trial"}
           </Button>
         </div>
-      </DialogContent>
+      </CustomDialogContent>
     </Dialog>
   );
 }
 
-// Small modification to DialogContent to allow hiding the close button
-import * as React from "react"
-import * as DialogPrimitive from "@radix-ui/react-dialog"
-import { X } from "lucide-react"
-import { cn } from "@/lib/utils"
 
-const OriginalDialogContent = React.forwardRef<
+// Custom DialogContent to allow hiding the close button
+const CustomDialogContent = React.forwardRef<
   React.ElementRef<typeof DialogPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof DialogPrimitive.Content> & { hideCloseButton?: boolean }
 >(({ className, children, hideCloseButton, ...props }, ref) => (
@@ -109,6 +107,4 @@ const OriginalDialogContent = React.forwardRef<
     </DialogPrimitive.Content>
   </DialogPrimitive.Portal>
 ))
-OriginalDialogContent.displayName = DialogPrimitive.Content.displayName
-// @ts-ignore
-Dialog.Content = OriginalDialogContent;
+CustomDialogContent.displayName = DialogPrimitive.Content.displayName;
