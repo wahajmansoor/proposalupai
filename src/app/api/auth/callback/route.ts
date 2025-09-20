@@ -20,13 +20,17 @@ export async function GET(req: NextRequest) {
   const code = searchParams.get('code');
   const error = searchParams.get('error');
 
+  const errorRedirectUrl = new URL('/login', `${protocol}://${host}`);
+
   if (error) {
     console.error('Error from Google:', error);
-    return NextResponse.redirect(new URL('/login?error=google-auth-failed', `${protocol}://${host}`));
+    errorRedirectUrl.searchParams.set('error', 'google-auth-failed');
+    return NextResponse.redirect(errorRedirectUrl);
   }
 
   if (!code) {
-    return NextResponse.redirect(new URL('/login?error=missing-code', `${protocol}://${host}`));
+    errorRedirectUrl.searchParams.set('error', 'missing-code');
+    return NextResponse.redirect(errorRedirectUrl);
   }
 
   try {
@@ -47,26 +51,30 @@ export async function GET(req: NextRequest) {
       throw new Error('Invalid ID token payload');
     }
 
-    const { sub: uid, email, name, picture } = payload;
+    const { sub: uid, email, name, picture, email_verified } = payload;
     let userRecord;
 
     try {
+      // Check if user exists by UID first
       userRecord = await adminAuth.getUser(uid);
     } catch (e: any) {
       if (e.code === 'auth/user-not-found') {
+        // If user does not exist, create them with the Google UID
         userRecord = await adminAuth.createUser({
           uid,
           email,
-          emailVerified: true,
+          emailVerified: email_verified,
           displayName: name,
           photoURL: picture,
           disabled: false,
         });
       } else {
+        // Rethrow other errors
         throw e;
       }
     }
     
+    // Ensure Firestore document exists
     const userRef = doc(adminDb, 'users', userRecord.uid);
     const userDoc = await getDoc(userRef);
     if (!userDoc.exists()) {
@@ -87,7 +95,8 @@ export async function GET(req: NextRequest) {
 
   } catch (err: any) {
     console.error('Failed to exchange code for token:', err.message);
-    console.error('Redirect URI used:', redirectUri);
-    return NextResponse.redirect(new URL('/login?error=token-exchange-failed', `${protocol}://${host}`));
+    errorRedirectUrl.searchParams.set('error', 'token-exchange-failed');
+    errorRedirectUrl.searchParams.set('details', err.message);
+    return NextResponse.redirect(errorRedirectUrl);
   }
 }
