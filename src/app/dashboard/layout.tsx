@@ -17,6 +17,8 @@ export default function DashboardLayout({
   const router = useRouter();
   const pathname = usePathname();
   const [showTrialDialog, setShowTrialDialog] = useState(false);
+  
+  const isPricingPage = pathname === "/dashboard/pricing";
 
   useEffect(() => {
     if (loading) {
@@ -65,7 +67,7 @@ export default function DashboardLayout({
   
   return (
     <div className="flex flex-col min-h-screen bg-[#f9f9f9]">
-      <Header />
+      {!isPricingPage && <Header />}
       <TrialDialog open={showTrialDialog} />
       <main className="flex-1 p-4 md:p-8 container mx-auto">
         {children}
