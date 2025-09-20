@@ -3,6 +3,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { headers } from 'next/headers';
+import type { UserRecord } from 'firebase-admin/auth';
 
 export async function GET(req: NextRequest) {
   const headersList = headers();
@@ -52,29 +53,43 @@ export async function GET(req: NextRequest) {
     }
 
     const { sub: uid, email, name, picture, email_verified } = payload;
-    let userRecord;
+    let userRecord: UserRecord;
 
     try {
-      // Check if user exists by UID first
+      // First, try to get the user by their Google UID. This is the standard case.
       userRecord = await adminAuth.getUser(uid);
     } catch (e: any) {
       if (e.code === 'auth/user-not-found') {
-        // If user does not exist, create them with the Google UID
-        userRecord = await adminAuth.createUser({
-          uid,
-          email,
-          emailVerified: email_verified,
-          displayName: name,
-          photoURL: picture,
-          disabled: false,
-        });
+        // If user not found by UID, they might have an account with the same email
+        // created via a different provider (e.g., email/password).
+        try {
+            userRecord = await adminAuth.getUserByEmail(email);
+            // If we found a user by email, we should consider updating their UID if the provider is different,
+            // but for now, we'll just use this record. This links the Google sign-in to the existing email.
+            // For more complex scenarios, you might link accounts.
+        } catch (emailError: any) {
+             if (emailError.code === 'auth/user-not-found') {
+                // If no user exists with this email either, create a new one.
+                userRecord = await adminAuth.createUser({
+                    uid, // Use the Google UID for the new user
+                    email,
+                    emailVerified: email_verified,
+                    displayName: name,
+                    photoURL: picture,
+                    disabled: false,
+                });
+             } else {
+                 // Rethrow other errors from getUserByEmail
+                 throw emailError;
+             }
+        }
       } else {
-        // Rethrow other errors
+        // Rethrow other errors from getUser
         throw e;
       }
     }
     
-    // Ensure Firestore document exists
+    // Ensure Firestore document exists for this user.
     const userRef = doc(adminDb, 'users', userRecord.uid);
     const userDoc = await getDoc(userRef);
     if (!userDoc.exists()) {
@@ -94,7 +109,7 @@ export async function GET(req: NextRequest) {
     return NextResponse.redirect(redirectUrl.toString());
 
   } catch (err: any) {
-    console.error('Failed to exchange code for token:', err.message);
+    console.error('Failed to exchange code for token:', err);
     errorRedirectUrl.searchParams.set('error', 'token-exchange-failed');
     errorRedirectUrl.searchParams.set('details', err.message);
     return NextResponse.redirect(errorRedirectUrl);
