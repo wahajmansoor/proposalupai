@@ -75,6 +75,10 @@ export default function SignupPage() {
         }
 
         const { type, token, error, details } = event.data;
+        
+        // Clean up the listener regardless of outcome
+        window.removeEventListener('message', handleMessage);
+        setIsGoogleLoading(false);
 
         if (type === 'auth-token' && token) {
           signInWithCustomToken(auth, token)
@@ -92,10 +96,6 @@ export default function SignupPage() {
                 description: 'There was a problem signing you in. Please try again.',
                 variant: 'destructive',
               });
-            })
-            .finally(() => {
-                setIsGoogleLoading(false);
-                window.removeEventListener('message', handleMessage);
             });
 
         } else if (type === 'auth-error') {
@@ -104,22 +104,10 @@ export default function SignupPage() {
                 description: details || 'An unexpected error occurred.',
                 variant: 'destructive',
             });
-            setIsGoogleLoading(false);
-            window.removeEventListener('message', handleMessage);
         }
       };
       
       window.addEventListener('message', handleMessage);
-      
-      const checkPopup = setInterval(() => {
-        if (!popup || popup.closed) {
-          clearInterval(checkPopup);
-          if(isGoogleLoading) {
-            setIsGoogleLoading(false);
-            window.removeEventListener('message', handleMessage);
-          }
-        }
-      }, 1000);
 
     } catch (error: any) {
       toast({

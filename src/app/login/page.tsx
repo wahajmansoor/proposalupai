@@ -44,6 +44,10 @@ export default function LoginPage() {
         }
 
         const { type, token, error, details } = event.data;
+        
+        // Clean up the listener regardless of outcome
+        window.removeEventListener('message', handleMessage);
+        setIsGoogleLoading(false);
 
         if (type === 'auth-token' && token) {
            signInWithCustomToken(auth, token)
@@ -52,7 +56,7 @@ export default function LoginPage() {
                 title: 'Successfully signed in!',
                 description: "You will be redirected to your dashboard.",
               });
-              // Redirection will be handled by the AuthProvider and root page
+              // Redirection is handled by the root page/auth context
             })
             .catch((signInError) => {
               console.error('Custom token sign-in error:', signInError);
@@ -61,10 +65,6 @@ export default function LoginPage() {
                 description: 'There was a problem signing you in. Please try again.',
                 variant: 'destructive',
               });
-            })
-            .finally(() => {
-                setIsGoogleLoading(false);
-                window.removeEventListener('message', handleMessage);
             });
 
         } else if (type === 'auth-error') {
@@ -73,24 +73,10 @@ export default function LoginPage() {
                 description: details || 'An unexpected error occurred.',
                 variant: 'destructive',
             });
-            setIsGoogleLoading(false);
-            window.removeEventListener('message', handleMessage);
         }
       };
       
       window.addEventListener('message', handleMessage);
-
-      // Check if the popup was closed, in case the user closes it manually
-      const checkPopup = setInterval(() => {
-        if (!popup || popup.closed) {
-          clearInterval(checkPopup);
-          // Only set loading to false if we haven't already processed a message
-          if(isGoogleLoading) {
-            setIsGoogleLoading(false);
-            window.removeEventListener('message', handleMessage);
-          }
-        }
-      }, 1000);
 
     } catch (error: any) {
       toast({
@@ -112,7 +98,7 @@ export default function LoginPage() {
         title: 'Login Successful!',
         description: "Welcome back!",
       });
-      // Redirection will be handled by the AuthProvider and root page
+      // Redirection will be handled by the root page
     } catch (error: any) {
       toast({
         title: 'Login Failed',
