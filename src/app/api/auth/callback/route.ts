@@ -66,7 +66,6 @@ export async function GET(req: NextRequest) {
             userRecord = await adminAuth.getUserByEmail(email);
             // If we found a user by email, we should consider updating their UID if the provider is different,
             // but for now, we'll just use this record. This links the Google sign-in to the existing email.
-            // For more complex scenarios, you might link accounts.
         } catch (emailError: any) {
              if (emailError.code === 'auth/user-not-found') {
                 // If no user exists with this email either, create a new one.
