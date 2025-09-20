@@ -9,6 +9,7 @@ import { createCheckoutSession } from '@/app/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
+import { ProposalUpLogo } from '@/components/icons';
 
 const features = [
   "Unlimited Proposal Generation",
@@ -62,6 +63,7 @@ export default function PricingPage() {
     <div className="max-w-md mx-auto">
       <Card className="shadow-lg">
         <CardHeader className="text-center">
+          <ProposalUpLogo className="h-12 w-12 mx-auto text-primary mb-2" />
           <CardTitle className="text-3xl font-bold">Proposal Up Pro</CardTitle>
           <CardDescription>
             {userProfile?.trialEndDate && new Date() < userProfile.trialEndDate 
