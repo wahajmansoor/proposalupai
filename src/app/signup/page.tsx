@@ -144,10 +144,15 @@ export default function SignupPage() {
     try {
       await signUpUser(fullName, email, password);
       toast({
-        title: 'Account Created!',
-        description: "Welcome! We're glad to have you.",
+        title: 'Verification Email Sent!',
+        description: "Please check your inbox to verify your email address.",
       });
-      // Redirection is handled by the root page
+      // The useAuth hook will handle the user state, no need to redirect here.
+      // After verification, the user can log in.
+      setFullName('');
+      setEmail('');
+      setPassword('');
+
     } catch (error: any) {
       const errorMessage = error.message || 'An unexpected error occurred.';
       toast({

@@ -1,4 +1,4 @@
-import { createUserWithEmailAndPassword, updateProfile, User, sendPasswordResetEmail } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile, User, sendPasswordResetEmail, sendEmailVerification } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './config';
 
@@ -10,8 +10,11 @@ export async function signUpUser(fullName: string, email: string, password: stri
 
     // 2. Update the user's profile in Firebase Auth
     await updateProfile(user, { displayName: fullName });
+    
+    // 3. Send the verification email
+    await sendEmailVerification(user);
 
-    // 3. Create user document in Firestore *after* auth profile is updated
+    // 4. Create user document in Firestore *after* auth profile is updated
     // This ensures displayName is not null and uses the correct server timestamp
     const userRef = doc(db, 'users', user.uid);
     await setDoc(userRef, {
