@@ -17,32 +17,44 @@ export default function DashboardLayout({
   const pathname = usePathname();
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        // If not logged in, redirect to login page
-        router.replace("/login");
-        return;
-      }
-      
-      // Allow access to pricing and profile pages regardless of subscription status
-      const allowedPaths = ["/dashboard/pricing", "/dashboard/profile"];
-      if (allowedPaths.includes(pathname)) {
-        return;
-      }
-
-      // Check for active subscription or trial
-      const hasActiveSubscription = userProfile?.subscriptionStatus === "active";
-      const isTrialActive =
-        userProfile?.trialEndDate && new Date() < userProfile.trialEndDate;
-
-      if (!hasActiveSubscription && !isTrialActive) {
-        // If no active sub and trial is over, redirect to pricing
-        router.replace("/dashboard/pricing");
-      }
+    // Wait until loading is false before doing anything
+    if (loading) {
+      return;
     }
+
+    // If there's no user, redirect to login
+    if (!user) {
+      router.replace("/login");
+      return;
+    }
+
+    // If there is a user but we are still waiting for the userProfile from Firestore
+    if (!userProfile) {
+      // Don't do anything yet, wait for the profile to load.
+      // The loading screen below will cover this state.
+      return;
+    }
+    
+    // Allow access to pricing and profile pages regardless of subscription status
+    const allowedPaths = ["/dashboard/pricing", "/dashboard/profile"];
+    if (allowedPaths.includes(pathname)) {
+      return;
+    }
+
+    // Check for active subscription or trial
+    const hasActiveSubscription = userProfile.subscriptionStatus === "active";
+    const isTrialActive = userProfile.trialEndDate && new Date() < userProfile.trialEndDate;
+
+    if (!hasActiveSubscription && !isTrialActive) {
+      // If no active sub and trial is over, redirect to pricing
+      router.replace("/dashboard/pricing");
+    }
+
   }, [user, userProfile, loading, router, pathname]);
 
-  if (loading || !user) {
+  // Show a loading screen while auth state is being determined OR
+  // if we have a user but are still waiting for their profile from the database.
+  if (loading || !userProfile) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />
