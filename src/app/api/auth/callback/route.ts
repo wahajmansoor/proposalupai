@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { OAuth2Client } from 'google-auth-library';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
-import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { headers } from 'next/headers';
 import type { UserRecord } from 'firebase-admin/auth';
 
@@ -10,6 +9,7 @@ export async function GET(req: NextRequest) {
   const protocol = headersList.get('x-forwarded-proto') || 'http';
   const host = headersList.get('host');
   const redirectUri = `${protocol}://${host}/api/auth/callback`;
+  const errorRedirectUrl = new URL('/login', `${protocol}://${host}`);
 
   const oAuth2Client = new OAuth2Client(
     process.env.GOOGLE_CLIENT_ID,
@@ -20,8 +20,6 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get('code');
   const error = searchParams.get('error');
-
-  const errorRedirectUrl = new URL('/login', `${protocol}://${host}`);
 
   if (error) {
     console.error('Error from Google:', error);
@@ -64,8 +62,6 @@ export async function GET(req: NextRequest) {
         // created via a different provider (e.g., email/password).
         try {
             userRecord = await adminAuth.getUserByEmail(email);
-            // If we found a user by email, we should consider updating their UID if the provider is different,
-            // but for now, we'll just use this record. This links the Google sign-in to the existing email.
         } catch (emailError: any) {
              if (emailError.code === 'auth/user-not-found') {
                 // If no user exists with this email either, create a new one.
@@ -89,15 +85,16 @@ export async function GET(req: NextRequest) {
     }
     
     // Ensure Firestore document exists for this user.
-    const userRef = doc(adminDb, 'users', userRecord.uid);
-    const userDoc = await getDoc(userRef);
-    if (!userDoc.exists()) {
-        await setDoc(userRef, {
+    const userRef = adminDb.collection('users').doc(userRecord.uid);
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+        await userRef.set({
             uid: userRecord.uid,
             email: userRecord.email,
             displayName: userRecord.displayName,
             photoURL: userRecord.photoURL,
-            createdAt: serverTimestamp(),
+            createdAt: new Date(),
         });
     }
 
