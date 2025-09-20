@@ -20,7 +20,7 @@ export async function createCheckoutSession() {
   const host = headersList.get('host');
   const origin = `${protocol}://${host}`;
   const successUrl = `${origin}/dashboard`;
-  const cancelUrl = `${origin}/dashboard/pricing`;
+  const cancelUrl = `${origin}/dashboard`;
   
   const priceId = process.env.STRIPE_PRICE_ID;
   if (!priceId) {
@@ -32,6 +32,9 @@ export async function createCheckoutSession() {
     mode: 'subscription',
     customer: stripeCustomerId,
     line_items: [{ price: priceId, quantity: 1 }],
+    subscription_data: {
+        trial_period_days: 2,
+    },
     success_url: successUrl,
     cancel_url: cancelUrl,
   });
