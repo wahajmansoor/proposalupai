@@ -15,6 +15,7 @@ import { getGoogleAuthUrl } from '@/app/lib/actions';
 import { cn } from '@/lib/utils';
 import { signInWithCustomToken } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
+import { useAuth } from '@/context/auth-context';
 
 
 const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => {
@@ -29,6 +30,7 @@ const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => {
 export default function SignupPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { user, loading } = useAuth();
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -44,6 +46,12 @@ export default function SignupPage() {
   });
 
   const allRequirementsMet = Object.values(passwordValidation).every(Boolean);
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace('/dashboard');
+    }
+  }, [user, loading, router]);
 
   useEffect(() => {
     setPasswordValidation({
@@ -75,7 +83,7 @@ export default function SignupPage() {
                 title: 'Successfully signed in!',
                 description: "Welcome! We're redirecting you to the dashboard.",
               });
-              router.push('/dashboard');
+              // Redirection is handled by the root page
             })
             .catch((signInError) => {
               console.error('Custom token sign-in error:', signInError);
@@ -151,7 +159,7 @@ export default function SignupPage() {
         title: 'Account Created!',
         description: "Welcome! We're glad to have you.",
       });
-      router.push('/dashboard');
+      // Redirection is handled by the root page
     } catch (error: any) {
       const errorMessage = error.message || 'An unexpected error occurred.';
       toast({
@@ -163,6 +171,14 @@ export default function SignupPage() {
       setIsLoading(false);
     }
   };
+  
+   if (loading || user) {
+     return (
+      <div className="flex items-center justify-center min-h-screen">
+        <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen">

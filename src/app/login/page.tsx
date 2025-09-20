@@ -14,14 +14,22 @@ import { signInWithCustomToken, signInWithEmailAndPassword } from 'firebase/auth
 import { auth } from '@/lib/firebase/config';
 import { getGoogleAuthUrl } from '@/app/lib/actions';
 import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/context/auth-context';
 
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
+  const { user, loading } = useAuth();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+
+  useEffect(() => {
+    if (!loading && user) {
+      router.replace('/dashboard');
+    }
+  }, [user, loading, router]);
   
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
@@ -44,7 +52,7 @@ export default function LoginPage() {
                 title: 'Successfully signed in!',
                 description: "You will be redirected to your dashboard.",
               });
-              router.push('/dashboard');
+              // Redirection will be handled by the AuthProvider and root page
             })
             .catch((signInError) => {
               console.error('Custom token sign-in error:', signInError);
@@ -104,7 +112,7 @@ export default function LoginPage() {
         title: 'Login Successful!',
         description: "Welcome back!",
       });
-      router.push('/dashboard');
+      // Redirection will be handled by the AuthProvider and root page
     } catch (error: any) {
       toast({
         title: 'Login Failed',
@@ -115,6 +123,14 @@ export default function LoginPage() {
       setIsLoading(false);
     }
   };
+
+  if (loading || user) {
+     return (
+      <div className="flex items-center justify-center min-h-screen">
+        <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />
+      </div>
+    );
+  }
 
   return (
     <div className="flex items-center justify-center min-h-screen">
