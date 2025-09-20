@@ -1,3 +1,4 @@
+
 // src/app/dashboard/profile/page.tsx
 "use client";
 
@@ -9,31 +10,18 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { updateUserProfile, sendPasswordReset } from '@/lib/firebase/auth';
-import { useRouter } from 'next/navigation';
 import { Loader2 } from 'lucide-react';
-import { Header } from '@/components/header';
-import { ProposalUpLogo } from '@/components/icons';
 
 export default function ProfilePage() {
   const { user, loading } = useAuth();
   const { toast } = useToast();
-  const router = useRouter();
 
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [isSaving, setIsSaving] = useState(false);
   const [isSendingReset, setIsSendingReset] = useState(false);
 
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    router.push('/login');
-    return null;
+  if (loading || !user) {
+    return null; // Layout handles loading/redirect
   }
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
@@ -94,59 +82,54 @@ export default function ProfilePage() {
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <Header />
-      <main className="flex-1 p-4 md:p-8 container mx-auto">
-        <div className="max-w-2xl mx-auto space-y-8">
-            <h1 className="text-3xl font-bold tracking-tight">Profile Settings</h1>
-            
-            <Card>
-                <CardHeader>
-                    <CardTitle>Update Profile</CardTitle>
-                    <CardDescription>Manage your display name and account details.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={handleProfileUpdate} className="space-y-4">
-                        <div className="space-y-2">
-                            <Label htmlFor="displayName">Display Name</Label>
-                            <Input 
-                                id="displayName"
-                                value={displayName}
-                                onChange={(e) => setDisplayName(e.target.value)}
-                                placeholder="Your display name"
-                            />
-                        </div>
-                         <div className="space-y-2">
-                            <Label htmlFor="email">Email</Label>
-                            <Input 
-                                id="email"
-                                type="email"
-                                value={user.email || ''}
-                                disabled
-                            />
-                        </div>
-                        <Button type="submit" disabled={isSaving}>
-                            {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Save Changes
-                        </Button>
-                    </form>
-                </CardContent>
-            </Card>
-
-            <Card>
-                <CardHeader>
-                    <CardTitle>Security</CardTitle>
-                    <CardDescription>Change your password.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <Button onClick={handlePasswordReset} variant="outline" disabled={isSendingReset}>
-                        {isSendingReset && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Send Password Reset Email
+    <div className="max-w-2xl mx-auto space-y-8">
+        <h1 className="text-3xl font-bold tracking-tight">Profile Settings</h1>
+        
+        <Card>
+            <CardHeader>
+                <CardTitle>Update Profile</CardTitle>
+                <CardDescription>Manage your display name and account details.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <form onSubmit={handleProfileUpdate} className="space-y-4">
+                    <div className="space-y-2">
+                        <Label htmlFor="displayName">Display Name</Label>
+                        <Input 
+                            id="displayName"
+                            value={displayName}
+                            onChange={(e) => setDisplayName(e.target.value)}
+                            placeholder="Your display name"
+                        />
+                    </div>
+                     <div className="space-y-2">
+                        <Label htmlFor="email">Email</Label>
+                        <Input 
+                            id="email"
+                            type="email"
+                            value={user.email || ''}
+                            disabled
+                        />
+                    </div>
+                    <Button type="submit" disabled={isSaving}>
+                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Save Changes
                     </Button>
-                </CardContent>
-            </Card>
-        </div>
-      </main>
+                </form>
+            </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
+                <CardTitle>Security</CardTitle>
+                <CardDescription>Change your password.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Button onClick={handlePasswordReset} variant="outline" disabled={isSendingReset}>
+                    {isSendingReset && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Send Password Reset Email
+                </Button>
+            </CardContent>
+        </Card>
     </div>
   );
 }

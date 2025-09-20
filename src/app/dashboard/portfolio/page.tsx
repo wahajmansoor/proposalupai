@@ -1,3 +1,4 @@
+
 // src/app/dashboard/portfolio/page.tsx
 "use client";
 
@@ -8,9 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
 import { Loader2, Plus, Trash2, X, Link as LinkIcon } from 'lucide-react';
-import { Header } from '@/components/header';
 import type { PortfolioCollection } from '@/app/lib/types';
 import {
   addPortfolioCollection,
@@ -30,12 +29,10 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@/components/ui/alert-dialog"
-import { ProposalUpLogo } from '@/components/icons';
 
 export default function PortfolioPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { user } = useAuth();
   const { toast } = useToast();
-  const router = useRouter();
 
   const [collections, setCollections] = useState<PortfolioCollection[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -57,12 +54,13 @@ export default function PortfolioPage() {
   }, [user, toast]);
 
   useEffect(() => {
-    if (!authLoading && !user) {
-      router.push('/login');
-    } else if (user) {
+    if (user) {
       fetchCollections();
+    } else {
+        // If no user, stop loading, layout will handle redirect.
+        setIsLoading(false);
     }
-  }, [user, authLoading, router, fetchCollections]);
+  }, [user, fetchCollections]);
 
 
   const handleAddCollection = async (e: React.FormEvent) => {
@@ -151,102 +149,110 @@ export default function PortfolioPage() {
   };
 
 
-  if (authLoading || isLoading) {
+  if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
-        <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />
+      <div className="max-w-4xl mx-auto space-y-8">
+        <div className="space-y-2">
+            <div className="h-8 bg-gray-200 rounded w-1/3 animate-pulse"></div>
+        </div>
+        <Card>
+            <CardHeader>
+                <div className="h-6 bg-gray-200 rounded w-1/4 animate-pulse"></div>
+                <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse mt-2"></div>
+            </CardHeader>
+            <CardContent>
+                <div className="flex items-center gap-4">
+                    <div className="flex-1 h-10 bg-gray-200 rounded animate-pulse"></div>
+                    <div className="h-10 bg-gray-200 rounded w-24 animate-pulse"></div>
+                </div>
+            </CardContent>
+        </Card>
       </div>
     );
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-      <Header />
-      <main className="flex-1 p-4 md:p-8 container mx-auto">
-        <div className="max-w-4xl mx-auto space-y-8">
-            <h1 className="text-3xl font-bold tracking-tight">Portfolio Collections</h1>
-            
-            <Card>
-                <CardHeader>
-                    <CardTitle>Create New Collection</CardTitle>
-                    <CardDescription>Organize your portfolio links into named collections.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <form onSubmit={handleAddCollection} className="flex items-center gap-4">
-                        <div className="flex-1 space-y-2">
-                            <Label htmlFor="collectionName" className="sr-only">Collection Name</Label>
-                            <Input 
-                                id="collectionName"
-                                value={newCollectionName}
-                                onChange={(e) => setNewCollectionName(e.target.value)}
-                                placeholder="e.g., eCommerce Websites"
-                            />
-                        </div>
-                        <Button type="submit" disabled={isSaving || !newCollectionName.trim()}>
-                            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-                            Create
-                        </Button>
-                    </form>
-                </CardContent>
-            </Card>
+    <div className="max-w-4xl mx-auto space-y-8">
+        <h1 className="text-3xl font-bold tracking-tight">Portfolio Collections</h1>
+        
+        <Card>
+            <CardHeader>
+                <CardTitle>Create New Collection</CardTitle>
+                <CardDescription>Organize your portfolio links into named collections.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <form onSubmit={handleAddCollection} className="flex items-center gap-4">
+                    <div className="flex-1 space-y-2">
+                        <Label htmlFor="collectionName" className="sr-only">Collection Name</Label>
+                        <Input 
+                            id="collectionName"
+                            value={newCollectionName}
+                            onChange={(e) => setNewCollectionName(e.target.value)}
+                            placeholder="e.g., eCommerce Websites"
+                        />
+                    </div>
+                    <Button type="submit" disabled={isSaving || !newCollectionName.trim()}>
+                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
+                        Create
+                    </Button>
+                </form>
+            </CardContent>
+        </Card>
 
-             <div className="space-y-6">
-                <h2 className="text-2xl font-semibold tracking-tight">Your Collections</h2>
-                {collections.length === 0 && !isLoading ? (
-                    <p className="text-muted-foreground">You haven't created any collections yet.</p>
-                ) : (
-                    collections.map(collection => (
-                        <Card key={collection.id}>
-                            <CardHeader className="flex flex-row items-center justify-between">
-                                <CardTitle className="text-xl">{collection.name}</CardTitle>
-                                <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-                                      <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        This will permanently delete the "{collection.name}" collection and all its links. This action cannot be undone.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => handleDeleteCollection(collection.id)}>
-                                        Delete
-                                      </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                            </CardHeader>
-                            <CardContent>
-                                <ul className="space-y-2">
-                                  {collection.links.map((link, index) => (
-                                    <li key={index} className="flex items-center justify-between group">
-                                      <div className="flex items-center gap-2">
-                                        <LinkIcon className="h-4 w-4 text-muted-foreground"/>
-                                        <a href={link} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline truncate">
-                                          {link}
-                                        </a>
-                                      </div>
-                                      <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveLink(collection.id, link)}>
-                                          <X className="h-4 w-4"/>
-                                      </Button>
-                                    </li>
-                                  ))}
-                                </ul>
-                                {collection.links.length === 0 && <p className="text-sm text-muted-foreground">No links added yet.</p>}
-                               <AddLinkForm collectionId={collection.id} />
-                            </CardContent>
-                        </Card>
-                    ))
-                )}
-            </div>
-
+         <div className="space-y-6">
+            <h2 className="text-2xl font-semibold tracking-tight">Your Collections</h2>
+            {collections.length === 0 && !isLoading ? (
+                <p className="text-muted-foreground">You haven't created any collections yet.</p>
+            ) : (
+                collections.map(collection => (
+                    <Card key={collection.id}>
+                        <CardHeader className="flex flex-row items-center justify-between">
+                            <CardTitle className="text-xl">{collection.name}</CardTitle>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    This will permanently delete the "{collection.name}" collection and all its links. This action cannot be undone.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => handleDeleteCollection(collection.id)}>
+                                    Delete
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                        </CardHeader>
+                        <CardContent>
+                            <ul className="space-y-2">
+                              {collection.links.map((link, index) => (
+                                <li key={index} className="flex items-center justify-between group">
+                                  <div className="flex items-center gap-2">
+                                    <LinkIcon className="h-4 w-4 text-muted-foreground"/>
+                                    <a href={link} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline truncate">
+                                      {link}
+                                    </a>
+                                  </div>
+                                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveLink(collection.id, link)}>
+                                      <X className="h-4 w-4"/>
+                                  </Button>
+                                </li>
+                              ))}
+                            </ul>
+                            {collection.links.length === 0 && <p className="text-sm text-muted-foreground">No links added yet.</p>}
+                           <AddLinkForm collectionId={collection.id} />
+                        </CardContent>
+                    </Card>
+                ))
+            )}
         </div>
-      </main>
     </div>
   );
 }

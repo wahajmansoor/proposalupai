@@ -9,7 +9,6 @@ import {
   answerQuestionsAction,
 } from '@/app/lib/actions';
 import { addSavedProposal } from '@/lib/firebase/proposals';
-import { Header } from '@/components/header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -26,7 +25,6 @@ import { Progress } from '@/components/ui/progress';
 import { ProTips } from '@/components/pro-tips';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
-import { useRouter } from 'next/navigation';
 import { getPortfolioCollections } from '@/lib/firebase/portfolio';
 import { Slider } from '@/components/ui/slider';
 import { ProposalUpLogo, LinkedInIcon } from '@/components/icons';
@@ -90,8 +88,7 @@ const signOffCtas = [
 ];
 
 export default function DashboardPage() {
-  const { user, userProfile, loading } = useAuth();
-  const router = useRouter();
+  const { user, loading } = useAuth();
   const { toast } = useToast();
   
   const [currentStep, setCurrentStep] = useState(1);
@@ -147,21 +144,6 @@ export default function DashboardPage() {
   const [answersGenerated, setAnswersGenerated] = useState(false);
 
   useEffect(() => {
-    if (!loading) {
-      if (!user) {
-        router.push('/login');
-      } else {
-        const hasActiveSubscription = userProfile?.subscriptionStatus === 'active';
-        const isTrialActive = userProfile?.trialEndDate && new Date() < userProfile.trialEndDate;
-        if (!hasActiveSubscription && !isTrialActive) {
-          router.push('/dashboard/pricing');
-        }
-      }
-    }
-  }, [user, userProfile, loading, router]);
-
-
-  useEffect(() => {
     if (user) {
       if (user.displayName) {
         setProfileName(user.displayName);
@@ -195,11 +177,8 @@ export default function DashboardPage() {
 
 
   if (loading || !user) {
-    return (
-      <div className="flex items-center justify-center min-h-screen">
-        <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />
-      </div>
-    );
+    // The layout will handle showing a loader, so we can return null or a minimal loader here.
+    return null;
   }
 
   const nextStep = () => {
@@ -412,482 +391,479 @@ export default function DashboardPage() {
   const hasQuestions = clientQuestions.some(q => q.question);
 
   return (
-    <div className="flex flex-col min-h-screen bg-[#f9f9f9]">
-      <Header />
-      <main className="flex-1 p-4 md:p-8 container mx-auto">
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-          
-          <div className="space-y-6">
-            <div className="flex items-center gap-3">
-              <FileText className="h-6 w-6 text-primary" />
-              <div>
-                <h1 className="text-2xl font-bold">Create Your Proposal</h1>
-                <p className="text-muted-foreground">Step {currentStep} of {totalSteps}: {stepTitles[currentStep - 1]}</p>
-              </div>
-            </div>
-            
-            <Progress value={(currentStep / totalSteps) * 100} className="w-full" />
-
-            {currentStep === 1 && (
-              <Card>
-                <CardContent className="p-6 space-y-4">
-                  <div>
-                    <Label htmlFor="projectTitle">Project Title</Label>
-                    <Input id="projectTitle" value={projectDetails.projectTitle} onChange={(e) => setProjectDetails({...projectDetails, projectTitle: e.target.value})} placeholder="e.g., Senior Frontend Developer" />
-                  </div>
-                  <div>
-                    <Label htmlFor="summary">Summary</Label>
-                    <Textarea 
-                      ref={summaryTextareaRef}
-                      id="summary" 
-                      value={projectDetails.summary} 
-                      onChange={(e) => setProjectDetails({...projectDetails, summary: e.target.value})} 
-                      placeholder="Paste the project summary from Upwork or another platform here..." 
-                      className="resize-none overflow-hidden" 
-                      rows={1}
-                    />
-                  </div>
-                   <Button onClick={handleAnalyzeJob} disabled={isAnalyzing} className="w-full">
-                    {isAnalyzing ? "Analyzing..." : <><Sparkles className="mr-2"/>Analyze & Get Suggestions</>}
-                  </Button>
-                  
-                  {isAnalyzing && (
-                    <div className="space-y-2 pt-4">
-                      <Skeleton className="h-6 w-1/3" />
-                      <Skeleton className="h-4 w-full" />
-                    </div>
-                  )}
-
-                  {suggestion && (
-                    <div className="pt-4">
-                      <h3 className="font-semibold text-lg mb-2">Proposal Template</h3>
-                      <RadioGroup value={proposalTemplate} onValueChange={(val) => setProposalTemplate(val as 'standard' | 'video')} className="space-y-2">
-                        <Label htmlFor="template-standard" className={cn("flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-all", proposalTemplate === 'standard' && "border-primary ring-2 ring-primary")}>
-                          <RadioGroupItem value="standard" id="template-standard" className="mt-1" />
-                          <div className="grid gap-1.5">
-                            <span className="font-semibold">Standard Proposal</span>
-                            <span className="text-sm text-muted-foreground">A classic, professional proposal structure. The AI will customize it for you.</span>
-                          </div>
-                        </Label>
-                         <Label htmlFor="template-video" className={cn("flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-all", proposalTemplate === 'video' && "border-primary ring-2 ring-primary")}>
-                          <RadioGroupItem value="video" id="template-video" className="mt-1" />
-                          <div className="grid gap-1.5">
-                            <span className="font-semibold">Video Intro Proposal</span>
-                            <span className="text-sm text-muted-foreground">A template that includes a Loom video to introduce yourself.</span>
-                          </div>
-                        </Label>
-                      </RadioGroup>
-                      <div className="mt-4 p-3 bg-green-50 border-l-4 border-green-400 text-green-800 rounded-r-lg">
-                        <p><span className="font-bold">AI Suggestion: </span>{suggestion.templateReasoning}</p>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
-            )}
-
-            {currentStep === 2 && (
-               <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <User className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-lg">Your Profile</CardTitle>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="yourName">Your Name</Label>
-                      <Input id="yourName" value={profileName} onChange={handleInputChange(setProfileName)} placeholder="Your name"/>
-                    </div>
-                    <div>
-                      <Label htmlFor="clientName">Client's Name (Optional)</Label>
-                      <Input id="clientName" value={clientName} onChange={handleInputChange(setClientName)} placeholder="Client's name (if known)"/>
-                    </div>
-                  </div>
-                  <div>
-                    <div className="flex justify-between items-center mb-1">
-                      <Label htmlFor="skillsAndExpertise">Skills and Expertise</Label>
-                      <Button variant="outline" size="sm" onClick={handleAutofillSkills} disabled={isSuggestingSkills}>
-                        {isSuggestingSkills ? 'Thinking...' : <><Sparkles className="mr-2 h-4 w-4" /> Auto Fill</>}
-                      </Button>
-                    </div>
-                    <Input id="skillsAndExpertise" value={skillsAndExpertise} onChange={handleInputChange(setSkillsAndExpertise)} placeholder="Enter skills separated by commas (e.g., React, Node.js)" />
-                    {skillsAndExpertise.trim() && (
-                      <div className="mt-2 flex flex-wrap gap-2">
-                        {skillsAndExpertise.split(',').map(skill => skill.trim()).filter(Boolean).map((skill, index) => (
-                          <Badge key={index} variant="secondary" className="font-normal">{skill}</Badge>
-                        ))}
-                      </div>
-                    )}
-                  </div>
-                  <div>
-                    <Label htmlFor="relevantExperience">My Style / Relevant Experience</Label>
-                    <Textarea id="relevantExperience" value={relevantExperience} onChange={handleInputChange(setRelevantExperience)} placeholder="Briefly describe your relevant experience or paste a sample of your writing. The AI will adapt to your style." className="min-h-[120px]" />
-                  </div>
-                   <div>
-                      <Label className="mb-2 block">Portfolio / Relevant Links</Label>
-                      <RadioGroup value={portfolioLinkOption} onValueChange={(value) => setPortfolioLinkOption(value as 'collection' | 'manual')} className="flex items-center space-x-4 mb-2">
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="manual" id="r2" />
-                          <Label htmlFor="r2">Manual Links</Label>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <RadioGroupItem value="collection" id="r1" />
-                          <Label htmlFor="r1">Portfolio Collection</Label>
-                        </div>
-                      </RadioGroup>
-
-                      {portfolioLinkOption === 'collection' ? (
-                        <div>
-                          <Select value={selectedPortfolio} onValueChange={setSelectedPortfolio}>
-                            <SelectTrigger>
-                              <SelectValue placeholder="Select a collection" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="none">None</SelectItem>
-                              {portfolioCollections.map(collection => (
-                                <SelectItem key={collection.id} value={collection.id}>
-                                  {collection.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <p className="text-sm text-muted-foreground mt-2">
-                            Manage your collections on the <a href="/dashboard/portfolio" className="underline">Portfolio page</a>.
-                          </p>
-                        </div>
-                      ) : (
-                        <Textarea 
-                          value={manualPortfolioLinks}
-                          onChange={handleInputChange(setManualPortfolioLinks)}
-                          placeholder="Paste relevant links, one per line."
-                          className="min-h-[100px]"
-                        />
-                      )}
-                    </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {currentStep === 3 && (
-              <Card>
-                <CardHeader>
-                  <div className="flex items-center gap-2">
-                    <Bot className="h-5 w-5 text-primary" />
-                    <CardTitle className="text-lg">Client Questions</CardTitle>
-                  </div>
-                  <CardDescription>If the job posting asks specific questions, add them here and get AI-powered answers.</CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {clientQuestions.map((q, index) => (
-                      <div key={q.id} className="space-y-2">
-                        <div className="flex items-start gap-2">
-                          <Textarea 
-                            placeholder={`Question ${index + 1}`} 
-                            value={q.question} 
-                            onChange={(e) => handleClientQuestionChange(q.id, 'question', e.target.value)} 
-                            className="flex-1"
-                            disabled={answersGenerated}
-                          />
-                          <Button 
-                            variant="ghost" 
-                            size="icon" 
-                            onClick={() => removeClientQuestion(q.id)} 
-                            className="text-muted-foreground hover:text-destructive h-8 w-8 self-center"
-                            disabled={answersGenerated}
-                          >
-                              <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </div>
-                  ))}
-                  <div className="flex gap-2">
-                    <Button variant="outline" size="sm" onClick={addClientQuestion} disabled={answersGenerated}><Plus className="mr-2 h-4 w-4" /> Add Question</Button>
-                    <Button variant="outline" size="sm" onClick={handleAnswerAllQuestions} disabled={isAnsweringQuestions || !hasQuestions || answersGenerated}>
-                       {isAnsweringQuestions ? 'Answering...' : <><Sparkles className="mr-2 h-4 w-4" /> Get All Answers</>}
-                    </Button>
-                  </div>
-                </CardContent>
-              </Card>
-            )}
-
-            {currentStep === 4 && (
-              <div className="space-y-6">
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      <Settings className="h-5 w-5 text-primary" />
-                      <CardTitle className="text-lg">Preferences</CardTitle>
-                    </div>
-                  </CardHeader>
-                  <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div>
-                        <Label>Greeting</Label>
-                        <Select value={greeting} onValueChange={setGreeting}>
-                            <SelectTrigger><SelectValue/></SelectTrigger>
-                            <SelectContent>
-                                {greetings.map(g => (
-                                    <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div>
-                        <Label>Closing CTA</Label>
-                        <Select value={closingCta} onValueChange={setClosingCta}>
-                            <SelectTrigger><SelectValue/></SelectTrigger>
-                            <SelectContent>
-                                {closingCtas.map(c => (
-                                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div>
-                        <Label>Sign-off (Optional)</Label>
-                        <Select value={closingCta2} onValueChange={setClosingCta2}>
-                            <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="none">None</SelectItem>
-                                {signOffCtas.map(c => (
-                                    <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
-                                ))}
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div>
-                        <Label>Tone</Label>
-                        <Select value={tone} onValueChange={setTone}>
-                            <SelectTrigger><SelectValue /></SelectTrigger>
-                            <SelectContent>
-                                <SelectItem value="professional">Professional</SelectItem>
-                                <SelectItem value="friendly">Friendly</SelectItem>
-                                <SelectItem value="assertive">Assertive</SelectItem>
-                                <SelectItem value="persuasive">Persuasive</SelectItem>
-                                <SelectItem value="creative">Creative</SelectItem>
-                                <SelectItem value="concise">Concise</SelectItem>
-                                <SelectItem value="formal">Formal</SelectItem>
-                            </SelectContent>
-                        </Select>
-                    </div>
-                    <div className="md:col-span-2">
-                        <div className="flex justify-between items-center mb-2">
-                          <Label>Word Limit (Optional)</Label>
-                          <span className="text-sm font-medium text-muted-foreground">{wordLimit[0]} - {wordLimit[1]} words</span>
-                        </div>
-                        <Slider 
-                          value={wordLimit}
-                          onValueChange={setWordLimit}
-                          min={50}
-                          max={500}
-                          step={10}
-                        />
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader>
-                    <div className="flex items-center gap-2">
-                      <Rocket className="h-5 w-5 text-primary" />
-                      <CardTitle className="text-lg">Opening Strategy</CardTitle>
-                    </div>
-                    <CardDescription>Choose a proven opening approach, or leave it as "None", AI will customize it for you.</CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <RadioGroup value={openingStrategy} onValueChange={setOpeningStrategy} className="space-y-2" disabled={proposalTemplate === 'video'}>
-                      {openingStrategies.map(strategy => (
-                        <Label key={strategy.id} htmlFor={`strategy-${strategy.id}`} className={cn("flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-all", openingStrategy === strategy.id && "border-primary ring-2 ring-primary", (proposalTemplate === 'video' && strategy.id !== 'video') && "opacity-50 cursor-not-allowed")}>
-                          <RadioGroupItem value={strategy.id} id={`strategy-${strategy.id}`} className="mt-1" disabled={proposalTemplate === 'video' && strategy.id !== 'video'} />
-                          <div className="grid gap-1.5">
-                            <span className="font-semibold">{strategy.title}</span>
-                            <span className="text-sm text-muted-foreground">{strategy.description}</span>
-                          </div>
-                        </Label>
-                      ))}
-                    </RadioGroup>
-                     {strategySuggestionReasoning && openingStrategy !== 'none' && (
-                        <div className="mt-4 p-3 bg-green-50 border-l-4 border-green-400 text-green-800 rounded-r-lg">
-                            <p><span className="font-bold">AI Suggestion: </span>{strategySuggestionReasoning}</p>
-                        </div>
-                    )}
-                  </CardContent>
-                </Card>
-              </div>
-            )}
-            
-            <div className="flex justify-between items-center">
-              <div>
-                {currentStep > 1 && (
-                  <Button variant="outline" onClick={prevStep}>
-                    <ArrowLeft className="mr-2 h-4 w-4" /> Previous
-                  </Button>
-                )}
-              </div>
-              <div>
-                {currentStep < totalSteps ? (
-                  <Button onClick={nextStep}>
-                    Next <ArrowRight className="ml-2 h-4 w-4" />
-                  </Button>
-                ) : (
-                  <Button size="lg" onClick={handleGenerateProposal} disabled={isGenerating}>
-                    {isGenerating ? "Generating..." : <><Wand2 className="mr-2"/>Generate Proposal</>}
-                  </Button>
-                )}
-              </div>
+    <>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        
+        <div className="space-y-6">
+          <div className="flex items-center gap-3">
+            <FileText className="h-6 w-6 text-primary" />
+            <div>
+              <h1 className="text-2xl font-bold">Create Your Proposal</h1>
+              <p className="text-muted-foreground">Step {currentStep} of {totalSteps}: {stepTitles[currentStep - 1]}</p>
             </div>
           </div>
           
-          <div className="space-y-6 sticky top-24">
+          <Progress value={(currentStep / totalSteps) * 100} className="w-full" />
+
+          {currentStep === 1 && (
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <CardTitle>Generated Proposal</CardTitle>
-                  {wordCount > 0 && (
-                    <Badge variant="secondary">{wordCount} words</Badge>
-                  )}
+              <CardContent className="p-6 space-y-4">
+                <div>
+                  <Label htmlFor="projectTitle">Project Title</Label>
+                  <Input id="projectTitle" value={projectDetails.projectTitle} onChange={(e) => setProjectDetails({...projectDetails, projectTitle: e.target.value})} placeholder="e.g., Senior Frontend Developer" />
                 </div>
-                <div className="flex items-center gap-1">
-                    <Button variant="outline" size="sm" onClick={handleSaveProposal} disabled={!generatedProposal || isSaving}>
-                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
-                        Save
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={() => copyToClipboard(generatedProposal)} disabled={!generatedProposal}>
-                        <Clipboard className="mr-2 h-4 w-4" /> Copy
-                    </Button>
+                <div>
+                  <Label htmlFor="summary">Summary</Label>
+                  <Textarea 
+                    ref={summaryTextareaRef}
+                    id="summary" 
+                    value={projectDetails.summary} 
+                    onChange={(e) => setProjectDetails({...projectDetails, summary: e.target.value})} 
+                    placeholder="Paste the project summary from Upwork or another platform here..." 
+                    className="resize-none overflow-hidden" 
+                    rows={1}
+                  />
                 </div>
-              </CardHeader>
-              <CardContent className={cn("min-h-[400px]", { 'min-h-[200px]': !generatedProposal && !isGenerating })}>
-                {isGenerating ? (
-                    <div className="space-y-2 pt-4">
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-5/6" />
-                        <Skeleton className="h-4 w-full mt-4" />
-                        <Skeleton className="h-4 w-full" />
-                        <Skeleton className="h-4 w-2/3" />
+                 <Button onClick={handleAnalyzeJob} disabled={isAnalyzing} className="w-full">
+                  {isAnalyzing ? "Analyzing..." : <><Sparkles className="mr-2"/>Analyze & Get Suggestions</>}
+                </Button>
+                
+                {isAnalyzing && (
+                  <div className="space-y-2 pt-4">
+                    <Skeleton className="h-6 w-1/3" />
+                    <Skeleton className="h-4 w-full" />
+                  </div>
+                )}
+
+                {suggestion && (
+                  <div className="pt-4">
+                    <h3 className="font-semibold text-lg mb-2">Proposal Template</h3>
+                    <RadioGroup value={proposalTemplate} onValueChange={(val) => setProposalTemplate(val as 'standard' | 'video')} className="space-y-2">
+                      <Label htmlFor="template-standard" className={cn("flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-all", proposalTemplate === 'standard' && "border-primary ring-2 ring-primary")}>
+                        <RadioGroupItem value="standard" id="template-standard" className="mt-1" />
+                        <div className="grid gap-1.5">
+                          <span className="font-semibold">Standard Proposal</span>
+                          <span className="text-sm text-muted-foreground">A classic, professional proposal structure. The AI will customize it for you.</span>
+                        </div>
+                      </Label>
+                       <Label htmlFor="template-video" className={cn("flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-all", proposalTemplate === 'video' && "border-primary ring-2 ring-primary")}>
+                        <RadioGroupItem value="video" id="template-video" className="mt-1" />
+                        <div className="grid gap-1.5">
+                          <span className="font-semibold">Video Intro Proposal</span>
+                          <span className="text-sm text-muted-foreground">A template that includes a Loom video to introduce yourself.</span>
+                        </div>
+                      </Label>
+                    </RadioGroup>
+                    <div className="mt-4 p-3 bg-green-50 border-l-4 border-green-400 text-green-800 rounded-r-lg">
+                      <p><span className="font-bold">AI Suggestion: </span>{suggestion.templateReasoning}</p>
                     </div>
-                ) : generatedProposal ? (
-                    <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
-                        {generatedProposal}
-                    </div>
-                ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
-                      <FileText className="h-12 w-12 mb-4" />
-                      <p className="font-medium">Your proposal will appear here.</p>
-                      <p className="text-sm">Fill out the details on the left and click "Generate Proposal".</p>
-                    </div>
+                  </div>
                 )}
               </CardContent>
             </Card>
+          )}
 
-            {generatedProposal && hasAnsweredQuestions && (
+          {currentStep === 2 && (
+             <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <User className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-lg">Your Profile</CardTitle>
+                </div>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="yourName">Your Name</Label>
+                    <Input id="yourName" value={profileName} onChange={handleInputChange(setProfileName)} placeholder="Your name"/>
+                  </div>
+                  <div>
+                    <Label htmlFor="clientName">Client's Name (Optional)</Label>
+                    <Input id="clientName" value={clientName} onChange={handleInputChange(setClientName)} placeholder="Client's name (if known)"/>
+                  </div>
+                </div>
+                <div>
+                  <div className="flex justify-between items-center mb-1">
+                    <Label htmlFor="skillsAndExpertise">Skills and Expertise</Label>
+                    <Button variant="outline" size="sm" onClick={handleAutofillSkills} disabled={isSuggestingSkills}>
+                      {isSuggestingSkills ? 'Thinking...' : <><Sparkles className="mr-2 h-4 w-4" /> Auto Fill</>}
+                    </Button>
+                  </div>
+                  <Input id="skillsAndExpertise" value={skillsAndExpertise} onChange={handleInputChange(setSkillsAndExpertise)} placeholder="Enter skills separated by commas (e.g., React, Node.js)" />
+                  {skillsAndExpertise.trim() && (
+                    <div className="mt-2 flex flex-wrap gap-2">
+                      {skillsAndExpertise.split(',').map(skill => skill.trim()).filter(Boolean).map((skill, index) => (
+                        <Badge key={index} variant="secondary" className="font-normal">{skill}</Badge>
+                      ))}
+                    </div>
+                  )}
+                </div>
+                <div>
+                  <Label htmlFor="relevantExperience">My Style / Relevant Experience</Label>
+                  <Textarea id="relevantExperience" value={relevantExperience} onChange={handleInputChange(setRelevantExperience)} placeholder="Briefly describe your relevant experience or paste a sample of your writing. The AI will adapt to your style." className="min-h-[120px]" />
+                </div>
+                 <div>
+                    <Label className="mb-2 block">Portfolio / Relevant Links</Label>
+                    <RadioGroup value={portfolioLinkOption} onValueChange={(value) => setPortfolioLinkOption(value as 'collection' | 'manual')} className="flex items-center space-x-4 mb-2">
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="manual" id="r2" />
+                        <Label htmlFor="r2">Manual Links</Label>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="collection" id="r1" />
+                        <Label htmlFor="r1">Portfolio Collection</Label>
+                      </div>
+                    </RadioGroup>
+
+                    {portfolioLinkOption === 'collection' ? (
+                      <div>
+                        <Select value={selectedPortfolio} onValueChange={setSelectedPortfolio}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select a collection" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">None</SelectItem>
+                            {portfolioCollections.map(collection => (
+                              <SelectItem key={collection.id} value={collection.id}>
+                                {collection.name}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <p className="text-sm text-muted-foreground mt-2">
+                          Manage your collections on the <a href="/dashboard/portfolio" className="underline">Portfolio page</a>.
+                        </p>
+                      </div>
+                    ) : (
+                      <Textarea 
+                        value={manualPortfolioLinks}
+                        onChange={handleInputChange(setManualPortfolioLinks)}
+                        placeholder="Paste relevant links, one per line."
+                        className="min-h-[100px]"
+                      />
+                    )}
+                  </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {currentStep === 3 && (
+            <Card>
+              <CardHeader>
+                <div className="flex items-center gap-2">
+                  <Bot className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-lg">Client Questions</CardTitle>
+                </div>
+                <CardDescription>If the job posting asks specific questions, add them here and get AI-powered answers.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {clientQuestions.map((q, index) => (
+                    <div key={q.id} className="space-y-2">
+                      <div className="flex items-start gap-2">
+                        <Textarea 
+                          placeholder={`Question ${index + 1}`} 
+                          value={q.question} 
+                          onChange={(e) => handleClientQuestionChange(q.id, 'question', e.target.value)} 
+                          className="flex-1"
+                          disabled={answersGenerated}
+                        />
+                        <Button 
+                          variant="ghost" 
+                          size="icon" 
+                          onClick={() => removeClientQuestion(q.id)} 
+                          className="text-muted-foreground hover:text-destructive h-8 w-8 self-center"
+                          disabled={answersGenerated}
+                        >
+                            <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
+                ))}
+                <div className="flex gap-2">
+                  <Button variant="outline" size="sm" onClick={addClientQuestion} disabled={answersGenerated}><Plus className="mr-2 h-4 w-4" /> Add Question</Button>
+                  <Button variant="outline" size="sm" onClick={handleAnswerAllQuestions} disabled={isAnsweringQuestions || !hasQuestions || answersGenerated}>
+                     {isAnsweringQuestions ? 'Answering...' : <><Sparkles className="mr-2 h-4 w-4" /> Get All Answers</>}
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {currentStep === 4 && (
+            <div className="space-y-6">
               <Card>
                 <CardHeader>
-                  <CardTitle className="flex items-center gap-2">
-                    <MessageSquareQuote className="h-5 w-5 text-primary" />
-                    Answers to Client Questions
-                  </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Settings className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-lg">Preferences</CardTitle>
+                  </div>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                  {clientQuestions.filter(q => q.answer).map(q => (
-                    <div key={q.id} className="prose prose-sm max-w-none">
-                      <p className="font-semibold text-gray-800">{q.question}</p>
-                      <p className="text-gray-600 whitespace-pre-wrap">{q.answer}</p>
-                    </div>
-                  ))}
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                      <Label>Greeting</Label>
+                      <Select value={greeting} onValueChange={setGreeting}>
+                          <SelectTrigger><SelectValue/></SelectTrigger>
+                          <SelectContent>
+                              {greetings.map(g => (
+                                  <SelectItem key={g.value} value={g.value}>{g.label}</SelectItem>
+                              ))}
+                          </SelectContent>
+                      </Select>
+                  </div>
+                  <div>
+                      <Label>Closing CTA</Label>
+                      <Select value={closingCta} onValueChange={setClosingCta}>
+                          <SelectTrigger><SelectValue/></SelectTrigger>
+                          <SelectContent>
+                              {closingCtas.map(c => (
+                                  <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                              ))}
+                          </SelectContent>
+                      </Select>
+                  </div>
+                  <div>
+                      <Label>Sign-off (Optional)</Label>
+                      <Select value={closingCta2} onValueChange={setClosingCta2}>
+                          <SelectTrigger><SelectValue placeholder="None" /></SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="none">None</SelectItem>
+                              {signOffCtas.map(c => (
+                                  <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+                              ))}
+                          </SelectContent>
+                      </Select>
+                  </div>
+                  <div>
+                      <Label>Tone</Label>
+                      <Select value={tone} onValueChange={setTone}>
+                          <SelectTrigger><SelectValue /></SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="professional">Professional</SelectItem>
+                              <SelectItem value="friendly">Friendly</SelectItem>
+                              <SelectItem value="assertive">Assertive</SelectItem>
+                              <SelectItem value="persuasive">Persuasive</SelectItem>
+                              <SelectItem value="creative">Creative</SelectItem>
+                              <SelectItem value="concise">Concise</SelectItem>
+                              <SelectItem value="formal">Formal</SelectItem>
+                          </SelectContent>
+                      </Select>
+                  </div>
+                  <div className="md:col-span-2">
+                      <div className="flex justify-between items-center mb-2">
+                        <Label>Word Limit (Optional)</Label>
+                        <span className="text-sm font-medium text-muted-foreground">{wordLimit[0]} - {wordLimit[1]} words</span>
+                      </div>
+                      <Slider 
+                        value={wordLimit}
+                        onValueChange={setWordLimit}
+                        min={50}
+                        max={500}
+                        step={10}
+                      />
+                  </div>
                 </CardContent>
               </Card>
-            )}
-          </div>
-        </div>
-
-        <div className="mt-16 grid grid-cols-1 md:grid-cols-5 gap-8 items-start">
-          <div className="md:col-span-3">
-            <div className="bg-card p-6 rounded-lg border shadow-sm">
-                <ProTips />
+              <Card>
+                <CardHeader>
+                  <div className="flex items-center gap-2">
+                    <Rocket className="h-5 w-5 text-primary" />
+                    <CardTitle className="text-lg">Opening Strategy</CardTitle>
+                  </div>
+                  <CardDescription>Choose a proven opening approach, or leave it as "None", AI will customize it for you.</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <RadioGroup value={openingStrategy} onValueChange={setOpeningStrategy} className="space-y-2" disabled={proposalTemplate === 'video'}>
+                    {openingStrategies.map(strategy => (
+                      <Label key={strategy.id} htmlFor={`strategy-${strategy.id}`} className={cn("flex items-start gap-3 rounded-lg border p-3 cursor-pointer transition-all", openingStrategy === strategy.id && "border-primary ring-2 ring-primary", (proposalTemplate === 'video' && strategy.id !== 'video') && "opacity-50 cursor-not-allowed")}>
+                        <RadioGroupItem value={strategy.id} id={`strategy-${strategy.id}`} className="mt-1" disabled={proposalTemplate === 'video' && strategy.id !== 'video'} />
+                        <div className="grid gap-1.5">
+                          <span className="font-semibold">{strategy.title}</span>
+                          <span className="text-sm text-muted-foreground">{strategy.description}</span>
+                        </div>
+                      </Label>
+                    ))}
+                  </RadioGroup>
+                   {strategySuggestionReasoning && openingStrategy !== 'none' && (
+                      <div className="mt-4 p-3 bg-green-50 border-l-4 border-green-400 text-green-800 rounded-r-lg">
+                          <p><span className="font-bold">AI Suggestion: </span>{strategySuggestionReasoning}</p>
+                      </div>
+                  )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+          
+          <div className="flex justify-between items-center">
+            <div>
+              {currentStep > 1 && (
+                <Button variant="outline" onClick={prevStep}>
+                  <ArrowLeft className="mr-2 h-4 w-4" /> Previous
+                </Button>
+              )}
+            </div>
+            <div>
+              {currentStep < totalSteps ? (
+                <Button onClick={nextStep}>
+                  Next <ArrowRight className="ml-2 h-4 w-4" />
+                </Button>
+              ) : (
+                <Button size="lg" onClick={handleGenerateProposal} disabled={isGenerating}>
+                  {isGenerating ? "Generating..." : <><Wand2 className="mr-2"/>Generate Proposal</>}
+                </Button>
+              )}
             </div>
           </div>
-          <Card className="md:col-span-2">
-            <CardContent className="p-6">
-               <div className="flex items-center gap-4 mb-4">
-                <img src="/wahaj-mansoor.png" alt="Wahaj Mansoor" width={80} height={80} className="rounded-full" />
-                <div>
-                  <Link href="https://www.linkedin.com/in/wahajmansoor/" target="_blank" className="flex items-center gap-2 hover:underline">
-                    <h3 className="text-xl font-bold">Wahaj Mansoor</h3>
-                    <LinkedInIcon className="h-5 w-5" />
-                  </Link>
-                  <p className="text-sm text-muted-foreground font-semibold">WordPress Developer & Brand Strategist</p>
-                </div>
+        </div>
+        
+        <div className="space-y-6 sticky top-24">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CardTitle>Generated Proposal</CardTitle>
+                {wordCount > 0 && (
+                  <Badge variant="secondary">{wordCount} words</Badge>
+                )}
               </div>
-              <p className="text-xs text-muted-foreground mb-4">
-                I design high-converting WordPress websites that consistently capture leads. With 1,500+ verified 5-star reviews, I'm recognized as a Preferred Freelancer on freelancer.com and a Level 2 Seller on fiverr.com.
-              </p>
-              
-              <div className="grid grid-cols-3 gap-4 text-center mb-6">
-                <div>
-                  <p className="text-lg font-bold">1500+</p>
-                  <p className="text-xs text-muted-foreground">Happy Customers</p>
-                </div>
-                <div>
-                  <p className="text-lg font-bold">10</p>
-                  <p className="text-xs text-muted-foreground">Years Experience</p>
-                </div>
-                <div>
-                  <p className="text-lg font-bold">6500+</p>
-                  <p className="text-xs text-muted-foreground">LinkedIn Community</p>
-                </div>
+              <div className="flex items-center gap-1">
+                  <Button variant="outline" size="sm" onClick={handleSaveProposal} disabled={!generatedProposal || isSaving}>
+                      {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
+                      Save
+                  </Button>
+                  <Button variant="outline" size="sm" onClick={() => copyToClipboard(generatedProposal)} disabled={!generatedProposal}>
+                      <Clipboard className="mr-2 h-4 w-4" /> Copy
+                  </Button>
               </div>
-
-              <div className="border-t pt-4 mt-6">
-                <h4 className="font-semibold mb-4">My Services</h4>
-                <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
-                    <div className="flex items-center gap-2">
-                      <div className="bg-primary/10 p-1 rounded-full"><Code className="h-3 w-3 text-primary" /></div>
-                      <span>Web Development</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="bg-primary/10 p-1 rounded-full"><ShoppingCart className="h-3 w-3 text-primary" /></div>
-                      <span>eCommerce Solution</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="bg-primary/10 p-1 rounded-full"><Search className="h-3 w-3 text-primary" /></div>
-                      <span>On-Page SEO</span>
-                    </div>
-                     <div className="flex items-center gap-2">
-                      <div className="bg-primary/10 p-1 rounded-full"><Lightbulb className="h-3 w-3 text-primary" /></div>
-                      <span>Landing Page</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="bg-primary/10 p-1 rounded-full"><Globe className="h-3 w-3 text-primary" /></div>
-                      <span>Web Designing</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <div className="bg-primary/10 p-1 rounded-full"><Mail className="h-3 w-3 text-primary" /></div>
-                      <span>Email Marketing</span>
-                    </div>
-                     <div className="flex items-center gap-2 col-span-2">
-                      <div className="bg-primary/10 p-1 rounded-full"><BarChart2 className="h-3 w-3 text-primary" /></div>
-                      <span>GoHighLevel Funnels</span>
-                    </div>
-                </div>
-              </div>
-
-              <div className="mt-6 flex flex-col gap-2">
-                 <Button asChild className="bg-black text-white hover:bg-gray-800 w-full">
-                  <Link href="https://cal.com/wahajmansoor/website-consultation" target="_blank">
-                    <Calendar className="mr-2" /> Book 1:1 Discovery Call
-                  </Link>
-                </Button>
-                <Button asChild variant="outline" className="w-full">
-                  <Link href="https://wahajmansoor.com/" target="_blank">
-                    <ExternalLink className="mr-2" /> Visit Website
-                  </Link>
-                </Button>
-              </div>
+            </CardHeader>
+            <CardContent className={cn("min-h-[400px]", { 'min-h-[200px]': !generatedProposal && !isGenerating })}>
+              {isGenerating ? (
+                  <div className="space-y-2 pt-4">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-5/6" />
+                      <Skeleton className="h-4 w-full mt-4" />
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-2/3" />
+                  </div>
+              ) : generatedProposal ? (
+                  <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
+                      {generatedProposal}
+                  </div>
+              ) : (
+                  <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+                    <FileText className="h-12 w-12 mb-4" />
+                    <p className="font-medium">Your proposal will appear here.</p>
+                    <p className="text-sm">Fill out the details on the left and click "Generate Proposal".</p>
+                  </div>
+              )}
             </CardContent>
           </Card>
+
+          {generatedProposal && hasAnsweredQuestions && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <MessageSquareQuote className="h-5 w-5 text-primary" />
+                  Answers to Client Questions
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                {clientQuestions.filter(q => q.answer).map(q => (
+                  <div key={q.id} className="prose prose-sm max-w-none">
+                    <p className="font-semibold text-gray-800">{q.question}</p>
+                    <p className="text-gray-600 whitespace-pre-wrap">{q.answer}</p>
+                  </div>
+                ))}
+              </CardContent>
+            </Card>
+          )}
         </div>
-      </main>
-    </div>
+      </div>
+
+      <div className="mt-16 grid grid-cols-1 md:grid-cols-5 gap-8 items-start">
+        <div className="md:col-span-3">
+          <div className="bg-card p-6 rounded-lg border shadow-sm">
+              <ProTips />
+          </div>
+        </div>
+        <Card className="md:col-span-2">
+          <CardContent className="p-6">
+             <div className="flex items-center gap-4 mb-4">
+              <img src="/wahaj-mansoor.png" alt="Wahaj Mansoor" width={80} height={80} className="rounded-full" />
+              <div>
+                <Link href="https://www.linkedin.com/in/wahajmansoor/" target="_blank" className="flex items-center gap-2 hover:underline">
+                  <h3 className="text-xl font-bold">Wahaj Mansoor</h3>
+                  <LinkedInIcon className="h-5 w-5" />
+                </Link>
+                <p className="text-sm text-muted-foreground font-semibold">WordPress Developer & Brand Strategist</p>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground mb-4">
+              I design high-converting WordPress websites that consistently capture leads. With 1,500+ verified 5-star reviews, I'm recognized as a Preferred Freelancer on freelancer.com and a Level 2 Seller on fiverr.com.
+            </p>
+            
+            <div className="grid grid-cols-3 gap-4 text-center mb-6">
+              <div>
+                <p className="text-lg font-bold">1500+</p>
+                <p className="text-xs text-muted-foreground">Happy Customers</p>
+              </div>
+              <div>
+                <p className="text-lg font-bold">10</p>
+                <p className="text-xs text-muted-foreground">Years Experience</p>
+              </div>
+              <div>
+                <p className="text-lg font-bold">6500+</p>
+                <p className="text-xs text-muted-foreground">LinkedIn Community</p>
+              </div>
+            </div>
+
+            <div className="border-t pt-4 mt-6">
+              <h4 className="font-semibold mb-4">My Services</h4>
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-sm">
+                  <div className="flex items-center gap-2">
+                    <div className="bg-primary/10 p-1 rounded-full"><Code className="h-3 w-3 text-primary" /></div>
+                    <span>Web Development</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="bg-primary/10 p-1 rounded-full"><ShoppingCart className="h-3 w-3 text-primary" /></div>
+                    <span>eCommerce Solution</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="bg-primary/10 p-1 rounded-full"><Search className="h-3 w-3 text-primary" /></div>
+                    <span>On-Page SEO</span>
+                  </div>
+                   <div className="flex items-center gap-2">
+                    <div className="bg-primary/10 p-1 rounded-full"><Lightbulb className="h-3 w-3 text-primary" /></div>
+                    <span>Landing Page</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="bg-primary/10 p-1 rounded-full"><Globe className="h-3 w-3 text-primary" /></div>
+                    <span>Web Designing</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <div className="bg-primary/10 p-1 rounded-full"><Mail className="h-3 w-3 text-primary" /></div>
+                    <span>Email Marketing</span>
+                  </div>
+                   <div className="flex items-center gap-2 col-span-2">
+                    <div className="bg-primary/10 p-1 rounded-full"><BarChart2 className="h-3 w-3 text-primary" /></div>
+                    <span>GoHighLevel Funnels</span>
+                  </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-col gap-2">
+               <Button asChild className="bg-black text-white hover:bg-gray-800 w-full">
+                <Link href="https://cal.com/wahajmansoor/website-consultation" target="_blank">
+                  <Calendar className="mr-2" /> Book 1:1 Discovery Call
+                </Link>
+              </Button>
+              <Button asChild variant="outline" className="w-full">
+                <Link href="https://wahajmansoor.com/" target="_blank">
+                  <ExternalLink className="mr-2" /> Visit Website
+                </Link>
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    </>
   );
 }
