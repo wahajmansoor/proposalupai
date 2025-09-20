@@ -7,11 +7,20 @@ if (!process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
 
 let app: admin.app.App;
 
-if (!admin.apps.length) {
+function getAdminApp() {
+  if (app) {
+    return app;
+  }
+
+  if (admin.apps.length > 0) {
+    app = admin.app();
+    return app;
+  }
+
   try {
-    const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY!;
     const serviceAccount = JSON.parse(serviceAccountString);
-    
+
     if (serviceAccount.private_key) {
       serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
     }
@@ -19,17 +28,14 @@ if (!admin.apps.length) {
     app = admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
     });
+    return app;
   } catch (error: any) {
     console.error('Failed to parse or initialize Firebase Admin SDK:', error);
     throw new Error(
       'Failed to initialize Firebase Admin SDK. Check server logs for details.'
     );
   }
-} else {
-  app = admin.app();
 }
 
-const adminAuth = admin.auth(app);
-const adminDb = admin.firestore(app);
-
-export { adminAuth, adminDb };
+export const getAdminAuth = () => admin.auth(getAdminApp());
+export const getAdminDb = () => admin.firestore(getAdminApp());
