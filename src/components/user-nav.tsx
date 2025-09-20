@@ -1,3 +1,4 @@
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -14,14 +15,28 @@ import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import Link from 'next/link';
 import { Skeleton } from './ui/skeleton';
-import { ChevronDown } from 'lucide-react';
+import { ChevronDown, CreditCard } from 'lucide-react';
+import { createCustomerPortalSession } from '@/app/lib/stripe-actions';
+import { useToast } from '@/hooks/use-toast';
 
 export function UserNav() {
-  const { user, loading } = useAuth();
+  const { user, userProfile, loading } = useAuth();
+  const { toast } = useToast();
 
   const handleLogout = async () => {
     await signOut(auth);
-    // The AuthProvider will handle redirecting the user
+  };
+
+  const handleManageBilling = async () => {
+    try {
+      await createCustomerPortalSession();
+    } catch (error: any) {
+        toast({
+            title: 'Error',
+            description: error.message || 'Could not redirect to billing portal.',
+            variant: 'destructive',
+        });
+    }
   };
 
   if (loading) {
@@ -53,7 +68,6 @@ export function UserNav() {
     return name.substring(0, 2).toUpperCase();
   };
   
-  // Use a variable to ensure we have the latest info for display
   const displayName = user.displayName;
   const photoURL = user.photoURL;
   const email = user.email;
@@ -90,6 +104,12 @@ export function UserNav() {
           <DropdownMenuItem asChild>
             <Link href="/dashboard/profile">Profile</Link>
           </DropdownMenuItem>
+          {userProfile?.stripeCustomerId && (
+             <DropdownMenuItem onSelect={handleManageBilling}>
+                <CreditCard className="mr-2 h-4 w-4" />
+                Manage Billing
+            </DropdownMenuItem>
+          )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>

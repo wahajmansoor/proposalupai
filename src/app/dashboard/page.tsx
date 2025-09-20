@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef } from 'react';
@@ -89,7 +90,7 @@ const signOffCtas = [
 ];
 
 export default function DashboardPage() {
-  const { user, loading } = useAuth();
+  const { user, userProfile, loading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   
@@ -145,12 +146,20 @@ export default function DashboardPage() {
   const [isAnsweringQuestions, setIsAnsweringQuestions] = useState(false);
   const [answersGenerated, setAnswersGenerated] = useState(false);
 
-
   useEffect(() => {
-    if (!loading && !user) {
-      router.push('/login');
+    if (!loading) {
+      if (!user) {
+        router.push('/login');
+      } else {
+        const hasActiveSubscription = userProfile?.subscriptionStatus === 'active';
+        const isTrialActive = userProfile?.trialEndDate && new Date() < userProfile.trialEndDate;
+        if (!hasActiveSubscription && !isTrialActive) {
+          router.push('/dashboard/pricing');
+        }
+      }
     }
-  }, [user, loading, router]);
+  }, [user, userProfile, loading, router]);
+
 
   useEffect(() => {
     if (user) {
