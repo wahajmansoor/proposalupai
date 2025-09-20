@@ -52,30 +52,33 @@ export async function GET(req: NextRequest) {
 
     const { sub: uid, email, name, picture, email_verified } = payload;
     let userRecord: UserRecord;
+    let isNewUser = false;
 
     try {
-      userRecord = await adminAuth.getUser(uid);
+      userRecord = await adminAuth.getUserByEmail(email);
     } catch (e: any) {
       if (e.code === 'auth/user-not-found') {
-        try {
-            userRecord = await adminAuth.getUserByEmail(email);
-        } catch (emailError: any) {
-             if (emailError.code === 'auth/user-not-found') {
-                userRecord = await adminAuth.createUser({
-                    uid,
-                    email,
-                    emailVerified: email_verified,
-                    displayName: name,
-                    photoURL: picture,
-                    disabled: false,
-                });
-             } else {
-                 throw emailError;
-             }
-        }
+        userRecord = await adminAuth.createUser({
+            // Use email as UID for consistency if possible, but Google sub is safer
+            uid: uid, 
+            email,
+            emailVerified: email_verified,
+            displayName: name,
+            photoURL: picture,
+            disabled: false,
+        });
+        isNewUser = true;
       } else {
         throw e;
       }
+    }
+
+    // Ensure Auth profile is up-to-date
+    if (!isNewUser) {
+        await adminAuth.updateUser(userRecord.uid, {
+            displayName: name,
+            photoURL: picture,
+        });
     }
     
     const userRef = adminDb.collection('users').doc(userRecord.uid);
