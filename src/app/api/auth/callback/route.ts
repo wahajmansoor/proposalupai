@@ -89,13 +89,20 @@ export async function GET(req: NextRequest) {
     const userDoc = await userRef.get();
 
     if (!userDoc.exists) {
-        await userRef.set({
+        const userData: { [key: string]: any } = {
             uid: userRecord.uid,
             email: userRecord.email,
-            displayName: userRecord.displayName,
-            photoURL: userRecord.photoURL,
             createdAt: new Date(),
-        });
+        };
+
+        if (userRecord.displayName) {
+            userData.displayName = userRecord.displayName;
+        }
+        if (userRecord.photoURL) {
+            userData.photoURL = userRecord.photoURL;
+        }
+
+        await userRef.set(userData);
     }
 
     const customToken = await adminAuth.createCustomToken(userRecord.uid);
