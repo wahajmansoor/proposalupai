@@ -53,12 +53,16 @@ export async function GET(req: NextRequest) {
     const { sub: uid, email, name, picture, email_verified } = payload;
     let userRecord: UserRecord;
     
+    const displayName = name;
+    // Use the provided picture, or a default placeholder if it doesn't exist.
+    const photoURL = picture || `https://picsum.photos/seed/${uid}/96/96`;
+
     try {
       userRecord = await adminAuth.getUserByEmail(email);
       // Update existing user's info in Firebase Auth
       await adminAuth.updateUser(userRecord.uid, {
-        displayName: name,
-        photoURL: picture,
+        displayName: displayName,
+        photoURL: photoURL,
       });
 
     } catch (e: any) {
@@ -68,8 +72,8 @@ export async function GET(req: NextRequest) {
             uid: uid, 
             email,
             emailVerified: email_verified,
-            displayName: name,
-            photoURL: picture,
+            displayName: displayName,
+            photoURL: photoURL,
             disabled: false,
         });
       } else {
@@ -84,10 +88,10 @@ export async function GET(req: NextRequest) {
     const userData: { [key: string]: any } = {
         uid: userRecord.uid,
         email: userRecord.email,
+        displayName: displayName,
+        photoURL: photoURL,
     };
-    if (name) userData.displayName = name;
-    if (picture) userData.photoURL = picture;
-
+    
     // This block now correctly handles both creation and updates.
     if (!userDoc.exists) {
         // If doc doesn't exist, create it with all available data + createdAt
