@@ -54,19 +54,15 @@ export async function GET(req: NextRequest) {
     let userRecord: UserRecord;
 
     try {
-      // First, try to get the user by their Google UID. This is the standard case.
       userRecord = await adminAuth.getUser(uid);
     } catch (e: any) {
       if (e.code === 'auth/user-not-found') {
-        // If user not found by UID, they might have an account with the same email
-        // created via a different provider (e.g., email/password).
         try {
             userRecord = await adminAuth.getUserByEmail(email);
         } catch (emailError: any) {
              if (emailError.code === 'auth/user-not-found') {
-                // If no user exists with this email either, create a new one.
                 userRecord = await adminAuth.createUser({
-                    uid, // Use the Google UID for the new user
+                    uid,
                     email,
                     emailVerified: email_verified,
                     displayName: name,
@@ -74,35 +70,30 @@ export async function GET(req: NextRequest) {
                     disabled: false,
                 });
              } else {
-                 // Rethrow other errors from getUserByEmail
                  throw emailError;
              }
         }
       } else {
-        // Rethrow other errors from getUser
         throw e;
       }
     }
     
-    // Ensure Firestore document exists for this user.
     const userRef = adminDb.collection('users').doc(userRecord.uid);
     const userDoc = await userRef.get();
 
+    const userData: { [key: string]: any } = {
+        uid: userRecord.uid,
+        email: userRecord.email,
+    };
+    if (name) userData.displayName = name;
+    if (picture) userData.photoURL = picture;
+
     if (!userDoc.exists) {
-        const userData: { [key: string]: any } = {
-            uid: userRecord.uid,
-            email: userRecord.email,
-            createdAt: new Date(),
-        };
-
-        if (userRecord.displayName) {
-            userData.displayName = userRecord.displayName;
-        }
-        if (userRecord.photoURL) {
-            userData.photoURL = userRecord.photoURL;
-        }
-
+        userData.createdAt = new Date();
         await userRef.set(userData);
+    } else {
+        // Always update with the latest info from Google on login
+        await userRef.update(userData);
     }
 
     const customToken = await adminAuth.createCustomToken(userRecord.uid);
