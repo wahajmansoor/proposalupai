@@ -1,14 +1,11 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { OAuth2Client } from 'google-auth-library';
-import { getAdminAuth, getAdminDb } from '@/lib/firebase/admin';
+import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { headers } from 'next/headers';
 import type { UserRecord } from 'firebase-admin/auth';
 
 export async function GET(req: NextRequest) {
-  const adminAuth = getAdminAuth();
-  const adminDb = getAdminDb();
-  
   const headersList = headers();
   const protocol = headersList.get('x-forwarded-proto') || 'http';
   const host = headersList.get('host');
