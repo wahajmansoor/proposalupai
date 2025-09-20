@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
@@ -10,7 +10,7 @@ import { Label } from '@/components/ui/label';
 import { ProposalUpLogo, GoogleIcon } from '@/components/icons';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithCustomToken, signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { getGoogleAuthUrl } from '@/app/lib/actions';
 import { Separator } from '@/components/ui/separator';
@@ -27,7 +27,63 @@ export default function LoginPage() {
     setIsGoogleLoading(true);
     try {
       const googleAuthUrl = await getGoogleAuthUrl();
-      router.push(googleAuthUrl);
+      const popup = window.open(googleAuthUrl, 'google-signin', 'width=600,height=700');
+      
+      const handleMessage = (event: MessageEvent) => {
+        // Ensure the message is from our own origin for security
+        if (event.origin !== window.location.origin) {
+          return;
+        }
+
+        const { type, token, error, details } = event.data;
+
+        if (type === 'auth-token' && token) {
+           signInWithCustomToken(auth, token)
+            .then(() => {
+              toast({
+                title: 'Successfully signed in!',
+                description: "You will be redirected to your dashboard.",
+              });
+              router.push('/dashboard');
+            })
+            .catch((signInError) => {
+              console.error('Custom token sign-in error:', signInError);
+              toast({
+                title: 'Sign-In Failed',
+                description: 'There was a problem signing you in. Please try again.',
+                variant: 'destructive',
+              });
+            })
+            .finally(() => {
+                setIsGoogleLoading(false);
+                window.removeEventListener('message', handleMessage);
+            });
+
+        } else if (type === 'auth-error') {
+            toast({
+                title: `Google Sign-In Failed: ${error}`,
+                description: details || 'An unexpected error occurred.',
+                variant: 'destructive',
+            });
+            setIsGoogleLoading(false);
+            window.removeEventListener('message', handleMessage);
+        }
+      };
+      
+      window.addEventListener('message', handleMessage);
+
+      // Check if the popup was closed, in case the user closes it manually
+      const checkPopup = setInterval(() => {
+        if (!popup || popup.closed) {
+          clearInterval(checkPopup);
+          // Only set loading to false if we haven't already processed a message
+          if(isGoogleLoading) {
+            setIsGoogleLoading(false);
+            window.removeEventListener('message', handleMessage);
+          }
+        }
+      }, 1000);
+
     } catch (error: any) {
       toast({
         title: 'Google Sign-In Failed',

@@ -2,8 +2,6 @@
 
 import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
-import { signInWithCustomToken } from 'firebase/auth';
-import { auth } from '@/lib/firebase/config';
 import { useToast } from '@/hooks/use-toast';
 import { ProposalUpLogo } from '@/components/icons';
 
@@ -14,28 +12,26 @@ function AuthCallback() {
 
   useEffect(() => {
     const token = searchParams.get('token');
-    if (token) {
-      signInWithCustomToken(auth, token)
-        .then(() => {
-          toast({
-            title: 'Successfully signed in!',
-            description: "You will be redirected to your dashboard.",
-          });
-          router.push('/dashboard');
-        })
-        .catch((error) => {
-          console.error('Custom token sign-in error:', error);
-          toast({
-            title: 'Sign-In Failed',
-            description: 'There was a problem signing you in. Please try again.',
-            variant: 'destructive',
-          });
-          router.push('/login');
-        });
+    
+    // Check if this window was opened by a parent window
+    if (window.opener) {
+      if (token) {
+        // Send the token to the parent window
+        window.opener.postMessage({ type: 'auth-token', token }, window.location.origin);
+      } else {
+        // Send an error to the parent window
+        const error = searchParams.get('error') || 'unknown-error';
+        const details = searchParams.get('details') || 'An unknown error occurred.';
+        window.opener.postMessage({ type: 'auth-error', error, details }, window.location.origin);
+      }
+       // The popup should close itself after posting the message.
+       // The parent window will handle the sign-in logic.
+       window.close();
     } else {
-       toast({
+      // Fallback for cases where it's not a popup (e.g., direct navigation)
+      toast({
         title: 'Authentication Error',
-        description: 'No authentication token found. Please try logging in again.',
+        description: 'Please try logging in again from the login page.',
         variant: 'destructive',
       });
       router.push('/login');
@@ -46,7 +42,7 @@ function AuthCallback() {
     <div className="flex items-center justify-center min-h-screen">
       <div className="flex flex-col items-center gap-4">
         <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />
-        <p className="text-muted-foreground">Signing you in...</p>
+        <p className="text-muted-foreground">Finalizing authentication...</p>
       </div>
     </div>
   );

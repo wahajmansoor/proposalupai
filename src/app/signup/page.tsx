@@ -13,6 +13,9 @@ import { Loader2, XCircle, CheckCircle2 } from 'lucide-react';
 import { signUpUser } from '@/lib/firebase/auth';
 import { getGoogleAuthUrl } from '@/app/lib/actions';
 import { cn } from '@/lib/utils';
+import { signInWithCustomToken } from 'firebase/auth';
+import { auth } from '@/lib/firebase/config';
+
 
 const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => {
   return (
@@ -56,7 +59,60 @@ export default function SignupPage() {
     setIsGoogleLoading(true);
     try {
       const googleAuthUrl = await getGoogleAuthUrl();
-      router.push(googleAuthUrl);
+      const popup = window.open(googleAuthUrl, 'google-signin', 'width=600,height=700');
+      
+      const handleMessage = (event: MessageEvent) => {
+        if (event.origin !== window.location.origin) {
+          return;
+        }
+
+        const { type, token, error, details } = event.data;
+
+        if (type === 'auth-token' && token) {
+          signInWithCustomToken(auth, token)
+            .then(() => {
+              toast({
+                title: 'Successfully signed in!',
+                description: "Welcome! We're redirecting you to the dashboard.",
+              });
+              router.push('/dashboard');
+            })
+            .catch((signInError) => {
+              console.error('Custom token sign-in error:', signInError);
+              toast({
+                title: 'Sign-In Failed',
+                description: 'There was a problem signing you in. Please try again.',
+                variant: 'destructive',
+              });
+            })
+            .finally(() => {
+                setIsGoogleLoading(false);
+                window.removeEventListener('message', handleMessage);
+            });
+
+        } else if (type === 'auth-error') {
+            toast({
+                title: `Google Sign-Up Failed: ${error}`,
+                description: details || 'An unexpected error occurred.',
+                variant: 'destructive',
+            });
+            setIsGoogleLoading(false);
+            window.removeEventListener('message', handleMessage);
+        }
+      };
+      
+      window.addEventListener('message', handleMessage);
+      
+      const checkPopup = setInterval(() => {
+        if (!popup || popup.closed) {
+          clearInterval(checkPopup);
+          if(isGoogleLoading) {
+            setIsGoogleLoading(false);
+            window.removeEventListener('message', handleMessage);
+          }
+        }
+      }, 1000);
+
     } catch (error: any) {
       toast({
         title: 'Google Sign-Up Failed',
