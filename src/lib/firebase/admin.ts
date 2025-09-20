@@ -1,8 +1,5 @@
 'server-only';
 import * as admin from 'firebase-admin';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 if (!process.env.FIREBASE_SERVICE_ACCOUNT_KEY) {
   throw new Error('Missing FIREBASE_SERVICE_ACCOUNT_KEY environment variable');

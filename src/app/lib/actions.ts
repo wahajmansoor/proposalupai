@@ -9,9 +9,6 @@ import { generateProposal } from '@/ai/flows/generate-proposal-from-job-analysis
 import { suggestProposalTemplate } from '@/ai/flows/suggest-proposal-template';
 import { suggestOpeningStrategy } from '@/ai/flows/suggest-opening-strategy';
 import { OAuth2Client } from 'google-auth-library';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 const projectDetailsSchema = z.object({
   projectTitle: z.string().min(1, 'Project title is required.'),

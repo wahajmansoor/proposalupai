@@ -2,9 +2,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { OAuth2Client } from 'google-auth-library';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { doc, setDoc, serverTimestamp, getDoc } from 'firebase/firestore';
-import dotenv from 'dotenv';
-
-dotenv.config();
 
 export async function GET(req: NextRequest) {
   // Initialize the OAuth2Client inside the handler to ensure env vars are loaded.
