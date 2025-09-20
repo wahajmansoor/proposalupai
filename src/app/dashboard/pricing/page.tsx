@@ -88,7 +88,7 @@ export default function PricingPage() {
           <form onSubmit={handleSubmit}>
             <Button size="lg" className="w-full" disabled={isSubmitting}>
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-              {isSubmitting ? 'Redirecting to Checkout...' : 'Upgrade to Pro'}
+              {isSubmitting ? 'Redirecting to Checkout...' : 'Start a 2-day free trial'}
             </Button>
           </form>
         </CardContent>
