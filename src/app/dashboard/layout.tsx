@@ -30,16 +30,20 @@ export default function DashboardLayout({
       return;
     }
     
+    // Wait until userProfile is definitively loaded
     if (!userProfile) {
       return;
     }
     
+    // Allow access to pricing and profile pages regardless of subscription
     const allowedPaths = ["/dashboard/pricing", "/dashboard/profile"];
     if (allowedPaths.includes(pathname)) {
+      setShowTrialDialog(false); // Ensure trial dialog is hidden on these pages
       return;
     }
 
     const hasActiveSubscription = userProfile.subscriptionStatus === "active";
+    // Check for a valid trial end date before comparing
     const isTrialActive = userProfile.trialEndDate && new Date() < userProfile.trialEndDate;
 
     if (!hasActiveSubscription) {
@@ -65,9 +69,14 @@ export default function DashboardLayout({
     );
   }
   
+  // Conditionally render based on pricing page to avoid showing app background
+  if (isPricingPage) {
+    return <>{children}</>;
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-[#f9f9f9]">
-      {!isPricingPage && <Header />}
+      <Header />
       <TrialDialog open={showTrialDialog} />
       <main className="flex-1 p-4 md:p-8 container mx-auto">
         {children}
