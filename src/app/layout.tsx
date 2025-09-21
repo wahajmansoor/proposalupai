@@ -24,9 +24,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" className={inter.variable}>
-      <head>
-        <link rel="icon" href="/logo.svg" type="image/svg+xml" />
-      </head>
+      <head />
       <body>
         <AuthProvider>
           {children}

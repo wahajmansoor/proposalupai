@@ -15,7 +15,14 @@ const firebaseConfig = {
 // Validate the Firebase config
 for (const [key, value] of Object.entries(firebaseConfig)) {
     if (!value || value.includes('your_')) {
-        throw new Error(`Missing or invalid Firebase config value for ${key} in .env.local. Please check your Firebase project settings.`);
+        const errorMessage = `Missing or invalid Firebase config value for ${key} in .env.local. Please check your Firebase project settings.`;
+        // Only throw an error on the server-side to prevent app crash during build/dev
+        if (typeof window === 'undefined') {
+            throw new Error(errorMessage);
+        } else {
+            // Log a prominent error in the browser console
+            console.error(errorMessage);
+        }
     }
 }
 
