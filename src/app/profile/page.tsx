@@ -54,9 +54,22 @@ export default function ProfilePage() {
     setIsSaving(false);
   };
 
-  const handleBillingSubmit = () => {
+  const handleBillingSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setIsManagingBilling(true);
-    // The form action will handle the rest. We just set loading state.
+    
+    const result = await createCustomerPortalSession();
+    
+    if (result.error) {
+        toast({
+            title: 'Error',
+            description: result.error,
+            variant: 'destructive',
+        });
+        setIsManagingBilling(false);
+    } else if (result.url) {
+        window.location.href = result.url;
+    }
   };
 
   const subscriptionStatus = userProfile?.subscriptionStatus;
@@ -138,7 +151,7 @@ export default function ProfilePage() {
                 )}
               </div>
               {userProfile?.stripeCustomerId && (
-                <form action={createCustomerPortalSession} onSubmit={handleBillingSubmit}>
+                <form onSubmit={handleBillingSubmit}>
                   <Button type="submit" disabled={isManagingBilling} className="w-full">
                     {isManagingBilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2" />}
                     Manage Billing & Subscription

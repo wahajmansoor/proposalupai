@@ -51,17 +51,17 @@ export async function createCheckoutSession() {
   redirect(checkoutSession.url);
 }
 
-export async function createCustomerPortalSession() {
+export async function createCustomerPortalSession(): Promise<{ url?: string; error?: string }> {
     const currentUser = await getCurrentUser();
     if (!currentUser) {
-        throw new Error('User not authenticated. Please log in again.');
+        return { error: 'User not authenticated. Please log in again.' };
     }
 
     const { userDoc } = currentUser;
     const stripeCustomerId = userDoc?.stripeCustomerId;
 
     if (!stripeCustomerId) {
-        throw new Error('Stripe customer ID not found for this user.');
+        return { error: 'Stripe customer ID not found for this user.' };
     }
 
     const headersList = headers();
@@ -69,23 +69,23 @@ export async function createCustomerPortalSession() {
     const host = headersList.get('host');
     const returnUrl = `${protocol}://${host}/profile`;
 
-    let portalSession;
     try {
-        portalSession = await stripe.billingPortal.sessions.create({
+        const portalSession = await stripe.billingPortal.sessions.create({
             customer: stripeCustomerId,
             return_url: returnUrl,
         });
 
         if (!portalSession.url) {
-            throw new Error('Could not create customer portal session.');
+            return { error: 'Could not create customer portal session.' };
         }
+        
+        return { url: portalSession.url };
+
     } catch (error: any) {
         console.error("Error creating customer portal session:", error.message);
         if (error.message && error.message.includes('No configuration provided')) {
-            throw new Error('Stripe Customer Portal is not configured. Please set it up in your Stripe dashboard at dashboard.stripe.com/test/settings/billing/portal');
+            return { error: 'Stripe Customer Portal is not configured. Please set it up in your Stripe dashboard at dashboard.stripe.com/test/settings/billing/portal' };
         }
-        throw new Error(error.message || 'An unexpected error occurred while creating the billing portal session.');
+        return { error: 'An unexpected error occurred while creating the billing portal session.' };
     }
-    
-    redirect(portalSession.url);
 }

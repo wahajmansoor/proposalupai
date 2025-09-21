@@ -23,13 +23,28 @@ import { useState } from 'react';
 export function UserNav() {
   const { user, userProfile, loading } = useAuth();
   const [isManagingBilling, setIsManagingBilling] = useState(false);
-
+  const { toast } = useToast();
 
   const handleLogout = async () => {
     // Clear session cookie on the server
     await fetch('/api/auth/session', { method: 'DELETE' });
     // Sign out from Firebase client-side
     await signOut(auth);
+  };
+
+  const handleManageBilling = async () => {
+    setIsManagingBilling(true);
+    const result = await createCustomerPortalSession();
+    if (result.error) {
+      toast({
+        title: 'Error',
+        description: result.error,
+        variant: 'destructive',
+      });
+    } else if (result.url) {
+      window.location.href = result.url;
+    }
+    setIsManagingBilling(false);
   };
   
   if (loading) {
@@ -101,14 +116,10 @@ export function UserNav() {
               </Link>
            </DropdownMenuItem>
           {userProfile?.stripeCustomerId && (
-             <form action={createCustomerPortalSession} onSubmit={() => setIsManagingBilling(true)}>
-                <button type="submit" className="w-full" disabled={isManagingBilling}>
-                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
-                        {isManagingBilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
-                        Manage Billing
-                    </DropdownMenuItem>
-                </button>
-             </form>
+             <DropdownMenuItem onSelect={handleManageBilling} disabled={isManagingBilling}>
+                {isManagingBilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
+                Manage Billing
+            </DropdownMenuItem>
           )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
