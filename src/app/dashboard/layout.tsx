@@ -29,7 +29,7 @@ export default function DashboardLayout({
 
     // Wait for userProfile to be loaded
     if (!userProfile) {
-      return; 
+      return;
     }
     
     // User can always access pricing and their profile
@@ -49,8 +49,9 @@ export default function DashboardLayout({
 
   }, [user, userProfile, loading, router, pathname]);
 
-  // Show a loading screen while we verify auth and subscription status
-  if (!isAuthorized || loading) {
+  // Show a loading screen while we verify auth and subscription status.
+  // This prevents the flicker of content on login/logout.
+  if (loading || !user || !isAuthorized) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />
