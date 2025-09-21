@@ -76,7 +76,7 @@ export default function PricingPage() {
             <p className="text-lg text-muted-foreground mt-2">Choose the plan that's right for you.</p>
         </div>
         <div className="flex justify-center w-full max-w-md">
-            <Card className="flex flex-col shadow-lg w-full">
+            <Card className="flex flex-col shadow-lg w-full border border-[#d8d5d1]">
                 <CardHeader className="pb-4">
                     <CardTitle className="text-xl font-semibold">{proPlan.name}</CardTitle>
                     <CardDescription className="min-h-[40px]">{proPlan.description}</CardDescription>
@@ -92,7 +92,7 @@ export default function PricingPage() {
                         <Button 
                             size="lg" 
                             className={cn(
-                                "w-full text-base font-semibold", 
+                                "w-full text-lg font-medium", 
                                 hasActiveSubscription && 'opacity-50 cursor-not-allowed'
                             )}
                             disabled={isSubmitting || hasActiveSubscription}>
