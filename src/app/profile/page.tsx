@@ -10,22 +10,24 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { updateUserProfile, sendPasswordReset } from '@/lib/firebase/auth';
 import { Loader2 } from 'lucide-react';
+import { createCustomerPortalSession } from '@/app/lib/stripe-actions';
 
 export default function ProfilePage() {
   const { user, loading } = useAuth();
   const { toast } = useToast();
 
-  const [displayName, setDisplayName] = useState(user?.displayName || '');
+  const [displayName, setDisplayName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isSendingReset, setIsSendingReset] = useState(false);
+  const [isManagingBilling, setIsManagingBilling] = useState(false);
   
+  // This effect correctly syncs the component's state with the auth context.
+  // It sets the name when the user object is first loaded.
   useEffect(() => {
-    // This ensures the displayName state is updated if the user object
-    // loads after the component has already mounted.
-    if (user?.displayName && displayName !== user.displayName) {
+    if (user?.displayName) {
       setDisplayName(user.displayName);
     }
-  }, [user, displayName]);
+  }, [user]);
 
 
   if (loading || !user) {
@@ -97,6 +99,21 @@ export default function ProfilePage() {
       setIsSendingReset(false);
     }
   }
+
+  const handleManageBilling = async () => {
+    setIsManagingBilling(true);
+    try {
+      await createCustomerPortalSession();
+    } catch (error: any) {
+        toast({
+            title: 'Error',
+            description: error.message || 'Could not redirect to billing portal.',
+            variant: 'destructive',
+        });
+    } finally {
+        setIsManagingBilling(false);
+    }
+  };
   
   const isEmailPasswordProvider = user.providerData.some(p => p.providerId === 'password');
 
