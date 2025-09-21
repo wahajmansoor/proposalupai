@@ -55,8 +55,8 @@ export default function PricingPage() {
     }
   };
 
-   if (authLoading || !user) {
-    return null; // Layout will show a loader
+   if (authLoading || !user || hasActiveSubscription) {
+    return null; // Layout will show a loader or redirect will happen
   }
 
   return (
@@ -67,7 +67,7 @@ export default function PricingPage() {
             <ProposalUpLogo className="h-12 w-12 mx-auto text-primary mb-2" />
             <CardTitle className="text-3xl font-bold">Proposal Up Pro</CardTitle>
             <CardDescription>
-                {userProfile?.trialEndDate && new Date() < userProfile.trialEndDate 
+                {userProfile?.trialEndDate && new Date() >= userProfile.trialEndDate 
                 ? "Your free trial has ended. Upgrade to continue creating proposals."
                 : "Unlock all features and generate unlimited proposals."
                 }

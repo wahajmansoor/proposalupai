@@ -20,41 +20,42 @@ export default function DashboardLayout({
   
   useEffect(() => {
     if (loading) {
-      return;
+      return; // Wait until auth state is confirmed
     }
 
     if (!user) {
       router.replace("/login");
       return;
     }
-    
-    // Wait until userProfile is definitively loaded
-    if (user && !userProfile) {
-      return;
+
+    // This condition ensures we don't proceed until userProfile is loaded.
+    // A user exists, but their profile data hasn't been fetched yet.
+    if (!userProfile) {
+      return; 
     }
     
-    // Allow access to pricing and profile pages regardless of subscription
+    // User can always access pricing and their profile
     const allowedPaths = ["/dashboard/pricing", "/dashboard/profile"];
     if (allowedPaths.includes(pathname)) {
-      setShowTrialDialog(false); // Ensure trial dialog is hidden on these pages
+      setShowTrialDialog(false); // Make sure dialog is hidden on these pages
       return;
     }
 
     const hasActiveSubscription = userProfile?.subscriptionStatus === "active";
-    // Check for a valid trial end date before comparing
-    const isTrialActive = userProfile?.trialEndDate && new Date() < userProfile.trialEndDate;
+    const trialEndDate = userProfile?.trialEndDate;
+    const isTrialActive = trialEndDate && new Date() < trialEndDate;
 
     if (!hasActiveSubscription) {
       if (isTrialActive) {
-        // User is in trial and not subscribed, show the modal.
+        // User is in trial, show the non-dismissible dialog
         setShowTrialDialog(true);
       } else {
-        // Trial is over and not subscribed, redirect to pricing.
+        // Trial is over, redirect to pricing
         router.replace("/dashboard/pricing");
       }
     } else {
-        // User has an active subscription, hide modal.
-        setShowTrialDialog(false);
+      // User is subscribed, hide the dialog
+      setShowTrialDialog(false);
     }
 
   }, [user, userProfile, loading, router, pathname]);
