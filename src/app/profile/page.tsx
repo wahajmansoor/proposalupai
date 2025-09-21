@@ -10,15 +10,18 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { updateUserProfile, sendPasswordReset } from '@/lib/firebase/auth';
 import { Loader2 } from 'lucide-react';
+import { createCustomerPortalSession } from '@/app/lib/stripe-actions';
+
 
 export default function ProfilePage() {
-  const { user } = useAuth(); // No loading needed, layout handles it.
+  const { user, userProfile } = useAuth(); // No loading needed, layout handles it.
   const { toast } = useToast();
 
   // Initialize state directly from the user object, guaranteed to exist by the layout.
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [isSaving, setIsSaving] = useState(false);
   const [isSendingReset, setIsSendingReset] = useState(false);
+  const [isManagingBilling, setIsManagingBilling] = useState(false);
   
   // This effect correctly syncs the local component state
   // if the user data somehow changes while the user is on the page.
@@ -26,7 +29,7 @@ export default function ProfilePage() {
     if (user?.displayName && user.displayName !== displayName) {
       setDisplayName(user.displayName);
     }
-  }, [user?.displayName]);
+  }, [user?.displayName, displayName]);
 
   // The layout ensures user is not null, so this check is for type safety.
   if (!user) {
@@ -98,8 +101,29 @@ export default function ProfilePage() {
       setIsSendingReset(false);
     }
   }
+
+  const handleManageBilling = async () => {
+    setIsManagingBilling(true);
+    try {
+      await createCustomerPortalSession();
+    } catch (error: any) {
+        toast({
+            title: 'Error',
+            description: error.message || 'Could not redirect to billing portal.',
+            variant: 'destructive',
+        });
+        setIsManagingBilling(false);
+    }
+  };
   
   const isEmailPasswordProvider = user.providerData.some(p => p.providerId === 'password');
+  const subscriptionEndDate = userProfile?.subscriptionCurrentPeriodEnd 
+    ? new Date(userProfile.subscriptionCurrentPeriodEnd).toLocaleDateString('en-US', {
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric',
+      })
+    : null;
 
   return (
     <div className="max-w-2xl mx-auto space-y-8 container py-8">
@@ -135,6 +159,33 @@ export default function ProfilePage() {
                         Save Changes
                     </Button>
                 </form>
+            </CardContent>
+        </Card>
+
+        <Card>
+            <CardHeader>
+                <CardTitle>Subscription</CardTitle>
+                <CardDescription>Manage your billing and subscription details.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <div className="space-y-2">
+                    <p className="text-sm">
+                        <span className="font-semibold">Current Plan:</span> Pro
+                    </p>
+                    <p className="text-sm">
+                       <span className="font-semibold">Status:</span> 
+                       <span className="ml-1 capitalize">{userProfile?.subscriptionStatus || 'Unknown'}</span>
+                    </p>
+                    {subscriptionEndDate && (
+                        <p className="text-sm">
+                            <span className="font-semibold">Next Billing Date:</span> {subscriptionEndDate}
+                        </p>
+                    )}
+                </div>
+                <Button onClick={handleManageBilling} className="mt-4" disabled={isManagingBilling}>
+                    {isManagingBilling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                    Manage Billing & Subscription
+                </Button>
             </CardContent>
         </Card>
 
