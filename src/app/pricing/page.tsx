@@ -76,7 +76,7 @@ export default function PricingPage() {
             <p className="text-lg text-muted-foreground mt-2">Choose the plan that's right for you.</p>
         </div>
         <div className="flex justify-center w-full max-w-md">
-            <Card className="flex flex-col shadow-lg border-primary ring-2 ring-primary w-full">
+            <Card className="flex flex-col shadow-lg w-full">
                 <CardHeader className="pb-4">
                     <CardTitle className="text-xl font-semibold">{proPlan.name}</CardTitle>
                     <CardDescription className="min-h-[40px]">{proPlan.description}</CardDescription>
