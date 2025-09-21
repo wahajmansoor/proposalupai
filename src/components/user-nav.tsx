@@ -15,7 +15,7 @@ import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import Link from 'next/link';
 import { Skeleton } from './ui/skeleton';
-import { ChevronDown, CreditCard, LogOut } from 'lucide-react';
+import { ChevronDown, CreditCard, LogOut, User } from 'lucide-react';
 import { createCustomerPortalSession } from '@/app/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
@@ -107,6 +107,12 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
+           <DropdownMenuItem asChild>
+              <Link href="/profile">
+                  <User className="mr-2 h-4 w-4" />
+                  Profile
+              </Link>
+           </DropdownMenuItem>
           {userProfile?.stripeCustomerId && (
              <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleManageBilling(); }} disabled={isManagingBilling}>
                 <CreditCard className="mr-2 h-4 w-4" />
