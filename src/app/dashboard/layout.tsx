@@ -18,8 +18,6 @@ export default function DashboardLayout({
   const pathname = usePathname();
   const [showTrialDialog, setShowTrialDialog] = useState(false);
   
-  const isPricingPage = pathname === "/dashboard/pricing";
-
   useEffect(() => {
     if (loading) {
       return;
@@ -31,7 +29,7 @@ export default function DashboardLayout({
     }
     
     // Wait until userProfile is definitively loaded
-    if (!userProfile) {
+    if (user && !userProfile) {
       return;
     }
     
@@ -42,9 +40,9 @@ export default function DashboardLayout({
       return;
     }
 
-    const hasActiveSubscription = userProfile.subscriptionStatus === "active";
+    const hasActiveSubscription = userProfile?.subscriptionStatus === "active";
     // Check for a valid trial end date before comparing
-    const isTrialActive = userProfile.trialEndDate && new Date() < userProfile.trialEndDate;
+    const isTrialActive = userProfile?.trialEndDate && new Date() < userProfile.trialEndDate;
 
     if (!hasActiveSubscription) {
       if (isTrialActive) {
@@ -61,17 +59,12 @@ export default function DashboardLayout({
 
   }, [user, userProfile, loading, router, pathname]);
 
-  if (loading || !userProfile) {
+  if (loading || !user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />
       </div>
     );
-  }
-  
-  // Conditionally render based on pricing page to avoid showing app background
-  if (isPricingPage) {
-    return <>{children}</>;
   }
 
   return (

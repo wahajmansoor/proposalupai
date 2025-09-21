@@ -10,8 +10,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { ProposalUpLogo } from '@/components/icons';
-import { UserNav } from '@/components/user-nav';
-import Link from 'next/link';
 
 const features = [
   "Unlimited Proposal Generation",
@@ -57,59 +55,48 @@ export default function PricingPage() {
     }
   };
 
-   if (authLoading) {
+   if (authLoading || !user) {
     return null; // Layout will show a loader
   }
 
   return (
-    <div className="flex flex-col min-h-screen">
-       <header className="sticky top-0 z-40 w-full border-b bg-card">
-        <div className="container flex h-16 items-center justify-between">
-            <Link href="/dashboard" className="flex items-center gap-2">
-                <ProposalUpLogo className="h-8 w-8 text-primary" />
-                <h1 className="text-xl font-bold tracking-tight hidden sm:block">Proposal Up</h1>
-            </Link>
-          <UserNav />
-        </div>
-      </header>
-        <main className="flex-1 flex items-center justify-center p-4">
-            <div className="w-full max-w-md">
-            <Card className="shadow-lg">
-                <CardHeader className="text-center">
-                <ProposalUpLogo className="h-12 w-12 mx-auto text-primary mb-2" />
-                <CardTitle className="text-3xl font-bold">Proposal Up Pro</CardTitle>
-                <CardDescription>
-                    {userProfile?.trialEndDate && new Date() < userProfile.trialEndDate 
-                    ? "Your free trial has ended. Upgrade to continue creating proposals."
-                    : "Unlock all features and generate unlimited proposals."
-                    }
-                </CardDescription>
-                </CardHeader>
-                <CardContent>
-                <div className="text-center mb-6">
-                    <span className="text-4xl font-extrabold">$20</span>
-                    <span className="text-muted-foreground">/ month</span>
-                </div>
-                <ul className="space-y-3 mb-8">
-                    {features.map((feature, index) => (
-                    <li key={index} className="flex items-center gap-3">
-                        <div className="bg-primary/10 p-1 rounded-full">
-                        <Check className="h-4 w-4 text-primary" />
-                        </div>
-                        <span className="text-sm">{feature}</span>
-                    </li>
-                    ))}
-                </ul>
-                <form onSubmit={handleSubmit}>
-                    <Button size="lg" className="w-full" disabled={isSubmitting}>
-                    {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                    {isSubmitting ? 'Redirecting to Checkout...' : 'Start a 2-day free trial'}
-                    </Button>
-                </form>
-                </CardContent>
-            </Card>
+    <div className="flex flex-col min-h-[calc(100vh-10rem)] items-center justify-center">
+        <div className="w-full max-w-md">
+        <Card className="shadow-lg">
+            <CardHeader className="text-center">
+            <ProposalUpLogo className="h-12 w-12 mx-auto text-primary mb-2" />
+            <CardTitle className="text-3xl font-bold">Proposal Up Pro</CardTitle>
+            <CardDescription>
+                {userProfile?.trialEndDate && new Date() < userProfile.trialEndDate 
+                ? "Your free trial has ended. Upgrade to continue creating proposals."
+                : "Unlock all features and generate unlimited proposals."
+                }
+            </CardDescription>
+            </CardHeader>
+            <CardContent>
+            <div className="text-center mb-6">
+                <span className="text-4xl font-extrabold">$20</span>
+                <span className="text-muted-foreground">/ month</span>
             </div>
-        </main>
+            <ul className="space-y-3 mb-8">
+                {features.map((feature, index) => (
+                <li key={index} className="flex items-center gap-3">
+                    <div className="bg-primary/10 p-1 rounded-full">
+                    <Check className="h-4 w-4 text-primary" />
+                    </div>
+                    <span className="text-sm">{feature}</span>
+                </li>
+                ))}
+            </ul>
+            <form onSubmit={handleSubmit}>
+                <Button size="lg" className="w-full" disabled={isSubmitting}>
+                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                {isSubmitting ? 'Redirecting to Checkout...' : 'Start a 2-day free trial'}
+                </Button>
+            </form>
+            </CardContent>
+        </Card>
+        </div>
     </div>
   );
 }
