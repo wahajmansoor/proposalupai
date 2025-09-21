@@ -2,10 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: 'Questrial', sans-serif;
-}
-
 @layer base {
   :root {
     --background: 240 5% 96%;
