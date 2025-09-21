@@ -127,7 +127,7 @@ export default function ProfilePage() {
           <div className="flex items-center justify-between p-4 border rounded-lg">
             <div>
               <h3 className="font-semibold">Your Plan</h3>
-              <Badge variant={subscriptionStatus === 'active' || subscriptionStatus === 'trialing' ? 'default' : 'secondary'} className="capitalize mt-1 bg-primary">
+              <Badge variant={subscriptionStatus === 'active' || subscriptionStatus === 'trialing' ? 'default' : 'secondary'} className="capitalize mt-1">
                 {subscriptionStatus || 'N/A'}
               </Badge>
             </div>
