@@ -82,8 +82,12 @@ export async function createCustomerPortalSession() {
         redirect(portalSession.url);
     } catch (error: any) {
         console.error("Error creating customer portal session:", error.message);
-        // Re-throwing the error so it can be caught by the client-side caller
-        // and displayed in a toast. This is better than a generic server error page.
+
+        // Check for the specific configuration error from Stripe
+        if (error.message && error.message.includes('No configuration provided')) {
+            throw new Error('Stripe Customer Portal is not configured. Please set it up in your Stripe dashboard at dashboard.stripe.com/test/settings/billing/portal');
+        }
+        
         throw new Error(error.message || 'An unexpected error occurred while creating the billing portal session.');
     }
 }
