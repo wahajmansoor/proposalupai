@@ -105,6 +105,8 @@ export async function GET(req: NextRequest) {
 
         await userRef.set(userData, { merge: true });
     } else {
+        // For existing users, just update their profile info.
+        // Don't overwrite stripe or trial data.
         await userRef.update(userData);
     }
 
