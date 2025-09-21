@@ -18,7 +18,7 @@ export function DashboardNav() {
   return (
     <div className="border-b">
         <div className="container mx-auto">
-            <nav className="flex items-center gap-1 sm:gap-2 -mb-px">
+            <nav className="flex items-center justify-around sm:justify-start sm:gap-2 -mb-px">
                 {navItems.map((item) => (
                 <Link
                     key={item.href}
@@ -30,7 +30,7 @@ export function DashboardNav() {
                         : "border-transparent text-muted-foreground hover:text-foreground"
                     )}
                 >
-                    <item.icon className="h-4 w-4" />
+                    <item.icon className="h-5 w-5 sm:h-4 sm:w-4" />
                     <span className="hidden sm:inline">{item.label}</span>
                 </Link>
                 ))}
