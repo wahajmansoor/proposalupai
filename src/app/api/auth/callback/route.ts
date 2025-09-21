@@ -102,6 +102,9 @@ export async function GET(req: NextRequest) {
         const customer = await stripe.customers.create({
             email: userRecord.email!,
             name: userRecord.displayName || undefined,
+            metadata: {
+                firebaseUID: userRecord.uid,
+            },
         });
 
         userData.createdAt = new Date();

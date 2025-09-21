@@ -1,6 +1,7 @@
 import { createUserWithEmailAndPassword, updateProfile, User, sendPasswordResetEmail, sendEmailVerification } from 'firebase/auth';
 import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './config';
+import { stripe } from '@/lib/stripe/config';
 
 export async function signUpUser(fullName: string, email: string, password: string): Promise<User> {
   try {
@@ -14,15 +15,28 @@ export async function signUpUser(fullName: string, email: string, password: stri
     // 3. Send the verification email
     await sendEmailVerification(user);
 
-    // 4. Create user document in Firestore *after* auth profile is updated
-    // This ensures displayName is not null and uses the correct server timestamp
+    // 4. Create Stripe customer
+    const customer = await stripe.customers.create({
+        email: user.email!,
+        name: fullName,
+        metadata: {
+            firebaseUID: user.uid,
+        },
+    });
+
+    // 5. Create user document in Firestore
     const userRef = doc(db, 'users', user.uid);
+    const trialEndDate = new Date();
+    trialEndDate.setDate(trialEndDate.getDate() + 2); // 2-day trial
+
     await setDoc(userRef, {
       uid: user.uid,
       email: user.email,
-      displayName: fullName, // Use the provided fullName directly
+      displayName: fullName,
       photoURL: user.photoURL,
-      createdAt: serverTimestamp(), // Use serverTimestamp for consistency
+      createdAt: serverTimestamp(),
+      stripeCustomerId: customer.id,
+      trialEndDate: trialEndDate,
     });
 
     return user;
