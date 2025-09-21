@@ -10,7 +10,7 @@ export function Header() {
 
   if (!user && !loading) {
     return (
-       <header className="sticky top-0 z-40 w-full border-b bg-card">
+       <header className="sticky top-0 z-40 w-full border-b bg-background">
           <div className="container flex h-16 items-center justify-between">
             <div className="flex gap-1 items-center">
               <ProposalUpLogo className="h-8 w-8 text-primary" />
@@ -25,7 +25,7 @@ export function Header() {
   }
 
   return (
-    <header className="sticky top-0 z-40 w-full border-b bg-card">
+    <header className="sticky top-0 z-40 w-full border-b bg-background">
       <div className="container flex h-16 items-center justify-between">
         <div className="flex gap-1 items-center">
           <ProposalUpLogo className="h-8 w-8 text-primary" />
