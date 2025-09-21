@@ -30,9 +30,10 @@ export default function DashboardLayout({
 
     // If the user profile is loaded, check for subscription
     if (userProfile) {
-      // Allow access to profile page regardless of subscription
+      // Allow access to profile page regardless of subscription status
+      // This allows users to manage their account even if subscription has lapsed
       if (pathname === "/dashboard/profile") {
-        return; 
+        return;
       }
       
       const hasActiveSubscription = userProfile.subscriptionStatus === "active" || userProfile.subscriptionStatus === "trialing";
@@ -41,14 +42,14 @@ export default function DashboardLayout({
         router.replace("/pricing");
       }
     }
-    // If user exists but userProfile is still null after loading, it might be a new user.
-    // The loading screen will show until the profile is created and this check re-runs.
-    // A separate check for new users might redirect them to pricing page.
+    // If user exists but userProfile is still null after loading, it might be a new user
+    // or a data loading issue. The loading screen will show until the profile is available.
 
   }, [user, userProfile, loading, router, pathname]);
 
   // Show a loading screen while we verify auth and subscription status.
-  // This prevents any flicker of content on initial load, logout, or for unauthorized users.
+  // This prevents any flicker of content for unauthorized users.
+  // We wait for both `loading` to be false and `userProfile` to be available.
   if (loading || !userProfile) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -57,8 +58,17 @@ export default function DashboardLayout({
     );
   }
   
-  // Once loaded and profile is available, we can safely render the layout
-  // The useEffect above will handle redirection if they are not subscribed.
+  // This condition ensures that we don't render the dashboard for users who will be redirected.
+  const isSubscribed = userProfile.subscriptionStatus === "active" || userProfile.subscriptionStatus === "trialing";
+  if (!isSubscribed && pathname !== "/dashboard/profile") {
+    // While the useEffect handles the redirect, this prevents rendering the content during the brief moment before the redirect occurs.
+    return (
+        <div className="flex items-center justify-center min-h-screen">
+            <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />
+        </div>
+    );
+  }
+
   return (
     <div className="flex flex-col min-h-screen bg-[#f9f9f9]">
       <Header />

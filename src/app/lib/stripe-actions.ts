@@ -15,6 +15,10 @@ export async function createCheckoutSession() {
   const { user, userDoc } = currentUser;
   const stripeCustomerId = userDoc?.stripeCustomerId;
 
+  if (!stripeCustomerId) {
+      throw new Error('Could not find Stripe customer ID. Please contact support.');
+  }
+
   const headersList = headers();
   const protocol = headersList.get('x-forwarded-proto') || 'http';
   const host = headersList.get('host');
