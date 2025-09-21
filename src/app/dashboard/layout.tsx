@@ -3,7 +3,7 @@
 
 import { useAuth } from "@/context/auth-context";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ProposalUpLogo } from "@/components/icons";
 import { Header } from "@/components/header";
 
@@ -15,6 +15,7 @@ export default function DashboardLayout({
   const { user, userProfile, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
     if (loading) {
@@ -34,6 +35,7 @@ export default function DashboardLayout({
     // User can always access pricing and their profile
     const allowedPaths = ["/dashboard/pricing", "/dashboard/profile"];
     if (allowedPaths.includes(pathname)) {
+      setIsAuthorized(true);
       return;
     }
 
@@ -41,11 +43,14 @@ export default function DashboardLayout({
 
     if (!hasActiveSubscription) {
       router.replace("/dashboard/pricing");
+    } else {
+      setIsAuthorized(true);
     }
 
   }, [user, userProfile, loading, router, pathname]);
 
-  if (loading || !user) {
+  // Show a loading screen while we verify auth and subscription status
+  if (!isAuthorized || loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />
