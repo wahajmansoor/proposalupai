@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { useEffect } from "react";
 import { ProposalUpLogo } from "@/components/icons";
 import { Header } from "@/components/header";
+import { DashboardNav } from "@/components/dashboard-nav";
 
 export default function ProfileLayout({
   children,
@@ -41,6 +42,7 @@ export default function ProfileLayout({
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
+      <DashboardNav />
       <main className="flex-1 p-4 md:p-8 container mx-auto">
         {children}
       </main>

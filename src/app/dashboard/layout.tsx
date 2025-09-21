@@ -6,44 +6,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useEffect } from "react";
 import { ProposalUpLogo } from "@/components/icons";
 import { Header } from "@/components/header";
-import Link from "next/link";
-import { cn } from "@/lib/utils";
-import { FilePlus2, FolderKanban, Save } from "lucide-react";
-
-const navItems = [
-  { href: "/dashboard", label: "Create Proposal", icon: FilePlus2 },
-  { href: "/dashboard/proposals", label: "Saved Proposals", icon: Save },
-  { href: "/dashboard/portfolio", label: "Portfolio Collections", icon: FolderKanban },
-];
-
-function DashboardNav() {
-  const pathname = usePathname();
-
-  return (
-    <div className="border-b">
-        <div className="container mx-auto">
-            <nav className="flex items-center gap-2 -mb-px">
-                {navItems.map((item) => (
-                <Link
-                    key={item.href}
-                    href={item.href}
-                    className={cn(
-                    "flex items-center gap-2 py-3 px-3 border-b-2 text-sm font-medium transition-colors",
-                    pathname === item.href
-                        ? "border-primary text-primary"
-                        : "border-transparent text-muted-foreground hover:text-foreground"
-                    )}
-                >
-                    <item.icon className="h-4 w-4" />
-                    {item.label}
-                </Link>
-                ))}
-            </nav>
-        </div>
-    </div>
-  );
-}
-
+import { DashboardNav } from "@/components/dashboard-nav";
 
 export default function DashboardLayout({
   children,
