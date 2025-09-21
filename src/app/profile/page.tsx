@@ -72,84 +72,90 @@ export default function ProfilePage() {
   const renewalDate = userProfile?.subscriptionCurrentPeriodEnd;
 
   return (
-    <div className="max-w-2xl mx-auto space-y-8">
+    <div className="max-w-4xl mx-auto space-y-8">
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Your Profile</h1>
         <p className="text-muted-foreground">View and manage your account details.</p>
       </div>
-      <form onSubmit={handleSubmit}>
-        <Card>
-          <CardHeader>
-            <CardTitle>Account Information</CardTitle>
-            <CardDescription>Your personal and contact details.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Avatar className="h-16 w-16">
-                {user?.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || 'User avatar'} />}
-                <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
-              </Avatar>
-              <div className="grid w-full gap-1.5">
-                  <Label htmlFor="displayName">Display Name</Label>
-                  <Input 
-                    id="displayName"
-                    name="displayName"
-                    value={displayName}
-                    onChange={(e) => setDisplayName(e.target.value)}
-                  />
+      <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+        <div className="lg:col-span-3">
+          <form onSubmit={handleSubmit}>
+            <Card>
+              <CardHeader>
+                <CardTitle>Account Information</CardTitle>
+                <CardDescription>Your personal and contact details.</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex items-center gap-4">
+                  <Avatar className="h-16 w-16">
+                    {user?.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || 'User avatar'} />}
+                    <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
+                  </Avatar>
+                  <div className="grid w-full gap-1.5">
+                      <Label htmlFor="displayName">Display Name</Label>
+                      <Input 
+                        id="displayName"
+                        name="displayName"
+                        value={displayName}
+                        onChange={(e) => setDisplayName(e.target.value)}
+                      />
+                  </div>
+                </div>
+                <div className="grid w-full gap-1.5">
+                    <Label htmlFor="email">Email</Label>
+                    <Input 
+                        id="email"
+                        type="email"
+                        value={user?.email || ''}
+                        disabled
+                    />
+                </div>
+              </CardContent>
+              <CardFooter className="border-t px-6 py-4">
+                <Button type="submit" disabled={isSaving || displayName === user?.displayName}>
+                  {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Save Changes
+                </Button>
+              </CardFooter>
+            </Card>
+          </form>
+        </div>
+        
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Subscription Details</CardTitle>
+              <CardDescription>Your current plan and billing information.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div>
+                  <h3 className="font-semibold">Your Plan</h3>
+                  <Badge variant={subscriptionStatus === 'active' || subscriptionStatus === 'trialing' ? 'default' : 'secondary'} className="capitalize mt-1">
+                    {subscriptionStatus || 'N/A'}
+                  </Badge>
+                </div>
+                {renewalDate && (subscriptionStatus === 'active' || subscriptionStatus === 'trialing') && (
+                  <div className="text-right">
+                    <p className="font-semibold">
+                      {subscriptionStatus === 'trialing' ? 'Trial Ends' : 'Renews On'}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {format(new Date(renewalDate), 'MMMM d, yyyy')}
+                    </p>
+                  </div>
+                )}
               </div>
-            </div>
-             <div className="grid w-full gap-1.5">
-                <Label htmlFor="email">Email</Label>
-                <Input 
-                    id="email"
-                    type="email"
-                    value={user?.email || ''}
-                    disabled
-                />
-            </div>
-          </CardContent>
-          <CardFooter className="border-t px-6 py-4">
-            <Button type="submit" disabled={isSaving || displayName === user?.displayName}>
-              {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              Save Changes
-            </Button>
-          </CardFooter>
-        </Card>
-      </form>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle>Subscription Details</CardTitle>
-          <CardDescription>Your current plan and billing information.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center justify-between p-4 border rounded-lg">
-            <div>
-              <h3 className="font-semibold">Your Plan</h3>
-              <Badge variant={subscriptionStatus === 'active' || subscriptionStatus === 'trialing' ? 'default' : 'secondary'} className="capitalize mt-1">
-                {subscriptionStatus || 'N/A'}
-              </Badge>
-            </div>
-            {renewalDate && (subscriptionStatus === 'active' || subscriptionStatus === 'trialing') && (
-              <div className="text-right">
-                <p className="font-semibold">
-                  {subscriptionStatus === 'trialing' ? 'Trial Ends' : 'Renews On'}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  {format(new Date(renewalDate), 'MMMM d, yyyy')}
-                </p>
-              </div>
-            )}
-          </div>
-          {userProfile?.stripeCustomerId && (
-            <Button onClick={handleManageBilling} disabled={isManagingBilling} className="w-full">
-              {isManagingBilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2" />}
-              Manage Billing & Subscription
-            </Button>
-          )}
-        </CardContent>
-      </Card>
+              {userProfile?.stripeCustomerId && (
+                <Button onClick={handleManageBilling} disabled={isManagingBilling} className="w-full">
+                  {isManagingBilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2" />}
+                  Manage Billing & Subscription
+                </Button>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
