@@ -11,8 +11,10 @@ import { suggestOpeningStrategy } from '@/ai/flows/suggest-opening-strategy';
 import { OAuth2Client } from 'google-auth-library';
 import { headers } from 'next/headers';
 import { getCurrentUser } from '@/lib/firebase/server-auth';
-import { updateUserDisplayName } from '@/lib/firebase/auth';
 import { revalidatePath } from 'next/cache';
+import { adminAuth } from '@/lib/firebase/admin';
+import { doc, updateDoc } from 'firebase/firestore';
+import { db } from '@/lib/firebase/config';
 
 const projectDetailsSchema = z.object({
   projectTitle: z.string().min(1, 'Project title is required.'),
@@ -170,6 +172,23 @@ export async function getGoogleAuthUrl() {
 const updateDisplayNameSchema = z.object({
     displayName: z.string().min(1, 'Display name cannot be empty.'),
 });
+
+async function updateUserDisplayName(uid: string, displayName: string) {
+  if (!uid) throw new Error('You must be logged in to update your profile.');
+
+  try {
+    // Update Firebase Auth profile (server-side)
+    await adminAuth.updateUser(uid, { displayName });
+
+    // Update Firestore user document
+    const userRef = doc(db, 'users', uid);
+    await updateDoc(userRef, { displayName });
+
+  } catch (error) {
+     console.error("Error updating display name:", error);
+     throw error;
+  }
+}
 
 export async function updateUserDisplayNameAction(formData: FormData) {
     const currentUser = await getCurrentUser();
