@@ -12,29 +12,30 @@ import { updateUserProfile, sendPasswordReset } from '@/lib/firebase/auth';
 import { Loader2 } from 'lucide-react';
 
 export default function ProfilePage() {
-  const { user, loading } = useAuth();
+  const { user } = useAuth(); // No loading needed, layout handles it.
   const { toast } = useToast();
 
-  const [displayName, setDisplayName] = useState('');
+  // Initialize state directly from the user object, guaranteed to exist by the layout.
+  const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [isSaving, setIsSaving] = useState(false);
   const [isSendingReset, setIsSendingReset] = useState(false);
   
   // This effect correctly syncs the local component state
-  // with the user data from the authentication context.
+  // if the user data somehow changes while the user is on the page.
   useEffect(() => {
-    if (user?.displayName) {
+    if (user?.displayName && user.displayName !== displayName) {
       setDisplayName(user.displayName);
     }
   }, [user?.displayName]);
 
-
-  if (loading || !user) {
-    return null; // Layout handles loading/redirect
+  // The layout ensures user is not null, so this check is for type safety.
+  if (!user) {
+    return null;
   }
 
   const handleProfileUpdate = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!user || !displayName.trim()) {
+    if (!displayName.trim()) {
       toast({
         title: 'Error',
         description: 'Display name cannot be empty.',
