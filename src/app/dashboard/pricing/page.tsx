@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, Loader2 } from 'lucide-react';
@@ -27,13 +27,6 @@ export default function PricingPage() {
   
   const hasActiveSubscription = userProfile?.subscriptionStatus === 'active';
 
-  // Redirect if user is already subscribed
-  useEffect(() => {
-    if (!authLoading && hasActiveSubscription) {
-        router.replace('/dashboard');
-    }
-  }, [userProfile, authLoading, router, hasActiveSubscription]);
-
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!user) {
@@ -55,8 +48,16 @@ export default function PricingPage() {
     }
   };
 
-   if (authLoading || !user || hasActiveSubscription) {
-    return null; // Layout will show a loader or redirect will happen
+  if (authLoading || !user) {
+    // The parent layout will handle showing a loader or redirecting.
+    // Returning null here prevents this component from rendering prematurely.
+    return null;
+  }
+  
+  // If the user somehow lands here with an active sub, the layout will redirect them.
+  // This check is a safeguard.
+  if (hasActiveSubscription) {
+    return null;
   }
 
   return (
