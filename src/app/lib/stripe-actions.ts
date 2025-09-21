@@ -20,7 +20,7 @@ export async function createCheckoutSession() {
   const host = headersList.get('host');
   const origin = `${protocol}://${host}`;
   const successUrl = `${origin}/dashboard`;
-  const cancelUrl = `${origin}/dashboard/pricing`;
+  const cancelUrl = `${origin}/pricing`;
   
   const priceId = process.env.STRIPE_PRICE_ID;
   if (!priceId || priceId.includes('your_stripe_price_id_here')) {

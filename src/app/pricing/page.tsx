@@ -49,8 +49,6 @@ export default function PricingPage() {
   };
 
   if (authLoading) {
-    // The parent layout will handle showing a loader or redirecting.
-    // Returning null here prevents this component from rendering prematurely.
     return (
         <div className="flex items-center justify-center min-h-screen">
           <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />

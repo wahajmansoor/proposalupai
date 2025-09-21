@@ -30,19 +30,20 @@ export default function DashboardLayout({
 
     // If the user profile is loaded, check for subscription
     if (userProfile) {
-      const allowedPaths = ["/dashboard/pricing", "/dashboard/profile"];
-      if (allowedPaths.includes(pathname)) {
-        return; // Always allow access to pricing and profile pages
+      // Allow access to profile page regardless of subscription
+      if (pathname === "/dashboard/profile") {
+        return; 
       }
       
       const hasActiveSubscription = userProfile.subscriptionStatus === "active" || userProfile.subscriptionStatus === "trialing";
 
       if (!hasActiveSubscription) {
-        router.replace("/dashboard/pricing");
+        router.replace("/pricing");
       }
     }
-    // If user exists but userProfile is still null after loading, it means they might be new
-    // and the check will re-run once the profile is created. The loading screen handles this.
+    // If user exists but userProfile is still null after loading, it might be a new user.
+    // The loading screen will show until the profile is created and this check re-runs.
+    // A separate check for new users might redirect them to pricing page.
 
   }, [user, userProfile, loading, router, pathname]);
 
