@@ -33,7 +33,8 @@ export function UserNav() {
     await signOut(auth);
   };
   
-  const handleManageBilling = async () => {
+  const handleManageBilling = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
     setIsManagingBilling(true);
     try {
       await createCustomerPortalSession();
@@ -117,10 +118,14 @@ export function UserNav() {
               </Link>
            </DropdownMenuItem>
           {userProfile?.stripeCustomerId && (
-             <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleManageBilling(); }} disabled={isManagingBilling}>
-                {isManagingBilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
-                Manage Billing
-            </DropdownMenuItem>
+             <form action={createCustomerPortalSession} onSubmit={(e) => { e.preventDefault(); e.currentTarget.submit(); setIsManagingBilling(true); }}>
+                <button type="submit" className="w-full" disabled={isManagingBilling}>
+                    <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
+                        {isManagingBilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
+                        Manage Billing
+                    </DropdownMenuItem>
+                </button>
+             </form>
           )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
