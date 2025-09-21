@@ -3,10 +3,9 @@
 
 import { useAuth } from "@/context/auth-context";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { ProposalUpLogo } from "@/components/icons";
 import { Header } from "@/components/header";
-import { TrialDialog } from "@/components/trial-dialog";
 
 export default function DashboardLayout({
   children,
