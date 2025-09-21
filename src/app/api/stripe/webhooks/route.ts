@@ -52,19 +52,16 @@ export async function POST(req: Request) {
         switch (event.type) {
             case 'checkout.session.completed':
                 const session = event.data.object as Stripe.Checkout.Session;
-                if (!session.customer || !session.subscription) {
-                    throw new Error('Missing customer or subscription in checkout session.');
+                if (!session.customer || !session.subscription || !session.client_reference_id) {
+                    throw new Error('Missing customer, subscription, or client_reference_id in checkout session.');
                 }
                 const customerId = session.customer as string;
                 const subscriptionId = session.subscription as string;
+                const userId = session.client_reference_id;
 
                 const subscription = await stripe.subscriptions.retrieve(subscriptionId);
                 
-                const userQuery = await adminDb.collection('users').where('email', '==', session.customer_details?.email).limit(1).get();
-                if (userQuery.empty) {
-                    throw new Error(`User not found for email: ${session.customer_details?.email}`);
-                }
-                const userDocRef = userQuery.docs[0].ref;
+                const userDocRef = adminDb.collection('users').doc(userId);
                 
                 await userDocRef.update({
                     stripeCustomerId: customerId,
