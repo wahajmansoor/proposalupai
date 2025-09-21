@@ -71,9 +71,9 @@ export default function PricingPage() {
             </CardDescription>
             </CardHeader>
             <CardContent>
-            <div className="text-center mb-6">
-                <span className="text-4xl font-extrabold">$20</span>
-                <span className="text-muted-foreground">/ month</span>
+            <div className="my-8 flex items-baseline justify-center gap-2">
+              <span className="text-5xl font-bold tracking-tight">$20</span>
+              <span className="text-lg font-medium text-muted-foreground">/ month</span>
             </div>
             <ul className="space-y-3 mb-8">
                 {features.map((feature, index) => (
