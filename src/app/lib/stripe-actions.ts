@@ -12,7 +12,7 @@ export async function createCheckoutSession() {
     throw new Error('User not authenticated');
   }
 
-  const { userDoc } = currentUser;
+  const { user, userDoc } = currentUser;
   const stripeCustomerId = userDoc?.stripeCustomerId;
 
   const headersList = headers();
@@ -20,7 +20,7 @@ export async function createCheckoutSession() {
   const host = headersList.get('host');
   const origin = `${protocol}://${host}`;
   const successUrl = `${origin}/dashboard`;
-  const cancelUrl = `${origin}/dashboard`;
+  const cancelUrl = `${origin}/dashboard/pricing`;
   
   const priceId = process.env.STRIPE_PRICE_ID;
   if (!priceId || priceId.includes('your_stripe_price_id_here')) {
@@ -31,6 +31,7 @@ export async function createCheckoutSession() {
     payment_method_types: ['card'],
     mode: 'subscription',
     customer: stripeCustomerId,
+    client_reference_id: user.uid, // Add user's UID to the session
     line_items: [{ price: priceId, quantity: 1 }],
     subscription_data: {
         trial_period_days: 2,
