@@ -22,7 +22,6 @@ import { useState } from 'react';
 
 export function UserNav() {
   const { user, userProfile, loading } = useAuth();
-  const { toast } = useToast();
   const [isManagingBilling, setIsManagingBilling] = useState(false);
 
 
@@ -33,22 +32,6 @@ export function UserNav() {
     await signOut(auth);
   };
   
-  const handleManageBilling = async (event: React.FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    setIsManagingBilling(true);
-    try {
-      await createCustomerPortalSession();
-    } catch (error: any) {
-        toast({
-            title: 'Error',
-            description: error.message || 'Could not redirect to billing portal.',
-            variant: 'destructive',
-        });
-    } finally {
-        setIsManagingBilling(false);
-    }
-  };
-
   if (loading) {
     return (
         <div className="flex items-center gap-2">
@@ -118,7 +101,7 @@ export function UserNav() {
               </Link>
            </DropdownMenuItem>
           {userProfile?.stripeCustomerId && (
-             <form action={createCustomerPortalSession} onSubmit={(e) => { e.preventDefault(); e.currentTarget.submit(); setIsManagingBilling(true); }}>
+             <form action={createCustomerPortalSession} onSubmit={() => setIsManagingBilling(true)}>
                 <button type="submit" className="w-full" disabled={isManagingBilling}>
                     <DropdownMenuItem onSelect={(e) => e.preventDefault()}>
                         {isManagingBilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
