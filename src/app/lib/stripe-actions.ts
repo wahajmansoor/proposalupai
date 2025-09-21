@@ -52,25 +52,26 @@ export async function createCheckoutSession() {
 }
 
 export async function createCustomerPortalSession() {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+        throw new Error('User not authenticated. Please log in again.');
+    }
+
+    const { userDoc } = currentUser;
+    const stripeCustomerId = userDoc?.stripeCustomerId;
+
+    if (!stripeCustomerId) {
+        throw new Error('Stripe customer ID not found for this user.');
+    }
+
+    const headersList = headers();
+    const protocol = headersList.get('x-forwarded-proto') || 'http';
+    const host = headersList.get('host');
+    const returnUrl = `${protocol}://${host}/profile`;
+
+    let portalSession;
     try {
-        const currentUser = await getCurrentUser();
-        if (!currentUser) {
-            throw new Error('User not authenticated. Please log in again.');
-        }
-
-        const { userDoc } = currentUser;
-        const stripeCustomerId = userDoc?.stripeCustomerId;
-
-        if (!stripeCustomerId) {
-            throw new Error('Stripe customer ID not found for this user.');
-        }
-
-        const headersList = headers();
-        const protocol = headersList.get('x-forwarded-proto') || 'http';
-        const host = headersList.get('host');
-        const returnUrl = `${protocol}://${host}/profile`;
-
-        const portalSession = await stripe.billingPortal.sessions.create({
+        portalSession = await stripe.billingPortal.sessions.create({
             customer: stripeCustomerId,
             return_url: returnUrl,
         });
@@ -78,16 +79,13 @@ export async function createCustomerPortalSession() {
         if (!portalSession.url) {
             throw new Error('Could not create customer portal session.');
         }
-
-        redirect(portalSession.url);
     } catch (error: any) {
         console.error("Error creating customer portal session:", error.message);
-
-        // Check for the specific configuration error from Stripe
         if (error.message && error.message.includes('No configuration provided')) {
             throw new Error('Stripe Customer Portal is not configured. Please set it up in your Stripe dashboard at dashboard.stripe.com/test/settings/billing/portal');
         }
-        
         throw new Error(error.message || 'An unexpected error occurred while creating the billing portal session.');
     }
+    
+    redirect(portalSession.url);
 }
