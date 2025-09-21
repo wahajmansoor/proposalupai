@@ -15,7 +15,7 @@ import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import Link from 'next/link';
 import { Skeleton } from './ui/skeleton';
-import { ChevronDown, CreditCard, LogOut, User } from 'lucide-react';
+import { ChevronDown, CreditCard, LogOut, User, Loader2 } from 'lucide-react';
 import { createCustomerPortalSession } from '@/app/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
@@ -27,9 +27,12 @@ export function UserNav() {
 
 
   const handleLogout = async () => {
+    // Clear session cookie on the server
+    await fetch('/api/auth/session', { method: 'DELETE' });
+    // Sign out from Firebase client-side
     await signOut(auth);
   };
-
+  
   const handleManageBilling = async () => {
     setIsManagingBilling(true);
     try {
@@ -115,7 +118,7 @@ export function UserNav() {
            </DropdownMenuItem>
           {userProfile?.stripeCustomerId && (
              <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleManageBilling(); }} disabled={isManagingBilling}>
-                <CreditCard className="mr-2 h-4 w-4" />
+                {isManagingBilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
                 Manage Billing
             </DropdownMenuItem>
           )}

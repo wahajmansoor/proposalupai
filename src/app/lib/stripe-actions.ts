@@ -52,31 +52,38 @@ export async function createCheckoutSession() {
 }
 
 export async function createCustomerPortalSession() {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) {
-        throw new Error('User not authenticated');
+    try {
+        const currentUser = await getCurrentUser();
+        if (!currentUser) {
+            throw new Error('User not authenticated. Please log in again.');
+        }
+
+        const { userDoc } = currentUser;
+        const stripeCustomerId = userDoc?.stripeCustomerId;
+
+        if (!stripeCustomerId) {
+            throw new Error('Stripe customer ID not found for this user.');
+        }
+
+        const headersList = headers();
+        const protocol = headersList.get('x-forwarded-proto') || 'http';
+        const host = headersList.get('host');
+        const returnUrl = `${protocol}://${host}/profile`;
+
+        const portalSession = await stripe.billingPortal.sessions.create({
+            customer: stripeCustomerId,
+            return_url: returnUrl,
+        });
+
+        if (!portalSession.url) {
+            throw new Error('Could not create customer portal session.');
+        }
+
+        redirect(portalSession.url);
+    } catch (error: any) {
+        console.error("Error creating customer portal session:", error.message);
+        // Re-throwing the error so it can be caught by the client-side caller
+        // and displayed in a toast. This is better than a generic server error page.
+        throw new Error(error.message || 'An unexpected error occurred while creating the billing portal session.');
     }
-
-    const { userDoc } = currentUser;
-    const stripeCustomerId = userDoc?.stripeCustomerId;
-
-    if (!stripeCustomerId) {
-        throw new Error('Stripe customer ID not found for this user.');
-    }
-
-    const headersList = headers();
-    const protocol = headersList.get('x-forwarded-proto') || 'http';
-    const host = headersList.get('host');
-    const returnUrl = `${protocol}://${host}/profile`;
-
-    const portalSession = await stripe.billingPortal.sessions.create({
-        customer: stripeCustomerId,
-        return_url: returnUrl,
-    });
-
-    if (!portalSession.url) {
-        throw new Error('Could not create customer portal session.');
-    }
-
-    redirect(portalSession.url);
 }
