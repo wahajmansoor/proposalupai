@@ -15,15 +15,17 @@ export default function ProfilePage() {
   const { user, loading } = useAuth();
   const { toast } = useToast();
 
-  const [displayName, setDisplayName] = useState('');
+  const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [isSaving, setIsSaving] = useState(false);
   const [isSendingReset, setIsSendingReset] = useState(false);
   
   useEffect(() => {
-    if (user?.displayName) {
+    // This ensures the displayName state is updated if the user object
+    // loads after the component has already mounted.
+    if (user?.displayName && displayName !== user.displayName) {
       setDisplayName(user.displayName);
     }
-  }, [user]);
+  }, [user, displayName]);
 
 
   if (loading || !user) {
@@ -69,6 +71,15 @@ export default function ProfilePage() {
       });
       return;
     }
+    // Only allow password reset for email providers
+    if (user.providerData.some(p => p.providerId !== 'password')) {
+        toast({
+            title: 'Action Not Available',
+            description: 'Password reset is only available for accounts created with email and password.',
+            variant: 'destructive',
+        });
+        return;
+    }
     setIsSendingReset(true);
     try {
       await sendPasswordReset(user.email);
@@ -86,6 +97,8 @@ export default function ProfilePage() {
       setIsSendingReset(false);
     }
   }
+  
+  const isEmailPasswordProvider = user.providerData.some(p => p.providerId === 'password');
 
   return (
     <div className="max-w-2xl mx-auto space-y-8 container py-8">
@@ -130,10 +143,15 @@ export default function ProfilePage() {
                 <CardDescription>Change your password.</CardDescription>
             </CardHeader>
             <CardContent>
-                <Button onClick={handlePasswordReset} variant="outline" disabled={isSendingReset}>
+                <Button onClick={handlePasswordReset} variant="outline" disabled={isSendingReset || !isEmailPasswordProvider}>
                     {isSendingReset && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                     Send Password Reset Email
                 </Button>
+                 {!isEmailPasswordProvider && (
+                    <p className="text-sm text-muted-foreground mt-2">
+                        Password management is not available because you signed in with a social provider.
+                    </p>
+                )}
             </CardContent>
         </Card>
     </div>
