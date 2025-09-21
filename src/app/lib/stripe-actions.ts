@@ -67,7 +67,7 @@ export async function createCustomerPortalSession() {
     const headersList = headers();
     const protocol = headersList.get('x-forwarded-proto') || 'http';
     const host = headersList.get('host');
-    const returnUrl = `${protocol}://${host}/dashboard/profile`;
+    const returnUrl = `${protocol}://${host}/profile`;
 
     const portalSession = await stripe.billingPortal.sessions.create({
         customer: stripeCustomerId,
