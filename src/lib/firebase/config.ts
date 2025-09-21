@@ -12,6 +12,13 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
+// Validate the Firebase config
+for (const [key, value] of Object.entries(firebaseConfig)) {
+    if (!value || value.includes('your_')) {
+        throw new Error(`Missing or invalid Firebase config value for ${key} in .env.local. Please check your Firebase project settings.`);
+    }
+}
+
 
 // Initialize Firebase for SSR
 const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
