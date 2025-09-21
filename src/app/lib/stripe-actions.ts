@@ -23,8 +23,8 @@ export async function createCheckoutSession() {
   const cancelUrl = `${origin}/dashboard`;
   
   const priceId = process.env.STRIPE_PRICE_ID;
-  if (!priceId) {
-    throw new Error('Stripe price ID is not configured.');
+  if (!priceId || priceId.includes('your_stripe_price_id_here')) {
+    throw new Error('Stripe Price ID is not configured. Please set it in your environment variables.');
   }
 
   const checkoutSession = await stripe.checkout.sessions.create({
