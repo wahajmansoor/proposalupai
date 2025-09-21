@@ -1,7 +1,9 @@
+
 import { createUserWithEmailAndPassword, updateProfile, User, sendPasswordResetEmail, sendEmailVerification } from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, setDoc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
 import { auth, db } from './config';
 import { stripe } from '@/lib/stripe/config';
+import { adminAuth } from './admin';
 
 export async function signUpUser(fullName: string, email: string, password: string): Promise<User> {
   try {
@@ -44,31 +46,23 @@ export async function signUpUser(fullName: string, email: string, password: stri
   }
 }
 
-export async function updateUserProfile(user: User, profileData: { displayName?: string; photoURL?: string }) {
-  if (!user) throw new Error('You must be logged in to update your profile.');
+export async function updateUserDisplayName(uid: string, displayName: string) {
+  if (!uid) throw new Error('You must be logged in to update your profile.');
 
   try {
-    // Update Firebase Auth profile
-    await updateProfile(user, profileData);
+    // Update Firebase Auth profile (server-side)
+    await adminAuth.updateUser(uid, { displayName });
 
     // Update Firestore user document
-    const userRef = doc(db, 'users', user.uid);
-    const dataToUpdate: { displayName?: string; photoURL?: string } = {};
-    if (profileData.displayName) {
-      dataToUpdate.displayName = profileData.displayName;
-    }
-     if (profileData.photoURL) {
-      dataToUpdate.photoURL = profileData.photoURL;
-    }
+    const userRef = doc(db, 'users', uid);
+    await updateDoc(userRef, { displayName });
 
-    if (Object.keys(dataToUpdate).length > 0) {
-      await setDoc(userRef, dataToUpdate, { merge: true });
-    }
   } catch (error) {
-     console.error("Error updating profile:", error);
+     console.error("Error updating display name:", error);
      throw error;
   }
 }
+
 
 export async function sendPasswordReset(email: string) {
   try {

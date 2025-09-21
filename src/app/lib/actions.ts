@@ -10,6 +10,9 @@ import { suggestProposalTemplate } from '@/ai/flows/suggest-proposal-template';
 import { suggestOpeningStrategy } from '@/ai/flows/suggest-opening-strategy';
 import { OAuth2Client } from 'google-auth-library';
 import { headers } from 'next/headers';
+import { getCurrentUser } from '@/lib/firebase/server-auth';
+import { updateUserDisplayName } from '@/lib/firebase/auth';
+import { revalidatePath } from 'next/cache';
 
 const projectDetailsSchema = z.object({
   projectTitle: z.string().min(1, 'Project title is required.'),
@@ -162,4 +165,31 @@ export async function getGoogleAuthUrl() {
     });
     
     return authorizeUrl;
+}
+
+const updateDisplayNameSchema = z.object({
+    displayName: z.string().min(1, 'Display name cannot be empty.'),
+});
+
+export async function updateUserDisplayNameAction(formData: FormData) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+        return { error: 'You must be logged in to update your profile.' };
+    }
+
+    const validatedFields = updateDisplayNameSchema.safeParse({
+        displayName: formData.get('displayName'),
+    });
+
+    if (!validatedFields.success) {
+        return { error: validatedFields.error.flatten().fieldErrors.displayName?.[0] };
+    }
+
+    try {
+        await updateUserDisplayName(currentUser.user.uid, validatedFields.data.displayName);
+        revalidatePath('/profile');
+        return { success: 'Display name updated successfully.' };
+    } catch (error: any) {
+        return { error: error.message || 'Failed to update display name.' };
+    }
 }
