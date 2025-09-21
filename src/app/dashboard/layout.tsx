@@ -41,8 +41,8 @@ export default function DashboardLayout({
         router.replace("/dashboard/pricing");
       }
     }
-    // If user exists but userProfile is still null, the loading screen will be shown,
-    // and this effect will re-run when userProfile is available.
+    // If user exists but userProfile is still null after loading, it means they might be new
+    // and the check will re-run once the profile is created. The loading screen handles this.
 
   }, [user, userProfile, loading, router, pathname]);
 
