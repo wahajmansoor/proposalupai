@@ -15,17 +15,17 @@ export default function ProfilePage() {
   const { user, loading } = useAuth();
   const { toast } = useToast();
 
-  const [displayName, setDisplayName] = useState(user?.displayName || '');
+  const [displayName, setDisplayName] = useState('');
   const [isSaving, setIsSaving] = useState(false);
   const [isSendingReset, setIsSendingReset] = useState(false);
   
-  // This effect syncs the component's state with the auth context
-  // if the user data loads after the component has already mounted.
+  // This effect correctly syncs the local component state
+  // with the user data from the authentication context.
   useEffect(() => {
     if (user?.displayName) {
       setDisplayName(user.displayName);
     }
-  }, [user]);
+  }, [user?.displayName]);
 
 
   if (loading || !user) {
