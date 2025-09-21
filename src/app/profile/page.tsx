@@ -27,20 +27,6 @@ export default function ProfilePage() {
       setDisplayName(user.displayName);
     }
   }, [user?.displayName]);
-
-  const handleManageBilling = async () => {
-    setIsManagingBilling(true);
-    try {
-      await createCustomerPortalSession();
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Could not redirect to billing portal.',
-        variant: 'destructive',
-      });
-      setIsManagingBilling(false);
-    }
-  };
   
   const getInitials = (name: string | null | undefined) => {
     if (!name) return 'U';
@@ -66,6 +52,11 @@ export default function ProfilePage() {
       toast({ title: 'Success!', description: 'Your display name has been updated.' });
     }
     setIsSaving(false);
+  };
+
+  const handleBillingSubmit = () => {
+    setIsManagingBilling(true);
+    // The form action will handle the rest. We just set loading state.
   };
 
   const subscriptionStatus = userProfile?.subscriptionStatus;
@@ -147,10 +138,12 @@ export default function ProfilePage() {
                 )}
               </div>
               {userProfile?.stripeCustomerId && (
-                <Button onClick={handleManageBilling} disabled={isManagingBilling} className="w-full">
-                  {isManagingBilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2" />}
-                  Manage Billing & Subscription
-                </Button>
+                <form action={createCustomerPortalSession} onSubmit={handleBillingSubmit}>
+                  <Button type="submit" disabled={isManagingBilling} className="w-full">
+                    {isManagingBilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2" />}
+                    Manage Billing & Subscription
+                  </Button>
+                </form>
               )}
             </CardContent>
           </Card>
