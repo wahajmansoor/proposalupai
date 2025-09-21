@@ -16,14 +16,15 @@ export default function ProfileLayout({
   const router = useRouter();
 
   useEffect(() => {
-    if (loading) {
-      return;
-    }
-    if (!user) {
+    // If auth state is done loading and there's still no user,
+    // redirect to login.
+    if (!loading && !user) {
       router.replace("/login");
     }
   }, [user, loading, router]);
 
+  // Show a loader while we are verifying authentication.
+  // This prevents any flicker of content.
   if (loading || !user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -32,6 +33,7 @@ export default function ProfileLayout({
     );
   }
 
+  // If the user is logged in, show the profile page.
   return (
     <div className="flex flex-col min-h-screen bg-[#f9f9f9]">
       <Header />

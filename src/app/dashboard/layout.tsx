@@ -17,7 +17,7 @@ export default function DashboardLayout({
 
   useEffect(() => {
     if (loading) {
-      return;
+      return; // Still waiting for auth state...
     }
 
     if (!user) {
@@ -25,6 +25,8 @@ export default function DashboardLayout({
       return;
     }
 
+    // After loading, if there's a user but no profile yet, we wait.
+    // If there is a profile, we check subscription.
     if (userProfile) {
       const hasActiveSubscription = userProfile.subscriptionStatus === "active" || userProfile.subscriptionStatus === "trialing";
       if (!hasActiveSubscription) {
@@ -34,6 +36,8 @@ export default function DashboardLayout({
     
   }, [user, userProfile, loading, router]);
 
+  // This is the gatekeeper. Show a loader while we are verifying.
+  // This prevents any flicker of the dashboard content.
   if (loading || !userProfile) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -42,15 +46,19 @@ export default function DashboardLayout({
     );
   }
   
+  // Once verified, only show the content if they have a subscription.
+  // The useEffect above will handle the redirect, but this is a final check.
   const isSubscribed = userProfile.subscriptionStatus === "active" || userProfile.subscriptionStatus === "trialing";
   if (!isSubscribed) {
-    return (
+      // Render the loader while redirecting
+     return (
         <div className="flex items-center justify-center min-h-screen">
             <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />
         </div>
     );
   }
 
+  // If all checks pass, render the dashboard.
   return (
     <div className="flex flex-col min-h-screen bg-[#f9f9f9]">
       <Header />
