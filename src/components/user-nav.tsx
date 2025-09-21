@@ -15,7 +15,7 @@ import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import Link from 'next/link';
 import { Skeleton } from './ui/skeleton';
-import { ChevronDown, CreditCard, LogOut, User } from 'lucide-react';
+import { ChevronDown, CreditCard, FileText, FolderKanban, LogOut, User } from 'lucide-react';
 import { createCustomerPortalSession } from '@/app/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
@@ -111,6 +111,18 @@ export function UserNav() {
               <Link href="/profile">
                   <User className="mr-2 h-4 w-4" />
                   Profile
+              </Link>
+           </DropdownMenuItem>
+           <DropdownMenuItem asChild>
+              <Link href="/dashboard/proposals">
+                  <FileText className="mr-2 h-4 w-4" />
+                  Saved Proposals
+              </Link>
+           </DropdownMenuItem>
+           <DropdownMenuItem asChild>
+              <Link href="/dashboard/portfolio">
+                  <FolderKanban className="mr-2 h-4 w-4" />
+                  Portfolio
               </Link>
            </DropdownMenuItem>
           {userProfile?.stripeCustomerId && (
