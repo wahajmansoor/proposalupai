@@ -61,7 +61,7 @@ export async function createCustomerPortalSession() {
     const stripeCustomerId = userDoc?.stripeCustomerId;
 
     if (!stripeCustomerId) {
-        throw new Error('Stripe customer ID not found for user');
+        throw new Error('Stripe customer ID not found for this user.');
     }
 
     const headersList = headers();
@@ -75,7 +75,7 @@ export async function createCustomerPortalSession() {
     });
 
     if (!portalSession.url) {
-        throw new Error('Could not create customer portal session');
+        throw new Error('Could not create customer portal session.');
     }
 
     redirect(portalSession.url);
