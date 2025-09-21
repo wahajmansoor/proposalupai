@@ -41,7 +41,7 @@ export default function DashboardLayout({
       return;
     }
 
-    const hasActiveSubscription = userProfile?.subscriptionStatus === "active";
+    const hasActiveSubscription = userProfile?.subscriptionStatus === "active" || userProfile?.subscriptionStatus === "trialing";
     const trialEndDate = userProfile?.trialEndDate;
     const isTrialActive = trialEndDate && new Date() < trialEndDate;
 
