@@ -56,14 +56,18 @@ export async function GET(req: NextRequest) {
     let userRecord: UserRecord;
     
     const displayName = name;
-    const photoURL = picture || null;
+    
+    // Conditionally build the user update/create payload
+    const userPayload: { [key: string]: any } = {
+        displayName: displayName,
+    };
+    if (picture) {
+        userPayload.photoURL = picture;
+    }
 
     try {
       userRecord = await adminAuth.getUserByEmail(email);
-      await adminAuth.updateUser(userRecord.uid, {
-        displayName: displayName,
-        photoURL: photoURL,
-      });
+      await adminAuth.updateUser(userRecord.uid, userPayload);
 
     } catch (e: any) {
       if (e.code === 'auth/user-not-found') {
@@ -71,8 +75,7 @@ export async function GET(req: NextRequest) {
             uid: uid, 
             email,
             emailVerified: email_verified,
-            displayName: displayName,
-            photoURL: photoURL,
+            ...userPayload, // Spread the payload here
             disabled: false,
         });
       } else {
@@ -87,8 +90,10 @@ export async function GET(req: NextRequest) {
         uid: userRecord.uid,
         email: userRecord.email,
         displayName: displayName,
-        photoURL: photoURL,
     };
+     if (picture) {
+        userData.photoURL = picture;
+    }
     
     if (!userDoc.exists) {
         const trialEndDate = new Date();
