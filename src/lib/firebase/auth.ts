@@ -26,9 +26,7 @@ export async function signUpUser(fullName: string, email: string, password: stri
 
     // 5. Create user document in Firestore
     const userRef = doc(db, 'users', user.uid);
-    const trialEndDate = new Date();
-    trialEndDate.setDate(trialEndDate.getDate() + 2); // 2-day trial
-
+    
     await setDoc(userRef, {
       uid: user.uid,
       email: user.email,
@@ -36,7 +34,6 @@ export async function signUpUser(fullName: string, email: string, password: stri
       photoURL: user.photoURL,
       createdAt: serverTimestamp(),
       stripeCustomerId: customer.id,
-      trialEndDate: trialEndDate,
     });
 
     return user;

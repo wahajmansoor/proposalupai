@@ -16,8 +16,7 @@ export default function DashboardLayout({
   const { user, userProfile, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const [showTrialDialog, setShowTrialDialog] = useState(false);
-  
+
   useEffect(() => {
     if (loading) {
       return; // Wait until auth state is confirmed
@@ -28,8 +27,7 @@ export default function DashboardLayout({
       return;
     }
 
-    // This condition ensures we don't proceed until userProfile is loaded.
-    // A user exists, but their profile data hasn't been fetched yet.
+    // Wait for userProfile to be loaded
     if (!userProfile) {
       return; 
     }
@@ -37,25 +35,13 @@ export default function DashboardLayout({
     // User can always access pricing and their profile
     const allowedPaths = ["/dashboard/pricing", "/dashboard/profile"];
     if (allowedPaths.includes(pathname)) {
-      setShowTrialDialog(false); // Make sure dialog is hidden on these pages
       return;
     }
 
     const hasActiveSubscription = userProfile?.subscriptionStatus === "active" || userProfile?.subscriptionStatus === "trialing";
-    const trialEndDate = userProfile?.trialEndDate;
-    const isTrialActive = trialEndDate && new Date() < trialEndDate;
 
     if (!hasActiveSubscription) {
-      if (isTrialActive) {
-        // User is in trial, show the non-dismissible dialog
-        setShowTrialDialog(true);
-      } else {
-        // Trial is over, redirect to pricing
-        router.replace("/dashboard/pricing");
-      }
-    } else {
-      // User is subscribed, hide the dialog
-      setShowTrialDialog(false);
+      router.replace("/dashboard/pricing");
     }
 
   }, [user, userProfile, loading, router, pathname]);
@@ -71,7 +57,6 @@ export default function DashboardLayout({
   return (
     <div className="flex flex-col min-h-screen bg-[#f9f9f9]">
       <Header />
-      <TrialDialog open={showTrialDialog} />
       <main className="flex-1 p-4 md:p-8 container mx-auto">
         {children}
       </main>

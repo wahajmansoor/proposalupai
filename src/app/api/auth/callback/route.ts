@@ -96,9 +96,6 @@ export async function GET(req: NextRequest) {
     }
     
     if (!userDoc.exists) {
-        const trialEndDate = new Date();
-        trialEndDate.setDate(trialEndDate.getDate() + 2); // 2-day trial
-        
         const customer = await stripe.customers.create({
             email: userRecord.email!,
             name: userRecord.displayName || undefined,
@@ -109,7 +106,6 @@ export async function GET(req: NextRequest) {
 
         userData.createdAt = new Date();
         userData.stripeCustomerId = customer.id;
-        userData.trialEndDate = trialEndDate;
 
         await userRef.set(userData, { merge: true });
     } else {

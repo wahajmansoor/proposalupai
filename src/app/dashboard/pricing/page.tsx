@@ -48,18 +48,16 @@ export default function PricingPage() {
     }
   };
 
-  if (authLoading || !user) {
+  if (authLoading) {
     // The parent layout will handle showing a loader or redirecting.
     // Returning null here prevents this component from rendering prematurely.
-    return null;
+    return (
+        <div className="flex items-center justify-center min-h-screen">
+          <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />
+        </div>
+      );
   }
   
-  // If the user somehow lands here with an active sub, the layout will redirect them.
-  // This check is a safeguard.
-  if (hasActiveSubscription) {
-    return null;
-  }
-
   return (
     <div className="flex flex-col min-h-[calc(100vh-10rem)] items-center justify-center">
         <div className="w-full max-w-md">
@@ -68,9 +66,9 @@ export default function PricingPage() {
             <ProposalUpLogo className="h-12 w-12 mx-auto text-primary mb-2" />
             <CardTitle className="text-3xl font-bold">Proposal Up Pro</CardTitle>
             <CardDescription>
-                {userProfile?.trialEndDate && new Date() >= userProfile.trialEndDate 
-                ? "Your free trial has ended. Upgrade to continue creating proposals."
-                : "Unlock all features and generate unlimited proposals."
+                {hasActiveSubscription 
+                    ? "You are currently subscribed to the Pro plan."
+                    : "Unlock all features and generate unlimited proposals."
                 }
             </CardDescription>
             </CardHeader>
@@ -90,7 +88,7 @@ export default function PricingPage() {
                 ))}
             </ul>
             <form onSubmit={handleSubmit}>
-                <Button size="lg" className="w-full" disabled={isSubmitting}>
+                <Button size="lg" className="w-full" disabled={isSubmitting || hasActiveSubscription}>
                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                 {isSubmitting ? 'Redirecting to Checkout...' : 'Start a 2-day free trial'}
                 </Button>
