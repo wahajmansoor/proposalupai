@@ -29,7 +29,7 @@ export default function ProfilePage() {
     if (user?.displayName && user.displayName !== displayName) {
       setDisplayName(user.displayName);
     }
-  }, [user?.displayName]);
+  }, [user?.displayName, displayName]);
 
   // The layout ensures user is not null, so this check is for type safety.
   if (!user) {
