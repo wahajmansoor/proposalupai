@@ -1,15 +1,15 @@
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
-import { Nunito } from 'next/font/google';
+import { Inter } from 'next/font/google';
 import { AuthProvider } from '@/context/auth-context';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
 
-const nunito = Nunito({
+const inter = Inter({
   subsets: ['latin'],
   display: 'swap',
-  variable: '--font-nunito',
+  variable: '--font-inter',
 });
 
 export const metadata: Metadata = {
@@ -23,7 +23,7 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={nunito.variable}>
+    <html lang="en" className={inter.variable}>
       <head />
       <body>
         <AuthProvider>
