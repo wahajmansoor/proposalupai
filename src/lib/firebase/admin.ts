@@ -12,11 +12,19 @@ let app: App;
 
 if (!getApps().length) {
   try {
-    const serviceAccount = JSON.parse(serviceAccountString);
+    let serviceAccount;
+    // Check if the variable is a string that needs parsing or is already an object
+    if (typeof serviceAccountString === 'string') {
+        serviceAccount = JSON.parse(serviceAccountString);
+    } else {
+        serviceAccount = serviceAccountString;
+    }
+
     // Vercel might escape newlines, so we need to replace them back.
     if (serviceAccount.private_key) {
       serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
     }
+    
     app = initializeApp({
       credential: cert(serviceAccount),
     });
