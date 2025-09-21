@@ -15,19 +15,23 @@ import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import Link from 'next/link';
 import { Skeleton } from './ui/skeleton';
-import { ChevronDown, CreditCard, User as UserIcon } from 'lucide-react';
+import { ChevronDown, CreditCard, User as UserIcon, LogOut } from 'lucide-react';
 import { createCustomerPortalSession } from '@/app/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
+import { useState } from 'react';
 
 export function UserNav() {
   const { user, userProfile, loading } = useAuth();
   const { toast } = useToast();
+  const [isManagingBilling, setIsManagingBilling] = useState(false);
+
 
   const handleLogout = async () => {
     await signOut(auth);
   };
 
   const handleManageBilling = async () => {
+    setIsManagingBilling(true);
     try {
       await createCustomerPortalSession();
     } catch (error: any) {
@@ -36,6 +40,8 @@ export function UserNav() {
             description: error.message || 'Could not redirect to billing portal.',
             variant: 'destructive',
         });
+    } finally {
+        setIsManagingBilling(false);
     }
   };
 
@@ -108,14 +114,17 @@ export function UserNav() {
             </Link>
           </DropdownMenuItem>
           {userProfile?.stripeCustomerId && (
-             <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleManageBilling(); }}>
+             <DropdownMenuItem onSelect={(e) => { e.preventDefault(); handleManageBilling(); }} disabled={isManagingBilling}>
                 <CreditCard className="mr-2 h-4 w-4" />
                 Manage Billing
             </DropdownMenuItem>
           )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleLogout}>Log out</DropdownMenuItem>
+        <DropdownMenuItem onClick={handleLogout}>
+            <LogOut className="mr-2 h-4 w-4" />
+            Log out
+        </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
   );

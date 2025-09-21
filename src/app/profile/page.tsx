@@ -10,16 +10,14 @@ import { Label } from '@/components/ui/label';
 import { useToast } from '@/hooks/use-toast';
 import { updateUserProfile, sendPasswordReset } from '@/lib/firebase/auth';
 import { Loader2 } from 'lucide-react';
-import { createCustomerPortalSession } from '@/app/lib/stripe-actions';
 
 export default function ProfilePage() {
-  const { user, userProfile, loading } = useAuth();
+  const { user, loading } = useAuth();
   const { toast } = useToast();
 
   const [displayName, setDisplayName] = useState(user?.displayName || '');
   const [isSaving, setIsSaving] = useState(false);
   const [isSendingReset, setIsSendingReset] = useState(false);
-  const [isManagingBilling, setIsManagingBilling] = useState(false);
 
   if (loading || !user) {
     return null; // Layout handles loading/redirect
@@ -82,20 +80,6 @@ export default function ProfilePage() {
     }
   }
 
-  const handleManageBilling = async () => {
-    setIsManagingBilling(true);
-    try {
-      await createCustomerPortalSession();
-    } catch (error: any) {
-        toast({
-            title: 'Error',
-            description: error.message || 'Could not redirect to billing portal.',
-            variant: 'destructive',
-        });
-        setIsManagingBilling(false);
-    }
-  };
-
   return (
     <div className="max-w-2xl mx-auto space-y-8 container py-8">
         <h1 className="text-3xl font-bold tracking-tight">Profile & Settings</h1>
@@ -145,21 +129,6 @@ export default function ProfilePage() {
                 </Button>
             </CardContent>
         </Card>
-
-        {userProfile?.stripeCustomerId && (
-          <Card>
-              <CardHeader>
-                  <CardTitle>Billing</CardTitle>
-                  <CardDescription>Manage your subscription and payment details.</CardDescription>
-              </CardHeader>
-              <CardContent>
-                  <Button onClick={handleManageBilling} variant="outline" disabled={isManagingBilling}>
-                      {isManagingBilling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                      Manage Billing & Subscription
-                  </Button>
-              </CardContent>
-          </Card>
-        )}
     </div>
   );
 }
