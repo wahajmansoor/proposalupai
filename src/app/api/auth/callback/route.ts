@@ -115,19 +115,10 @@ export async function GET(req: NextRequest) {
     }
 
     const customToken = await adminAuth.createCustomToken(userRecord.uid);
-
-    // Create a session cookie
-    const expiresIn = 60 * 60 * 24 * 5 * 1000; // 5 days
-    const sessionCookie = await adminAuth.createSessionCookie(tokens.id_token, { expiresIn });
-    const options = { name: '__session', value: sessionCookie, maxAge: expiresIn, httpOnly: true, secure: true };
-
     const redirectUrl = new URL('/auth/callback-client', `${protocol}://${host}`);
     redirectUrl.searchParams.set('token', customToken);
 
-    const response = NextResponse.redirect(redirectUrl.toString());
-    response.cookies.set(options);
-
-    return response;
+    return NextResponse.redirect(redirectUrl.toString());
 
   } catch (err: any) {
     console.error('Failed to exchange code for token:', err);

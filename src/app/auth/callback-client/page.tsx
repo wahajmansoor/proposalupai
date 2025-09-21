@@ -1,9 +1,12 @@
+
 "use client";
 
 import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { ProposalUpLogo } from '@/components/icons';
+import { signInWithCustomToken } from 'firebase/auth';
+import { auth } from '@/lib/firebase/config';
 
 function AuthCallback() {
   const router = useRouter();
@@ -11,30 +14,56 @@ function AuthCallback() {
   const { toast } = useToast();
 
   useEffect(() => {
-    const token = searchParams.get('token');
+    const customToken = searchParams.get('token');
     
-    // Check if this window was opened by a parent window
-    if (window.opener) {
-      if (token) {
-        // Send the token to the parent window
-        window.opener.postMessage({ type: 'auth-token', token }, window.location.origin);
-      } else {
-        // Send an error to the parent window
-        const error = searchParams.get('error') || 'unknown-error';
-        const details = searchParams.get('details') || 'An unknown error occurred.';
-        window.opener.postMessage({ type: 'auth-error', error, details }, window.location.origin);
-      }
-       // The popup should close itself after posting the message.
-       // The parent window will handle the sign-in logic.
-       window.close();
+    if (customToken) {
+      signInWithCustomToken(auth, customToken)
+        .then(async (userCredential) => {
+          const idToken = await userCredential.user.getIdToken();
+          
+          // Post the ID token to the server to create a session cookie
+          await fetch('/api/auth/session', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ idToken }),
+          });
+
+          if (window.opener) {
+            // Inform the parent window and close
+            window.opener.postMessage({ type: 'auth-success' }, window.location.origin);
+            window.close();
+          } else {
+             router.push('/dashboard');
+          }
+        })
+        .catch((error) => {
+          console.error("Firebase custom sign-in error:", error);
+           if (window.opener) {
+              window.opener.postMessage({ type: 'auth-error', error: 'firebase-signin-failed', details: error.message }, window.location.origin);
+              window.close();
+           } else {
+              toast({
+                  title: 'Authentication Error',
+                  description: 'Failed to sign you in. Please try again.',
+                  variant: 'destructive',
+              });
+              router.push('/login');
+           }
+        });
     } else {
-      // Fallback for cases where it's not a popup (e.g., direct navigation)
-      toast({
-        title: 'Authentication Error',
-        description: 'Please try logging in again from the login page.',
-        variant: 'destructive',
-      });
-      router.push('/login');
+      const error = searchParams.get('error') || 'unknown-error';
+      const details = searchParams.get('details') || 'An unknown error occurred.';
+      if (window.opener) {
+        window.opener.postMessage({ type: 'auth-error', error, details }, window.location.origin);
+        window.close();
+      } else {
+        toast({
+          title: 'Authentication Error',
+          description: details,
+          variant: 'destructive',
+        });
+        router.push('/login');
+      }
     }
   }, [router, searchParams, toast]);
 

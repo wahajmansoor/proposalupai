@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -10,7 +11,7 @@ import { Label } from '@/components/ui/label';
 import { ProposalUpLogo, GoogleIcon } from '@/components/icons';
 import { Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { signInWithCustomToken, signInWithEmailAndPassword } from 'firebase/auth';
+import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { getGoogleAuthUrl } from '@/app/lib/actions';
 import { Separator } from '@/components/ui/separator';
@@ -43,30 +44,19 @@ export default function LoginPage() {
           return;
         }
 
-        const { type, token, error, details } = event.data;
+        const { type, error, details } = event.data;
         
         // Clean up the listener regardless of outcome
         window.removeEventListener('message', handleMessage);
         setIsGoogleLoading(false);
 
-        if (type === 'auth-token' && token) {
-           signInWithCustomToken(auth, token)
-            .then(() => {
-              toast({
-                title: 'Successfully signed in!',
-                description: "You will be redirected to your dashboard.",
-              });
-              // Redirection is handled by the root page/auth context
-            })
-            .catch((signInError) => {
-              console.error('Custom token sign-in error:', signInError);
-              toast({
-                title: 'Sign-In Failed',
-                description: 'There was a problem signing you in. Please try again.',
-                variant: 'destructive',
-              });
-            });
-
+        if (type === 'auth-success') {
+          toast({
+            title: 'Successfully signed in!',
+            description: "You will be redirected to your dashboard.",
+          });
+          // The auth context will handle redirection.
+          router.refresh();
         } else if (type === 'auth-error') {
             toast({
                 title: `Google Sign-In Failed: ${error}`,

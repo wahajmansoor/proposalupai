@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -13,8 +14,6 @@ import { Loader2, XCircle, CheckCircle2 } from 'lucide-react';
 import { signUpUser } from '@/lib/firebase/auth';
 import { getGoogleAuthUrl } from '@/app/lib/actions';
 import { cn } from '@/lib/utils';
-import { signInWithCustomToken } from 'firebase/auth';
-import { auth } from '@/lib/firebase/config';
 import { useAuth } from '@/context/auth-context';
 
 
@@ -74,30 +73,19 @@ export default function SignupPage() {
           return;
         }
 
-        const { type, token, error, details } = event.data;
+        const { type, error, details } = event.data;
         
         // Clean up the listener regardless of outcome
         window.removeEventListener('message', handleMessage);
         setIsGoogleLoading(false);
 
-        if (type === 'auth-token' && token) {
-          signInWithCustomToken(auth, token)
-            .then(() => {
-              toast({
-                title: 'Successfully signed in!',
-                description: "Welcome! We're redirecting you to the dashboard.",
-              });
-              // Redirection is handled by the root page
-            })
-            .catch((signInError) => {
-              console.error('Custom token sign-in error:', signInError);
-              toast({
-                title: 'Sign-In Failed',
-                description: 'There was a problem signing you in. Please try again.',
-                variant: 'destructive',
-              });
-            });
-
+        if (type === 'auth-success') {
+          toast({
+            title: 'Successfully signed up!',
+            description: "Welcome! We're redirecting you to the dashboard.",
+          });
+          // Redirection is handled by the auth context
+          router.refresh();
         } else if (type === 'auth-error') {
             toast({
                 title: `Google Sign-Up Failed: ${error}`,
