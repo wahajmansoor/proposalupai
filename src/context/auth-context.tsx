@@ -17,12 +17,12 @@ interface UserProfile {
   subscriptionStatus?: string;
   subscriptionCurrentPeriodEnd?: Date;
   trialEndDate?: Date;
-  isAdmin?: boolean;
 }
 
 interface AuthContextType {
   user: User | null;
   userProfile: UserProfile | null;
+
   loading: boolean;
 }
 
@@ -63,12 +63,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     subscriptionCurrentPeriodEnd: data.subscriptionCurrentPeriodEnd?.toDate(),
                     trialEndDate: data.trialEndDate?.toDate(),
                 } as UserProfile);
-            } else {
-              // This can happen briefly if Firestore creation is slower than auth.
-              // Setting profile to null ensures the layout waits.
-              setUserProfile(null);
             }
-            setLoading(false); // Move loading state change inside the snapshot listener
+            // By only acting when the doc exists and setting loading false
+            // after the first check, we avoid the race condition.
+            setLoading(false); 
         }, (error) => {
             console.error("Error fetching user profile:", error);
             setUserProfile(null);
