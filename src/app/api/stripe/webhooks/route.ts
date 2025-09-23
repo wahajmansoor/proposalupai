@@ -26,8 +26,7 @@ async function findUserByStripeCustomerId(stripeCustomerId: string) {
 }
 
 /**
- * Handles subscription creation, update, or deletion events from Stripe and updates the corresponding user document in Firestore.
- * This single function handles all relevant subscription statuses.
+ * Handles subscription creation or update events from Stripe and updates the corresponding user document in Firestore.
  * @param subscription - The Stripe subscription object.
  */
 async function handleSubscriptionChange(subscription: Stripe.Subscription) {
@@ -90,9 +89,21 @@ export async function POST(req: Request) {
 
             case 'customer.subscription.created':
             case 'customer.subscription.updated':
-            case 'customer.subscription.deleted':
                 const subscription = event.data.object as Stripe.Subscription;
                 await handleSubscriptionChange(subscription);
+                break;
+
+            case 'customer.subscription.deleted':
+                const deletedSubscription = event.data.object as Stripe.Subscription;
+                const stripeCustomerId = deletedSubscription.customer as string;
+                const userDocRef = await findUserByStripeCustomerId(stripeCustomerId);
+
+                if (userDocRef) {
+                    await userDocRef.update({
+                        subscriptionStatus: 'canceled',
+                    });
+                     console.log(`Successfully marked subscription as canceled for user ${userDocRef.id}.`);
+                }
                 break;
             
             default:
