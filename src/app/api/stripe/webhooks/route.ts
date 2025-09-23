@@ -12,6 +12,10 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
  * @returns The user's document reference or null if not found.
  */
 async function findUserByStripeCustomerId(stripeCustomerId: string) {
+    if (!stripeCustomerId) {
+        console.warn(`Webhook Warning: Stripe customer ID is missing.`);
+        return null;
+    }
     const userQuery = await adminDb.collection('users').where('stripeCustomerId', '==', stripeCustomerId).limit(1).get();
     if (userQuery.empty) {
         console.warn(`Webhook Warning: No user found with Stripe customer ID ${stripeCustomerId}`);

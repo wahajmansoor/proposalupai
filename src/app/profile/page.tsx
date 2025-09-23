@@ -81,6 +81,12 @@ export default function ProfilePage() {
     return subscriptionStatus || 'N/A';
   }
 
+  const getRenewalText = () => {
+    if (subscriptionStatus === 'trialing') return 'Trial Ends';
+    if (subscriptionStatus === 'active') return 'Renews On';
+    return null;
+  }
+
   return (
     <div className="space-y-8">
       <div>
@@ -145,10 +151,10 @@ export default function ProfilePage() {
                     {getPlanName()}
                   </Badge>
                 </div>
-                {renewalDate && (subscriptionStatus === 'active' || subscriptionStatus === 'trialing') && (
+                {renewalDate && getRenewalText() && (
                   <div className="text-right">
                     <p className="font-semibold">
-                      {subscriptionStatus === 'trialing' ? 'Trial Ends' : 'Renews On'}
+                      {getRenewalText()}
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {format(new Date(renewalDate), 'MMMM d, yyyy')}
