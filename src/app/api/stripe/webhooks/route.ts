@@ -7,20 +7,29 @@ import type Stripe from 'stripe';
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 /**
- * Handles subscription change events from Stripe and updates the corresponding user document in Firestore.
+ * Finds a user in Firestore by their Stripe customer ID.
+ * @param stripeCustomerId - The Stripe customer ID.
+ * @returns The user's document reference or null if not found.
+ */
+async function findUserByStripeCustomerId(stripeCustomerId: string) {
+    const userQuery = await adminDb.collection('users').where('stripeCustomerId', '==', stripeCustomerId).limit(1).get();
+    if (userQuery.empty) {
+        console.warn(`Webhook Warning: No user found with Stripe customer ID ${stripeCustomerId}`);
+        return null;
+    }
+    return userQuery.docs[0].ref;
+}
+
+
+/**
+ * Handles subscription creation or update events from Stripe and updates the corresponding user document in Firestore.
  * @param subscription - The Stripe subscription object.
  */
 async function handleSubscriptionChange(subscription: Stripe.Subscription) {
     const stripeCustomerId = subscription.customer as string;
-    const userQuery = await adminDb.collection('users').where('stripeCustomerId', '==', stripeCustomerId).limit(1).get();
+    const userDocRef = await findUserByStripeCustomerId(stripeCustomerId);
 
-    if (userQuery.empty) {
-        console.warn(`Webhook Warning: No user found with Stripe customer ID ${stripeCustomerId}`);
-        return;
-    }
-
-    const userDocRef = userQuery.docs[0].ref;
-    const userId = userDocRef.id;
+    if (!userDocRef) return;
 
     const subscriptionData = {
         subscriptionId: subscription.id,
@@ -29,8 +38,28 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
     };
     
     await userDocRef.update(subscriptionData);
-    console.log(`Successfully updated subscription for user ${userId}. Status: ${subscription.status}`);
+    console.log(`Successfully updated subscription for user ${userDocRef.id}. Status: ${subscription.status}`);
 }
+
+/**
+ * Handles subscription deletion events from Stripe.
+ * @param subscription - The Stripe subscription object (can be partial).
+ */
+async function handleSubscriptionDeletion(subscription: Stripe.Subscription) {
+    const stripeCustomerId = subscription.customer as string;
+    const userDocRef = await findUserByStripeCustomerId(stripeCustomerId);
+    
+    if (!userDocRef) return;
+
+    // When a subscription is deleted, we only update the status.
+    const subscriptionData = {
+        subscriptionStatus: subscription.status, // e.g., 'canceled'
+    };
+    
+    await userDocRef.update(subscriptionData);
+    console.log(`Successfully updated subscription for user ${userDocRef.id}. Status: ${subscription.status}`);
+}
+
 
 export async function POST(req: Request) {
     const buf = await req.text();
@@ -57,8 +86,6 @@ export async function POST(req: Request) {
         switch (event.type) {
             case 'checkout.session.completed':
                 const session = event.data.object as Stripe.Checkout.Session;
-                // This event is fired when a subscription is created.
-                // We need to retrieve the subscription object from the session.
                 if (session.subscription) {
                     const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
                     await handleSubscriptionChange(subscription);
@@ -67,9 +94,13 @@ export async function POST(req: Request) {
 
             case 'customer.subscription.created':
             case 'customer.subscription.updated':
+                const updatedSubscription = event.data.object as Stripe.Subscription;
+                await handleSubscriptionChange(updatedSubscription);
+                break;
+            
             case 'customer.subscription.deleted':
-                const subscription = event.data.object as Stripe.Subscription;
-                await handleSubscriptionChange(subscription);
+                const deletedSubscription = event.data.object as Stripe.Subscription;
+                await handleSubscriptionDeletion(deletedSubscription);
                 break;
             
             default:
