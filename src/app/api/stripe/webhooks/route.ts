@@ -8,15 +8,6 @@ import { NextResponse } from 'next/server';
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
 /**
- * Stripe requires the raw body to construct the event, so we disable Next.js's body parser.
- */
-export const config = {
-  api: {
-    bodyParser: false,
-  },
-};
-
-/**
  * Finds a user in Firestore by their Stripe customer ID.
  * @param stripeCustomerId - The Stripe customer ID.
  * @returns The user's document reference or null if not found.
