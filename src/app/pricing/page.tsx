@@ -2,9 +2,10 @@
 "use client";
 
 import { useState } from 'react';
+import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Loader2, Briefcase } from 'lucide-react';
+import { Check, Loader2, Briefcase, FilePlus2 } from 'lucide-react';
 import { createCheckoutSession } from '@/app/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -88,7 +89,7 @@ export default function PricingPage() {
                         <p className="text-sm text-muted-foreground">{proPlan.priceDescription}</p>
                     </div>
                     
-                    <form onSubmit={handleSubmit} className="w-full">
+                    <form onSubmit={handleSubmit} className="w-full flex flex-col gap-2">
                         <Button 
                             size="lg" 
                             className={cn(
@@ -99,6 +100,14 @@ export default function PricingPage() {
                             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                             {hasActiveSubscription ? 'Subscribed' : proPlan.buttonText}
                         </Button>
+                        {hasActiveSubscription && (
+                          <Button asChild size="lg" variant="outline" className="w-full text-lg font-medium">
+                            <Link href="/dashboard">
+                              <FilePlus2 className="mr-2 h-5 w-5" />
+                              Create Proposal
+                            </Link>
+                          </Button>
+                        )}
                     </form>
                     
                     <div className="border-t my-6"></div>
