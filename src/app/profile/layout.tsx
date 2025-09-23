@@ -13,7 +13,7 @@ export default function ProfileLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, userProfile, loading } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -24,12 +24,9 @@ export default function ProfileLayout({
       router.replace("/login");
       return;
     }
-    if (!userProfile?.subscriptionStatus || !['active', 'trialing'].includes(userProfile.subscriptionStatus)) {
-        router.replace('/pricing');
-    }
-  }, [user, userProfile, loading, router]);
+  }, [user, loading, router]);
 
-  if (loading || !user || !userProfile?.subscriptionStatus || !['active', 'trialing'].includes(userProfile.subscriptionStatus)) {
+  if (loading || !user) {
     return (
       <div className="flex flex-col min-h-screen">
         <Header />
