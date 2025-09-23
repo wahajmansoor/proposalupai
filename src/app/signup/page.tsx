@@ -15,6 +15,8 @@ import { getGoogleAuthUrl } from '@/app/lib/actions';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
 import { signUpWithEmail } from '@/app/lib/auth-actions';
+import { signInWithEmailAndPassword } from 'firebase/auth';
+import { auth } from '@/lib/firebase/config';
 
 
 const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => {
@@ -128,14 +130,28 @@ export default function SignupPage() {
     setIsLoading(true);
 
     try {
+      // Step 1: Create the user via the server action
       const result = await signUpWithEmail({ fullName, email, password });
       
       if (result.error) {
         throw new Error(result.error);
       }
+      
+      // Step 2: Sign the new user in on the client
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const idToken = await userCredential.user.getIdToken();
 
-      // At this point, the server action has created the user and the session cookie.
-      // The AuthProvider will detect the change and handle the redirect.
+      // Step 3: Create the session cookie
+      const response = await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
+
+      if (!response.ok) {
+        throw new Error('Failed to create session after signup.');
+      }
+      
       toast({
         title: 'Success!',
         description: "Account created. Welcome aboard!",
