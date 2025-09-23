@@ -26,14 +26,18 @@ async function findUserByStripeCustomerId(stripeCustomerId: string) {
 
 
 /**
- * Handles subscription creation or update events from Stripe and updates the corresponding user document in Firestore.
+ * Handles subscription creation, update, or deletion events from Stripe and updates the corresponding user document in Firestore.
+ * This single function handles all relevant subscription statuses.
  * @param subscription - The Stripe subscription object.
  */
 async function handleSubscriptionChange(subscription: Stripe.Subscription) {
     const stripeCustomerId = subscription.customer as string;
     const userDocRef = await findUserByStripeCustomerId(stripeCustomerId);
 
-    if (!userDocRef) return;
+    if (!userDocRef) {
+        console.warn(`No user found for Stripe customer ID: ${stripeCustomerId}. Skipping update.`);
+        return;
+    }
 
     const subscriptionData = {
         subscriptionId: subscription.id,
@@ -42,26 +46,7 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
     };
     
     await userDocRef.update(subscriptionData);
-    console.log(`Successfully updated subscription for user ${userDocRef.id}. Status: ${subscription.status}`);
-}
-
-/**
- * Handles subscription deletion events from Stripe.
- * @param subscription - The Stripe subscription object (can be partial).
- */
-async function handleSubscriptionDeletion(subscription: Stripe.Subscription) {
-    const stripeCustomerId = subscription.customer as string;
-    const userDocRef = await findUserByStripeCustomerId(stripeCustomerId);
-    
-    if (!userDocRef) return;
-
-    // When a subscription is deleted, we only update the status.
-    const subscriptionData = {
-        subscriptionStatus: subscription.status, // e.g., 'canceled'
-    };
-    
-    await userDocRef.update(subscriptionData);
-    console.log(`Successfully updated subscription for user ${userDocRef.id}. Status: ${subscription.status}`);
+    console.log(`Successfully synced subscription for user ${userDocRef.id}. New status: ${subscription.status}`);
 }
 
 
@@ -98,17 +83,14 @@ export async function POST(req: Request) {
 
             case 'customer.subscription.created':
             case 'customer.subscription.updated':
-                const updatedSubscription = event.data.object as Stripe.Subscription;
-                await handleSubscriptionChange(updatedSubscription);
-                break;
-            
             case 'customer.subscription.deleted':
-                const deletedSubscription = event.data.object as Stripe.Subscription;
-                await handleSubscriptionDeletion(deletedSubscription);
+                const subscription = event.data.object as Stripe.Subscription;
+                await handleSubscriptionChange(subscription);
                 break;
             
             default:
                 // Unhandled event type
+                console.log(`Unhandled event type: ${event.type}`);
         }
     } catch (error: any) {
         console.error(`Webhook handler failed for event type ${event.type}. Error: ${error.message}`);
