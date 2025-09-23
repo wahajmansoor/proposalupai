@@ -33,32 +33,32 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, async (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
+      setUser(user);
       if (user) {
-        setUser(user);
         const userRef = doc(db, 'users', user.uid);
-        
         const unsubscribeSnapshot = onSnapshot(userRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                setUserProfile({
-                    ...data,
-                    subscriptionCurrentPeriodEnd: data.subscriptionCurrentPeriodEnd?.toDate(),
-                    trialEndDate: data.trialEndDate?.toDate(),
-                } as UserProfile);
-            } else {
-                setUserProfile(null);
-            }
-            setLoading(false); 
-        }, (error) => {
-            console.error("Error fetching user profile:", error);
+          if (docSnap.exists()) {
+            const data = docSnap.data();
+            setUserProfile({
+              ...data,
+              subscriptionCurrentPeriodEnd: data.subscriptionCurrentPeriodEnd?.toDate(),
+              trialEndDate: data.trialEndDate?.toDate(),
+            } as UserProfile);
+          } else {
+            // Document might not exist yet, this is fine.
+            // It will be created server-side or by the signup function.
             setUserProfile(null);
-            setLoading(false);
+          }
+          setLoading(false);
+        }, (error) => {
+          console.error("Error fetching user profile:", error);
+          setUserProfile(null);
+          setLoading(false);
         });
         
         return () => unsubscribeSnapshot();
       } else {
-        setUser(null);
         setUserProfile(null);
         setLoading(false);
       }

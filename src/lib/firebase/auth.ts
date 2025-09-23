@@ -1,22 +1,25 @@
 
 import { createUserWithEmailAndPassword, updateProfile, User, sendPasswordResetEmail, sendEmailVerification } from 'firebase/auth';
-import { doc, setDoc, getDoc, serverTimestamp, updateDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { auth, db } from './config';
 import { stripe } from '@/lib/stripe/config';
 
 export async function signUpUser(fullName: string, email: string, password: string): Promise<User> {
   try {
-    // 1. Create user in Firebase Auth
     const userCredential = await createUserWithEmailAndPassword(auth, email, password);
     const user = userCredential.user;
 
-    // 2. Update the user's profile in Firebase Auth
     await updateProfile(user, { displayName: fullName });
     
-    // 3. Send the verification email
-    await sendEmailVerification(user);
+    // Defer the email verification sending to allow other processes to complete
+    sendEmailVerification(user);
 
-    // 4. Create Stripe customer
+    // This function now primarily handles Auth user creation and profile update.
+    // The critical Firestore and Stripe creation is handled server-side via the Google sign-in flow,
+    // which we will now replicate for email sign-up.
+    // For now, to unblock email signup, we'll create the Firestore doc here.
+    // NOTE: A more robust solution would be to trigger a server-side function on user creation.
+
     const customer = await stripe.customers.create({
         email: user.email!,
         name: fullName,
@@ -25,10 +28,7 @@ export async function signUpUser(fullName: string, email: string, password: stri
         },
     });
 
-    // 5. Create user document in Firestore - THIS IS THE CRITICAL STEP
-    // We must ensure this completes before the function returns.
     const userRef = doc(db, 'users', user.uid);
-    
     await setDoc(userRef, {
       uid: user.uid,
       email: user.email,
@@ -37,11 +37,10 @@ export async function signUpUser(fullName: string, email: string, password: stri
       createdAt: serverTimestamp(),
       stripeCustomerId: customer.id,
     });
-
+    
     return user;
   } catch (error) {
     console.error("Error signing up:", error);
-    // Re-throw the error to be caught by the calling function and displayed to the user
     throw error;
   }
 }

@@ -75,7 +75,6 @@ export default function SignupPage() {
 
         const { type, error, details } = event.data;
         
-        // Clean up the listener regardless of outcome
         window.removeEventListener('message', handleMessage);
         setIsGoogleLoading(false);
 
@@ -84,8 +83,7 @@ export default function SignupPage() {
             title: 'Successfully signed up!',
             description: "Welcome! We're redirecting you to the dashboard.",
           });
-          // Redirection is handled by the auth context
-          router.refresh();
+          router.push('/dashboard');
         } else if (type === 'auth-error') {
             toast({
                 title: `Google Sign-Up Failed: ${error}`,
@@ -132,14 +130,10 @@ export default function SignupPage() {
     try {
       await signUpUser(fullName, email, password);
       toast({
-        title: 'Verification Email Sent!',
-        description: "Please check your inbox to verify your email address.",
+        title: 'Success!',
+        description: "Please check your inbox to verify your email, then log in.",
       });
-      // The useAuth hook will handle the user state, no need to redirect here.
-      // After verification, the user can log in.
-      setFullName('');
-      setEmail('');
-      setPassword('');
+      router.push('/login');
 
     } catch (error: any) {
       const errorMessage = error.message || 'An unexpected error occurred.';

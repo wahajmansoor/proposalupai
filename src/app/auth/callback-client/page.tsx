@@ -22,14 +22,17 @@ function AuthCallback() {
           const idToken = await userCredential.user.getIdToken();
           
           // Post the ID token to the server to create a session cookie
-          await fetch('/api/auth/session', {
+          const response = await fetch('/api/auth/session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ idToken }),
           });
 
+          if (!response.ok) {
+              throw new Error('Failed to create session.');
+          }
+
           if (window.opener) {
-            // Inform the parent window and close
             window.opener.postMessage({ type: 'auth-success' }, window.location.origin);
             window.close();
           } else {

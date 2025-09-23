@@ -57,9 +57,10 @@ export async function GET(req: NextRequest) {
     
     const displayName = name;
     
-    // Conditionally build the user update/create payload
     const userPayload: { [key: string]: any } = {
         displayName: displayName,
+        emailVerified: email_verified,
+        disabled: false,
     };
     if (picture) {
         userPayload.photoURL = picture;
@@ -68,15 +69,12 @@ export async function GET(req: NextRequest) {
     try {
       userRecord = await adminAuth.getUserByEmail(email);
       await adminAuth.updateUser(userRecord.uid, userPayload);
-
     } catch (e: any) {
       if (e.code === 'auth/user-not-found') {
         userRecord = await adminAuth.createUser({
             uid: uid, 
             email,
-            emailVerified: email_verified,
-            ...userPayload, // Spread the payload here
-            disabled: false,
+            ...userPayload,
         });
       } else {
         throw e;
@@ -85,15 +83,6 @@ export async function GET(req: NextRequest) {
     
     const userRef = adminDb.collection('users').doc(userRecord.uid);
     const userDoc = await userRef.get();
-
-    const userData: { [key: string]: any } = {
-        uid: userRecord.uid,
-        email: userRecord.email,
-        displayName: displayName,
-    };
-     if (picture) {
-        userData.photoURL = picture;
-    }
     
     if (!userDoc.exists) {
         const customer = await stripe.customers.create({
@@ -104,14 +93,17 @@ export async function GET(req: NextRequest) {
             },
         });
 
-        userData.createdAt = new Date();
-        userData.stripeCustomerId = customer.id;
-
+        const userData: { [key: string]: any } = {
+            uid: userRecord.uid,
+            email: userRecord.email,
+            displayName: displayName,
+            createdAt: new Date(),
+            stripeCustomerId: customer.id,
+        };
+        if (picture) {
+            userData.photoURL = picture;
+        }
         await userRef.set(userData, { merge: true });
-    } else {
-        // For existing users, just update their profile info.
-        // Don't overwrite stripe or trial data.
-        await userRef.update(userData);
     }
 
     const customToken = await adminAuth.createCustomToken(userRecord.uid);

@@ -18,17 +18,13 @@ export default function DashboardLayout({
 
   useEffect(() => {
     if (loading) {
-      return; // Still waiting for auth state...
+      return; 
     }
-
     if (!user) {
       router.replace("/login");
-      return;
     }
   }, [user, loading, router]);
 
-  // This is the gatekeeper. Show a loader while we are verifying.
-  // This prevents any flicker of the dashboard content.
   if (loading || !user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -37,7 +33,6 @@ export default function DashboardLayout({
     );
   }
 
-  // If all checks pass, render the dashboard.
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
