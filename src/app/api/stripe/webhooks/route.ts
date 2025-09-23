@@ -15,8 +15,6 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
     const userQuery = await adminDb.collection('users').where('stripeCustomerId', '==', stripeCustomerId).limit(1).get();
 
     if (userQuery.empty) {
-        // Not returning an error to Stripe because the user might have been deleted,
-        // but we can't find a record to update.
         console.warn(`Webhook Warning: No user found with Stripe customer ID ${stripeCustomerId}`);
         return;
     }
@@ -59,6 +57,8 @@ export async function POST(req: Request) {
         switch (event.type) {
             case 'checkout.session.completed':
                 const session = event.data.object as Stripe.Checkout.Session;
+                // This event is fired when a subscription is created.
+                // We need to retrieve the subscription object from the session.
                 if (session.subscription) {
                     const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
                     await handleSubscriptionChange(subscription);
