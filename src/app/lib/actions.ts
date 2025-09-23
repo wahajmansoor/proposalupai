@@ -188,7 +188,7 @@ async function updateUserDisplayName(uid: string, displayName: string) {
 
   } catch (error) {
      console.error("Error updating display name:", error);
-     throw error;
+     throw new Error("Failed to update display name on the server.");
   }
 }
 
