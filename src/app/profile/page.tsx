@@ -75,6 +75,12 @@ export default function ProfilePage() {
   const subscriptionStatus = userProfile?.subscriptionStatus;
   const renewalDate = userProfile?.subscriptionCurrentPeriodEnd;
 
+  const getPlanName = () => {
+    if (subscriptionStatus === 'trialing') return '2 Days Free Trial Plan';
+    if (subscriptionStatus === 'active') return 'Premium Plan';
+    return subscriptionStatus || 'N/A';
+  }
+
   return (
     <div className="space-y-8">
       <div>
@@ -136,7 +142,7 @@ export default function ProfilePage() {
                 <div>
                   <h3 className="font-semibold">Your Plan</h3>
                   <Badge variant={subscriptionStatus === 'active' || subscriptionStatus === 'trialing' ? 'default' : 'secondary'} className="capitalize mt-1">
-                    {subscriptionStatus === 'trialing' ? '2 Days Free Trial Plan' : (subscriptionStatus || 'N/A')}
+                    {getPlanName()}
                   </Badge>
                 </div>
                 {renewalDate && (subscriptionStatus === 'active' || subscriptionStatus === 'trialing') && (
