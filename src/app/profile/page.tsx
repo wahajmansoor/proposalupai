@@ -136,7 +136,7 @@ export default function ProfilePage() {
                 <div>
                   <h3 className="font-semibold">Your Plan</h3>
                   <Badge variant={subscriptionStatus === 'active' || subscriptionStatus === 'trialing' ? 'default' : 'secondary'} className="capitalize mt-1">
-                    {subscriptionStatus || 'N/A'}
+                    {subscriptionStatus === 'trialing' ? '2 Days Free Trial Plan' : (subscriptionStatus || 'N/A')}
                   </Badge>
                 </div>
                 {renewalDate && (subscriptionStatus === 'active' || subscriptionStatus === 'trialing') && (
