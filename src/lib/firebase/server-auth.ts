@@ -31,6 +31,8 @@ export async function getCurrentUser(): Promise<{
 
   } catch (error) {
     console.error('Error verifying session cookie:', error);
+    // Invalidate the corrupt cookie
+    cookies().set('__session', '', { maxAge: 0 });
     return null;
   }
 }
