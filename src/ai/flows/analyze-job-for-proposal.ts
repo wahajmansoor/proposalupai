@@ -7,12 +7,8 @@
  * - AnalyzeJobForProposalInput - The input type for the analyzeJobForProposal function.
  * - AnalyzeJobForProposalOutput - The return type for the analyzeJobForProposal function.
  */
-import OpenAI from 'openai';
+import { openai } from '@/lib/openai';
 import { z } from 'zod';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 const AnalyzeJobForProposalInputSchema = z.object({
   projectTitle: z.string().describe('The title of the job posting.'),

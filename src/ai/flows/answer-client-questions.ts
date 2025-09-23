@@ -8,12 +8,8 @@
  * - AnswerClientQuestionsInput - The input type for the answerClientQuestions function.
  * - AnswerClientQuestionsOutput - The return type for the answerClientQuestions function.
  */
-import OpenAI from 'openai';
+import { openai } from '@/lib/openai';
 import { z } from 'zod';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
 
 const AnswerClientQuestionsInputSchema = z.object({
   jobDescription: z.string().describe('The job description for the proposal.'),

@@ -7,13 +7,8 @@
  * - SuggestProposalTemplateInput - Input type for the function.
  * - SuggestProposalTemplateOutput - Output type for the function.
  */
-import OpenAI from 'openai';
+import { openai } from '@/lib/openai';
 import { z } from 'zod';
-
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
-
 
 const SuggestProposalTemplateInputSchema = z.object({
   projectTitle: z.string().describe('The title of the project being applied for.'),
