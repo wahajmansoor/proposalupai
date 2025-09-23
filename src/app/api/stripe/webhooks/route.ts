@@ -6,26 +6,33 @@ import type Stripe from 'stripe';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-async function handleSubscriptionEvent(subscription: Stripe.Subscription, eventType: string) {
+/**
+ * Handles subscription change events from Stripe and updates the corresponding user document in Firestore.
+ * @param subscription - The Stripe subscription object.
+ */
+async function handleSubscriptionChange(subscription: Stripe.Subscription) {
     const stripeCustomerId = subscription.customer as string;
     const userQuery = await adminDb.collection('users').where('stripeCustomerId', '==', stripeCustomerId).limit(1).get();
 
     if (userQuery.empty) {
-        console.error(`Webhook Error: No user found with Stripe customer ID ${stripeCustomerId}`);
+        // Not returning an error to Stripe because the user might have been deleted,
+        // but we can't find a record to update.
+        console.warn(`Webhook Warning: No user found with Stripe customer ID ${stripeCustomerId}`);
         return;
     }
+
     const userDocRef = userQuery.docs[0].ref;
+    const userId = userDocRef.id;
 
     const subscriptionData = {
         subscriptionId: subscription.id,
         subscriptionStatus: subscription.status,
         subscriptionCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
     };
-
+    
     await userDocRef.update(subscriptionData);
-    console.log(`Updated subscription for user ${userDocRef.id}, Event: ${eventType}`);
+    console.log(`Successfully updated subscription for user ${userId}. Status: ${subscription.status}`);
 }
-
 
 export async function POST(req: Request) {
     const buf = await req.text();
@@ -52,38 +59,24 @@ export async function POST(req: Request) {
         switch (event.type) {
             case 'checkout.session.completed':
                 const session = event.data.object as Stripe.Checkout.Session;
-                if (!session.customer || !session.subscription || !session.client_reference_id) {
-                    throw new Error('Missing customer, subscription, or client_reference_id in checkout session.');
+                if (session.subscription) {
+                    const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+                    await handleSubscriptionChange(subscription);
                 }
-                const customerId = session.customer as string;
-                const subscriptionId = session.subscription as string;
-                const userId = session.client_reference_id;
-
-                const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-                
-                const userDocRef = adminDb.collection('users').doc(userId);
-                
-                await userDocRef.update({
-                    stripeCustomerId: customerId,
-                    subscriptionId: subscription.id,
-                    subscriptionStatus: subscription.status,
-                    subscriptionCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
-                });
                 break;
 
-            case 'invoice.payment_succeeded':
+            case 'customer.subscription.created':
             case 'customer.subscription.updated':
             case 'customer.subscription.deleted':
-            case 'customer.subscription.resumed':
-                const subscriptionEvent = event.data.object as Stripe.Subscription;
-                await handleSubscriptionEvent(subscriptionEvent, event.type);
+                const subscription = event.data.object as Stripe.Subscription;
+                await handleSubscriptionChange(subscription);
                 break;
             
             default:
-                // console.log(`Unhandled event type: ${event.type}`);
+                // Unhandled event type
         }
     } catch (error: any) {
-        console.error(`Webhook handler failed. Event: ${event.type}. Error: ${error.message}`);
+        console.error(`Webhook handler failed for event type ${event.type}. Error: ${error.message}`);
         return new Response('Webhook handler failed.', { status: 500 });
     }
 
