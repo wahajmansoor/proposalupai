@@ -38,7 +38,7 @@ export default function PricingPage() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const hasActiveSubscription = userProfile?.subscriptionStatus === 'active';
+  const hasActiveSubscription = userProfile?.subscriptionStatus === 'active' || userProfile?.subscriptionStatus === 'trialing';
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
