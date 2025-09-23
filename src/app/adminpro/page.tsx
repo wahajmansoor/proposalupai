@@ -1,8 +1,16 @@
 
-import { Card, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
-import { Users } from 'lucide-react';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
+import { getAllUsers } from '@/app/lib/admin-actions';
+import { UsersTable } from '@/components/users-table';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
 
-export default function AdminDashboardPage() {
+export default async function AdminDashboardPage() {
+  
+  const { data: users, error } = await getAllUsers().then(
+    data => ({ data, error: null }),
+    error => ({ data: null, error })
+  );
 
   return (
     <div className="space-y-8">
@@ -15,8 +23,21 @@ export default function AdminDashboardPage() {
        <Card>
           <CardHeader>
             <CardTitle>All Users</CardTitle>
-            <CardDescription>A list of all registered users.</CardDescription>
+            <CardDescription>A list of all registered users and their status.</CardDescription>
           </CardHeader>
+          <CardContent>
+            {error ? (
+              <Alert variant="destructive">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Error</AlertTitle>
+                <AlertDescription>
+                  Failed to load users. Please try again later.
+                </AlertDescription>
+              </Alert>
+            ) : (
+              <UsersTable users={users || []} />
+            )}
+          </CardContent>
         </Card>
     </div>
   );
