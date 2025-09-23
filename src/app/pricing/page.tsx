@@ -12,6 +12,7 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { ProposalUpLogo } from '@/components/icons';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 const proPlan = {
     name: "Pro",
@@ -39,7 +40,13 @@ export default function PricingPage() {
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
   
-  const hasActiveSubscription = userProfile?.subscriptionStatus === 'active' || userProfile?.subscriptionStatus === 'trialing';
+  const subscriptionStatus = userProfile?.subscriptionStatus;
+  const renewalDate = userProfile?.subscriptionCurrentPeriodEnd;
+  const hasActiveSubscription = subscriptionStatus === 'active' || subscriptionStatus === 'trialing';
+
+  // This state covers a user who has canceled but their subscription is valid until the period end.
+  const isCanceledButActive = subscriptionStatus === 'canceled' && renewalDate && new Date(renewalDate) > new Date();
+
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -61,6 +68,12 @@ export default function PricingPage() {
       setIsSubmitting(false);
     }
   };
+
+  const getButtonText = () => {
+    if (hasActiveSubscription) return 'Subscribed';
+    if (isCanceledButActive) return 'Subscription Canceled';
+    return proPlan.buttonText;
+  }
 
   if (authLoading) {
     return (
@@ -94,11 +107,11 @@ export default function PricingPage() {
                             size="lg" 
                             className={cn(
                                 "w-full text-lg font-medium", 
-                                hasActiveSubscription && 'opacity-50 cursor-not-allowed'
+                                (hasActiveSubscription || isCanceledButActive) && 'opacity-50 cursor-not-allowed'
                             )}
-                            disabled={isSubmitting || hasActiveSubscription}>
+                            disabled={isSubmitting || hasActiveSubscription || isCanceledButActive}>
                             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                            {hasActiveSubscription ? 'Subscribed' : proPlan.buttonText}
+                            {getButtonText()}
                         </Button>
                         {hasActiveSubscription && (
                           <Button asChild size="lg" variant="outline" className="w-full text-lg font-medium">
@@ -109,6 +122,12 @@ export default function PricingPage() {
                           </Button>
                         )}
                     </form>
+
+                     {isCanceledButActive && renewalDate && (
+                      <p className="text-center text-sm text-muted-foreground mt-2">
+                        Your access will end on {format(new Date(renewalDate), 'MMMM d, yyyy')}.
+                      </p>
+                    )}
                     
                     <div className="border-t my-6"></div>
 
