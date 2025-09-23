@@ -17,6 +17,7 @@ interface UserProfile {
   subscriptionStatus?: string;
   subscriptionCurrentPeriodEnd?: Date;
   trialEndDate?: Date;
+  isAdmin?: boolean;
 }
 
 interface AuthContextType {
