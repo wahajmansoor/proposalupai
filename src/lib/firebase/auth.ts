@@ -25,7 +25,8 @@ export async function signUpUser(fullName: string, email: string, password: stri
         },
     });
 
-    // 5. Create user document in Firestore
+    // 5. Create user document in Firestore - THIS IS THE CRITICAL STEP
+    // We must ensure this completes before the function returns.
     const userRef = doc(db, 'users', user.uid);
     
     await setDoc(userRef, {

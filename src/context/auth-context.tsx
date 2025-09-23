@@ -4,7 +4,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onIdTokenChanged, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
-import { doc, setDoc, onSnapshot, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 
 interface UserProfile {
   uid: string;
@@ -22,7 +22,6 @@ interface UserProfile {
 interface AuthContextType {
   user: User | null;
   userProfile: UserProfile | null;
-
   loading: boolean;
 }
 
@@ -63,6 +62,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                     subscriptionCurrentPeriodEnd: data.subscriptionCurrentPeriodEnd?.toDate(),
                     trialEndDate: data.trialEndDate?.toDate(),
                 } as UserProfile);
+            } else {
+                // If the doc doesn't exist, it means it's still being created.
+                // We set profile to null but wait for it to appear.
+                setUserProfile(null);
             }
             // By only acting when the doc exists and setting loading false
             // after the first check, we avoid the race condition.
