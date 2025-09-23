@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useAuth } from "@/context/auth-context";
@@ -12,22 +13,23 @@ export default function ProfileLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading } = useAuth();
+  const { user, userProfile, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
     if (loading) {
-      return; // Still waiting for auth state...
+      return; 
     }
-
     if (!user) {
       router.replace("/login");
       return;
     }
-  }, [user, loading, router]);
+    if (!userProfile?.subscriptionStatus || !['active', 'trialing'].includes(userProfile.subscriptionStatus)) {
+        router.replace('/pricing');
+    }
+  }, [user, userProfile, loading, router]);
 
-  // This is the gatekeeper. Show a loader while we are verifying.
-  if (loading || !user) {
+  if (loading || !user || !userProfile?.subscriptionStatus || !['active', 'trialing'].includes(userProfile.subscriptionStatus)) {
     return (
       <div className="flex flex-col min-h-screen">
         <Header />

@@ -2,7 +2,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { onIdTokenChanged, User } from 'firebase/auth';
+import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
 import { doc, onSnapshot } from 'firebase/firestore';
 
@@ -14,9 +14,8 @@ interface UserProfile {
   createdAt: any;
   stripeCustomerId?: string;
   subscriptionId?: string;
-  subscriptionStatus?: string;
+  subscriptionStatus?: 'active' | 'trialing' | 'canceled' | 'past_due' | 'unpaid' | string;
   subscriptionCurrentPeriodEnd?: Date;
-  trialEndDate?: Date;
 }
 
 interface AuthContextType {
@@ -33,7 +32,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onIdTokenChanged(auth, (user) => {
+    const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       if (user) {
         const userRef = doc(db, 'users', user.uid);
@@ -43,7 +42,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setUserProfile({
               ...data,
               subscriptionCurrentPeriodEnd: data.subscriptionCurrentPeriodEnd?.toDate(),
-              trialEndDate: data.trialEndDate?.toDate(),
             } as UserProfile);
           } else {
             setUserProfile(null);

@@ -13,7 +13,7 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, loading } = useAuth();
+  const { user, userProfile, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
@@ -22,10 +22,14 @@ export default function DashboardLayout({
     }
     if (!user) {
       router.replace("/login");
+      return;
     }
-  }, [user, loading, router]);
+    if (!userProfile?.subscriptionStatus || !['active', 'trialing'].includes(userProfile.subscriptionStatus)) {
+        router.replace('/pricing');
+    }
+  }, [user, userProfile, loading, router]);
 
-  if (loading || !user) {
+  if (loading || !user || !userProfile?.subscriptionStatus || !['active', 'trialing'].includes(userProfile.subscriptionStatus)) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />
