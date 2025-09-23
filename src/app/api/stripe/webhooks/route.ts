@@ -40,6 +40,8 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
     }
     
     let status = subscription.status;
+    // If cancel_at_period_end is true, the subscription is considered 'canceled' in our system
+    // even if it's technically 'active' in Stripe until the period ends.
     if (subscription.cancel_at_period_end) {
         status = 'canceled';
     }
@@ -54,17 +56,9 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
     console.log(`Successfully synced subscription for user ${userDocRef.id}. New status: ${status}`);
 }
 
-async function buffer(readable: NodeJS.ReadableStream) {
-  const chunks = [];
-  for await (const chunk of readable) {
-    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
-  }
-  return Buffer.concat(chunks);
-}
-
 
 export async function POST(req: Request) {
-    const buf = await buffer(req.body as unknown as NodeJS.ReadableStream);
+    const body = await req.text();
     const sig = headers().get('stripe-signature');
 
     if (!webhookSecret) {
@@ -78,7 +72,7 @@ export async function POST(req: Request) {
 
     let event: Stripe.Event;
     try {
-        event = stripe.webhooks.constructEvent(buf, sig, webhookSecret);
+        event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
     } catch (err: any) {
         console.error(`Webhook signature verification failed: ${err.message}`);
         return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
