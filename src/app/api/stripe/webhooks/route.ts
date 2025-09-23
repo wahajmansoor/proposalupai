@@ -3,8 +3,18 @@ import { stripe } from '@/lib/stripe/config';
 import { adminDb } from '@/lib/firebase/admin';
 import { headers } from 'next/headers';
 import type Stripe from 'stripe';
+import { NextResponse } from 'next/server';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+
+/**
+ * Stripe requires the raw body to construct the event, so we disable Next.js's body parser.
+ */
+export const config = {
+  api: {
+    bodyParser: false,
+  },
+};
 
 /**
  * Finds a user in Firestore by their Stripe customer ID.
@@ -24,7 +34,6 @@ async function findUserByStripeCustomerId(stripeCustomerId: string) {
     return userQuery.docs[0].ref;
 }
 
-
 /**
  * Handles subscription creation, update, or deletion events from Stripe and updates the corresponding user document in Firestore.
  * This single function handles all relevant subscription statuses.
@@ -38,29 +47,42 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
         console.warn(`No user found for Stripe customer ID: ${stripeCustomerId}. Skipping update.`);
         return;
     }
+    
+    let status = subscription.status;
+    if (subscription.cancel_at_period_end) {
+        status = 'canceled';
+    }
 
     const subscriptionData = {
         subscriptionId: subscription.id,
-        subscriptionStatus: subscription.status,
+        subscriptionStatus: status,
         subscriptionCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
     };
     
     await userDocRef.update(subscriptionData);
-    console.log(`Successfully synced subscription for user ${userDocRef.id}. New status: ${subscription.status}`);
+    console.log(`Successfully synced subscription for user ${userDocRef.id}. New status: ${status}`);
+}
+
+async function buffer(readable: NodeJS.ReadableStream) {
+  const chunks = [];
+  for await (const chunk of readable) {
+    chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
+  }
+  return Buffer.concat(chunks);
 }
 
 
 export async function POST(req: Request) {
-    const buf = await req.text();
+    const buf = await buffer(req.body as unknown as NodeJS.ReadableStream);
     const sig = headers().get('stripe-signature');
 
     if (!webhookSecret) {
         console.error('Stripe webhook secret is not set.');
-        return new Response('Webhook secret not configured.', { status: 500 });
+        return new NextResponse('Webhook secret not configured.', { status: 500 });
     }
     if (!sig) {
         console.error('Missing stripe-signature header.');
-        return new Response('Missing stripe-signature header.', { status: 400 });
+        return new NextResponse('Missing stripe-signature header.', { status: 400 });
     }
 
     let event: Stripe.Event;
@@ -68,7 +90,7 @@ export async function POST(req: Request) {
         event = stripe.webhooks.constructEvent(buf, sig, webhookSecret);
     } catch (err: any) {
         console.error(`Webhook signature verification failed: ${err.message}`);
-        return new Response(`Webhook Error: ${err.message}`, { status: 400 });
+        return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
     }
 
     try {
@@ -94,8 +116,8 @@ export async function POST(req: Request) {
         }
     } catch (error: any) {
         console.error(`Webhook handler failed for event type ${event.type}. Error: ${error.message}`);
-        return new Response('Webhook handler failed.', { status: 500 });
+        return new NextResponse('Webhook handler failed.', { status: 500 });
     }
 
-    return new Response(JSON.stringify({ received: true }), { status: 200 });
+    return new NextResponse(JSON.stringify({ received: true }), { status: 200 });
 }
