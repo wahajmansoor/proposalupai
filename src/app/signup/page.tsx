@@ -11,10 +11,10 @@ import { Label } from '@/components/ui/label';
 import { ProposalUpLogo, GoogleIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, XCircle, CheckCircle2 } from 'lucide-react';
-import { signUpUser } from '@/lib/firebase/auth';
 import { getGoogleAuthUrl } from '@/app/lib/actions';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
+import { signUpWithEmail } from '@/app/lib/auth-actions';
 
 
 const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => {
@@ -128,22 +128,17 @@ export default function SignupPage() {
     setIsLoading(true);
 
     try {
-      const user = await signUpUser(fullName, email, password);
-      const idToken = await user.getIdToken();
+      const result = await signUpWithEmail({ fullName, email, password });
       
-      const response = await fetch('/api/auth/session', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ idToken }),
-      });
-
-      if (!response.ok) {
-          throw new Error('Failed to create session.');
+      if (result.error) {
+        throw new Error(result.error);
       }
 
+      // At this point, the server action has created the user and the session cookie.
+      // The AuthProvider will detect the change and handle the redirect.
       toast({
         title: 'Success!',
-        description: "Account created. Please check your inbox to verify your email.",
+        description: "Account created. Welcome aboard!",
       });
       router.push('/dashboard');
 

@@ -14,7 +14,6 @@ import { useToast } from '@/hooks/use-toast';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { getGoogleAuthUrl } from '@/app/lib/actions';
-import { Separator } from '@/components/ui/separator';
 import { useAuth } from '@/context/auth-context';
 
 export default function LoginPage() {
@@ -83,12 +82,24 @@ export default function LoginPage() {
     setIsLoading(true);
     
     try {
-      await signInWithEmailAndPassword(auth, email, password);
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      const idToken = await userCredential.user.getIdToken();
+      
+      const response = await fetch('/api/auth/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken }),
+      });
+
+      if (!response.ok) {
+          throw new Error('Failed to create session.');
+      }
+
       toast({
         title: 'Login Successful!',
         description: "Welcome back!",
       });
-      // Redirection will be handled by the root page
+      router.push('/dashboard');
     } catch (error: any) {
       toast({
         title: 'Login Failed',
