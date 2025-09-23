@@ -83,9 +83,10 @@ export default function SignupPage() {
         if (type === 'auth-success') {
           toast({
             title: 'Successfully signed up!',
-            description: "Welcome! We're redirecting you to the dashboard.",
+            description: "Welcome! We're redirecting you now.",
           });
-          router.push('/dashboard');
+          // The callback client will handle redirection to pricing for new users
+          router.refresh();
         } else if (type === 'auth-error') {
             toast({
                 title: `Google Sign-Up Failed: ${error}`,
@@ -154,9 +155,9 @@ export default function SignupPage() {
       
       toast({
         title: 'Success!',
-        description: "Account created. Welcome aboard!",
+        description: "Account created. Let's get you set up.",
       });
-      router.push('/dashboard');
+      router.push('/pricing');
 
     } catch (error: any) {
       const errorMessage = error.message || 'An unexpected error occurred.';

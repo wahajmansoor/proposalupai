@@ -21,7 +21,6 @@ function AuthCallback() {
         .then(async (userCredential) => {
           const idToken = await userCredential.user.getIdToken();
           
-          // Post the ID token to the server to create a session cookie
           const response = await fetch('/api/auth/session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
@@ -32,11 +31,17 @@ function AuthCallback() {
               throw new Error('Failed to create session.');
           }
 
+          const isNewUser = userCredential.user.metadata.creationTime === userCredential.user.metadata.lastSignInTime;
+          // A small buffer for clock differences
+          const isNewUserFuzzy = (new Date().getTime() - new Date(userCredential.user.metadata.creationTime!).getTime()) < 60 * 1000;
+          
+          const redirectPath = isNewUserFuzzy ? '/pricing' : '/dashboard';
+
           if (window.opener) {
-            window.opener.postMessage({ type: 'auth-success' }, window.location.origin);
+            window.opener.postMessage({ type: 'auth-success', redirectPath }, window.location.origin);
             window.close();
           } else {
-             router.push('/dashboard');
+             router.push(redirectPath);
           }
         })
         .catch((error) => {
