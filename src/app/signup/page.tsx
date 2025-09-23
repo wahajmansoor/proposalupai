@@ -128,12 +128,24 @@ export default function SignupPage() {
     setIsLoading(true);
 
     try {
-      await signUpUser(fullName, email, password);
+      const user = await signUpUser(fullName, email, password);
+      const idToken = await user.getIdToken();
+      
+      const response = await fetch('/api/auth/session', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ idToken }),
+      });
+
+      if (!response.ok) {
+          throw new Error('Failed to create session.');
+      }
+
       toast({
         title: 'Success!',
-        description: "Please check your inbox to verify your email, then log in.",
+        description: "Account created. Please check your inbox to verify your email.",
       });
-      router.push('/login');
+      router.push('/dashboard');
 
     } catch (error: any) {
       const errorMessage = error.message || 'An unexpected error occurred.';

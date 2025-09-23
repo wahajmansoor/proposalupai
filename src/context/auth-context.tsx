@@ -2,7 +2,7 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { onIdTokenChanged, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
 import { doc, onSnapshot } from 'firebase/firestore';
 
@@ -33,7 +33,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
+    const unsubscribe = onIdTokenChanged(auth, (user) => {
       setUser(user);
       if (user) {
         const userRef = doc(db, 'users', user.uid);
@@ -46,8 +46,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               trialEndDate: data.trialEndDate?.toDate(),
             } as UserProfile);
           } else {
-            // Document might not exist yet, this is fine.
-            // It will be created server-side or by the signup function.
             setUserProfile(null);
           }
           setLoading(false);
