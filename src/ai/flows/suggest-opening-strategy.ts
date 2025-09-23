@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Suggests an opening strategy based on job details.

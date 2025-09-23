@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview Suggests a proposal template based on job details.
