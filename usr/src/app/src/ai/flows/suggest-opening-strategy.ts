@@ -8,7 +8,7 @@
  */
 import OpenAI from 'openai';
 import { z } from 'zod';
-import { zodToJsonSchema } from 'zod-to-json-schema';
+import { zodToJsonSchema } from 'zod-to-json-schema-next';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,

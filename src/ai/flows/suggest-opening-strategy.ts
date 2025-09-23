@@ -68,20 +68,7 @@ export async function suggestOpeningStrategy(
                 function: {
                     name: 'suggest_opening_strategy',
                     description: 'Suggests an opening strategy for a proposal.',
-                    parameters: {
-                        type: 'object',
-                        properties: {
-                            strategyId: {
-                                type: 'string',
-                                description: "The ID of the suggested opening strategy. MUST be one of the keys from the input strategies."
-                            },
-                            reasoning: {
-                                type: 'string',
-                                description: 'A brief, one-sentence explanation for the strategy suggestion.'
-                            }
-                        },
-                        required: ['strategyId', 'reasoning']
-                    }
+                    parameters: SuggestOpeningStrategyOutputSchema.openapi('OpeningStrategy'),
                 }
             }
         ],

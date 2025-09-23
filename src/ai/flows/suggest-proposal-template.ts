@@ -65,21 +65,7 @@ export async function suggestProposalTemplate(
           function: {
             name: 'suggest_proposal_template',
             description: 'Suggests a proposal template.',
-            parameters: {
-                type: 'object',
-                properties: {
-                    template: {
-                        type: 'string',
-                        enum: ['standard', 'video'],
-                        description: "The suggested proposal template. MUST be either 'standard' or 'video'."
-                    },
-                    reasoning: {
-                        type: 'string',
-                        description: 'A brief, one-sentence explanation for the template suggestion.'
-                    }
-                },
-                required: ['template', 'reasoning']
-            }
+            parameters: SuggestProposalTemplateOutputSchema.openapi('ProposalTemplate'),
           },
         },
       ],
