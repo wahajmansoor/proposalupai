@@ -16,12 +16,19 @@ export function WelcomeDialog({
   open,
   onOpenChange,
   subscriptionStatus,
+  planInterval,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   subscriptionStatus?: string;
+  planInterval?: 'monthly' | 'yearly' | null;
 }) {
   const isTrialing = subscriptionStatus === 'trialing';
+
+  const getPlanName = () => {
+    if (!planInterval) return 'Pro';
+    return planInterval === 'yearly' ? 'Pro Yearly' : 'Pro Monthly';
+  };
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
@@ -41,7 +48,7 @@ export function WelcomeDialog({
           <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
             <CheckCircle className="h-5 w-5 text-primary mt-0.5 shrink-0" />
             <div>
-              <h4 className="font-semibold">Your Plan: Pro</h4>
+              <h4 className="font-semibold">Your Plan: {getPlanName()}</h4>
               <p className="text-sm text-muted-foreground">
                 You have unlimited access to all features.
               </p>

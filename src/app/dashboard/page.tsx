@@ -132,6 +132,7 @@ function DashboardContent() {
   const summaryTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
+  const [planInterval, setPlanInterval] = useState<'monthly' | 'yearly' | null>(null);
 
   const isTrial = userProfile?.subscriptionStatus === 'trialing';
   const proposalCount = userProfile?.proposalCount ?? 0;
@@ -139,6 +140,10 @@ function DashboardContent() {
 
   useEffect(() => {
     if (searchParams.get('subscribed') === 'true') {
+      const interval = searchParams.get('interval');
+      if (interval === 'monthly' || interval === 'yearly') {
+        setPlanInterval(interval);
+      }
       setShowWelcomeDialog(true);
       // Remove the query param from the URL
       router.replace('/dashboard', { scroll: false });
@@ -454,6 +459,7 @@ function DashboardContent() {
         open={showWelcomeDialog}
         onOpenChange={setShowWelcomeDialog}
         subscriptionStatus={userProfile?.subscriptionStatus}
+        planInterval={planInterval}
       />
       {trialLimitReached && (
         <Card className="mb-6 border-destructive bg-destructive/5 text-destructive-foreground">
