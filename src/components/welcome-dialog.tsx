@@ -20,15 +20,15 @@ export function WelcomeDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
+    <Dialog open={open} onOpen-change={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader className="items-center text-center">
           <div className="bg-primary/10 rounded-full p-3 mb-4">
             <PartyPopper className="h-8 w-8 text-primary" />
           </div>
           <DialogTitle className="text-2xl font-bold">Welcome to Proposal Up!</DialogTitle>
-          <DialogDescription className="text-base">
-            Your subscription is active and your journey to winning more proposals has begun.
+          <DialogDescription className="text-base text-center">
+            Your subscription is active, and your journey to winning more projects has begun.
           </DialogDescription>
         </DialogHeader>
         <div className="my-4 space-y-3">
