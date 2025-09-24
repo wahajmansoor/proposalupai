@@ -31,6 +31,7 @@ export async function createCheckoutSession(formData: FormData) {
   const { user, userDoc } = currentUser;
   const stripeCustomerId = userDoc?.stripeCustomerId;
   const subscriptionStatus = userDoc?.subscriptionStatus;
+  const proposalCount = userDoc?.proposalCount ?? 0;
 
   if (!stripeCustomerId) {
     throw new Error('Could not find Stripe customer ID. Please contact support.');
@@ -57,11 +58,11 @@ export async function createCheckoutSession(formData: FormData) {
 
   const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {};
 
-  // CORRECTED LOGIC: Only apply a trial if the user's status is specifically 'trialing'.
-  // This prevents new subscribers who exhausted their free proposals from getting a trial.
-  if (subscriptionStatus === 'trialing') {
+  // A user gets a free trial if they are not already an active subscriber AND they haven't used up their free proposals.
+  if (subscriptionStatus !== 'active' && proposalCount < 5) {
     subscriptionData.trial_period_days = 2;
   }
+
 
   const checkoutSession = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],

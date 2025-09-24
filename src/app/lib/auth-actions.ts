@@ -41,6 +41,7 @@ export async function signUpWithEmail(input: z.infer<typeof signUpSchema>): Prom
       createdAt: new Date(),
       stripeCustomerId: customer.id,
       proposalCount: 0, // Initialize proposal count
+      subscriptionStatus: 'trialing', // Initialize status to trialing for all new users
     });
 
     // 4. Create a session cookie for the user
