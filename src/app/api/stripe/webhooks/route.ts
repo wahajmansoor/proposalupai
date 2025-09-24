@@ -45,14 +45,21 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
         status = 'canceled';
     }
 
-    const subscriptionData = {
+    const price = subscription.items.data[0]?.price;
+    const interval = price?.recurring?.interval;
+
+    const subscriptionData: { [key: string]: any } = {
         subscriptionId: subscription.id,
         subscriptionStatus: status,
         subscriptionCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
     };
+
+    if (interval) {
+        subscriptionData.subscriptionInterval = interval;
+    }
     
     await userDocRef.update(subscriptionData);
-    console.log(`Successfully synced subscription for user ${userDocRef.id}. New status: ${status}`);
+    console.log(`Successfully synced subscription for user ${userDocRef.id}. New status: ${status}, Interval: ${interval}`);
 }
 
 
@@ -82,7 +89,9 @@ export async function POST(req: Request) {
             case 'checkout.session.completed':
                 const session = event.data.object as Stripe.Checkout.Session;
                 if (session.subscription) {
-                    const subscription = await stripe.subscriptions.retrieve(session.subscription as string);
+                    const subscription = await stripe.subscriptions.retrieve(session.subscription as string, {
+                        expand: ['items.data.price'],
+                    });
                     await handleSubscriptionChange(subscription);
                 }
                 break;
@@ -90,7 +99,10 @@ export async function POST(req: Request) {
             case 'customer.subscription.created':
             case 'customer.subscription.updated':
                 const subscription = event.data.object as Stripe.Subscription;
-                await handleSubscriptionChange(subscription);
+                const expandedSubscription = await stripe.subscriptions.retrieve(subscription.id, {
+                    expand: ['items.data.price'],
+                });
+                await handleSubscriptionChange(expandedSubscription);
                 break;
 
             case 'customer.subscription.deleted':
@@ -101,6 +113,7 @@ export async function POST(req: Request) {
                 if (userDocRef) {
                     await userDocRef.update({
                         subscriptionStatus: 'canceled',
+                        subscriptionInterval: null, // Clear interval on cancellation
                     });
                      console.log(`Successfully marked subscription as canceled for user ${userDocRef.id}.`);
                 }

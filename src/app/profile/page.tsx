@@ -74,11 +74,16 @@ export default function ProfilePage() {
 
   const subscriptionStatus = userProfile?.subscriptionStatus;
   const renewalDate = userProfile?.subscriptionCurrentPeriodEnd;
+  const interval = userProfile?.subscriptionInterval;
 
   const getPlanName = () => {
     if (subscriptionStatus === 'trialing') return '2 Days Free Trial Plan';
-    if (subscriptionStatus === 'active') return 'Premium Plan';
-    return subscriptionStatus || 'N/A';
+    if (subscriptionStatus === 'active') {
+      if (interval === 'year') return 'Premium Yearly';
+      if (interval === 'month') return 'Premium Monthly';
+      return 'Premium Plan';
+    }
+    return subscriptionStatus ? subscriptionStatus.charAt(0).toUpperCase() + subscriptionStatus.slice(1) : 'N/A';
   }
 
   const getRenewalText = () => {
