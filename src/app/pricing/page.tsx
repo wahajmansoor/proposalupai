@@ -20,7 +20,7 @@ const proPlan = {
     priceDescription: "/month",
     description: "Complete freedom with unlimited access to build websites of any size.",
     buttonText: "Start a 2-day free trial",
-    buttonTextUpgrade: "Upgrade to Pro",
+    buttonTextUpgrade: "Activate Pro Plan",
     buttonTextActivate: "Activate Pro Plan",
     isCurrent: false,
     isFeatured: true,
