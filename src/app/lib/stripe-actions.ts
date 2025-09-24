@@ -30,7 +30,6 @@ export async function createCheckoutSession(formData: FormData) {
 
   const { user, userDoc } = currentUser;
   const stripeCustomerId = userDoc?.stripeCustomerId;
-  const proposalCount = userDoc?.proposalCount ?? 0;
   const subscriptionStatus = userDoc?.subscriptionStatus;
 
   if (!stripeCustomerId) {
@@ -58,9 +57,9 @@ export async function createCheckoutSession(formData: FormData) {
 
   const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {};
 
-  // CORRECTED LOGIC: Only apply a trial if the user is a genuinely new subscriber
-  // who has not had a previous subscription status and has not used their free proposals.
-  if (subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing' && proposalCount < 5) {
+  // FINAL CORRECTED LOGIC: Only apply a trial if the user's status is specifically 'trialing'.
+  // This prevents new subscribers who exhausted their free proposals from getting a trial.
+  if (subscriptionStatus === 'trialing') {
     subscriptionData.trial_period_days = 2;
   }
 
