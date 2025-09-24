@@ -18,7 +18,7 @@ const proPlan = {
     name: "Pro",
     price: "$20",
     priceDescription: "/month",
-    description: "Complete freedom with unlimited access to build websites of any size.",
+    description: "Unlock unlimited access to all our AI-powered tools and generate winning proposals in minutes.",
     buttonText: "Start a 2-day free trial",
     buttonTextUpgrade: "Activate Pro Plan",
     buttonTextActivate: "Activate Pro Plan",
@@ -33,7 +33,7 @@ const proPlan = {
     ],
     personaIcon: Briefcase,
     personaTitle: "Full-time Freelancer",
-    personaDescription: "An experienced freelancer managing larger projects with more pages and ongoing client maintenance, requiring more project slots."
+    personaDescription: "For the serious freelancer who wants to save time, automate their workflow, and increase their win rate with high-quality proposals."
 };
 
 export default function PricingPage() {
