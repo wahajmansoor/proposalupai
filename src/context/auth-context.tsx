@@ -16,6 +16,7 @@ interface UserProfile {
   subscriptionId?: string;
   subscriptionStatus?: 'active' | 'trialing' | 'canceled' | 'past_due' | 'unpaid' | string;
   subscriptionCurrentPeriodEnd?: Date;
+  proposalCount?: number;
 }
 
 interface AuthContextType {

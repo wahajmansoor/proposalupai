@@ -40,6 +40,7 @@ export async function signUpWithEmail(input: z.infer<typeof signUpSchema>): Prom
       displayName: userRecord.displayName,
       createdAt: new Date(),
       stripeCustomerId: customer.id,
+      proposalCount: 0, // Initialize proposal count
     });
 
     // 4. Create a session cookie for the user

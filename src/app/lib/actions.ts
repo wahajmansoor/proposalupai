@@ -13,6 +13,7 @@ import { headers } from 'next/headers';
 import { getCurrentUser } from '@/lib/firebase/server-auth';
 import { revalidatePath } from 'next/cache';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { incrementProposalCount } from '@/lib/firebase/usage';
 
 const projectDetailsSchema = z.object({
   projectTitle: z.string().min(1, 'Project title is required.'),
@@ -129,19 +130,38 @@ const generateProposalSchema = z.object({
 });
 
 export async function generateProposalAction(input: z.infer<typeof generateProposalSchema>) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || !currentUser.userDoc) {
+      return { error: 'You must be logged in to generate a proposal.' };
+    }
+
+    const { user, userDoc } = currentUser;
+    const { subscriptionStatus, proposalCount = 0 } = userDoc;
+
+    // Enforce trial limit
+    if (subscriptionStatus === 'trialing' && proposalCount >= 5) {
+      return { error: 'You have reached your trial limit of 5 proposals. Please upgrade to continue.' };
+    }
+
     const validatedFields = generateProposalSchema.safeParse(input);
     if (!validatedFields.success) {
         console.log(validatedFields.error.flatten());
         return { error: 'Invalid input for generating proposal.' };
     }
-  try {
-    const result = await generateProposal(validatedFields.data);
-    return { data: result };
-  } catch (error) {
-    console.error(error);
-    return { error: 'Failed to generate proposal.' };
-  }
+
+    try {
+      const result = await generateProposal(validatedFields.data);
+
+      // If successful, increment the proposal count
+      await incrementProposalCount(user.uid);
+
+      return { data: result };
+    } catch (error) {
+      console.error(error);
+      return { error: 'Failed to generate proposal.' };
+    }
 }
+
 
 export async function getGoogleAuthUrl() {
     const headersList = headers();

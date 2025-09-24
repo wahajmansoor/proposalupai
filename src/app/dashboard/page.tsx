@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuote, CheckCircle, Phone, Globe, Users, Calendar, BarChart, ShoppingCart, Code, Search, Lightbulb, Mail, BarChart2, ExternalLink, LayoutDashboard, FolderKanban, Save } from 'lucide-react';
+import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuote, CheckCircle, Phone, Globe, Users, Calendar, BarChart, ShoppingCart, Code, Search, Lightbulb, Mail, BarChart2, ExternalLink, LayoutDashboard, FolderKanban, Save, AlertCircle } from 'lucide-react';
 import type { ClientQuestion, PortfolioCollection } from '@/app/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -90,7 +90,7 @@ const signOffCtas = [
 ];
 
 function DashboardContent() {
-  const { user, loading } = useAuth();
+  const { user, userProfile, loading } = useAuth();
   const { toast } = useToast();
   const searchParams = useSearchParams();
   const router = useRouter();
@@ -132,6 +132,10 @@ function DashboardContent() {
   const summaryTextareaRef = useRef<HTMLTextAreaElement>(null);
 
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
+
+  const isTrial = userProfile?.subscriptionStatus === 'trialing';
+  const proposalCount = userProfile?.proposalCount ?? 0;
+  const trialLimitReached = isTrial && proposalCount >= 5;
 
   useEffect(() => {
     if (searchParams.get('subscribed') === 'true') {
@@ -334,6 +338,14 @@ function DashboardContent() {
   }
 
   const handleGenerateProposal = async () => {
+    if (trialLimitReached) {
+      toast({
+        title: 'Trial Limit Reached',
+        description: 'Please upgrade your plan to generate more proposals.',
+        variant: 'destructive',
+      });
+      return;
+    }
     if (!projectDetails.summary || !projectDetails.projectTitle) {
         toast({ title: 'Missing Information', description: 'Please provide project title and summary first.', variant: 'destructive' });
         setCurrentStep(1);
@@ -407,15 +419,40 @@ function DashboardContent() {
   return (
     <>
       <WelcomeDialog open={showWelcomeDialog} onOpenChange={setShowWelcomeDialog} />
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-        
-        <div className="space-y-6">
-          <div className="flex items-center gap-3">
-            <FileText className="h-6 w-6 text-primary" />
-            <div>
-              <h1 className="text-2xl font-bold">Create Your Proposal</h1>
-              <p className="text-muted-foreground">Step {currentStep} of {totalSteps}: {stepTitles[currentStep - 1]}</p>
+      {trialLimitReached && (
+        <Card className="mb-6 border-destructive bg-destructive/5 text-destructive-foreground">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <AlertCircle className="h-6 w-6 text-destructive" />
+              <div>
+                <CardTitle className="text-destructive">Trial Limit Reached</CardTitle>
+                <CardDescription className="text-destructive/80">You've used all 5 of your free proposal generations.</CardDescription>
+              </div>
             </div>
+          </CardHeader>
+          <CardContent>
+            <Button asChild>
+              <Link href="/pricing">Upgrade to Pro to Continue</Link>
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+        <div className="space-y-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <FileText className="h-6 w-6 text-primary" />
+              <div>
+                <h1 className="text-2xl font-bold">Create Your Proposal</h1>
+                <p className="text-muted-foreground">Step {currentStep} of {totalSteps}: {stepTitles[currentStep - 1]}</p>
+              </div>
+            </div>
+             {isTrial && !trialLimitReached && (
+              <div className="text-right">
+                <p className="font-semibold text-sm">Trial Usage</p>
+                <p className="text-xs text-muted-foreground">Proposals created: {proposalCount} / 5</p>
+              </div>
+            )}
           </div>
           
           <Progress value={(currentStep / totalSteps) * 100} className="w-full" />
@@ -722,7 +759,7 @@ function DashboardContent() {
                   Next <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
               ) : (
-                <Button size="lg" onClick={handleGenerateProposal} disabled={isGenerating}>
+                <Button size="lg" onClick={handleGenerateProposal} disabled={isGenerating || trialLimitReached}>
                   {isGenerating ? "Generating..." : <><Wand2 className="mr-2"/>Generate Proposal</>}
                 </Button>
               )}

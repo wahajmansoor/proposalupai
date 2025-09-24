@@ -99,6 +99,7 @@ export async function GET(req: NextRequest) {
             displayName: displayName,
             createdAt: new Date(),
             stripeCustomerId: customer.id,
+            proposalCount: 0, // Initialize proposal count
         };
         if (picture) {
             userData.photoURL = picture;
