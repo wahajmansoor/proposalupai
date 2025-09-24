@@ -9,6 +9,7 @@
  */
 import { openai } from '@/lib/openai';
 import { z } from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 const SuggestProposalTemplateInputSchema = z.object({
   projectTitle: z.string().describe('The title of the project being applied for.'),
@@ -60,7 +61,7 @@ export async function suggestProposalTemplate(
           function: {
             name: 'suggest_proposal_template',
             description: 'Suggests a proposal template.',
-            parameters: SuggestProposalTemplateOutputSchema.openapi('ProposalTemplate'),
+            parameters: zodToJsonSchema(SuggestProposalTemplateOutputSchema),
           },
         },
       ],

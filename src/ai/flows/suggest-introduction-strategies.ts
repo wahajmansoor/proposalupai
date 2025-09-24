@@ -10,6 +10,7 @@
  */
 import { openai } from '@/lib/openai';
 import { z } from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 const SuggestIntroductionStrategiesInputSchema = z.object({
   projectTitle: z.string().describe('The title of the project being applied for.'),
@@ -56,7 +57,7 @@ export async function suggestIntroductionStrategies(
             function: {
                 name: 'provide_introduction_suggestions',
                 description: 'Provides a list of introduction suggestions.',
-                parameters: SuggestIntroductionStrategiesOutputSchema.openapi("IntroductionSuggestions"),
+                parameters: zodToJsonSchema(SuggestIntroductionStrategiesOutputSchema),
             }
         }
     ],

@@ -9,6 +9,7 @@
  */
 import { openai } from '@/lib/openai';
 import { z } from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 const AnalyzeJobForProposalInputSchema = z.object({
   projectTitle: z.string().describe('The title of the job posting.'),
@@ -54,7 +55,7 @@ export async function analyzeJobForProposal(
           name: 'extract_job_analysis',
           description:
             'Extracts key requirements and themes from a job description.',
-          parameters: AnalyzeJobForProposalOutputSchema.openapi('JobAnalysis'),
+          parameters: zodToJsonSchema(AnalyzeJobForProposalOutputSchema),
         },
       },
     ],
