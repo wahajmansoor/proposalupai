@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, Suspense } from 'react';
 import {
   generateProposalAction,
   analyzeAndSuggestAction,
@@ -31,6 +31,8 @@ import { ProposalUpLogo, LinkedInIcon } from '@/components/icons';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
+import { WelcomeDialog } from '@/components/welcome-dialog';
+import { useSearchParams, useRouter } from 'next/navigation';
 
 type Suggestion = {
   template: 'standard' | 'video';
@@ -87,9 +89,11 @@ const signOffCtas = [
     { value: 'warm-regards', label: 'Warm regards,' },
 ];
 
-export default function DashboardPage() {
+function DashboardContent() {
   const { user, loading } = useAuth();
   const { toast } = useToast();
+  const searchParams = useSearchParams();
+  const router = useRouter();
   
   const [currentStep, setCurrentStep] = useState(1);
   const totalSteps = 4;
@@ -126,6 +130,16 @@ export default function DashboardPage() {
   const [isSaving, setIsSaving] = useState(false);
 
   const summaryTextareaRef = useRef<HTMLTextAreaElement>(null);
+
+  const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
+
+  useEffect(() => {
+    if (searchParams.get('subscribed') === 'true') {
+      setShowWelcomeDialog(true);
+      // Remove the query param from the URL
+      router.replace('/dashboard', { scroll: false });
+    }
+  }, [searchParams, router]);
 
   useEffect(() => {
     if (generatedProposal) {
@@ -392,6 +406,7 @@ export default function DashboardPage() {
 
   return (
     <>
+      <WelcomeDialog open={showWelcomeDialog} onOpenChange={setShowWelcomeDialog} />
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
         
         <div className="space-y-6">
@@ -866,4 +881,12 @@ export default function DashboardPage() {
       </div>
     </>
   );
+}
+
+export default function DashboardPage() {
+    return (
+        <Suspense fallback={<div>Loading...</div>}>
+            <DashboardContent />
+        </Suspense>
+    )
 }

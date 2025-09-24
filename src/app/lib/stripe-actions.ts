@@ -23,7 +23,7 @@ export async function createCheckoutSession() {
   const protocol = headersList.get('x-forwarded-proto') || 'http';
   const host = headersList.get('host');
   const origin = `${protocol}://${host}`;
-  const successUrl = `${origin}/dashboard`;
+  const successUrl = `${origin}/dashboard?subscribed=true`;
   const cancelUrl = `${origin}/pricing`;
   
   const priceId = process.env.STRIPE_PRICE_ID;
