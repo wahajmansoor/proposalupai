@@ -450,7 +450,11 @@ function DashboardContent() {
 
   return (
     <>
-      <WelcomeDialog open={showWelcomeDialog} onOpenChange={setShowWelcomeDialog} />
+      <WelcomeDialog
+        open={showWelcomeDialog}
+        onOpenChange={setShowWelcomeDialog}
+        subscriptionStatus={userProfile?.subscriptionStatus}
+      />
       {trialLimitReached && (
         <Card className="mb-6 border-destructive bg-destructive/5 text-destructive-foreground">
           <CardHeader>
