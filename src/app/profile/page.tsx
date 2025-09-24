@@ -81,7 +81,11 @@ export default function ProfilePage() {
     if (subscriptionStatus === 'active') {
       if (interval === 'year') return 'Premium Yearly';
       if (interval === 'month') return 'Premium Monthly';
-      return 'Premium Plan';
+      return 'Premium Plan'; // Fallback
+    }
+    // For other statuses like 'canceled', 'past_due'
+    if (interval) {
+        return `Premium ${interval.charAt(0).toUpperCase() + interval.slice(1)}`;
     }
     return subscriptionStatus ? subscriptionStatus.charAt(0).toUpperCase() + subscriptionStatus.slice(1) : 'N/A';
   }
@@ -89,6 +93,9 @@ export default function ProfilePage() {
   const getRenewalText = () => {
     if (subscriptionStatus === 'trialing') return 'Trial Ends';
     if (subscriptionStatus === 'active') return 'Renews On';
+    if (subscriptionStatus === 'canceled' && renewalDate && new Date(renewalDate) > new Date()) {
+        return 'Access Ends On';
+    }
     return null;
   }
 
