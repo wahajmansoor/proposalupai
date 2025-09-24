@@ -5,8 +5,23 @@ import { stripe } from '@/lib/stripe/config';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/firebase/server-auth';
+import { z } from 'zod';
 
-export async function createCheckoutSession() {
+const checkoutSessionSchema = z.object({
+  interval: z.enum(['monthly', 'yearly']),
+});
+
+export async function createCheckoutSession(formData: FormData) {
+  const validatedFields = checkoutSessionSchema.safeParse({
+    interval: formData.get('interval'),
+  });
+
+  if (!validatedFields.success) {
+    throw new Error('Invalid billing interval selected.');
+  }
+
+  const { interval } = validatedFields.data;
+
   const currentUser = await getCurrentUser();
   if (!currentUser) {
     throw new Error('User not authenticated');
@@ -18,7 +33,7 @@ export async function createCheckoutSession() {
   const subscriptionStatus = userDoc?.subscriptionStatus;
 
   if (!stripeCustomerId) {
-      throw new Error('Could not find Stripe customer ID. Please contact support.');
+    throw new Error('Could not find Stripe customer ID. Please contact support.');
   }
 
   const headersList = headers();
@@ -27,18 +42,25 @@ export async function createCheckoutSession() {
   const origin = `${protocol}://${host}`;
   const successUrl = `${origin}/dashboard?subscribed=true`;
   const cancelUrl = `${origin}/pricing`;
-  
-  const priceId = process.env.STRIPE_PRICE_ID;
-  if (!priceId || priceId.includes('your_stripe_price_id_here')) {
-    throw new Error('Stripe Price ID is not configured. Please set it in your environment variables.');
+
+  const monthlyPriceId = process.env.STRIPE_MONTHLY_PRICE_ID;
+  const yearlyPriceId = process.env.STRIPE_YEARLY_PRICE_ID;
+
+  if (!monthlyPriceId || monthlyPriceId.includes('your_stripe_price_id_here')) {
+    throw new Error('Monthly Stripe Price ID is not configured.');
   }
+  if (!yearlyPriceId || yearlyPriceId.includes('your_stripe_price_id_here')) {
+    throw new Error('Yearly Stripe Price ID is not configured.');
+  }
+  
+  const priceId = interval === 'yearly' ? yearlyPriceId : monthlyPriceId;
 
   const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {};
 
   // Only apply a trial if the user is a new user (no subscription status yet)
   // and has not exhausted their free proposals.
   if (!subscriptionStatus && proposalCount < 5) {
-      subscriptionData.trial_period_days = 2;
+    subscriptionData.trial_period_days = 2;
   }
 
   const checkoutSession = await stripe.checkout.sessions.create({
@@ -60,40 +82,45 @@ export async function createCheckoutSession() {
 }
 
 export async function createCustomerPortalSession(): Promise<{ url?: string; error?: string }> {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) {
-        return { error: 'User not authenticated. Please log in again.' };
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
+    return { error: 'User not authenticated. Please log in again.' };
+  }
+
+  const { userDoc } = currentUser;
+  const stripeCustomerId = userDoc?.stripeCustomerId;
+
+  if (!stripeCustomerId) {
+    return { error: 'Stripe customer ID not found for this user.' };
+  }
+
+  const headersList = headers();
+  const protocol = headersList.get('x-forwarded-proto') || 'http';
+  const host = headersList.get('host');
+  const returnUrl = `${protocol}://${host}/profile`;
+
+  try {
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: stripeCustomerId,
+      return_url: returnUrl,
+    });
+
+    if (!portalSession.url) {
+      return { error: 'Could not create customer portal session.' };
     }
 
-    const { userDoc } = currentUser;
-    const stripeCustomerId = userDoc?.stripeCustomerId;
-
-    if (!stripeCustomerId) {
-        return { error: 'Stripe customer ID not found for this user.' };
+    return { url: portalSession.url };
+  } catch (error: any) {
+    console.error('Error creating customer portal session:', error.message);
+    if (error.message && error.message.includes('No configuration provided')) {
+      return {
+        error:
+          'Stripe Customer Portal is not configured. Please set it up in your Stripe dashboard at dashboard.stripe.com/test/settings/billing/portal',
+      };
     }
-
-    const headersList = headers();
-    const protocol = headersList.get('x-forwarded-proto') || 'http';
-    const host = headersList.get('host');
-    const returnUrl = `${protocol}://${host}/profile`;
-
-    try {
-        const portalSession = await stripe.billingPortal.sessions.create({
-            customer: stripeCustomerId,
-            return_url: returnUrl,
-        });
-
-        if (!portalSession.url) {
-            return { error: 'Could not create customer portal session.' };
-        }
-        
-        return { url: portalSession.url };
-
-    } catch (error: any) {
-        console.error("Error creating customer portal session:", error.message);
-        if (error.message && error.message.includes('No configuration provided')) {
-            return { error: 'Stripe Customer Portal is not configured. Please set it up in your Stripe dashboard at dashboard.stripe.com/test/settings/billing/portal' };
-        }
-        return { error: 'An unexpected error occurred while creating the billing portal session.' };
-    }
+    return {
+      error:
+        'An unexpected error occurred while creating the billing portal session.',
+    };
+  }
 }

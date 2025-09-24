@@ -13,17 +13,30 @@ import { useRouter } from 'next/navigation';
 import { ProposalUpLogo } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
+import { Badge } from '@/components/ui/badge';
 
-const proPlan = {
-    name: "Pro",
+const plans = {
+  monthly: {
+    name: "Pro Monthly",
     price: "$20",
     priceDescription: "/month",
     description: "Unlock unlimited access to all our AI-powered tools and generate winning proposals in minutes.",
     buttonText: "Start a 2-day free trial",
     buttonTextUpgrade: "Activate Pro Plan",
-    buttonTextActivate: "Activate Pro Plan",
-    isCurrent: false,
-    isFeatured: true,
+  },
+  yearly: {
+    name: "Pro Yearly",
+    price: "$200",
+    priceDescription: "/year",
+    description: "Get two months free! Unlock a full year of unlimited access and maximize your proposal win rate.",
+    buttonText: "Start a 2-day free trial",
+    buttonTextUpgrade: "Activate Pro Plan",
+  }
+};
+
+const sharedFeatures = {
     features: [
         "Unlimited Proposal Generation",
         "AI-Powered Suggestions",
@@ -36,11 +49,13 @@ const proPlan = {
     personaDescription: "For the serious freelancer who wants to save time, automate their workflow, and increase their win rate with high-quality proposals."
 };
 
+
 export default function PricingPage() {
   const { user, userProfile, loading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
   
   const subscriptionStatus = userProfile?.subscriptionStatus;
   const renewalDate = userProfile?.subscriptionCurrentPeriodEnd;
@@ -50,9 +65,9 @@ export default function PricingPage() {
   const isTrialing = subscriptionStatus === 'trialing';
   const trialLimitReached = isTrialing && proposalCount >= 5;
 
-  // This state covers a user who has canceled but their subscription is valid until the period end.
   const isCanceledButActive = subscriptionStatus === 'canceled' && renewalDate && new Date(renewalDate) > new Date();
 
+  const currentPlan = plans[billingInterval];
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -63,7 +78,8 @@ export default function PricingPage() {
     }
     setIsSubmitting(true);
     try {
-      await createCheckoutSession();
+      const formData = new FormData(event.currentTarget);
+      await createCheckoutSession(formData);
       // The user will be redirected to Stripe by the server action
     } catch (error: any) {
       toast({
@@ -78,10 +94,9 @@ export default function PricingPage() {
   const getButtonText = () => {
     if (isSubscribedAndActive) return 'Subscribed';
     if (isCanceledButActive) return 'Subscription Canceled';
-    if (trialLimitReached) return proPlan.buttonTextUpgrade;
-    if (isTrialing) return proPlan.buttonTextActivate;
-    // Default for new users or those whose subscription has fully ended
-    return proPlan.buttonText;
+    if (trialLimitReached) return currentPlan.buttonTextUpgrade;
+    if (isTrialing) return "Activate Pro Plan";
+    return currentPlan.buttonText;
   }
   
   const isButtonDisabled = isSubmitting || isSubscribedAndActive || isCanceledButActive;
@@ -96,25 +111,39 @@ export default function PricingPage() {
   
   return (
     <div className="flex flex-col items-center justify-center p-4 md:p-8">
-        <div className="text-center mb-12">
+        <div className="text-center mb-8">
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Plans & Pricing</h1>
             <p className="text-lg text-muted-foreground mt-2">Choose the plan that's right for you.</p>
         </div>
+
+        <div className="flex items-center space-x-2 mb-8">
+          <Label htmlFor="billing-interval" className={cn(billingInterval === 'monthly' ? 'text-foreground' : 'text-muted-foreground')}>Monthly</Label>
+          <Switch 
+            id="billing-interval" 
+            checked={billingInterval === 'yearly'}
+            onCheckedChange={(checked) => setBillingInterval(checked ? 'yearly' : 'monthly')}
+          />
+          <Label htmlFor="billing-interval" className={cn(billingInterval === 'yearly' ? 'text-foreground' : 'text-muted-foreground')}>Yearly</Label>
+          <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">Save 16%</Badge>
+        </div>
+
         <div className="flex justify-center w-full max-w-md">
             <Card className="flex flex-col shadow-lg w-full border border-[#d8d5d1]">
                 <CardHeader className="pb-4">
-                    <CardTitle className="text-xl font-semibold">{proPlan.name}</CardTitle>
-                    <CardDescription className="min-h-[40px]">{proPlan.description}</CardDescription>
+                    <CardTitle className="text-xl font-semibold">{currentPlan.name}</CardTitle>
+                    <CardDescription className="min-h-[40px]">{currentPlan.description}</CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col flex-1">
                     <div className="my-4">
-                        <span className="text-5xl font-bold tracking-tight">{proPlan.price}</span>
+                        <span className="text-5xl font-bold tracking-tight">{currentPlan.price}</span>
                         <span className="text-lg font-medium text-muted-foreground ml-1">USD</span>
-                        <p className="text-sm text-muted-foreground">{proPlan.priceDescription}</p>
+                        <p className="text-sm text-muted-foreground">{currentPlan.priceDescription}</p>
                     </div>
                     
                     <form onSubmit={handleSubmit} className="w-full flex flex-col gap-2">
+                        <input type="hidden" name="interval" value={billingInterval} />
                         <Button 
+                            type="submit"
                             size="lg" 
                             className={cn(
                                 "w-full text-lg font-medium", 
@@ -143,7 +172,7 @@ export default function PricingPage() {
                     <div className="border-t my-6"></div>
 
                     <ul className="space-y-3 mb-8 text-sm">
-                        {proPlan.features.map((feature, index) => (
+                        {sharedFeatures.features.map((feature, index) => (
                         <li key={index} className="flex items-center gap-3">
                             <Check className="h-4 w-4 text-primary" />
                             <span>{feature}</span>
@@ -154,13 +183,13 @@ export default function PricingPage() {
                     <div className="mt-auto pt-6 border-t">
                          <div className="flex items-center gap-3">
                              <div className="bg-muted p-2 rounded-full">
-                                 <proPlan.personaIcon className="h-5 w-5 text-muted-foreground" />
+                                 <sharedFeatures.personaIcon className="h-5 w-5 text-muted-foreground" />
                              </div>
                             <div>
-                                <p className="font-semibold">{proPlan.personaTitle}</p>
+                                <p className="font-semibold">{sharedFeatures.personaTitle}</p>
                             </div>
                         </div>
-                        <p className="text-sm text-muted-foreground mt-2">{proPlan.personaDescription}</p>
+                        <p className="text-sm text-muted-foreground mt-2">{sharedFeatures.personaDescription}</p>
                     </div>
                 </CardContent>
             </Card>
