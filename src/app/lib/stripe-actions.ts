@@ -14,6 +14,8 @@ export async function createCheckoutSession() {
 
   const { user, userDoc } = currentUser;
   const stripeCustomerId = userDoc?.stripeCustomerId;
+  const proposalCount = userDoc?.proposalCount ?? 0;
+  const subscriptionStatus = userDoc?.subscriptionStatus;
 
   if (!stripeCustomerId) {
       throw new Error('Could not find Stripe customer ID. Please contact support.');
@@ -31,15 +33,21 @@ export async function createCheckoutSession() {
     throw new Error('Stripe Price ID is not configured. Please set it in your environment variables.');
   }
 
+  const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {};
+
+  // Only apply a trial if the user is a new user (no subscription status yet)
+  // and has not exhausted their free proposals.
+  if (!subscriptionStatus && proposalCount < 5) {
+      subscriptionData.trial_period_days = 2;
+  }
+
   const checkoutSession = await stripe.checkout.sessions.create({
     payment_method_types: ['card'],
     mode: 'subscription',
     customer: stripeCustomerId,
-    client_reference_id: user.uid, // Add user's UID to the session
+    client_reference_id: user.uid,
     line_items: [{ price: priceId, quantity: 1 }],
-    subscription_data: {
-        trial_period_days: 2,
-    },
+    subscription_data: subscriptionData,
     success_url: successUrl,
     cancel_url: cancelUrl,
   });

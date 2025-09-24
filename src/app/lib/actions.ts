@@ -45,6 +45,18 @@ const analyzeAndSuggestSchema = z.object({
 });
 
 export async function analyzeAndSuggestAction(input: z.infer<typeof analyzeAndSuggestSchema>) {
+    const currentUser = await getCurrentUser();
+    if (!currentUser || !currentUser.userDoc) {
+      return { error: 'You must be logged in to use this feature.' };
+    }
+
+    const { userDoc } = currentUser;
+    const { subscriptionStatus, proposalCount = 0 } = userDoc;
+
+    if (subscriptionStatus === 'trialing' && proposalCount >= 5) {
+      return { error: 'You have reached your trial limit of 5 proposals. Please upgrade to continue.' };
+    }
+
     const validatedFields = analyzeAndSuggestSchema.safeParse(input);
     if (!validatedFields.success) {
         return { error: 'Invalid input for analysis and suggestions.' };

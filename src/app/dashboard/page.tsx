@@ -215,7 +215,7 @@ function DashboardContent() {
 
   const prevStep = () => {
     if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1);
+      setCurrentStep(prev => prev + 1);
     }
   };
 
@@ -236,6 +236,14 @@ function DashboardContent() {
   };
   
   const handleAnalyzeJob = async () => {
+    if (trialLimitReached) {
+      toast({
+        title: 'Trial Limit Reached',
+        description: 'Please upgrade your plan to use AI features.',
+        variant: 'destructive',
+      });
+      return;
+    }
     if (!projectDetails.projectTitle || !projectDetails.summary) {
       toast({ title: 'Missing Information', description: 'Please provide Project Title and Summary to analyze.', variant: 'destructive' });
       return;
@@ -476,7 +484,7 @@ function DashboardContent() {
                     rows={1}
                   />
                 </div>
-                 <Button onClick={handleAnalyzeJob} disabled={isAnalyzing} className="w-full">
+                 <Button onClick={handleAnalyzeJob} disabled={isAnalyzing || trialLimitReached} className="w-full">
                   {isAnalyzing ? "Analyzing..." : <><Sparkles className="mr-2"/>Analyze & Get Suggestions</>}
                 </Button>
                 
