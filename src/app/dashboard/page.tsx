@@ -462,11 +462,6 @@ function DashboardContent() {
               </div>
             </div>
           </CardHeader>
-          <CardContent>
-            <Button asChild>
-              <Link href="/pricing">Upgrade to Pro to Continue</Link>
-            </Button>
-          </CardContent>
         </Card>
       )}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
@@ -790,8 +785,12 @@ function DashboardContent() {
                 <Button onClick={nextStep}>
                   Next <ArrowRight className="ml-2 h-4 w-4" />
                 </Button>
+              ) : trialLimitReached ? (
+                <Button size="lg" asChild>
+                    <Link href="/pricing">Upgrade to Pro to Continue</Link>
+                </Button>
               ) : (
-                <Button size="lg" onClick={handleGenerateProposal} disabled={isGenerating || trialLimitReached}>
+                <Button size="lg" onClick={handleGenerateProposal} disabled={isGenerating}>
                   {isGenerating ? "Generating..." : <><Wand2 className="mr-2"/>Generate Proposal</>}
                 </Button>
               )}
@@ -966,5 +965,3 @@ export default function DashboardPage() {
         </Suspense>
     )
 }
-
-    
