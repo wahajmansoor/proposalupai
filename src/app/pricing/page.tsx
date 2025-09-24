@@ -21,6 +21,7 @@ const proPlan = {
     description: "Complete freedom with unlimited access to build websites of any size.",
     buttonText: "Start a 2-day free trial",
     buttonTextUpgrade: "Upgrade to Pro",
+    buttonTextActivate: "Activate Pro Plan",
     isCurrent: false,
     isFeatured: true,
     features: [
@@ -45,8 +46,9 @@ export default function PricingPage() {
   const renewalDate = userProfile?.subscriptionCurrentPeriodEnd;
   const proposalCount = userProfile?.proposalCount ?? 0;
   
-  const hasActiveSubscription = subscriptionStatus === 'active' || subscriptionStatus === 'trialing';
-  const trialLimitReached = subscriptionStatus === 'trialing' && proposalCount >= 5;
+  const isSubscribedAndActive = subscriptionStatus === 'active';
+  const isTrialing = subscriptionStatus === 'trialing';
+  const trialLimitReached = isTrialing && proposalCount >= 5;
 
   // This state covers a user who has canceled but their subscription is valid until the period end.
   const isCanceledButActive = subscriptionStatus === 'canceled' && renewalDate && new Date(renewalDate) > new Date();
@@ -74,13 +76,15 @@ export default function PricingPage() {
   };
 
   const getButtonText = () => {
-    if (hasActiveSubscription && !trialLimitReached) return 'Subscribed';
+    if (isSubscribedAndActive) return 'Subscribed';
     if (isCanceledButActive) return 'Subscription Canceled';
-    if (trialLimitReached || (subscriptionStatus && subscriptionStatus !== 'trialing')) {
-        return proPlan.buttonTextUpgrade;
-    }
+    if (trialLimitReached) return proPlan.buttonTextUpgrade;
+    if (isTrialing) return proPlan.buttonTextActivate;
+    // Default for new users or those whose subscription has fully ended
     return proPlan.buttonText;
   }
+  
+  const isButtonDisabled = isSubmitting || isSubscribedAndActive || isCanceledButActive;
 
   if (authLoading) {
     return (
@@ -114,13 +118,13 @@ export default function PricingPage() {
                             size="lg" 
                             className={cn(
                                 "w-full text-lg font-medium", 
-                                (hasActiveSubscription && !trialLimitReached || isCanceledButActive) && 'opacity-50 cursor-not-allowed'
+                                isButtonDisabled && 'opacity-50 cursor-not-allowed'
                             )}
-                            disabled={isSubmitting || (hasActiveSubscription && !trialLimitReached) || isCanceledButActive}>
+                            disabled={isButtonDisabled}>
                             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                             {getButtonText()}
                         </Button>
-                        {hasActiveSubscription && !trialLimitReached && (
+                        {isSubscribedAndActive && (
                           <Button asChild size="lg" variant="outline" className="w-full text-lg font-medium">
                             <Link href="/dashboard">
                               <FilePlus2 className="mr-2 h-5 w-5" />
