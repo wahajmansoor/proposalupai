@@ -6,6 +6,7 @@ import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/firebase/server-auth';
 import { z } from 'zod';
+import type Stripe from 'stripe';
 
 const checkoutSessionSchema = z.object({
   interval: z.enum(['monthly', 'yearly']),
@@ -57,7 +58,7 @@ export async function createCheckoutSession(formData: FormData) {
 
   const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {};
 
-  // Corrected Logic: Only apply a trial if the user is a genuinely new subscriber
+  // CORRECTED LOGIC: Only apply a trial if the user is a genuinely new subscriber
   // who has not had a previous subscription status and has not used their free proposals.
   if (subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing' && proposalCount < 5) {
     subscriptionData.trial_period_days = 2;
