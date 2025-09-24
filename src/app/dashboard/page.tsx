@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuote, CheckCircle, Phone, Globe, Users, Calendar, BarChart, ShoppingCart, Code, Search, Lightbulb, Mail, BarChart2, ExternalLink, LayoutDashboard, FolderKanban, Save, AlertCircle } from 'lucide-react';
+import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuote, CheckCircle, Phone, Globe, Users, Calendar, BarChart, ShoppingCart, Code, Search, Lightbulb, Mail, BarChart2, ExternalLink, LayoutDashboard, FolderKanban, Save, AlertCircle, RefreshCcw } from 'lucide-react';
 import type { ClientQuestion, PortfolioCollection } from '@/app/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -199,6 +199,30 @@ function DashboardContent() {
     return null;
   }
 
+  const handleResetForm = () => {
+    setCurrentStep(1);
+    setProjectDetails({ projectTitle: '', summary: '' });
+    setProposalTemplate('standard');
+    setOpeningStrategy('none');
+    setStrategySuggestionReasoning('');
+    setClientName('');
+    setSkillsAndExpertise('');
+    setRelevantExperience('');
+    setSelectedPortfolio('none');
+    setPortfolioLinkOption('manual');
+    setManualPortfolioLinks('');
+    setGreeting('hi');
+    setClosingCta('looking-forward');
+    setClosingCta2('best-regards');
+    setTone('professional');
+    setWordLimit([50, 120]);
+    setClientQuestions([{ id: 1, question: '', answer: '' }]);
+    setGeneratedProposal('');
+    setSuggestion(null);
+    setAnswersGenerated(false);
+    toast({ title: 'Form Cleared', description: 'You can now start a new proposal.' });
+  };
+
   const nextStep = () => {
     if (currentStep < totalSteps) {
       if (currentStep === 1 && (!projectDetails.projectTitle || !projectDetails.summary)) {
@@ -215,7 +239,7 @@ function DashboardContent() {
 
   const prevStep = () => {
     if (currentStep > 1) {
-      setCurrentStep(prev => prev + 1);
+      setCurrentStep(prev => prev - 1);
     }
   };
 
@@ -817,6 +841,13 @@ function DashboardContent() {
             </CardContent>
           </Card>
 
+          {generatedProposal && (
+            <Button variant="outline" className="w-full" onClick={handleResetForm}>
+              <RefreshCcw className="mr-2 h-4 w-4" />
+              Create a New Proposal
+            </Button>
+          )}
+
           {generatedProposal && hasAnsweredQuestions && (
             <Card>
               <CardHeader>
@@ -935,3 +966,5 @@ export default function DashboardPage() {
         </Suspense>
     )
 }
+
+    
