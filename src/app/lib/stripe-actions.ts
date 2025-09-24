@@ -57,7 +57,7 @@ export async function createCheckoutSession(formData: FormData) {
 
   const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {};
 
-  // FINAL CORRECTED LOGIC: Only apply a trial if the user's status is specifically 'trialing'.
+  // CORRECTED LOGIC: Only apply a trial if the user's status is specifically 'trialing'.
   // This prevents new subscribers who exhausted their free proposals from getting a trial.
   if (subscriptionStatus === 'trialing') {
     subscriptionData.trial_period_days = 2;
