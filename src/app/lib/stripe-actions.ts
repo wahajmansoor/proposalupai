@@ -57,9 +57,9 @@ export async function createCheckoutSession(formData: FormData) {
 
   const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {};
 
-  // Only apply a trial if the user is a new user (no subscription status yet)
-  // and has not exhausted their free proposals.
-  if (!subscriptionStatus && proposalCount < 5) {
+  // Corrected Logic: Only apply a trial if the user is a genuinely new subscriber
+  // who has not had a previous subscription status and has not used their free proposals.
+  if (subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing' && proposalCount < 5) {
     subscriptionData.trial_period_days = 2;
   }
 
@@ -124,5 +124,3 @@ export async function createCustomerPortalSession(): Promise<{ url?: string; err
     };
   }
 }
-
-    
