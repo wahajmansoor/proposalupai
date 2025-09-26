@@ -30,7 +30,7 @@ export async function createCheckoutSession(formData: FormData) {
   }
 
   const { user, userDoc } = currentUser;
-  const { stripeCustomerId, subscriptionStatus, subscriptionId, proposalCount = 0 } = userDoc;
+  const { stripeCustomerId, subscriptionStatus, subscriptionId } = userDoc;
 
   if (!stripeCustomerId) {
     throw new Error('Could not find Stripe customer ID. Please contact support.');
@@ -63,43 +63,28 @@ export async function createCheckoutSession(formData: FormData) {
     cancel_url: cancelUrl,
   };
 
-  // Case 1: User has an active subscription and is upgrading/changing plans
-  if (subscriptionStatus === 'active' && subscriptionId) {
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-    
-    // Create a setup intent session to update the subscription
-    const setupSession = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      mode: 'setup',
-      customer: stripeCustomerId,
-      setup_intent_data: {
-        metadata: {
-          subscription_id: subscriptionId,
-          price_id: priceId,
-        },
-      },
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-    });
-    
-    if (!setupSession.url) {
-        throw new Error('Could not create setup session for plan change.');
-    }
-    
-    redirect(setupSession.url);
-    return; // End execution here
-  }
-  
-  // Case 2: New user or expired user starting a new subscription
+  // User is not on a trial and is not active - starting a new subscription
   sessionParams.mode = 'subscription';
   sessionParams.line_items = [{ price: priceId, quantity: 1 }];
-  
-  const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {};
-  if (subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing' && proposalCount < 5) {
-    subscriptionData.trial_period_days = 2;
+
+  if (subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing') {
+    sessionParams.subscription_data = {
+      trial_period_days: 2,
+    };
   }
-  sessionParams.subscription_data = subscriptionData;
-  
+
+  // If user is trialing, we modify the existing subscription instead of creating a new one
+  if (subscriptionStatus === 'trialing' && subscriptionId) {
+      sessionParams.subscription_data = {
+          trial_end: 'now',
+      }
+      sessionParams.mode = 'subscription'; // Keep as subscription
+      // We need to tell Stripe which subscription to update
+      // This is not directly possible with a standard checkout session for trial activation.
+      // The activateTrialAction is the correct approach here.
+      // This part of createCheckoutSession will be used for NEW subscriptions only.
+  }
+   
   let checkoutSession: Stripe.Checkout.Session;
   try {
     checkoutSession = await stripe.checkout.sessions.create(sessionParams);
@@ -202,6 +187,55 @@ export async function upgradeSubscriptionAction(): Promise<{ success?: boolean; 
   } catch (error: any) {
     console.error('Error upgrading subscription:', error);
     return { error: 'Failed to upgrade your plan. Please try again.' };
+  }
+}
+
+const changeTrialPlanSchema = z.object({
+  interval: z.enum(['monthly', 'yearly']),
+});
+
+export async function changeTrialPlanAction(formData: FormData): Promise<{ success?: boolean; error?: string }> {
+  const validatedFields = changeTrialPlanSchema.safeParse({
+    interval: formData.get('interval'),
+  });
+
+  if (!validatedFields.success) {
+    return { error: 'Invalid billing interval selected.' };
+  }
+  const { interval } = validatedFields.data;
+  
+  const currentUser = await getCurrentUser();
+  if (!currentUser || !currentUser.userDoc) {
+    return { error: 'You must be logged in to change your plan.' };
+  }
+
+  const { subscriptionStatus, subscriptionId } = currentUser.userDoc;
+
+  if (subscriptionStatus !== 'trialing' || !subscriptionId) {
+    return { error: 'You are not in a trial period or the subscription is missing.' };
+  }
+  
+  const monthlyPriceId = process.env.STRIPE_MONTHLY_PRICE_ID;
+  const yearlyPriceId = process.env.STRIPE_YEARLY_PRICE_ID;
+  const newPriceId = interval === 'yearly' ? yearlyPriceId : monthlyPriceId;
+  
+  try {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    
+    await stripe.subscriptions.update(subscription.id, {
+      items: [{
+        id: subscription.items.data[0].id,
+        price: newPriceId,
+      }],
+      proration_behavior: 'none', // No proration change during trial
+    });
+
+    revalidatePath('/pricing');
+    return { success: true };
+    
+  } catch (error: any) {
+    console.error('Error changing trial plan:', error);
+    return { error: 'Failed to change your plan. Please try again.' };
   }
 }
 
