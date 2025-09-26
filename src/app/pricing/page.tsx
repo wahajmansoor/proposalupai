@@ -5,7 +5,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Loader2, Briefcase, FilePlus2, AlertCircle } from 'lucide-react';
+import { Check, Loader2, Briefcase, FilePlus2, AlertCircle, ArrowLeft } from 'lucide-react';
 import { createCheckoutSession } from '@/app/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -178,9 +178,10 @@ export default function PricingPage() {
                         
                          {isTrialing && (
                           <>
-                            <Button asChild size="lg" className="w-full text-lg font-medium">
+                            <Button asChild size="lg" className="w-full text-lg font-medium bg-black text-white hover:bg-gray-800">
                               <Link href="/dashboard">
-                                Create a Proposal
+                                <ArrowLeft className="mr-2" />
+                                Back to Dashboard
                               </Link>
                             </Button>
                           </>
