@@ -63,13 +63,18 @@ export async function createCheckoutSession(formData: FormData) {
 
   const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {};
 
-  // A user gets a free trial if they are not already an active subscriber AND they haven't used up their free proposals.
-  if (subscriptionStatus !== 'active' && proposalCount < 5) {
+  // If user is currently in a trial, end it immediately upon activation.
+  if (subscriptionStatus === 'trialing') {
+    subscriptionData.trial_end = 'now';
+  } 
+  // A new user (not active) gets a free trial if they haven't used up their free proposals.
+  else if (subscriptionStatus !== 'active' && proposalCount < 5) {
     subscriptionData.trial_period_days = 2;
   }
 
+  let checkoutSession: Stripe.Checkout.Session;
   try {
-    const checkoutSession = await stripe.checkout.sessions.create({
+    checkoutSession = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
       mode: 'subscription',
       customer: stripeCustomerId,
@@ -79,19 +84,18 @@ export async function createCheckoutSession(formData: FormData) {
       success_url: successUrl,
       cancel_url: cancelUrl,
     });
-
-    if (!checkoutSession.url) {
-      throw new Error('Could not create checkout session');
-    }
-
-    redirect(checkoutSession.url);
-
   } catch (error: any) {
     console.error("Error creating Stripe checkout session:", error);
     // You could redirect to an error page or show a toast message on the client
     // For now, we'll throw, which will be caught by Next.js's error handling.
     throw new Error('Failed to connect to Stripe. Please try again later.');
   }
+
+  if (!checkoutSession.url) {
+    throw new Error('Could not create checkout session');
+  }
+
+  redirect(checkoutSession.url);
 }
 
 export async function createCustomerPortalSession(): Promise<{ url?: string; error?: string }> {
