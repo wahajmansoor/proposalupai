@@ -96,7 +96,10 @@ export default function PricingPage() {
     if (isSubscribedAndActive) return 'Manage Subscription';
     if (isCanceledButActive) return 'Reactivate Plan';
     if (isTrialing) {
-        return billingInterval === interval ? 'Manage Subscription' : `Switch to ${billingInterval === 'monthly' ? 'Monthly' : 'Yearly'}`;
+        if (billingInterval === interval) {
+          return 'Manage Subscription';
+        }
+        return currentPlan.buttonTextUpgrade;
     }
     return currentPlan.buttonText;
   }
