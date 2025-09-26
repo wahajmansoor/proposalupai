@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, Loader2, Briefcase, ArrowLeft } from 'lucide-react';
-import { createCheckoutSession, activateTrialAction, createCustomerPortalSession, upgradeSubscriptionAction, changeTrialPlanAction } from '@/app/lib/stripe-actions';
+import { createCheckoutSession, activateTrialAction, createCustomerPortalSession, upgradeSubscriptionAction, changeTrialPlanAction } from '@/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
