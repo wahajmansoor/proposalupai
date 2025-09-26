@@ -67,12 +67,6 @@ export async function createCheckoutSession(formData: FormData) {
   if (subscriptionStatus === 'active' && subscriptionId) {
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
     
-    sessionParams.mode = 'subscription';
-    sessionParams.line_items = [{
-      price: priceId,
-      quantity: 1,
-    }];
-    
     // Create a setup intent session to update the subscription
     const setupSession = await stripe.checkout.sessions.create({
       payment_method_types: ['card'],
@@ -101,9 +95,12 @@ export async function createCheckoutSession(formData: FormData) {
   sessionParams.line_items = [{ price: priceId, quantity: 1 }];
   
   const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {};
-  if (subscriptionStatus !== 'active' && proposalCount < 5) {
+
+  // Give a trial only to new users (no existing subscription status)
+  if (!subscriptionStatus && proposalCount < 5) {
     subscriptionData.trial_period_days = 2;
   }
+  
   sessionParams.subscription_data = subscriptionData;
   
   let checkoutSession: Stripe.Checkout.Session;
@@ -121,7 +118,20 @@ export async function createCheckoutSession(formData: FormData) {
   redirect(checkoutSession.url);
 }
 
-export async function activateTrialAction(): Promise<{ success?: boolean; error?: string }> {
+const activateTrialSchema = z.object({
+  interval: z.enum(['monthly', 'yearly']),
+});
+
+export async function activateTrialAction(formData: FormData): Promise<{ success?: boolean; error?: string }> {
+  const validatedFields = activateTrialSchema.safeParse({
+    interval: formData.get('interval'),
+  });
+
+  if (!validatedFields.success) {
+    return { error: 'Invalid billing interval selected.' };
+  }
+  const { interval } = validatedFields.data;
+
   const currentUser = await getCurrentUser();
   if (!currentUser || !currentUser.userDoc) {
     return { error: 'You must be logged in to activate a plan.' };
@@ -134,8 +144,18 @@ export async function activateTrialAction(): Promise<{ success?: boolean; error?
     return { error: 'You are not in a trial period or the subscription is missing.' };
   }
 
+  const monthlyPriceId = process.env.STRIPE_MONTHLY_PRICE_ID;
+  const yearlyPriceId = process.env.STRIPE_YEARLY_PRICE_ID;
+  const newPriceId = interval === 'yearly' ? yearlyPriceId : monthlyPriceId;
+
   try {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    
     await stripe.subscriptions.update(subscriptionId, {
+      items: [{
+        id: subscription.items.data[0].id, // Get the ID of the item to update
+        price: newPriceId, // Set the new price
+      }],
       trial_end: 'now',
       proration_behavior: 'none',
     });
