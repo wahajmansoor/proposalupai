@@ -115,9 +115,8 @@ export default function PricingPage() {
   }
 
   const getPlanName = () => {
-    const planInterval = isTrialing ? billingInterval : currentInterval;
-    if (planInterval === 'year') return 'Pro Yearly';
-    if (planInterval === 'month') return 'Pro Monthly';
+    if (currentInterval === 'year') return 'Pro Yearly';
+    if (currentInterval === 'month') return 'Pro Monthly';
     return 'Free Plan';
   };
   
