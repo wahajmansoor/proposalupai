@@ -17,7 +17,7 @@ export function DashboardNav() {
   const pathname = usePathname();
 
   return (
-    <div className="border-b">
+    <div className="border-b bg-white">
         <div className="container mx-auto">
             <nav className="flex items-center justify-around sm:justify-start sm:gap-2 -mb-px">
                 {navItems.map((item) => (
