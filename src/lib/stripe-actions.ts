@@ -25,20 +25,16 @@ export async function createCheckoutSession(formData: FormData) {
 
   const currentUser = await getCurrentUser();
   if (!currentUser || !currentUser.userDoc) {
-    // This will redirect to login if the user is not found, which is a safe fallback.
     return redirect('/login');
   }
 
   const { user, userDoc } = currentUser;
   const stripeCustomerId = userDoc.stripeCustomerId;
   const subscriptionStatus = userDoc.subscriptionStatus;
-  // Safely get proposalCount, defaulting to 0 if it doesn't exist.
+  const subscriptionId = userDoc.subscriptionId;
   const proposalCount = userDoc.proposalCount ?? 0;
 
-
   if (!stripeCustomerId) {
-    // This is a critical error and should not happen for a logged-in user.
-    // We can throw an error to be caught by an error boundary or log it.
     throw new Error('Could not find Stripe customer ID. Please contact support.');
   }
 
@@ -61,33 +57,60 @@ export async function createCheckoutSession(formData: FormData) {
   
   const priceId = interval === 'yearly' ? yearlyPriceId : monthlyPriceId;
 
-  const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {};
+  const sessionParams: Stripe.Checkout.SessionCreateParams = {
+    payment_method_types: ['card'],
+    customer: stripeCustomerId,
+    client_reference_id: user.uid,
+    success_url: successUrl,
+    cancel_url: cancelUrl,
+  };
 
-  // If user is currently in a trial, end it immediately upon activation.
-  if (subscriptionStatus === 'trialing') {
-    subscriptionData.trial_end = 'now';
-  } 
-  // A new user (not active) gets a free trial if they haven't used up their free proposals.
-  else if (subscriptionStatus !== 'active' && proposalCount < 5) {
-    subscriptionData.trial_period_days = 2;
+  if (subscriptionStatus === 'trialing' && subscriptionId) {
+    // Logic to UPDATE an existing subscription (end the trial)
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    
+    sessionParams.mode = 'setup';
+    sessionParams.setup_intent_data = {
+      metadata: {
+        subscription_id: subscriptionId,
+        price_id: priceId,
+      },
+    };
+    // Redirect to billing portal to update subscription
+    const portalSession = await stripe.billingPortal.sessions.create({
+        customer: stripeCustomerId,
+        return_url: successUrl,
+        flow_data: {
+            type: 'subscription_update',
+            subscription_update: {
+                subscription: subscriptionId,
+                items: [{
+                    id: subscription.items.data[0].id,
+                    price: priceId,
+                }],
+                proration_behavior: 'none',
+            },
+        },
+    });
+    redirect(portalSession.url);
+
+  } else {
+    // Logic to create a NEW subscription
+    sessionParams.mode = 'subscription';
+    sessionParams.line_items = [{ price: priceId, quantity: 1 }];
+
+    const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {};
+    if (subscriptionStatus !== 'active' && proposalCount < 5) {
+      subscriptionData.trial_period_days = 2;
+    }
+    sessionParams.subscription_data = subscriptionData;
   }
-
+  
   let checkoutSession: Stripe.Checkout.Session;
   try {
-    checkoutSession = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      mode: 'subscription',
-      customer: stripeCustomerId,
-      client_reference_id: user.uid,
-      line_items: [{ price: priceId, quantity: 1 }],
-      subscription_data: subscriptionData,
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-    });
+    checkoutSession = await stripe.checkout.sessions.create(sessionParams);
   } catch (error: any) {
     console.error("Error creating Stripe checkout session:", error);
-    // You could redirect to an error page or show a toast message on the client
-    // For now, we'll throw, which will be caught by Next.js's error handling.
     throw new Error('Failed to connect to Stripe. Please try again later.');
   }
 

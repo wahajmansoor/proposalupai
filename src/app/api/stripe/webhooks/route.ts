@@ -88,13 +88,32 @@ export async function POST(req: Request) {
         switch (event.type) {
             case 'checkout.session.completed':
                 const session = event.data.object as Stripe.Checkout.Session;
-                if (session.subscription) {
+                if (session.mode === 'subscription') {
                     const subscription = await stripe.subscriptions.retrieve(session.subscription as string, {
                         expand: ['items.data.price'],
                     });
                     await handleSubscriptionChange(subscription);
                 }
                 break;
+            
+            case 'setup_intent.succeeded':
+                const setupIntent = event.data.object as Stripe.SetupIntent;
+                const { subscription_id, price_id } = setupIntent.metadata || {};
+                
+                if (subscription_id && price_id && setupIntent.payment_method) {
+                    const subscription = await stripe.subscriptions.retrieve(subscription_id);
+                    await stripe.subscriptions.update(subscription_id, {
+                        items: [{
+                            id: subscription.items.data[0].id,
+                            price: price_id,
+                        }],
+                        trial_end: 'now',
+                        proration_behavior: 'none',
+                        default_payment_method: setupIntent.payment_method as string,
+                    });
+                }
+                break;
+
 
             case 'customer.subscription.created':
             case 'customer.subscription.updated':
