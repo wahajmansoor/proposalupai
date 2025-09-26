@@ -136,7 +136,7 @@ export default function PricingPage() {
         </div>
         
         {isTrialing && renewalDate && (
-          <div className="w-full max-w-md mb-8 border rounded-lg p-4 flex items-center justify-between bg-card">
+          <div className="w-full max-w-md mb-8 border rounded-lg p-4 flex items-center justify-between bg-card bg-white">
             <div>
               <p className="text-sm font-semibold">Your Current Plan:</p>
               <div className="flex items-center gap-2 mt-1">
@@ -169,7 +169,7 @@ export default function PricingPage() {
                         <Button 
                             type="submit"
                             size="lg" 
-                            className="w-full text-lg font-medium"
+                            className="w-full text-sm font-medium"
                             disabled={isButtonDisabled}
                         >
                             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
@@ -178,7 +178,7 @@ export default function PricingPage() {
                         
                          {isTrialing && (
                           <>
-                            <Button asChild size="lg" className="w-full text-lg font-medium bg-black text-white hover:bg-gray-800">
+                            <Button asChild size="lg" className="w-full text-sm font-medium bg-black text-white hover:bg-gray-800">
                               <Link href="/dashboard">
                                 <ArrowLeft className="mr-2" />
                                 Back to Dashboard
