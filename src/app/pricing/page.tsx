@@ -5,7 +5,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Loader2, Briefcase, FilePlus2 } from 'lucide-react';
+import { Check, Loader2, Briefcase, FilePlus2, AlertCircle } from 'lucide-react';
 import { createCheckoutSession } from '@/app/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -22,9 +22,9 @@ const plans = {
     name: "Pro Monthly",
     price: "$20",
     priceDescription: "/month",
-    description: "Unlock unlimited access to all our AI-powered tools and generate winning proposals in minutes.",
+    description: "Unlock unlimited access to all our AI-powered features and generate winning proposals in seconds.",
     buttonText: "Start a 2-day free trial",
-    buttonTextUpgrade: "Activate Pro Plan",
+    buttonTextUpgrade: "Activate Monthly Plan",
   },
   yearly: {
     name: "Pro Yearly",
@@ -32,7 +32,7 @@ const plans = {
     priceDescription: "/year",
     description: "Get two months free! Unlock a full year of unlimited access and maximize your proposal win rate.",
     buttonText: "Start a 2-day free trial",
-    buttonTextUpgrade: "Activate Pro Plan",
+    buttonTextUpgrade: "Activate Yearly Plan",
   }
 };
 
@@ -77,10 +77,9 @@ export default function PricingPage() {
         return;
     }
     setIsSubmitting(true);
+    const formData = new FormData(event.currentTarget);
     try {
-      const formData = new FormData(event.currentTarget);
       await createCheckoutSession(formData);
-      // The user will be redirected to Stripe by the server action
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -94,8 +93,7 @@ export default function PricingPage() {
   const getButtonText = () => {
     if (isSubscribedAndActive) return 'Subscribed';
     if (isCanceledButActive) return 'Subscription Canceled';
-    if (trialLimitReached) return currentPlan.buttonTextUpgrade;
-    if (isTrialing) return "Activate Pro Plan";
+    if (isTrialing) return currentPlan.buttonTextUpgrade;
     return currentPlan.buttonText;
   }
   
@@ -126,6 +124,22 @@ export default function PricingPage() {
           <Label htmlFor="billing-interval" className={cn(billingInterval === 'yearly' ? 'text-foreground' : 'text-muted-foreground')}>Yearly</Label>
           <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">Save 16%</Badge>
         </div>
+        
+        {isTrialing && renewalDate && (
+          <div className="w-full max-w-md mb-8 border rounded-lg p-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-semibold">Your Current Plan:</p>
+              <div className="flex items-center gap-2 mt-1">
+                 <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground">Pro Plan</Badge>
+                 <Badge variant="outline" className="border-green-600 text-green-600">2 Days Free Trial</Badge>
+              </div>
+            </div>
+            <div className="text-right">
+              <p className="text-sm font-semibold">Trial Ends</p>
+              <p className="text-xs text-muted-foreground">{format(new Date(renewalDate), 'MMMM d, yyyy')}</p>
+            </div>
+          </div>
+        )}
 
         <div className="flex justify-center w-full max-w-md">
             <Card className="flex flex-col shadow-lg w-full border border-[#d8d5d1]">
@@ -140,26 +154,32 @@ export default function PricingPage() {
                         <p className="text-sm text-muted-foreground">{currentPlan.priceDescription}</p>
                     </div>
                     
-                    <form onSubmit={handleSubmit} className="w-full flex flex-col gap-2">
+                    <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
                         <input type="hidden" name="interval" value={billingInterval} />
                         <Button 
                             type="submit"
                             size="lg" 
-                            className={cn(
-                                "w-full text-lg font-medium", 
-                                isButtonDisabled && 'opacity-50 cursor-not-allowed'
-                            )}
-                            disabled={isButtonDisabled}>
+                            className="w-full text-lg font-medium"
+                            disabled={isButtonDisabled}
+                        >
                             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                             {getButtonText()}
                         </Button>
-                        {isSubscribedAndActive && (
-                          <Button asChild size="lg" variant="outline" className="w-full text-lg font-medium">
-                            <Link href="/dashboard">
-                              <FilePlus2 className="mr-2 h-5 w-5" />
-                              Create Proposal
-                            </Link>
-                          </Button>
+                        
+                         {isTrialing && (
+                          <>
+                            <div className="flex items-start gap-3 p-3 bg-red-50 text-red-700 border border-red-200 rounded-lg">
+                              <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
+                              <p className="text-sm">
+                                First, try the tool free and create one proposal then start your monthly or yearly subscription.
+                              </p>
+                            </div>
+                            <Button asChild size="lg" className="w-full text-lg font-medium">
+                              <Link href="/dashboard">
+                                Create a Proposal
+                              </Link>
+                            </Button>
+                          </>
                         )}
                     </form>
 
@@ -197,5 +217,3 @@ export default function PricingPage() {
     </div>
   );
 }
-
-    
