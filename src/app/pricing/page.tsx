@@ -136,7 +136,7 @@ export default function PricingPage() {
         </div>
         
         {isTrialing && renewalDate && (
-          <div className="w-full max-w-md mb-8 border rounded-lg p-4 flex items-center justify-between">
+          <div className="w-full max-w-md mb-8 border rounded-lg p-4 flex items-center justify-between bg-card">
             <div>
               <p className="text-sm font-semibold">Your Current Plan:</p>
               <div className="flex items-center gap-2 mt-1">
