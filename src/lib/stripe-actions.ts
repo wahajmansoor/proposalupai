@@ -30,9 +30,7 @@ export async function createCheckoutSession(formData: FormData) {
   }
 
   const { user, userDoc } = currentUser;
-  const stripeCustomerId = userDoc.stripeCustomerId;
-  const subscriptionStatus = userDoc.subscriptionStatus;
-  const proposalCount = userDoc.proposalCount ?? 0;
+  const { stripeCustomerId, subscriptionStatus, subscriptionId, proposalCount = 0 } = userDoc;
 
   if (!stripeCustomerId) {
     throw new Error('Could not find Stripe customer ID. Please contact support.');
@@ -63,11 +61,45 @@ export async function createCheckoutSession(formData: FormData) {
     client_reference_id: user.uid,
     success_url: successUrl,
     cancel_url: cancelUrl,
-    mode: 'subscription',
-    line_items: [{ price: priceId, quantity: 1 }],
   };
+
+  // Case 1: User has an active subscription and is upgrading/changing plans
+  if (subscriptionStatus === 'active' && subscriptionId) {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    
+    sessionParams.mode = 'subscription';
+    sessionParams.line_items = [{
+      price: priceId,
+      quantity: 1,
+    }];
+    
+    // Create a setup intent session to update the subscription
+    const setupSession = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'setup',
+      customer: stripeCustomerId,
+      setup_intent_data: {
+        metadata: {
+          subscription_id: subscriptionId,
+          price_id: priceId,
+        },
+      },
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+    });
+    
+    if (!setupSession.url) {
+        throw new Error('Could not create setup session for plan change.');
+    }
+    
+    redirect(setupSession.url);
+    return; // End execution here
+  }
   
-  // This logic is now only for new users starting a subscription for the first time.
+  // Case 2: New user or expired user starting a new subscription
+  sessionParams.mode = 'subscription';
+  sessionParams.line_items = [{ price: priceId, quantity: 1 }];
+  
   const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {};
   if (subscriptionStatus !== 'active' && proposalCount < 5) {
     subscriptionData.trial_period_days = 2;
@@ -103,13 +135,11 @@ export async function activateTrialAction(): Promise<{ success?: boolean; error?
   }
 
   try {
-    // End the trial immediately, which will trigger an invoice and charge the default payment method.
     await stripe.subscriptions.update(subscriptionId, {
       trial_end: 'now',
-      proration_behavior: 'none', // Optional: disable proration for this change
+      proration_behavior: 'none',
     });
     
-    // Invalidate the cache for the pricing page to reflect the new status
     revalidatePath('/pricing');
     
     return { success: true };

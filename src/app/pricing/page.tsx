@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, Loader2, Briefcase, ArrowLeft } from 'lucide-react';
-import { createCheckoutSession, activateTrialAction } from '@/app/lib/stripe-actions';
+import { createCheckoutSession, activateTrialAction, createCustomerPortalSession } from '@/app/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
@@ -59,7 +59,7 @@ export default function PricingPage() {
   
   const subscriptionStatus = userProfile?.subscriptionStatus;
   const renewalDate = userProfile?.subscriptionCurrentPeriodEnd;
-  const interval = userProfile?.subscriptionInterval;
+  const currentInterval = userProfile?.subscriptionInterval;
   
   const isSubscribedAndActive = subscriptionStatus === 'active';
   const isTrialing = subscriptionStatus === 'trialing';
@@ -68,6 +68,10 @@ export default function PricingPage() {
   
   const isNewUser = !subscriptionStatus;
   const showPlanManagement = isTrialing || isSubscribedAndActive || isCanceledButActive;
+  
+  const isMonthlyActive = isSubscribedAndActive && currentInterval === 'month';
+  const isYearlyActive = isSubscribedAndActive && currentInterval === 'year';
+
 
   const currentPlan = plans[billingInterval];
 
@@ -80,9 +84,20 @@ export default function PricingPage() {
     }
     
     setIsSubmitting(true);
+    
+    // User is on a yearly plan and clicks "Manage Subscription"
+    if (isYearlyActive && billingInterval === 'monthly') {
+        const result = await createCustomerPortalSession();
+        if (result.error) {
+            toast({ title: 'Error', description: result.error, variant: 'destructive' });
+        } else if (result.url) {
+            router.push(result.url);
+        }
+        setIsSubmitting(false);
+        return;
+    }
 
     if (isTrialing) {
-        // Case 2a: User is in trial and wants to activate the plan now.
         const result = await activateTrialAction();
         if (result.error) {
             toast({ title: 'Activation Failed', description: result.error, variant: 'destructive' });
@@ -90,7 +105,6 @@ export default function PricingPage() {
             toast({ title: 'Plan Activated!', description: 'Your trial has ended and your paid subscription has begun.' });
         }
     } else {
-        // Case 1: New user starting a subscription/trial.
         const formData = new FormData(event.currentTarget);
         try {
           await createCheckoutSession(formData);
@@ -107,25 +121,28 @@ export default function PricingPage() {
   };
 
   const getButtonText = () => {
-    if (isSubscribedAndActive) return 'Manage Subscription';
+    if (isMonthlyActive && billingInterval === 'yearly') return 'Switch to Yearly Plan';
+    if (isYearlyActive && billingInterval === 'monthly') return 'Manage Subscription';
+    if (isSubscribedAndActive) return 'Your Current Plan';
     if (isCanceledButActive) return 'Reactivate Plan';
     if (isTrialing) {
-      return currentPlan.buttonTextUpgrade;
+      if (billingInterval === 'monthly') return plans.monthly.buttonTextUpgrade;
+      return plans.yearly.buttonTextUpgrade;
     }
     return currentPlan.buttonText;
   }
 
   const getPlanName = () => {
     if (isTrialing || isSubscribedAndActive || isCanceledButActive) {
-      if (interval === 'year') return 'Pro Yearly';
-      if (interval === 'month') return 'Pro Monthly';
+      if (currentInterval === 'year') return 'Pro Yearly';
+      if (currentInterval === 'month') return 'Pro Monthly';
     }
     // Fallback for trial if interval isn't set yet
     if (isTrialing) return 'Pro Trial';
     return 'Free Plan';
   };
   
-  const isButtonDisabled = isSubmitting;
+  const isButtonDisabled = isSubmitting || (isMonthlyActive && billingInterval === 'monthly') || (isYearlyActive && billingInterval === 'yearly');
 
   if (authLoading) {
     return (
@@ -203,9 +220,15 @@ export default function PricingPage() {
                     
                     {isTrialing && (
                         <p className="text-xs text-center text-muted-foreground mt-2">
-                           This will end your trial and charge the payment method on file. To change your card, please use the Billing Portal.
+                           This will end your trial and charge the payment method on file.
                         </p>
                     )}
+                    {isYearlyActive && billingInterval === 'monthly' && (
+                        <p className="text-xs text-center text-muted-foreground mt-2">
+                            You will be redirected to the billing portal to schedule this change.
+                        </p>
+                    )}
+
 
                     <div className="border-t my-6"></div>
 
