@@ -115,10 +115,9 @@ export default function PricingPage() {
   }
 
   const getPlanName = () => {
-    if (isTrialing || isSubscribedAndActive || isCanceledButActive) {
-      if (currentInterval === 'year') return 'Pro Yearly';
-      if (currentInterval === 'month') return 'Pro Monthly';
-    }
+    const planInterval = isTrialing ? billingInterval : currentInterval;
+    if (planInterval === 'year') return 'Pro Yearly';
+    if (planInterval === 'month') return 'Pro Monthly';
     return 'Free Plan';
   };
   
@@ -160,8 +159,7 @@ export default function PricingPage() {
                 <div>
                   <p className="text-sm font-semibold">Your Current Plan:</p>
                   <div className="flex items-center gap-2 mt-1">
-                     <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground">{getPlanName()}</Badge>
-                     {isTrialing && <Badge variant="outline" className="border-green-600 text-green-600">2 Days Free Trial</Badge>}
+                     <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground">{getPlanName()}{isTrialing && " Trial"}</Badge>
                   </div>
                 </div>
                 {renewalDate && (
@@ -225,7 +223,7 @@ export default function PricingPage() {
                     
                     {isTrialing && (
                          <p className="text-xs text-center text-muted-foreground mt-2">
-                           This will end your trial and charge the card on file. To change your payment method, please visit the <Link href="/profile" className="underline">profile page</Link>.
+                           This will end your trial and charge the card on file. To change your payment method, please visit your <Link href="/profile" className="underline">profile page</Link>.
                         </p>
                     )}
                     {isYearlyActive && billingInterval === 'monthly' && (
@@ -261,7 +259,7 @@ export default function PricingPage() {
             </Card>
         </div>
         
-        {isSubscribedAndActive && (
+        {showPlanManagement && (
             <div className="mt-6 w-full max-w-md">
                  <Button asChild size="lg" className="w-full">
                     <Link href="/dashboard">
@@ -274,4 +272,3 @@ export default function PricingPage() {
     </div>
   );
 }
-
