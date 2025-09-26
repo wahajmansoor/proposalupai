@@ -83,22 +83,12 @@ export default function PricingPage() {
     const formData = new FormData(event.currentTarget);
 
     if (isTrialing) {
-        if (billingInterval !== currentInterval) {
-            // User is changing plan type during trial
-            const result = await changeTrialPlanAction(formData);
-             if (result.error) {
-                toast({ title: 'Plan Change Failed', description: result.error, variant: 'destructive' });
-            } else {
-                toast({ title: 'Plan Changed!', description: `Your trial is now for the ${billingInterval} plan.` });
-            }
+        // User is activating their chosen trial plan
+        const result = await activateTrialAction(formData);
+        if (result.error) {
+            toast({ title: 'Activation Failed', description: result.error, variant: 'destructive' });
         } else {
-            // User is activating their chosen trial plan
-            const result = await activateTrialAction(formData);
-            if (result.error) {
-                toast({ title: 'Activation Failed', description: result.error, variant: 'destructive' });
-            } else {
-                toast({ title: 'Plan Activated!', description: `Your trial has ended and your new ${billingInterval} subscription has begun.` });
-            }
+            toast({ title: 'Plan Activated!', description: `Your trial has ended and your new ${billingInterval} subscription has begun.` });
         }
     } else if (isMonthlyActive && billingInterval === 'yearly') {
         const result = await upgradeSubscriptionAction();
@@ -116,10 +106,7 @@ export default function PricingPage() {
 
   const getButtonText = () => {
     if (isTrialing) {
-        if (billingInterval === currentInterval) {
-            return billingInterval === 'monthly' ? 'Activate Monthly Plan' : 'Activate Yearly Plan';
-        }
-        return billingInterval === 'monthly' ? 'Switch to Monthly Trial' : 'Switch to Yearly Trial';
+        return billingInterval === 'monthly' ? 'Activate Monthly Plan' : 'Activate Yearly Plan';
     }
     if (isMonthlyActive && billingInterval === 'yearly') return 'Switch to Yearly Plan';
     if (isYearlyActive && billingInterval === 'monthly') return 'Manage Subscription';
@@ -238,7 +225,7 @@ export default function PricingPage() {
                     )}
                     
                     
-                    {isTrialing && billingInterval === currentInterval && (
+                    {isTrialing && (
                         <p className="text-xs text-center text-muted-foreground mt-2">
                            This will end your trial and charge the payment method on file.
                         </p>

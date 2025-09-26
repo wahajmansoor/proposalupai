@@ -62,29 +62,45 @@ export async function createCheckoutSession(formData: FormData) {
     success_url: successUrl,
     cancel_url: cancelUrl,
   };
-
-  // User is not on a trial and is not active - starting a new subscription
+  
+  // Case 1: User has an active subscription and is upgrading/changing plans
+  if (subscriptionStatus === 'active' && subscriptionId) {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    
+    // Create a setup intent session to update the subscription
+    const setupSession = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'setup',
+      customer: stripeCustomerId,
+      setup_intent_data: {
+        metadata: {
+          subscription_id: subscriptionId,
+          price_id: priceId,
+        },
+      },
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+    });
+    
+    if (!setupSession.url) {
+        throw new Error('Could not create setup session for plan change.');
+    }
+    
+    redirect(setupSession.url);
+    return; // End execution here
+  }
+  
+  // Case 2: New user or expired user starting a new subscription
   sessionParams.mode = 'subscription';
   sessionParams.line_items = [{ price: priceId, quantity: 1 }];
-
+  
+  // Only give trials to users who are not active or trialing
   if (subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing') {
     sessionParams.subscription_data = {
       trial_period_days: 2,
     };
   }
-
-  // If user is trialing, we modify the existing subscription instead of creating a new one
-  if (subscriptionStatus === 'trialing' && subscriptionId) {
-      sessionParams.subscription_data = {
-          trial_end: 'now',
-      }
-      sessionParams.mode = 'subscription'; // Keep as subscription
-      // We need to tell Stripe which subscription to update
-      // This is not directly possible with a standard checkout session for trial activation.
-      // The activateTrialAction is the correct approach here.
-      // This part of createCheckoutSession will be used for NEW subscriptions only.
-  }
-   
+  
   let checkoutSession: Stripe.Checkout.Session;
   try {
     checkoutSession = await stripe.checkout.sessions.create(sessionParams);
