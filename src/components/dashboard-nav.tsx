@@ -3,12 +3,13 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { cn } from "@/lib/utils";
-import { FilePlus2, FolderKanban, Save, User } from "lucide-react";
+import { FilePlus2, FolderKanban, Save, User, CreditCard } from "lucide-react";
 
 const navItems = [
   { href: "/dashboard", label: "Create Proposal", icon: FilePlus2 },
   { href: "/dashboard/proposals", label: "Saved Proposals", icon: Save },
   { href: "/dashboard/portfolio", label: "Portfolio Collections", icon: FolderKanban },
+  { href: "/pricing", label: "Plans & Pricing", icon: CreditCard },
   { href: "/profile", label: "Profile", icon: User },
 ];
 
