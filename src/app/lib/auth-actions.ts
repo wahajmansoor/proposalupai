@@ -41,7 +41,7 @@ export async function signUpWithEmail(input: z.infer<typeof signUpSchema>): Prom
       createdAt: new Date(),
       stripeCustomerId: customer.id,
       proposalCount: 0, // Initialize proposal count
-      subscriptionStatus: 'trialing', // Initialize status to trialing for all new users
+      subscriptionStatus: null, // New users have no plan by default
     });
 
     // 4. Create a session cookie for the user
@@ -54,7 +54,7 @@ export async function signUpWithEmail(input: z.infer<typeof signUpSchema>): Prom
     // For now, we will return success and let the client handle sign-in.
     // A better approach is to create a custom token and send it back to the client.
 
-    // Let's create a session directly. This requires an id token.
+    // Let's create the session directly. This requires an id token.
     // Since we can't get an ID token on the server directly after user creation,
     // the client will need to sign in and post the id token.
     // The server action will return success, and the client will then sign in.

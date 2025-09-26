@@ -66,6 +66,9 @@ export default function PricingPage() {
   const isTrialing = subscriptionStatus === 'trialing';
 
   const isCanceledButActive = subscriptionStatus === 'canceled' && renewalDate && new Date(renewalDate) > new Date();
+  
+  // A new user has no subscription status.
+  const isNewUser = !subscriptionStatus;
 
   const currentPlan = plans[billingInterval];
 
@@ -117,6 +120,56 @@ export default function PricingPage() {
       );
   }
   
+  // Main render for trial, active, or canceled users
+  if (isTrialing || isSubscribedAndActive || isCanceledButActive) {
+    return (
+        <div className="flex flex-col items-center justify-center p-4 md:p-8">
+            <div className="text-center mb-8">
+                <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Manage Your Plan</h1>
+                <p className="text-lg text-muted-foreground mt-2">You have access to all Pro features.</p>
+            </div>
+            
+             <div className="w-full max-w-md mb-8 border rounded-lg p-4 flex items-center justify-between bg-white">
+                <div>
+                  <p className="text-sm font-semibold">Your Current Plan:</p>
+                  <div className="flex items-center gap-2 mt-1">
+                     <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground">{getPlanName()}</Badge>
+                     {isTrialing && <Badge variant="outline" className="border-green-600 text-green-600">2 Days Free Trial</Badge>}
+                  </div>
+                </div>
+                {renewalDate && (
+                    <div className="text-right">
+                      <p className="text-sm font-semibold">{isTrialing ? 'Trial Ends' : 'Renews On'}</p>
+                      <p className="text-xs text-muted-foreground">{format(new Date(renewalDate), 'MMMM d, yyyy')}</p>
+                    </div>
+                )}
+              </div>
+
+            <div className="w-full max-w-md space-y-4">
+                 <form onSubmit={handleSubmit}>
+                    <input type="hidden" name="interval" value={interval || 'monthly'} />
+                    <Button 
+                        type="submit"
+                        size="lg" 
+                        className="w-full text-sm font-medium"
+                        disabled={isButtonDisabled}
+                    >
+                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                        {isTrialing ? `Activate ${interval === 'year' ? 'Yearly' : 'Monthly'} Plan` : 'Manage Subscription'}
+                    </Button>
+                 </form>
+                 <Button asChild size="lg" className="w-full text-sm font-medium bg-black text-white hover:bg-gray-800">
+                    <Link href="/dashboard">
+                        <ArrowLeft className="mr-2" />
+                        Back to Dashboard
+                    </Link>
+                 </Button>
+            </div>
+        </div>
+    )
+  }
+
+  // Render for new users to choose a plan
   return (
     <div className="flex flex-col items-center justify-center p-4 md:p-8">
         <div className="text-center mb-8">
@@ -134,22 +187,6 @@ export default function PricingPage() {
           <Label htmlFor="billing-interval" className={cn(billingInterval === 'yearly' ? 'text-foreground' : 'text-muted-foreground')}>Yearly</Label>
           <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">Save 16%</Badge>
         </div>
-        
-        {isTrialing && renewalDate && (
-          <div className="w-full max-w-md mb-8 border rounded-lg p-4 flex items-center justify-between bg-card bg-white">
-            <div>
-              <p className="text-sm font-semibold">Your Current Plan:</p>
-              <div className="flex items-center gap-2 mt-1">
-                 <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground">{getPlanName()}</Badge>
-                 <Badge variant="outline" className="border-green-600 text-green-600">2 Days Free Trial</Badge>
-              </div>
-            </div>
-            <div className="text-right">
-              <p className="text-sm font-semibold">Trial Ends</p>
-              <p className="text-xs text-muted-foreground">{format(new Date(renewalDate), 'MMMM d, yyyy')}</p>
-            </div>
-          </div>
-        )}
 
         <div className="flex justify-center w-full max-w-md">
             <Card className="flex flex-col shadow-lg w-full border border-[#d8d5d1]">
@@ -175,24 +212,7 @@ export default function PricingPage() {
                             {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                             {getButtonText()}
                         </Button>
-                        
-                         {isTrialing && (
-                          <>
-                            <Button asChild size="lg" className="w-full text-sm font-medium bg-black text-white hover:bg-gray-800">
-                              <Link href="/dashboard">
-                                <ArrowLeft className="mr-2" />
-                                Back to Dashboard
-                              </Link>
-                            </Button>
-                          </>
-                        )}
                     </form>
-
-                     {isCanceledButActive && renewalDate && (
-                      <p className="text-center text-sm text-muted-foreground mt-2">
-                        Your access will end on {format(new Date(renewalDate), 'MMMM d, yyyy')}.
-                      </p>
-                    )}
                     
                     <div className="border-t my-6"></div>
 

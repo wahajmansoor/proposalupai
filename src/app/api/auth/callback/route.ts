@@ -100,6 +100,7 @@ export async function GET(req: NextRequest) {
             createdAt: new Date(),
             stripeCustomerId: customer.id,
             proposalCount: 0, // Initialize proposal count
+            subscriptionStatus: null, // New users have no plan by default
         };
         if (picture) {
             userData.photoURL = picture;
