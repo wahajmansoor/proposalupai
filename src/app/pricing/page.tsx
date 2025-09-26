@@ -5,7 +5,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Loader2, Briefcase, FilePlus2, AlertCircle, ArrowLeft } from 'lucide-react';
+import { Check, Loader2, Briefcase, ArrowLeft } from 'lucide-react';
 import { createCheckoutSession } from '@/app/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -59,7 +59,6 @@ export default function PricingPage() {
   
   const subscriptionStatus = userProfile?.subscriptionStatus;
   const renewalDate = userProfile?.subscriptionCurrentPeriodEnd;
-  const proposalCount = userProfile?.proposalCount ?? 0;
   const interval = userProfile?.subscriptionInterval;
   
   const isSubscribedAndActive = subscriptionStatus === 'active';
@@ -68,6 +67,7 @@ export default function PricingPage() {
   const isCanceledButActive = subscriptionStatus === 'canceled' && renewalDate && new Date(renewalDate) > new Date();
   
   const isNewUser = !subscriptionStatus;
+  const showPlanManagement = isTrialing || isSubscribedAndActive || isCanceledButActive;
 
   const currentPlan = plans[billingInterval];
 
@@ -94,8 +94,10 @@ export default function PricingPage() {
 
   const getButtonText = () => {
     if (isSubscribedAndActive) return 'Manage Subscription';
-    if (isCanceledButActive) return 'Subscription Canceled';
-    if (isTrialing) return currentPlan.buttonTextUpgrade;
+    if (isCanceledButActive) return 'Reactivate Plan';
+    if (isTrialing) {
+        return billingInterval === interval ? 'Manage Subscription' : `Switch to ${billingInterval === 'monthly' ? 'Monthly' : 'Yearly'}`;
+    }
     return currentPlan.buttonText;
   }
 
@@ -118,17 +120,20 @@ export default function PricingPage() {
         </div>
       );
   }
-  
-  // Main render for trial, active, or canceled users
-  if (isTrialing || isSubscribedAndActive || isCanceledButActive) {
-    return (
-        <div className="flex flex-col items-center justify-center p-4 md:p-8">
-            <div className="text-center mb-8">
-                <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Manage Your Plan</h1>
-                <p className="text-lg text-muted-foreground mt-2">You have access to all Pro features.</p>
-            </div>
-            
-             <div className="w-full max-w-md mb-8 border rounded-lg p-4 flex items-center justify-between bg-white">
+
+  return (
+    <div className="flex flex-col items-center justify-center p-4 md:p-8">
+        <div className="text-center mb-8">
+            <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
+                {showPlanManagement ? 'Manage Your Plan' : 'Plans & Pricing'}
+            </h1>
+            <p className="text-lg text-muted-foreground mt-2">
+                {showPlanManagement ? 'You have access to all Pro features.' : "Choose the plan that's right for you."}
+            </p>
+        </div>
+
+        {showPlanManagement && (
+            <div className="w-full max-w-md mb-8 border rounded-lg p-4 flex items-center justify-between bg-white">
                 <div>
                   <p className="text-sm font-semibold">Your Current Plan:</p>
                   <div className="flex items-center gap-2 mt-1">
@@ -142,39 +147,8 @@ export default function PricingPage() {
                       <p className="text-xs text-muted-foreground">{format(new Date(renewalDate), 'MMMM d, yyyy')}</p>
                     </div>
                 )}
-              </div>
-
-            <div className="w-full max-w-md space-y-4">
-                 <form onSubmit={handleSubmit}>
-                    <input type="hidden" name="interval" value={interval || 'monthly'} />
-                    <Button 
-                        type="submit"
-                        size="lg" 
-                        className="w-full text-sm font-medium"
-                        disabled={isButtonDisabled}
-                    >
-                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                        {isCanceledButActive ? 'Reactivate Plan' : getButtonText()}
-                    </Button>
-                 </form>
-                 <Button asChild size="lg" className="w-full text-sm font-medium bg-black text-white hover:bg-gray-800">
-                    <Link href="/dashboard">
-                        <ArrowLeft className="mr-2" />
-                        Back to Dashboard
-                    </Link>
-                 </Button>
             </div>
-        </div>
-    )
-  }
-
-  // Render for new users to choose a plan
-  return (
-    <div className="flex flex-col items-center justify-center p-4 md:p-8">
-        <div className="text-center mb-8">
-            <h1 className="text-4xl md:text-5xl font-bold tracking-tight">Plans & Pricing</h1>
-            <p className="text-lg text-muted-foreground mt-2">Choose the plan that's right for you.</p>
-        </div>
+        )}
 
         <div className="flex items-center space-x-2 mb-8">
           <Label htmlFor="billing-interval" className={cn(billingInterval === 'monthly' ? 'text-foreground' : 'text-muted-foreground')}>Monthly</Label>
@@ -238,6 +212,17 @@ export default function PricingPage() {
                 </CardContent>
             </Card>
         </div>
+        
+        {showPlanManagement && (
+            <div className="mt-6 w-full max-w-md">
+                 <Button asChild size="lg" className="w-full text-sm font-medium bg-black text-white hover:bg-gray-800">
+                    <Link href="/dashboard">
+                        <ArrowLeft className="mr-2" />
+                        Back to Dashboard
+                    </Link>
+                 </Button>
+            </div>
+        )}
     </div>
   );
 }
