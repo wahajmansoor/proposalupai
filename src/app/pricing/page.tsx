@@ -178,12 +178,6 @@ export default function PricingPage() {
                         
                          {isTrialing && (
                           <>
-                            <div className="flex items-start gap-3 p-3 bg-red-50 text-red-700 border border-red-200 rounded-lg">
-                              <AlertCircle className="h-5 w-5 mt-0.5 shrink-0" />
-                              <p className="text-sm">
-                                First, try the tool free and create one proposal then start your monthly or yearly subscription.
-                              </p>
-                            </div>
                             <Button asChild size="lg" className="w-full text-lg font-medium">
                               <Link href="/dashboard">
                                 Create a Proposal
