@@ -67,7 +67,6 @@ export default function PricingPage() {
 
   const isCanceledButActive = subscriptionStatus === 'canceled' && renewalDate && new Date(renewalDate) > new Date();
   
-  // A new user has no subscription status.
   const isNewUser = !subscriptionStatus;
 
   const currentPlan = plans[billingInterval];
@@ -94,7 +93,7 @@ export default function PricingPage() {
   };
 
   const getButtonText = () => {
-    if (isSubscribedAndActive) return 'Subscribed';
+    if (isSubscribedAndActive) return 'Manage Subscription';
     if (isCanceledButActive) return 'Subscription Canceled';
     if (isTrialing) return currentPlan.buttonTextUpgrade;
     return currentPlan.buttonText;
@@ -110,7 +109,7 @@ export default function PricingPage() {
     return 'Free Plan';
   };
   
-  const isButtonDisabled = isSubmitting || isSubscribedAndActive || isCanceledButActive;
+  const isButtonDisabled = isSubmitting;
 
   if (authLoading) {
     return (
@@ -155,7 +154,7 @@ export default function PricingPage() {
                         disabled={isButtonDisabled}
                     >
                         {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                        {isTrialing ? `Activate ${interval === 'year' ? 'Yearly' : 'Monthly'} Plan` : 'Manage Subscription'}
+                        {isCanceledButActive ? 'Reactivate Plan' : getButtonText()}
                     </Button>
                  </form>
                  <Button asChild size="lg" className="w-full text-sm font-medium bg-black text-white hover:bg-gray-800">
