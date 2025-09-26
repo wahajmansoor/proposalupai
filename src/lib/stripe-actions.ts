@@ -7,6 +7,7 @@ import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/firebase/server-auth';
 import { z } from 'zod';
 import type Stripe from 'stripe';
+import { revalidatePath } from 'next/cache';
 
 const checkoutSessionSchema = z.object({
   interval: z.enum(['monthly', 'yearly']),
@@ -31,7 +32,6 @@ export async function createCheckoutSession(formData: FormData) {
   const { user, userDoc } = currentUser;
   const stripeCustomerId = userDoc.stripeCustomerId;
   const subscriptionStatus = userDoc.subscriptionStatus;
-  const subscriptionId = userDoc.subscriptionId;
   const proposalCount = userDoc.proposalCount ?? 0;
 
   if (!stripeCustomerId) {
@@ -64,37 +64,15 @@ export async function createCheckoutSession(formData: FormData) {
     success_url: successUrl,
     cancel_url: cancelUrl,
     mode: 'subscription',
+    line_items: [{ price: priceId, quantity: 1 }],
   };
-
-  if (subscriptionStatus === 'trialing' && subscriptionId) {
-    // Logic to UPDATE an existing trial subscription and end the trial immediately.
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-    
-    sessionParams.line_items = [{
-      price: priceId,
-      quantity: 1,
-    }];
-    sessionParams.subscription_data = {
-        trial_end: 'now',
-        // By default, Stripe will prorate. We can set it to none if desired.
-        // proration_behavior: 'none', 
-    };
-    
-    // Pass the existing subscription to modify it
-    sessionParams.subscription = subscriptionId;
-
-
-  } else {
-    // Logic for a NEW user or a user without an active subscription.
-    sessionParams.line_items = [{ price: priceId, quantity: 1 }];
-
-    const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {};
-    // A user gets a free trial if they are not already an active subscriber AND they haven't used up their free proposals.
-    if (subscriptionStatus !== 'active' && proposalCount < 5) {
-      subscriptionData.trial_period_days = 2;
-    }
-    sessionParams.subscription_data = subscriptionData;
+  
+  // This logic is now only for new users starting a subscription for the first time.
+  const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {};
+  if (subscriptionStatus !== 'active' && proposalCount < 5) {
+    subscriptionData.trial_period_days = 2;
   }
+  sessionParams.subscription_data = subscriptionData;
   
   let checkoutSession: Stripe.Checkout.Session;
   try {
@@ -109,6 +87,37 @@ export async function createCheckoutSession(formData: FormData) {
   }
 
   redirect(checkoutSession.url);
+}
+
+export async function activateTrialAction(): Promise<{ success?: boolean; error?: string }> {
+  const currentUser = await getCurrentUser();
+  if (!currentUser || !currentUser.userDoc) {
+    return { error: 'You must be logged in to activate a plan.' };
+  }
+  
+  const { userDoc } = currentUser;
+  const { subscriptionStatus, subscriptionId } = userDoc;
+
+  if (subscriptionStatus !== 'trialing' || !subscriptionId) {
+    return { error: 'You are not in a trial period or the subscription is missing.' };
+  }
+
+  try {
+    // End the trial immediately, which will trigger an invoice and charge the default payment method.
+    await stripe.subscriptions.update(subscriptionId, {
+      trial_end: 'now',
+      proration_behavior: 'none', // Optional: disable proration for this change
+    });
+    
+    // Invalidate the cache for the pricing page to reflect the new status
+    revalidatePath('/pricing');
+    
+    return { success: true };
+
+  } catch (error: any) {
+    console.error('Error activating trial subscription:', error);
+    return { error: error.message || 'An unexpected error occurred while activating your plan.' };
+  }
 }
 
 export async function createCustomerPortalSession(): Promise<{ url?: string; error?: string }> {

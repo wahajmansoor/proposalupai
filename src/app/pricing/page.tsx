@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, Loader2, Briefcase, ArrowLeft } from 'lucide-react';
-import { createCheckoutSession } from '@/app/lib/stripe-actions';
+import { createCheckoutSession, activateTrialAction } from '@/app/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
@@ -71,35 +71,46 @@ export default function PricingPage() {
 
   const currentPlan = plans[billingInterval];
 
-  const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
+  const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!user) {
         toast({ title: "Not Authenticated", description: "Please log in to subscribe.", variant: "destructive" });
         router.push('/login');
         return;
     }
+    
     setIsSubmitting(true);
-    const formData = new FormData(event.currentTarget);
-    try {
-      await createCheckoutSession(formData);
-    } catch (error: any) {
-      toast({
-        title: 'Error',
-        description: error.message || 'Could not initiate checkout. Please try again.',
-        variant: 'destructive',
-      });
-      setIsSubmitting(false);
+
+    if (isTrialing) {
+        // Case 2a: User is in trial and wants to activate the plan now.
+        const result = await activateTrialAction();
+        if (result.error) {
+            toast({ title: 'Activation Failed', description: result.error, variant: 'destructive' });
+        } else {
+            toast({ title: 'Plan Activated!', description: 'Your trial has ended and your paid subscription has begun.' });
+        }
+    } else {
+        // Case 1: New user starting a subscription/trial.
+        const formData = new FormData(event.currentTarget);
+        try {
+          await createCheckoutSession(formData);
+        } catch (error: any) {
+          toast({
+            title: 'Error',
+            description: error.message || 'Could not initiate checkout. Please try again.',
+            variant: 'destructive',
+          });
+        }
     }
+    
+    setIsSubmitting(false);
   };
 
   const getButtonText = () => {
     if (isSubscribedAndActive) return 'Manage Subscription';
     if (isCanceledButActive) return 'Reactivate Plan';
     if (isTrialing) {
-        if (billingInterval === interval) {
-          return 'Manage Subscription';
-        }
-        return currentPlan.buttonTextUpgrade;
+      return currentPlan.buttonTextUpgrade;
     }
     return currentPlan.buttonText;
   }
@@ -177,7 +188,7 @@ export default function PricingPage() {
                         <p className="text-sm text-muted-foreground">{currentPlan.priceDescription}</p>
                     </div>
                     
-                    <form onSubmit={handleSubmit} className="w-full flex flex-col gap-4">
+                    <form onSubmit={handleFormSubmit} className="w-full flex flex-col gap-4">
                         <input type="hidden" name="interval" value={billingInterval} />
                         <Button 
                             type="submit"
@@ -190,6 +201,12 @@ export default function PricingPage() {
                         </Button>
                     </form>
                     
+                    {isTrialing && (
+                        <p className="text-xs text-center text-muted-foreground mt-2">
+                           This will end your trial and charge the payment method on file. To change your card, please use the Billing Portal.
+                        </p>
+                    )}
+
                     <div className="border-t my-6"></div>
 
                     <ul className="space-y-3 mb-8 text-sm">
@@ -216,7 +233,7 @@ export default function PricingPage() {
             </Card>
         </div>
         
-        {showPlanManagement && (
+        {isSubscribedAndActive && (
             <div className="mt-6 w-full max-w-md">
                  <Button asChild size="lg" className="w-full text-sm font-medium bg-black text-white hover:bg-gray-800">
                     <Link href="/dashboard">
