@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, Loader2, Briefcase, ArrowLeft } from 'lucide-react';
-import { createCheckoutSession, activateTrialAction, createCustomerPortalSession } from '@/app/lib/stripe-actions';
+import { createCheckoutSession, activateTrialAction, createCustomerPortalSession, upgradeSubscriptionAction } from '@/app/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
@@ -83,18 +83,22 @@ export default function PricingPage() {
     const formData = new FormData(event.currentTarget);
 
     if (isTrialing) {
-        // Scenario: Trialing user wants to activate their plan now.
         const result = await activateTrialAction(formData);
         if (result.error) {
             toast({ title: 'Activation Failed', description: result.error, variant: 'destructive' });
         } else {
             toast({ title: 'Plan Activated!', description: `Your trial has ended and your new ${billingInterval} subscription has begun.` });
         }
-    } else if (isSubscribedAndActive && ((isMonthlyActive && billingInterval === 'yearly') || isCanceledButActive)) {
-        // Scenario: Active monthly user upgrading to yearly, OR a canceled user reactivating.
+    } else if (isMonthlyActive && billingInterval === 'yearly') {
+        const result = await upgradeSubscriptionAction();
+        if (result.error) {
+            toast({ title: 'Upgrade Failed', description: result.error, variant: 'destructive' });
+        } else {
+            toast({ title: 'Upgrade Successful!', description: 'You are now on the Pro Yearly plan.' });
+        }
+    } else if (isCanceledButActive) {
         await createCheckoutSession(formData);
     } else if (!isSubscribedAndActive) {
-        // Scenario: New or expired user subscribing.
         await createCheckoutSession(formData);
     }
     
@@ -271,3 +275,5 @@ export default function PricingPage() {
     </div>
   );
 }
+
+    

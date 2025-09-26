@@ -63,7 +63,6 @@ export async function createCheckoutSession(formData: FormData) {
     cancel_url: cancelUrl,
   };
 
-  // Case 1: User has an active subscription and is upgrading/changing plans
   if (subscriptionStatus === 'active' && subscriptionId) {
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
     sessionParams.line_items = [
@@ -81,13 +80,11 @@ export async function createCheckoutSession(formData: FormData) {
       proration_behavior: 'create_prorations',
     }
   } else {
-    // Case 2: New user or expired user starting a new subscription
     sessionParams.mode = 'subscription';
     sessionParams.line_items = [{ price: priceId, quantity: 1 }];
     
     const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {};
   
-    // Give a trial only to new users (no existing subscription status)
     if (!subscriptionStatus && proposalCount < 5) {
       subscriptionData.trial_period_days = 2;
     }
@@ -145,8 +142,8 @@ export async function activateTrialAction(formData: FormData): Promise<{ success
     
     await stripe.subscriptions.update(subscriptionId, {
       items: [{
-        id: subscription.items.data[0].id, // Get the ID of the item to update
-        price: newPriceId, // Set the new price
+        id: subscription.items.data[0].id,
+        price: newPriceId,
       }],
       trial_end: 'now',
       proration_behavior: 'none',
@@ -159,6 +156,44 @@ export async function activateTrialAction(formData: FormData): Promise<{ success
   } catch (error: any) {
     console.error('Error activating trial subscription:', error);
     return { error: error.message || 'An unexpected error occurred while activating your plan.' };
+  }
+}
+
+export async function upgradeSubscriptionAction(): Promise<{ success?: boolean; error?: string }> {
+  const currentUser = await getCurrentUser();
+  if (!currentUser || !currentUser.userDoc) {
+    return { error: 'You must be logged in to upgrade your plan.' };
+  }
+
+  const { subscriptionStatus, subscriptionId, subscriptionInterval } = currentUser.userDoc;
+
+  if (subscriptionStatus !== 'active' || subscriptionInterval !== 'month' || !subscriptionId) {
+    return { error: 'You are not on an active monthly plan eligible for an upgrade.' };
+  }
+
+  const yearlyPriceId = process.env.STRIPE_YEARLY_PRICE_ID;
+  if (!yearlyPriceId) {
+    return { error: 'Yearly plan is not configured.' };
+  }
+
+  try {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    
+    await stripe.subscriptions.update(subscriptionId, {
+      items: [{
+        id: subscription.items.data[0].id,
+        price: yearlyPriceId,
+      }],
+      proration_behavior: 'create_prorations',
+      trial_end: 'now', // Ensure any residual trial is ended
+    });
+
+    revalidatePath('/pricing');
+    return { success: true };
+    
+  } catch (error: any) {
+    console.error('Error upgrading subscription:', error);
+    return { error: 'Failed to upgrade your plan. Please try again.' };
   }
 }
 
@@ -206,3 +241,5 @@ export async function createCustomerPortalSession(): Promise<{ url?: string; err
     };
   }
 }
+
+    
