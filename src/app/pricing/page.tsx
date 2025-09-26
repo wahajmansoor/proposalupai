@@ -83,7 +83,6 @@ export default function PricingPage() {
     const formData = new FormData(event.currentTarget);
 
     if (isTrialing) {
-        // User is activating their chosen trial plan
         const result = await activateTrialAction(formData);
         if (result.error) {
             toast({ title: 'Activation Failed', description: result.error, variant: 'destructive' });
@@ -116,8 +115,7 @@ export default function PricingPage() {
   }
 
   const getPlanName = () => {
-    if (isTrialing) return 'Pro Trial';
-    if (isSubscribedAndActive || isCanceledButActive) {
+    if (isTrialing || isSubscribedAndActive || isCanceledButActive) {
       if (currentInterval === 'year') return 'Pro Yearly';
       if (currentInterval === 'month') return 'Pro Monthly';
     }
@@ -226,8 +224,8 @@ export default function PricingPage() {
                     
                     
                     {isTrialing && (
-                        <p className="text-xs text-center text-muted-foreground mt-2">
-                           This will end your trial and charge the payment method on file.
+                         <p className="text-xs text-center text-muted-foreground mt-2">
+                           This will end your trial and charge the card on file. To change your payment method, please visit the <Link href="/profile" className="underline">profile page</Link>.
                         </p>
                     )}
                     {isYearlyActive && billingInterval === 'monthly' && (
@@ -265,7 +263,7 @@ export default function PricingPage() {
         
         {isSubscribedAndActive && (
             <div className="mt-6 w-full max-w-md">
-                 <Button asChild size="lg" className="w-full text-sm font-medium bg-black text-white hover:bg-gray-800">
+                 <Button asChild size="lg" className="w-full">
                     <Link href="/dashboard">
                         <ArrowLeft className="mr-2" />
                         Back to Dashboard
@@ -276,3 +274,4 @@ export default function PricingPage() {
     </div>
   );
 }
+
