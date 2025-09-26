@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, Loader2, Briefcase, ArrowLeft } from 'lucide-react';
-import { createCheckoutSession, activateTrialAction, createCustomerPortalSession } from '@/app/lib/stripe-actions';
+import { createCheckoutSession, activateTrialAction, createCustomerPortalSession, changeTrialPlanAction } from '@/app/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
@@ -72,7 +72,6 @@ export default function PricingPage() {
   const isMonthlyActive = isSubscribedAndActive && currentInterval === 'month';
   const isYearlyActive = isSubscribedAndActive && currentInterval === 'year';
 
-
   const currentPlan = plans[billingInterval];
 
   const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -84,51 +83,50 @@ export default function PricingPage() {
     }
     
     setIsSubmitting(true);
-    
-    // User is on a yearly plan and clicks "Manage Subscription"
-    if (isYearlyActive && billingInterval === 'monthly') {
-        const result = await createCustomerPortalSession();
-        if (result.error) {
-            toast({ title: 'Error', description: result.error, variant: 'destructive' });
-        } else if (result.url) {
-            router.push(result.url);
-        }
-        setIsSubmitting(false);
-        return;
-    }
+    const formData = new FormData(event.currentTarget);
 
     if (isTrialing) {
-        const result = await activateTrialAction();
-        if (result.error) {
-            toast({ title: 'Activation Failed', description: result.error, variant: 'destructive' });
+        // Scenario: Trialing user wants to switch the plan they are trialing
+        if (billingInterval !== currentInterval) {
+            const result = await changeTrialPlanAction(formData);
+            if (result.error) {
+                toast({ title: 'Plan Change Failed', description: result.error, variant: 'destructive' });
+            } else {
+                toast({ title: 'Plan Changed!', description: `Your trial is now for the ${billingInterval} plan.` });
+            }
         } else {
-            toast({ title: 'Plan Activated!', description: 'Your trial has ended and your paid subscription has begun.' });
+            // Scenario: Trialing user wants to activate their currently selected plan
+            const result = await activateTrialAction();
+            if (result.error) {
+                toast({ title: 'Activation Failed', description: result.error, variant: 'destructive' });
+            } else {
+                toast({ title: 'Plan Activated!', description: 'Your trial has ended and your paid subscription has begun.' });
+            }
+        }
+    } else if (isSubscribedAndActive) {
+        // Scenario: Active user wants to upgrade/downgrade
+        if ((isMonthlyActive && billingInterval === 'yearly') || (isYearlyActive && billingInterval === 'monthly')) {
+             await createCheckoutSession(formData);
         }
     } else {
-        const formData = new FormData(event.currentTarget);
-        try {
-          await createCheckoutSession(formData);
-        } catch (error: any) {
-          toast({
-            title: 'Error',
-            description: error.message || 'Could not initiate checkout. Please try again.',
-            variant: 'destructive',
-          });
-        }
+        // Scenario: New or canceled user subscribing
+        await createCheckoutSession(formData);
     }
     
     setIsSubmitting(false);
   };
 
   const getButtonText = () => {
+    if (isTrialing) {
+        if (billingInterval === currentInterval) {
+            return billingInterval === 'monthly' ? 'Activate Monthly Plan' : 'Activate Yearly Plan';
+        }
+        return `Switch to ${billingInterval === 'monthly' ? 'Monthly' : 'Yearly'} Trial`;
+    }
     if (isMonthlyActive && billingInterval === 'yearly') return 'Switch to Yearly Plan';
     if (isYearlyActive && billingInterval === 'monthly') return 'Manage Subscription';
     if (isSubscribedAndActive) return 'Your Current Plan';
     if (isCanceledButActive) return 'Reactivate Plan';
-    if (isTrialing) {
-      if (billingInterval === 'monthly') return plans.monthly.buttonTextUpgrade;
-      return plans.yearly.buttonTextUpgrade;
-    }
     return currentPlan.buttonText;
   }
 
@@ -137,7 +135,6 @@ export default function PricingPage() {
       if (currentInterval === 'year') return 'Pro Yearly';
       if (currentInterval === 'month') return 'Pro Monthly';
     }
-    // Fallback for trial if interval isn't set yet
     if (isTrialing) return 'Pro Trial';
     return 'Free Plan';
   };
@@ -220,7 +217,9 @@ export default function PricingPage() {
                     
                     {isTrialing && (
                         <p className="text-xs text-center text-muted-foreground mt-2">
-                           This will end your trial and charge the payment method on file.
+                           {billingInterval === currentInterval
+                             ? "This will end your trial and charge the payment method on file."
+                             : "This will switch your plan for when the trial ends."}
                         </p>
                     )}
                     {isYearlyActive && billingInterval === 'monthly' && (
