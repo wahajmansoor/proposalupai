@@ -77,17 +77,11 @@ export default function ProfilePage() {
   const interval = userProfile?.subscriptionInterval;
 
   const getPlanName = () => {
-    if (subscriptionStatus === 'trialing') return '2 Days Free Trial Plan';
-    if (subscriptionStatus === 'active') {
-      if (interval === 'year') return 'Premium Yearly';
-      if (interval === 'month') return 'Premium Monthly';
-      return 'Premium Plan'; // Fallback
+    if (subscriptionStatus === 'active' || subscriptionStatus === 'canceled' || subscriptionStatus === 'trialing') {
+        if (interval === 'year') return 'Pro Yearly';
+        if (interval === 'month') return 'Pro Monthly';
     }
-    // For other statuses like 'canceled', 'past_due'
-    if (interval) {
-        return `Premium ${interval.charAt(0).toUpperCase() + interval.slice(1)}`;
-    }
-    return subscriptionStatus ? subscriptionStatus.charAt(0).toUpperCase() + subscriptionStatus.slice(1) : 'N/A';
+    return 'Free Plan';
   }
 
   const getRenewalText = () => {
@@ -98,6 +92,8 @@ export default function ProfilePage() {
     }
     return null;
   }
+
+  const isTrial = subscriptionStatus === 'trialing';
 
   return (
     <div className="space-y-8">
@@ -156,24 +152,26 @@ export default function ProfilePage() {
               <CardDescription>Your current plan and billing information.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-              <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div>
-                  <h3 className="font-semibold">Your Plan</h3>
-                  <Badge variant={subscriptionStatus === 'active' || subscriptionStatus === 'trialing' ? 'default' : 'secondary'} className="capitalize mt-1">
-                    {getPlanName()}
-                  </Badge>
+               <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex flex-col items-start gap-2">
+                    <h3 className="font-semibold text-sm">Your Current Plan:</h3>
+                    <div className="flex items-center gap-2">
+                        <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground">{getPlanName()}</Badge>
+                        {isTrial && <Badge variant="outline" className="border-green-600 text-green-600">2 Days Free Trial</Badge>}
+                    </div>
                 </div>
                 {renewalDate && getRenewalText() && (
                   <div className="text-right">
-                    <p className="font-semibold">
+                    <p className="font-semibold text-sm">
                       {getRenewalText()}
                     </p>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-xs text-muted-foreground">
                       {format(new Date(renewalDate), 'MMMM d, yyyy')}
                     </p>
                   </div>
                 )}
               </div>
+
               {userProfile?.stripeCustomerId && (
                 <form onSubmit={handleBillingSubmit}>
                   <Button type="submit" disabled={isManagingBilling} className="w-full">
