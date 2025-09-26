@@ -60,10 +60,10 @@ export default function PricingPage() {
   const subscriptionStatus = userProfile?.subscriptionStatus;
   const renewalDate = userProfile?.subscriptionCurrentPeriodEnd;
   const proposalCount = userProfile?.proposalCount ?? 0;
+  const interval = userProfile?.subscriptionInterval;
   
   const isSubscribedAndActive = subscriptionStatus === 'active';
   const isTrialing = subscriptionStatus === 'trialing';
-  const trialLimitReached = isTrialing && proposalCount >= 5;
 
   const isCanceledButActive = subscriptionStatus === 'canceled' && renewalDate && new Date(renewalDate) > new Date();
 
@@ -96,6 +96,16 @@ export default function PricingPage() {
     if (isTrialing) return currentPlan.buttonTextUpgrade;
     return currentPlan.buttonText;
   }
+
+  const getPlanName = () => {
+    if (isTrialing || isSubscribedAndActive || isCanceledButActive) {
+      if (interval === 'year') return 'Pro Yearly';
+      if (interval === 'month') return 'Pro Monthly';
+    }
+    // Fallback for trial if interval isn't set yet
+    if (isTrialing) return 'Pro Trial';
+    return 'Free Plan';
+  };
   
   const isButtonDisabled = isSubmitting || isSubscribedAndActive || isCanceledButActive;
 
@@ -130,7 +140,7 @@ export default function PricingPage() {
             <div>
               <p className="text-sm font-semibold">Your Current Plan:</p>
               <div className="flex items-center gap-2 mt-1">
-                 <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground">Pro Plan</Badge>
+                 <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground">{getPlanName()}</Badge>
                  <Badge variant="outline" className="border-green-600 text-green-600">2 Days Free Trial</Badge>
               </div>
             </div>
