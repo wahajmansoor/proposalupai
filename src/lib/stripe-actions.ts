@@ -63,34 +63,42 @@ export async function createCheckoutSession(formData: FormData) {
     cancel_url: cancelUrl,
   };
 
+  // Case 1: User has an active subscription and is upgrading/changing plans
   if (subscriptionStatus === 'active' && subscriptionId) {
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-    sessionParams.line_items = [
-        {
-            price: priceId,
-            quantity: 1,
+    
+    // Create a setup intent session to update the subscription
+    const setupSession = await stripe.checkout.sessions.create({
+      payment_method_types: ['card'],
+      mode: 'setup',
+      customer: stripeCustomerId,
+      setup_intent_data: {
+        metadata: {
+          subscription_id: subscriptionId,
+          price_id: priceId,
         },
-    ];
-    sessionParams.mode = 'subscription';
-    sessionParams.subscription_data = {
-      items: [{
-        id: subscription.items.data[0].id,
-        price: priceId,
-      }],
-      proration_behavior: 'create_prorations',
-    }
-  } else {
-    sessionParams.mode = 'subscription';
-    sessionParams.line_items = [{ price: priceId, quantity: 1 }];
+      },
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+    });
     
-    const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {};
-  
-    if (!subscriptionStatus && proposalCount < 5) {
-      subscriptionData.trial_period_days = 2;
+    if (!setupSession.url) {
+        throw new Error('Could not create setup session for plan change.');
     }
     
-    sessionParams.subscription_data = subscriptionData;
+    redirect(setupSession.url);
+    return; // End execution here
   }
+  
+  // Case 2: New user or expired user starting a new subscription
+  sessionParams.mode = 'subscription';
+  sessionParams.line_items = [{ price: priceId, quantity: 1 }];
+  
+  const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {};
+  if (subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing' && proposalCount < 5) {
+    subscriptionData.trial_period_days = 2;
+  }
+  sessionParams.subscription_data = subscriptionData;
   
   let checkoutSession: Stripe.Checkout.Session;
   try {
@@ -241,5 +249,3 @@ export async function createCustomerPortalSession(): Promise<{ url?: string; err
     };
   }
 }
-
-    
