@@ -63,43 +63,33 @@ export async function createCheckoutSession(formData: FormData) {
     client_reference_id: user.uid,
     success_url: successUrl,
     cancel_url: cancelUrl,
+    mode: 'subscription',
   };
 
   if (subscriptionStatus === 'trialing' && subscriptionId) {
-    // Logic to UPDATE an existing subscription (end the trial)
+    // Logic to UPDATE an existing trial subscription and end the trial immediately.
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
     
-    sessionParams.mode = 'setup';
-    sessionParams.setup_intent_data = {
-      metadata: {
-        subscription_id: subscriptionId,
-        price_id: priceId,
-      },
+    sessionParams.line_items = [{
+      price: priceId,
+      quantity: 1,
+    }];
+    sessionParams.subscription_data = {
+        trial_end: 'now',
+        // By default, Stripe will prorate. We can set it to none if desired.
+        // proration_behavior: 'none', 
     };
-    // Redirect to billing portal to update subscription
-    const portalSession = await stripe.billingPortal.sessions.create({
-        customer: stripeCustomerId,
-        return_url: successUrl,
-        flow_data: {
-            type: 'subscription_update',
-            subscription_update: {
-                subscription: subscriptionId,
-                items: [{
-                    id: subscription.items.data[0].id,
-                    price: priceId,
-                }],
-                proration_behavior: 'none',
-            },
-        },
-    });
-    redirect(portalSession.url);
+    
+    // Pass the existing subscription to modify it
+    sessionParams.subscription = subscriptionId;
+
 
   } else {
-    // Logic to create a NEW subscription
-    sessionParams.mode = 'subscription';
+    // Logic for a NEW user or a user without an active subscription.
     sessionParams.line_items = [{ price: priceId, quantity: 1 }];
 
     const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {};
+    // A user gets a free trial if they are not already an active subscriber AND they haven't used up their free proposals.
     if (subscriptionStatus !== 'active' && proposalCount < 5) {
       subscriptionData.trial_period_days = 2;
     }
