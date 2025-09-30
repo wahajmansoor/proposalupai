@@ -1,32 +1,33 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { getAdminSession } from '@/app/admin-portal/login/actions';
+import { getAdminSession } from '@/app/login/actions';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
-  // Exclude the login page from the session check
-  if (pathname === '/admin-portal/login') {
+  // If user is logged in and tries to access /login page, redirect to admin dashboard
+  if (pathname === '/login') {
     const session = await getAdminSession();
-    // If user is logged in and tries to access login page, redirect to dashboard
     if (session) {
       return NextResponse.redirect(new URL('/admin-portal', request.url));
     }
     return NextResponse.next();
   }
 
-  // For any other admin page, check for a session
+  // For any page inside /admin-portal, check for a session
   if (pathname.startsWith('/admin-portal')) {
     const session = await getAdminSession();
     if (!session) {
-      return NextResponse.redirect(new URL('/admin-portal/login', request.url));
+      // Redirect them to the new /login page
+      return NextResponse.redirect(new URL('/login', request.url));
     }
   }
 
   return NextResponse.next();
 }
 
+// Apply middleware to both /login and /admin-portal paths
 export const config = {
-  matcher: ['/admin-portal/:path*'],
+  matcher: ['/login', '/admin-portal/:path*'],
 };

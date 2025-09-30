@@ -1,11 +1,11 @@
 
-import { getAdminSession, adminLogout } from './login/actions';
-import { redirect, usePathname } from 'next/navigation';
+import { getAdminSession } from '@/app/login/actions';
+import { redirect } from 'next/navigation';
 import { Sidebar, SidebarProvider, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarHeader, SidebarTrigger, SidebarContent, SidebarFooter } from '@/components/ui/sidebar';
 import { Home, Users, LogOut, PanelLeft } from 'lucide-react';
 import { ProposalUpLogo } from '@/components/icons';
 import { Button } from '@/components/ui/button';
-import { cookies } from 'next/headers';
+import { adminLogout } from '@/app/login/actions';
 
 export default async function AdminLayout({
   children,
@@ -15,13 +15,13 @@ export default async function AdminLayout({
   const session = await getAdminSession();
   
   if (!session) {
-    redirect('/admin-portal/login');
+    redirect('/login');
   }
 
   const handleLogout = async () => {
     'use server';
     await adminLogout();
-    redirect('/admin-portal/login');
+    redirect('/login');
   }
 
   return (
