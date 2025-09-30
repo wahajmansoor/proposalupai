@@ -4,6 +4,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { getUsers, AppUser } from "./actions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { UserActions } from "./user-actions";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
 function getInitials(name: string | null | undefined) {
   if (!name) return "U";
@@ -12,6 +14,24 @@ function getInitials(name: string | null | undefined) {
     return `${names[0][0]}${names[names.length - 1][0]}`;
   }
   return name.substring(0, 2).toUpperCase();
+}
+
+function SubscriptionBadge({ status }: { status: string | null }) {
+    if (!status || status === 'N/A' || status === 'No Record') {
+        return <Badge variant="outline">{status || 'Unknown'}</Badge>;
+    }
+    const lowerStatus = status.toLowerCase();
+    return (
+        <Badge
+            className={cn({
+                'bg-green-100 text-green-800 border-green-200': lowerStatus === 'active' || lowerStatus === 'trialing',
+                'bg-yellow-100 text-yellow-800 border-yellow-200': lowerStatus === 'past_due' || lowerStatus === 'unpaid',
+                'bg-red-100 text-red-800 border-red-200': lowerStatus === 'canceled',
+            })}
+        >
+            {status.charAt(0).toUpperCase() + status.slice(1)}
+        </Badge>
+    );
 }
 
 export default async function AdminUsersPage() {
@@ -53,6 +73,8 @@ export default async function AdminUsersPage() {
                 <TableRow>
                   <TableHead>User</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead>Subscription</TableHead>
+                  <TableHead className="text-center">Proposals</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -68,6 +90,10 @@ export default async function AdminUsersPage() {
                       </div>
                     </TableCell>
                     <TableCell>{user.email || "N/A"}</TableCell>
+                    <TableCell>
+                        <SubscriptionBadge status={user.subscriptionStatus} />
+                    </TableCell>
+                    <TableCell className="text-center">{user.proposalCount}</TableCell>
                     <TableCell className="text-right">
                       <UserActions user={user} />
                     </TableCell>
