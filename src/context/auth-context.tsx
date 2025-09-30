@@ -15,7 +15,7 @@ interface UserProfile {
   stripeCustomerId?: string;
   subscriptionId?: string;
   subscriptionStatus?: 'active' | 'trialing' | 'canceled' | 'past_due' | 'unpaid' | string;
-  subscriptionCurrentPeriodEnd?: Date;
+  subscriptionCurrentPeriodEnd?: string; // Changed to string
   subscriptionInterval?: 'month' | 'year';
   proposalCount?: number;
 }
@@ -41,10 +41,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const unsubscribeSnapshot = onSnapshot(userRef, (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
-            setUserProfile({
+            const profile: UserProfile = {
               ...data,
-              subscriptionCurrentPeriodEnd: data.subscriptionCurrentPeriodEnd?.toDate(),
-            } as UserProfile);
+              // Convert Timestamp to ISO string to prevent serialization issues
+              subscriptionCurrentPeriodEnd: data.subscriptionCurrentPeriodEnd?.toDate().toISOString(),
+            } as UserProfile;
+            setUserProfile(profile);
           } else {
             setUserProfile(null);
           }
