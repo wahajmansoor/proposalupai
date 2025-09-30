@@ -13,10 +13,7 @@ let app: App;
 
 if (!getApps().length) {
   try {
-    // Replace escaped newlines before parsing
-    const sanitizedServiceAccountString = serviceAccountString.replace(/\\n/g, '\n');
-    const serviceAccount = JSON.parse(sanitizedServiceAccountString);
-    
+    const serviceAccount = JSON.parse(serviceAccountString.replace(/\\n/g, '\n'));
     app = initializeApp({
       credential: cert(serviceAccount),
     });
