@@ -1,15 +1,28 @@
 
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
+import { getUsers } from "./actions";
+import { Badge } from "@/components/ui/badge";
+import { cn } from "@/lib/utils";
 
-// This is a placeholder for the user data we will fetch from Firestore.
-const users = [
-  { id: '1', name: 'John Doe', email: 'john@example.com', status: 'Active', plan: 'Pro Monthly', proposals: 12, joined: '2023-10-01' },
-  { id: '2', name: 'Jane Smith', email: 'jane@example.com', status: 'Trialing', plan: 'Pro Yearly', proposals: 3, joined: '2023-10-15' },
-  { id: '3', name: 'Sam Wilson', email: 'sam@example.com', status: 'Canceled', plan: 'N/A', proposals: 25, joined: '2023-09-20' },
-]
+export default async function AdminUsersPage() {
+  const users = await getUsers();
 
-export default function AdminUsersPage() {
+  const getStatusBadgeVariant = (status: string) => {
+    switch (status.toLowerCase()) {
+      case 'active':
+        return 'bg-green-100 text-green-800 border-green-200 hover:bg-green-100';
+      case 'trialing':
+        return 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-100';
+      case 'canceled':
+        return 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-100';
+      case 'past due':
+        return 'bg-red-100 text-red-800 border-red-200 hover:bg-red-100';
+      default:
+        return 'secondary';
+    }
+  }
+
   return (
     <div className="space-y-6">
       <div className="space-y-1">
@@ -20,7 +33,7 @@ export default function AdminUsersPage() {
         <CardHeader>
           <CardTitle>All Users</CardTitle>
           <CardDescription>
-            This is a static placeholder. In the next step, we will fetch and display real user data from your database.
+            A live list of all registered users in your application.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -31,6 +44,7 @@ export default function AdminUsersPage() {
                 <TableHead>Email</TableHead>
                 <TableHead>Subscription Status</TableHead>
                 <TableHead>Plan</TableHead>
+                <TableHead>Joined</TableHead>
                 <TableHead className="text-right">Proposals Created</TableHead>
               </TableRow>
             </TableHeader>
@@ -39,11 +53,23 @@ export default function AdminUsersPage() {
                 <TableRow key={user.id}>
                   <TableCell className="font-medium">{user.name}</TableCell>
                   <TableCell>{user.email}</TableCell>
-                  <TableCell>{user.status}</TableCell>
+                  <TableCell>
+                    <Badge variant="outline" className={cn("font-normal", getStatusBadgeVariant(user.status))}>
+                      {user.status}
+                    </Badge>
+                  </TableCell>
                   <TableCell>{user.plan}</TableCell>
+                  <TableCell>{user.joined}</TableCell>
                   <TableCell className="text-right">{user.proposals}</TableCell>
                 </TableRow>
               ))}
+               {users.length === 0 && (
+                <TableRow>
+                    <TableCell colSpan={6} className="text-center h-24 text-muted-foreground">
+                        No users found.
+                    </TableCell>
+                </TableRow>
+               )}
             </TableBody>
           </Table>
         </CardContent>
