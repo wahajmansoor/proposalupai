@@ -20,6 +20,7 @@ export default async function AdminUsersPage() {
     users = await getUsers();
   } catch (error: any) {
     fetchError = error.message;
+    console.error("Error rendered on page:", error);
   }
 
   return (

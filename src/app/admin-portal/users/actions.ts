@@ -1,4 +1,3 @@
-
 'use server';
 
 import { getAdminSession } from '@/app/login/actions';
@@ -35,7 +34,10 @@ export async function getUsers(): Promise<AppUser[]> {
     return users;
   } catch (error) {
     console.error("Error fetching users:", error);
-    // This is the error that is continuously being thrown.
-    throw new Error("Failed to fetch user data from the database.");
+    // Re-throw the original error to get more details on the client.
+    if (error instanceof Error) {
+        throw new Error(`Failed to fetch user data: ${error.message}`);
+    }
+    throw new Error("An unknown error occurred while fetching user data.");
   }
 }
