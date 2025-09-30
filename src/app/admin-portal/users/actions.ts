@@ -8,11 +8,6 @@ export interface AppUser {
   id: string;
   name: string | null;
   email: string | null;
-  // Temporarily removing other fields to debug
-  // status: string;
-  // plan: string;
-  // proposals: number;
-  // joined: string;
 }
 
 export async function getUsers(): Promise<AppUser[]> {
@@ -41,6 +36,7 @@ export async function getUsers(): Promise<AppUser[]> {
     return users;
   } catch (error) {
     console.error("Error fetching users:", error);
+    // This is the error that is continuously being thrown.
     throw new Error("Failed to fetch user data from the database.");
   }
 }
