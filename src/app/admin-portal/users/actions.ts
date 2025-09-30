@@ -23,13 +23,12 @@ export async function getUsers(): Promise<AppUser[]> {
       return [];
     }
 
-    // Simplified mapping to isolate the error
     const users: AppUser[] = usersSnapshot.docs.map(doc => {
       const data = doc.data();
       return {
         id: doc.id,
-        name: data.displayName || 'N/A',
-        email: data.email || 'N/A',
+        name: data.displayName || null, // Safely access displayName
+        email: data.email || null,      // Safely access email
       };
     });
 
