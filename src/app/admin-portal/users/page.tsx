@@ -1,21 +1,22 @@
-
+// app/admin/users/page.tsx
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { getUsers, AppUser } from './actions';
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { getUsers, AppUser } from "./actions";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 
 function getInitials(name: string | null | undefined) {
-    if (!name) return 'U';
-    const names = name.split(' ');
-    if (names.length > 1 && names[1]) {
-      return `${names[0][0]}${names[names.length - 1][0]}`;
-    }
-    return name.substring(0, 2).toUpperCase();
-};
+  if (!name) return "U";
+  const names = name.split(" ");
+  if (names.length > 1 && names[1]) {
+    return `${names[0][0]}${names[names.length - 1][0]}`;
+  }
+  return name.substring(0, 2).toUpperCase();
+}
 
 export default async function AdminUsersPage() {
   let users: AppUser[] = [];
   let fetchError: string | null = null;
+
   try {
     users = await getUsers();
   } catch (error: any) {
@@ -29,25 +30,23 @@ export default async function AdminUsersPage() {
         <h1 className="text-3xl font-bold tracking-tight">User Management</h1>
         <p className="text-muted-foreground">View and manage all users in your application.</p>
       </div>
-      
+
       <Card>
         <CardHeader>
           <CardTitle>All Users</CardTitle>
-          <CardDescription>
-            A live list of all registered users in your application.
-          </CardDescription>
+          <CardDescription>A live list of all registered users in your application.</CardDescription>
         </CardHeader>
         <CardContent>
-           {fetchError ? (
-             <div className="text-center text-destructive py-12">
-                <p className="font-bold">Error Fetching Users</p>
-                <p className="text-sm">{fetchError}</p>
-             </div>
-           ) : users.length === 0 ? (
-             <p className="text-center text-muted-foreground py-12">
-                No users found in the database.
-             </p>
-           ) : (
+          {fetchError ? (
+            <div className="text-center text-destructive py-12">
+              <p className="font-bold">Error Fetching Users</p>
+              <p className="text-sm">{fetchError}</p>
+            </div>
+          ) : users.length === 0 ? (
+            <p className="text-center text-muted-foreground py-12">
+              No users found in the database.
+            </p>
+          ) : (
             <Table>
               <TableHeader>
                 <TableRow>
@@ -61,18 +60,17 @@ export default async function AdminUsersPage() {
                     <TableCell>
                       <div className="flex items-center gap-3">
                         <Avatar className="h-9 w-9">
-                          {/* We don't have photoURL in the simplified AppUser, so we use fallback */}
                           <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                         </Avatar>
-                        <div className="font-medium">{user.name || 'N/A'}</div>
+                        <div className="font-medium">{user.name || "N/A"}</div>
                       </div>
                     </TableCell>
-                    <TableCell>{user.email || 'N/A'}</TableCell>
+                    <TableCell>{user.email || "N/A"}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>
             </Table>
-           )}
+          )}
         </CardContent>
       </Card>
     </div>
