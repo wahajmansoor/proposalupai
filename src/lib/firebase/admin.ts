@@ -6,8 +6,8 @@ import { getFirestore, Firestore } from 'firebase-admin/firestore';
 // Check for the new, simpler environment variables.
 const projectId = process.env.FIREBASE_PROJECT_ID;
 const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-// The private key from the .env file will have its newlines escaped. We need to un-escape them.
-const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+// The private key from the .env file must be handled carefully.
+const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
 if (!projectId || !clientEmail || !privateKey) {
   throw new Error(
