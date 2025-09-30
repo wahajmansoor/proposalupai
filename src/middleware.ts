@@ -9,13 +9,13 @@ const ADMIN_SESSION_COOKIE = 'admin-session';
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   
-  // Define admin routes that need protection
-  const adminRoutes = ['/admin-portal'];
+  // Define all admin routes that need protection
+  const adminRoutes = ['/admin-portal/users', '/admin-portal'];
 
-  // Check if the current route is an admin route (but not the login page itself)
-  const isAdminRoute = adminRoutes.some(route => pathname.startsWith(route)) && pathname !== '/admin-portal/login';
+  // Check if the current route is one of the protected admin routes
+  const isProtectedRoute = adminRoutes.includes(pathname);
 
-  if (isAdminRoute) {
+  if (isProtectedRoute) {
     const sessionCookie = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
 
     if (!sessionCookie) {
@@ -25,9 +25,10 @@ export async function middleware(request: NextRequest) {
 
     try {
       // Verify the JWT token
-      const decoded = await new Promise((resolve, reject) => {
+      // Using a promise wrapper for the callback-style verify function
+      await new Promise((resolve, reject) => {
           verify(sessionCookie, JWT_SECRET, {}, (err, decoded) => {
-              if (err) reject(err);
+              if (err) return reject(err);
               resolve(decoded);
           });
       });
