@@ -4,7 +4,6 @@ import { getAdminSession } from '@/app/login/actions';
 import { redirect } from 'next/navigation';
 import { Sidebar, SidebarProvider, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarHeader, SidebarTrigger, SidebarContent, SidebarFooter } from '@/components/ui/sidebar';
 import { Home, Users, LogOut, PanelLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { adminLogout } from '@/app/login/actions';
 
 export default async function AdminLayout({
@@ -26,16 +25,16 @@ export default async function AdminLayout({
 
   return (
     <SidebarProvider>
-        <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-            <Sidebar side="left" className="hidden border-r bg-gray-900 text-white md:block" collapsible="icon">
-                <SidebarContent className="flex h-full max-h-screen flex-col gap-2">
+        <div className="min-h-screen w-full">
+            <Sidebar side="left" className="hidden md:block" collapsible="icon">
+                <SidebarContent className="flex h-full max-h-screen flex-col gap-2 bg-gray-900 text-white">
                     <SidebarHeader className="flex h-14 items-start justify-center border-b border-gray-800 px-4 lg:h-[60px] lg:px-6">
                         <Link href="/admin-portal" className="flex items-start gap-2 font-semibold text-white">
                             <span className="text-2xl group-data-[collapsible=icon]:hidden">Admin Panel</span>
                         </Link>
                     </SidebarHeader>
                     <div className="flex-1">
-                        <SidebarMenu className="px-2 py-4 text-sm font-medium text-gray-300 lg:px-4">
+                        <SidebarMenu className="px-2 py-4 text-sm font-medium lg:px-4">
                             <SidebarMenuItem>
                                 <Link href="/admin-portal" className="w-full">
                                     <SidebarMenuButton className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800" tooltip="Dashboard">
@@ -66,8 +65,8 @@ export default async function AdminLayout({
                     </SidebarFooter>
                 </SidebarContent>
             </Sidebar>
-            <div className="flex flex-col">
-                 <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+            <div className="flex flex-col md:ml-[var(--sidebar-width)] group-data-[state=collapsed]:md:ml-[var(--sidebar-width-icon)] transition-[margin-left] duration-300 ease-in-out">
+                 <header className="sticky top-0 flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
                     <SidebarTrigger className="shrink-0 md:hidden">
                         <PanelLeft />
                         <span className="sr-only">Toggle Menu</span>
