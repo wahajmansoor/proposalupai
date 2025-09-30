@@ -9,7 +9,6 @@ export interface AppUser {
 }
 
 export async function getUsers(): Promise<AppUser[]> {
-  console.log("adminAuth is:", adminAuth);
   if (!adminAuth) {
     throw new Error("Firebase Admin SDK not initialized. Check server logs for details.");
   }

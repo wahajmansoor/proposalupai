@@ -1,25 +1,42 @@
-// lib/firebase/admin.ts
-import * as admin from "firebase-admin";
+'server-only';
+import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
+import { getAuth, Auth } from 'firebase-admin/auth';
+import { getFirestore, Firestore } from 'firebase-admin/firestore';
 
-if (!admin.apps.length) {
-  const serviceAccount = {
-      projectId: process.env.FIREBASE_PROJECT_ID,
-      clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-      privateKey: process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, "\n"),
-  };
+let app: App;
+let adminAuth: Auth;
+let adminDb: Firestore;
 
-  if (serviceAccount.projectId && serviceAccount.clientEmail && serviceAccount.privateKey) {
-    try {
-      admin.initializeApp({
-        credential: admin.credential.cert(serviceAccount),
-      });
-    } catch (error: any) {
-      console.error("Firebase Admin initialization error:", error.message);
-    }
-  } else {
-      console.warn("Firebase Admin credentials are not fully configured in environment variables. Admin features may not work.");
+try {
+  const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+  if (!serviceAccountString) {
+    throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set.');
   }
+
+  const serviceAccount = JSON.parse(serviceAccountString);
+
+  // Vercel escapes newlines, so we must un-escape them
+  if (serviceAccount.private_key) {
+    serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+  }
+
+  if (!getApps().length) {
+    app = initializeApp({
+      credential: cert(serviceAccount),
+    });
+  } else {
+    app = getApps()[0];
+  }
+
+  adminAuth = getAuth(app);
+  adminDb = getFirestore(app);
+
+} catch (error: any) {
+  console.error('Firebase Admin SDK initialization failed:', error.message);
+  // @ts-ignore
+  adminAuth = undefined;
+  // @ts-ignore
+  adminDb = undefined;
 }
 
-export const adminAuth = admin.apps.length ? admin.auth() : undefined;
-export const adminDb = admin.apps.length ? admin.firestore() : undefined;
+export { adminAuth, adminDb };
