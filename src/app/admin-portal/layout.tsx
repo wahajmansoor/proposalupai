@@ -40,16 +40,16 @@ export default async function AdminLayout({
                         <SidebarMenu className="px-2 py-4 lg:px-4">
                             <SidebarMenuItem>
                                 <Link href="/admin-portal" className="w-full">
-                                    <SidebarMenuButton className="w-full">
-                                        <Home className="h-4 w-4" />
+                                    <SidebarMenuButton className="w-full justify-start">
+                                        <Home className="mr-2 h-4 w-4" />
                                         Dashboard
                                     </SidebarMenuButton>
                                 </Link>
                             </SidebarMenuItem>
                             <SidebarMenuItem>
                                 <Link href="/admin-portal/users" className="w-full">
-                                    <SidebarMenuButton className="w-full">
-                                        <Users className="h-4 w-4" />
+                                    <SidebarMenuButton className="w-full justify-start">
+                                        <Users className="mr-2 h-4 w-4" />
                                         Users
                                     </SidebarMenuButton>
                                 </Link>
@@ -68,7 +68,7 @@ export default async function AdminLayout({
             </Sidebar>
             <div className="flex flex-col">
                  <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
-                    <SidebarTrigger className="md:hidden">
+                    <SidebarTrigger className="shrink-0 md:hidden">
                         <PanelLeft />
                         <span className="sr-only">Toggle Menu</span>
                     </SidebarTrigger>
@@ -76,7 +76,7 @@ export default async function AdminLayout({
                        {/* You can add breadcrumbs or search here if needed */}
                     </div>
                 </header>
-                <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6">
+                <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-background">
                     {children}
                 </main>
             </div>
