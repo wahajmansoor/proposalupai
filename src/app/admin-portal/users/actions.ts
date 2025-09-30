@@ -149,11 +149,13 @@ export async function createAdminCustomerPortalSession(formData: FormData): Prom
     }
 
     const { stripeCustomerId } = validatedFields.data;
+    
+    const returnUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/admin-portal/users`;
 
     try {
         const portalSession = await stripe.billingPortal.sessions.create({
             customer: stripeCustomerId,
-            return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/admin-portal/users`,
+            return_url: returnUrl,
         });
 
         if (!portalSession.url) {
