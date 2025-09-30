@@ -21,7 +21,8 @@ export async function getUsers(): Promise<AppUser[]> {
   }
 
   try {
-    const usersSnapshot = await adminDb.collection('users').orderBy('createdAt', 'desc').get();
+    // Removed orderBy('createdAt', 'desc') to prevent missing index error.
+    const usersSnapshot = await adminDb.collection('users').get();
     
     if (usersSnapshot.empty) {
       return [];
