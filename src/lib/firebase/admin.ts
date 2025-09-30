@@ -1,47 +1,46 @@
-
 'server-only';
-import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
+import { initializeApp, getApps, cert, App, ServiceAccount } from 'firebase-admin/app';
 import { getAuth, Auth } from 'firebase-admin/auth';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
-
-const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
 let app: App;
 let adminAuth: Auth;
 let adminDb: Firestore;
 
-if (!serviceAccountString) {
-  console.error('Firebase Admin SDK Error: FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set.');
-  // @ts-ignore - Allow adminAuth and adminDb to be undefined if initialization fails
+const projectId = process.env.FIREBASE_PROJECT_ID;
+const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+
+if (!projectId || !clientEmail || !privateKey) {
+  console.error("Firebase Admin SDK Error: One or more required environment variables (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY) are not set.");
+  // @ts-ignore
   adminAuth = undefined;
   // @ts-ignore
   adminDb = undefined;
 } else {
-  try {
-    const serviceAccount = JSON.parse(serviceAccountString);
+  const serviceAccount: ServiceAccount = {
+    projectId,
+    clientEmail,
+    privateKey: privateKey.replace(/\\n/g, '\n'), // Replace escaped newlines
+  };
 
-    // Vercel might escape newlines, so we need to replace them back.
-    if (serviceAccount.private_key) {
-      serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
-    }
-
-    if (!getApps().length) {
+  if (!getApps().length) {
+    try {
       app = initializeApp({
         credential: cert(serviceAccount),
       });
-    } else {
-      app = getApps()[0];
+    } catch (error: any) {
+      console.error('Firebase Admin SDK initialization failed:', error);
     }
-
-    adminAuth = getAuth(app);
-    adminDb = getFirestore(app);
-  } catch (error: any) {
-    console.error('Firebase Admin SDK initialization failed:', error);
-    // @ts-ignore - Allow adminAuth and adminDb to be undefined if initialization fails
-    adminAuth = undefined;
-    // @ts-ignore
-    adminDb = undefined;
+  } else {
+    app = getApps()[0];
   }
+  
+  // @ts-ignore
+  adminAuth = app ? getAuth(app) : undefined;
+  // @ts-ignore
+  adminDb = app ? getFirestore(app) : undefined;
 }
+
 
 export { adminAuth, adminDb };
