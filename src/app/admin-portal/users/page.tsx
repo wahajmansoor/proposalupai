@@ -16,11 +16,15 @@ function getInitials(name: string | null | undefined) {
   return name.substring(0, 2).toUpperCase();
 }
 
-function SubscriptionBadge({ status }: { status: string | null }) {
+function SubscriptionBadge({ status, interval }: { status: string | null, interval: 'month' | 'year' | null }) {
     if (!status || status === 'N/A' || status === 'No Record') {
         return <Badge variant="outline">{status || 'Unknown'}</Badge>;
     }
     const lowerStatus = status.toLowerCase();
+    
+    const statusText = status.charAt(0).toUpperCase() + status.slice(1);
+    const intervalText = interval ? `(${interval.charAt(0).toUpperCase() + interval.slice(1)})` : '';
+    
     return (
         <Badge
             variant={cn({
@@ -29,7 +33,7 @@ function SubscriptionBadge({ status }: { status: string | null }) {
                 "secondary": lowerStatus === 'past_due' || lowerStatus === 'unpaid',
             }) as "default" | "destructive" | "secondary"}
         >
-            {status.charAt(0).toUpperCase() + status.slice(1)}
+            {statusText} {['active', 'trialing'].includes(lowerStatus) && intervalText}
         </Badge>
     );
 }
@@ -91,7 +95,7 @@ export default async function AdminUsersPage() {
                     </TableCell>
                     <TableCell>{user.email || "N/A"}</TableCell>
                     <TableCell>
-                        <SubscriptionBadge status={user.subscriptionStatus} />
+                        <SubscriptionBadge status={user.subscriptionStatus} interval={user.subscriptionInterval} />
                     </TableCell>
                     <TableCell className="text-center">{user.proposalCount}</TableCell>
                     <TableCell className="text-right">

@@ -11,6 +11,7 @@ export interface AppUser {
   email: string | null;
   subscriptionStatus: string | null;
   proposalCount: number;
+  subscriptionInterval: 'month' | 'year' | null;
 }
 
 export async function getUsers(): Promise<AppUser[]> {
@@ -33,6 +34,7 @@ export async function getUsers(): Promise<AppUser[]> {
           email: user.email,
           subscriptionStatus: userData?.subscriptionStatus || 'N/A',
           proposalCount: userData?.proposalCount || 0,
+          subscriptionInterval: userData?.subscriptionInterval || null,
         };
       } else {
         // Fallback for users who might exist in Auth but not Firestore
@@ -42,6 +44,7 @@ export async function getUsers(): Promise<AppUser[]> {
           email: user.email,
           subscriptionStatus: 'No Record',
           proposalCount: 0,
+          subscriptionInterval: null,
         };
       }
     });
