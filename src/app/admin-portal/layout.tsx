@@ -1,10 +1,11 @@
 
 import { getAdminSession, adminLogout } from './login/actions';
-import { redirect } from 'next/navigation';
+import { redirect, usePathname } from 'next/navigation';
 import { Sidebar, SidebarProvider, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarHeader, SidebarTrigger, SidebarContent, SidebarFooter } from '@/components/ui/sidebar';
 import { Home, Users, LogOut, PanelLeft } from 'lucide-react';
 import { ProposalUpLogo } from '@/components/icons';
 import { Button } from '@/components/ui/button';
+import { cookies } from 'next/headers';
 
 export default async function AdminLayout({
   children,

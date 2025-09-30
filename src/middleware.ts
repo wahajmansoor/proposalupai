@@ -1,36 +1,32 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-
-const ADMIN_SESSION_COOKIE = 'admin-session';
+import { getAdminSession } from '@/app/admin-portal/login/actions';
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
-  const sessionCookie = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
 
-  // Check if the requested path is within the admin portal
-  if (pathname.startsWith('/admin-portal')) {
-    const isLoginPage = pathname === '/admin-portal/login';
-
-    // If on the login page, do nothing special.
-    // Let the page render, regardless of session status.
-    if (isLoginPage) {
-      return NextResponse.next();
+  // Exclude the login page from the session check
+  if (pathname === '/admin-portal/login') {
+    const session = await getAdminSession();
+    // If user is logged in and tries to access login page, redirect to dashboard
+    if (session) {
+      return NextResponse.redirect(new URL('/admin-portal', request.url));
     }
+    return NextResponse.next();
+  }
 
-    // For any OTHER admin page, check for a valid session.
-    // If there is no session cookie, redirect to the login page.
-    if (!sessionCookie) {
-      const loginUrl = new URL('/admin-portal/login', request.url);
-      return NextResponse.redirect(loginUrl);
+  // For any other admin page, check for a session
+  if (pathname.startsWith('/admin-portal')) {
+    const session = await getAdminSession();
+    if (!session) {
+      return NextResponse.redirect(new URL('/admin-portal/login', request.url));
     }
   }
 
-  // For all non-admin routes, do nothing.
   return NextResponse.next();
 }
 
-// Configure the middleware to run on specific paths
 export const config = {
   matcher: ['/admin-portal/:path*'],
 };
