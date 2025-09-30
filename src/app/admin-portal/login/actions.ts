@@ -3,7 +3,7 @@
 
 import { z } from 'zod';
 import { cookies } from 'next/headers';
-import { SignJWT } from 'jose';
+import { SignJWT, jwtVerify } from 'jose';
 
 const loginSchema = z.object({
   email: z.string().email(),
