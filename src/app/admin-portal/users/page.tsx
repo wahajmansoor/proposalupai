@@ -18,6 +18,7 @@ export default async function AdminUsersPage() {
   let fetchError: string | null = null;
 
   try {
+    console.log("getUsers is:", getUsers);
     users = await getUsers();
   } catch (error: any) {
     fetchError = error.message;
