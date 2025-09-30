@@ -5,22 +5,21 @@ import { getFirestore, Firestore } from 'firebase-admin/firestore';
 
 if (!admin.apps.length) {
   try {
-    const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
-    if (!process.env.FIREBASE_PROJECT_ID || !process.env.FIREBASE_CLIENT_EMAIL || !privateKey) {
-        throw new Error('Missing Firebase Admin SDK credentials in environment variables.');
+    const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+    if (!serviceAccountString) {
+      throw new Error('FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set.');
     }
     
+    const serviceAccount = JSON.parse(serviceAccountString);
+
     admin.initializeApp({
-      credential: admin.credential.cert({
-        projectId: process.env.FIREBASE_PROJECT_ID,
-        clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-        privateKey: privateKey,
-      }),
+      credential: admin.credential.cert(serviceAccount),
     });
+
   } catch (error: any) {
     console.error('Firebase Admin SDK initialization failed:', error);
     throw new Error(
-      'Could not initialize Firebase Admin SDK. Verify the service account environment variables.'
+      'Could not initialize Firebase Admin SDK. Verify the FIREBASE_SERVICE_ACCOUNT_KEY environment variable is a valid JSON string.'
     );
   }
 }
