@@ -1,8 +1,6 @@
-
-'use server';
+"use server";
 
 import { adminAuth } from '@/lib/firebase/admin';
-import { getAdminSession } from '@/app/login/actions';
 
 export interface AppUser {
   id: string;
@@ -28,4 +26,22 @@ export async function getUsers(): Promise<AppUser[]> {
     console.error("Failed to fetch user data:", error);
     throw new Error(`Failed to fetch user data: ${error.message}`);
   }
+}
+
+async function getAdminSession() {
+    const { cookies } = await import('next/headers');
+    const { jwtVerify } = await import('jose');
+    const ADMIN_SESSION_COOKIE = 'admin-session';
+    const JWT_SECRET = process.env.ADMIN_JWT_SECRET || 'your-super-secret-jwt-key-for-admin';
+
+    const token = cookies().get(ADMIN_SESSION_COOKIE)?.value;
+    if (!token) return null;
+
+    try {
+        const secret = new TextEncoder().encode(JWT_SECRET);
+        const { payload } = await jwtVerify(token, secret);
+        return payload;
+    } catch (error) {
+        return null;
+    }
 }
