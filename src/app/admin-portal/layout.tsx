@@ -4,7 +4,6 @@ import { getAdminSession } from '@/app/login/actions';
 import { redirect } from 'next/navigation';
 import { Sidebar, SidebarProvider, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarHeader, SidebarTrigger, SidebarContent, SidebarFooter } from '@/components/ui/sidebar';
 import { Home, Users, LogOut, PanelLeft } from 'lucide-react';
-import { ProposalUpLogo } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { adminLogout } from '@/app/login/actions';
 
@@ -67,7 +66,7 @@ export default async function AdminLayout({
             </Sidebar>
             <div className="flex flex-col">
                  <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
-                    <SidebarTrigger className="shrink-0 md:hidden">
+                    <SidebarTrigger className="shrink-0">
                         <PanelLeft />
                         <span className="sr-only">Toggle Menu</span>
                     </SidebarTrigger>
@@ -83,3 +82,4 @@ export default async function AdminLayout({
     </SidebarProvider>
   );
 }
+
