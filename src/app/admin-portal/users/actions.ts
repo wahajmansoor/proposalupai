@@ -10,7 +10,7 @@ export interface AppUser {
 
 export async function getUsers(): Promise<AppUser[]> {
   if (!adminAuth) {
-    throw new Error("Firebase Admin SDK not initialized.");
+    throw new Error("Firebase Admin SDK not initialized. Check server logs for details.");
   }
   try {
     const list = await adminAuth.listUsers(1000); // max 1000 per request
