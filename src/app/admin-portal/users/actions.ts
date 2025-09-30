@@ -8,10 +8,11 @@ export interface AppUser {
   id: string;
   name: string | null;
   email: string | null;
-  status: string;
-  plan: string;
-  proposals: number;
-  joined: string;
+  // Temporarily removing other fields to debug
+  // status: string;
+  // plan: string;
+  // proposals: number;
+  // joined: string;
 }
 
 export async function getUsers(): Promise<AppUser[]> {
@@ -27,38 +28,13 @@ export async function getUsers(): Promise<AppUser[]> {
       return [];
     }
 
+    // Simplified mapping to isolate the error
     const users: AppUser[] = usersSnapshot.docs.map(doc => {
       const data = doc.data();
-      
-      const getPlanName = () => {
-          if (data.subscriptionStatus === 'active' || data.subscriptionStatus === 'trialing' || data.subscriptionStatus === 'canceled') {
-              if (data.subscriptionInterval === 'year') return 'Pro Yearly';
-              if (data.subscriptionInterval === 'month') return 'Pro Monthly';
-          }
-          return 'N/A';
-      };
-
-      const getStatus = () => {
-          if (data.subscriptionStatus === 'active') return 'Active';
-          if (data.subscriptionStatus === 'trialing') return 'Trialing';
-          if (data.subscriptionStatus === 'canceled') return 'Canceled';
-          if (data.subscriptionStatus === 'past_due') return 'Past Due';
-          return 'No Subscription';
-      }
-
-      // Defensive check for createdAt field
-      const joinedDate = (data.createdAt && typeof data.createdAt.toDate === 'function')
-        ? data.createdAt.toDate().toLocaleDateString()
-        : 'Unknown';
-
       return {
         id: doc.id,
         name: data.displayName || 'N/A',
         email: data.email || 'N/A',
-        status: getStatus(),
-        plan: getPlanName(),
-        proposals: data.proposalCount || 0,
-        joined: joinedDate,
       };
     });
 
