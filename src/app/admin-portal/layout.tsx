@@ -28,7 +28,7 @@ export default async function AdminLayout({
   return (
     <SidebarProvider>
         <div className="flex min-h-screen">
-            <Sidebar side="left" className="w-64 bg-gray-800 text-white flex-shrink-0">
+            <Sidebar side="left" className="w-64 bg-gray-800 text-white flex-shrink-0 hidden md:flex">
                 <SidebarContent className="p-0">
                     <SidebarHeader className="p-4 border-b border-gray-700">
                         <div className="flex items-center gap-3">
