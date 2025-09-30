@@ -100,7 +100,7 @@ export default async function AdminUsersPage() {
                      <TableCell>
                         {user.subscriptionInterval ? (
                             <Badge variant="outline">
-                                Pro {user.subscriptionInterval.charAt(0).toUpperCase() + user.subscriptionInterval.slice(1)}
+                                Pro {user.subscriptionInterval === 'month' ? 'Monthly' : 'Yearly'}
                             </Badge>
                         ) : "N/A"}
                     </TableCell>
