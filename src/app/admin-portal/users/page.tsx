@@ -1,8 +1,9 @@
-// app/admin/users/page.tsx
+
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getUsers, AppUser } from "./actions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { UserActions } from "./user-actions";
 
 function getInitials(name: string | null | undefined) {
   if (!name) return "U";
@@ -18,7 +19,6 @@ export default async function AdminUsersPage() {
   let fetchError: string | null = null;
 
   try {
-    console.log("getUsers is:", getUsers);
     users = await getUsers();
   } catch (error: any) {
     fetchError = error.message;
@@ -32,7 +32,7 @@ export default async function AdminUsersPage() {
         <p className="text-muted-foreground">View and manage all users in your application.</p>
       </div>
 
-      <Card>
+      <Card className="w-full">
         <CardHeader>
           <CardTitle>All Users</CardTitle>
           <CardDescription>A live list of all registered users in your application.</CardDescription>
@@ -53,6 +53,7 @@ export default async function AdminUsersPage() {
                 <TableRow>
                   <TableHead>User</TableHead>
                   <TableHead>Email</TableHead>
+                  <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -67,6 +68,9 @@ export default async function AdminUsersPage() {
                       </div>
                     </TableCell>
                     <TableCell>{user.email || "N/A"}</TableCell>
+                    <TableCell className="text-right">
+                      <UserActions user={user} />
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>
