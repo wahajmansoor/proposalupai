@@ -1,7 +1,8 @@
+
 'use server';
 
+import { adminAuth } from '@/lib/firebase/admin';
 import { getAdminSession } from '@/app/login/actions';
-import { adminDb } from '@/lib/firebase/admin';
 
 export interface AppUser {
   id: string;
@@ -16,28 +17,15 @@ export async function getUsers(): Promise<AppUser[]> {
   }
 
   try {
-    const usersSnapshot = await adminDb.collection('users').get();
-    
-    if (usersSnapshot.empty) {
-      return [];
-    }
-
-    const users: AppUser[] = usersSnapshot.docs.map(doc => {
-      const data = doc.data();
-      return {
-        id: doc.id,
-        name: data.displayName || null, // Safely access displayName
-        email: data.email || null,      // Safely access email
-      };
-    });
-
+    const listUsersResult = await adminAuth.listUsers(1000); // max 1000 per request
+    const users: AppUser[] = listUsersResult.users.map(userRecord => ({
+      id: userRecord.uid,
+      name: userRecord.displayName || null,
+      email: userRecord.email || null,
+    }));
     return users;
-  } catch (error) {
-    console.error("Error fetching users:", error);
-    // Re-throw the original error to get more details on the client.
-    if (error instanceof Error) {
-        throw new Error(`Failed to fetch user data: ${error.message}`);
-    }
-    throw new Error("An unknown error occurred while fetching user data.");
+  } catch (error: any) {
+    console.error("Failed to fetch user data:", error);
+    throw new Error(`Failed to fetch user data: ${error.message}`);
   }
 }
