@@ -1,3 +1,4 @@
+
 'server-only';
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getAuth, Auth } from 'firebase-admin/auth';
@@ -12,12 +13,9 @@ let app: App;
 
 if (!getApps().length) {
   try {
-    const serviceAccount = JSON.parse(serviceAccountString);
-    
-    // Vercel and other environments might escape newlines, so we need to replace them back.
-    if (serviceAccount.private_key) {
-      serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
-    }
+    // Replace escaped newlines before parsing
+    const sanitizedServiceAccountString = serviceAccountString.replace(/\\n/g, '\n');
+    const serviceAccount = JSON.parse(sanitizedServiceAccountString);
     
     app = initializeApp({
       credential: cert(serviceAccount),
