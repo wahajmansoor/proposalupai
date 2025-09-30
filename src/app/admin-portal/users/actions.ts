@@ -1,6 +1,6 @@
 "use server";
 
-import { auth } from "@/lib/firebaseAdmin";
+import { adminAuth } from "@/lib/firebase/admin";
 
 export interface AppUser {
   id: string;
@@ -9,11 +9,11 @@ export interface AppUser {
 }
 
 export async function getUsers(): Promise<AppUser[]> {
-  if (!auth) {
+  if (!adminAuth) {
     throw new Error("Firebase Admin SDK not initialized.");
   }
   try {
-    const list = await auth.listUsers(1000); // max 1000 per request
+    const list = await adminAuth.listUsers(1000); // max 1000 per request
     return list.users.map((user) => ({
       id: user.uid,
       name: user.displayName,
