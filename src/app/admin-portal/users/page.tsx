@@ -23,11 +23,11 @@ function SubscriptionBadge({ status }: { status: string | null }) {
     const lowerStatus = status.toLowerCase();
     return (
         <Badge
-            className={cn({
-                'bg-green-100 text-green-800 border-green-200': lowerStatus === 'active' || lowerStatus === 'trialing',
-                'bg-yellow-100 text-yellow-800 border-yellow-200': lowerStatus === 'past_due' || lowerStatus === 'unpaid',
-                'bg-red-100 text-red-800 border-red-200': lowerStatus === 'canceled',
-            })}
+            variant={cn({
+                "default": lowerStatus === 'active' || lowerStatus === 'trialing',
+                "destructive": lowerStatus === 'canceled',
+                "secondary": lowerStatus === 'past_due' || lowerStatus === 'unpaid',
+            }) as "default" | "destructive" | "secondary"}
         >
             {status.charAt(0).toUpperCase() + status.slice(1)}
         </Badge>
