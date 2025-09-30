@@ -4,6 +4,7 @@
 import { adminAuth, adminDb } from "@/lib/firebase/admin";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
+import { stripe } from "@/lib/stripe/config";
 
 export interface AppUser {
   id: string;
@@ -12,6 +13,8 @@ export interface AppUser {
   subscriptionStatus: string | null;
   proposalCount: number;
   subscriptionInterval: 'month' | 'year' | null;
+  createdAt: string | null; // Changed to string for serialization
+  stripeCustomerId: string | null;
 }
 
 export async function getUsers(): Promise<AppUser[]> {
@@ -28,6 +31,8 @@ export async function getUsers(): Promise<AppUser[]> {
       
       if (userDoc.exists) {
         const userData = userDoc.data();
+        // Convert timestamp to ISO string for safe serialization
+        const createdAt = userData?.createdAt?.toDate()?.toISOString() || null;
         return {
           id: user.uid,
           name: user.displayName,
@@ -35,6 +40,8 @@ export async function getUsers(): Promise<AppUser[]> {
           subscriptionStatus: userData?.subscriptionStatus || 'N/A',
           proposalCount: userData?.proposalCount || 0,
           subscriptionInterval: userData?.subscriptionInterval || null,
+          createdAt: createdAt,
+          stripeCustomerId: userData?.stripeCustomerId || null,
         };
       } else {
         // Fallback for users who might exist in Auth but not Firestore
@@ -45,6 +52,8 @@ export async function getUsers(): Promise<AppUser[]> {
           subscriptionStatus: 'No Record',
           proposalCount: 0,
           subscriptionInterval: null,
+          createdAt: null,
+          stripeCustomerId: null,
         };
       }
     });
@@ -124,4 +133,37 @@ export async function deleteUser(userId: string): Promise<{ success: boolean, er
     }
     return { success: false, error: error.message };
   }
+}
+
+const manageBillingSchema = z.object({
+  stripeCustomerId: z.string(),
+});
+
+export async function createAdminCustomerPortalSession(formData: FormData): Promise<{ url?: string, error?: string }> {
+    const validatedFields = manageBillingSchema.safeParse({
+        stripeCustomerId: formData.get('stripeCustomerId'),
+    });
+
+    if (!validatedFields.success) {
+        return { error: "Invalid Stripe Customer ID provided." };
+    }
+
+    const { stripeCustomerId } = validatedFields.data;
+
+    try {
+        const portalSession = await stripe.billingPortal.sessions.create({
+            customer: stripeCustomerId,
+            return_url: `${process.env.NEXT_PUBLIC_BASE_URL}/admin-portal/users`,
+        });
+
+        if (!portalSession.url) {
+          return { error: 'Could not create customer portal session.' };
+        }
+
+        return { url: portalSession.url };
+
+    } catch (error: any) {
+        console.error("Error creating admin customer portal session:", error);
+        return { error: error.message || "Failed to create billing session." };
+    }
 }

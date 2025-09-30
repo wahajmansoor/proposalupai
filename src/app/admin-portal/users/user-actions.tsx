@@ -3,8 +3,8 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash2, Loader2 } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { MoreHorizontal, Edit, Trash2, Loader2, CreditCard } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
@@ -14,7 +14,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { deleteUser, updateUser, AppUser } from './actions';
+import { deleteUser, updateUser, AppUser, createAdminCustomerPortalSession } from './actions';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 
@@ -23,6 +23,7 @@ export function UserActions({ user }: { user: AppUser }) {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isManagingBilling, setIsManagingBilling] = useState(false);
   const { toast } = useToast();
 
   const handleDelete = async () => {
@@ -52,6 +53,24 @@ export function UserActions({ user }: { user: AppUser }) {
     setIsSaving(false);
   }
 
+  const handleManageBilling = async () => {
+    if (!user.stripeCustomerId) {
+      toast({ title: 'No Billing Info', description: "This user doesn't have a Stripe customer ID.", variant: 'destructive' });
+      return;
+    }
+    setIsManagingBilling(true);
+    const formData = new FormData();
+    formData.append('stripeCustomerId', user.stripeCustomerId);
+    
+    const result = await createAdminCustomerPortalSession(formData);
+    if (result.url) {
+      window.open(result.url, '_blank');
+    } else {
+      toast({ title: 'Error', description: result.error, variant: 'destructive' });
+    }
+    setIsManagingBilling(false);
+  };
+
   return (
     <>
       <DropdownMenu>
@@ -64,11 +83,16 @@ export function UserActions({ user }: { user: AppUser }) {
         <DropdownMenuContent align="end">
           <DropdownMenuItem onSelect={() => setIsEditDialogOpen(true)}>
             <Edit className="mr-2 h-4 w-4" />
-            Edit
+            Edit User
           </DropdownMenuItem>
+           <DropdownMenuItem onSelect={handleManageBilling} disabled={!user.stripeCustomerId || isManagingBilling}>
+            {isManagingBilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
+            Manage Billing
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => setIsDeleteDialogOpen(true)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
             <Trash2 className="mr-2 h-4 w-4" />
-            Delete
+            Delete User
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>

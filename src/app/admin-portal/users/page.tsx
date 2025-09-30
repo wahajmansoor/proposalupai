@@ -6,6 +6,7 @@ import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { UserActions } from "./user-actions";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
+import { format } from "date-fns";
 
 function getInitials(name: string | null | undefined) {
   if (!name) return "U";
@@ -77,7 +78,9 @@ export default async function AdminUsersPage() {
                 <TableRow>
                   <TableHead>User</TableHead>
                   <TableHead>Email</TableHead>
-                  <TableHead>Subscription</TableHead>
+                  <TableHead>Plan</TableHead>
+                  <TableHead>Status</TableHead>
+                  <TableHead>Sign-up Date</TableHead>
                   <TableHead className="text-center">Proposals</TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
@@ -94,15 +97,18 @@ export default async function AdminUsersPage() {
                       </div>
                     </TableCell>
                     <TableCell>{user.email || "N/A"}</TableCell>
+                     <TableCell>
+                        {user.subscriptionInterval ? (
+                            <Badge variant="outline">
+                                Pro {user.subscriptionInterval.charAt(0).toUpperCase() + user.subscriptionInterval.slice(1)}
+                            </Badge>
+                        ) : "N/A"}
+                    </TableCell>
                     <TableCell>
-                       <div className="flex items-center gap-2">
                         <SubscriptionBadge status={user.subscriptionStatus} />
-                        {user.subscriptionInterval && ['active', 'trialing'].includes(user.subscriptionStatus?.toLowerCase() || '') && (
-                          <Badge variant="outline">
-                            {user.subscriptionInterval.charAt(0).toUpperCase() + user.subscriptionInterval.slice(1)}
-                          </Badge>
-                        )}
-                      </div>
+                    </TableCell>
+                    <TableCell>
+                      {user.createdAt ? format(new Date(user.createdAt), "MMM d, yyyy") : "N/A"}
                     </TableCell>
                     <TableCell className="text-center">{user.proposalCount}</TableCell>
                     <TableCell className="text-right">
