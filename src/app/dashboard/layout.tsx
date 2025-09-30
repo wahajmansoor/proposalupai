@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useAuth } from "@/context/auth-context";
@@ -13,27 +12,16 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, userProfile, loading } = useAuth();
+  const { user, loading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (loading) {
-      return; 
-    }
-    if (!user) {
+    if (!loading && !user) {
       router.replace("/login");
-      return;
     }
-    // This is the key logic gate. If the user's subscription is not active or trialing,
-    // they will be redirected. This includes 'canceled', 'past_due', etc.
-    if (!userProfile?.subscriptionStatus || !['active', 'trialing'].includes(userProfile.subscriptionStatus)) {
-        router.replace('/pricing');
-    }
-  }, [user, userProfile, loading, router]);
+  }, [user, loading, router]);
 
-  // This loading state will show until the user is verified and their subscription status is checked.
-  // If the check fails, the useEffect above will redirect them.
-  if (loading || !user || !userProfile?.subscriptionStatus || !['active', 'trialing'].includes(userProfile.subscriptionStatus)) {
+  if (loading || !user) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />
