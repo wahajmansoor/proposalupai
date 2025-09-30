@@ -33,7 +33,7 @@ export default async function AdminLayout({
                     <SidebarHeader className="flex h-14 items-center border-b border-gray-800 px-4 lg:h-[60px] lg:px-6">
                         <Link href="/admin-portal" className="flex items-center gap-2 font-semibold text-white">
                             <ProposalUpLogo className="h-6 w-6 text-primary" />
-                            <span className="">Admin Panel</span>
+                            Admin Panel
                         </Link>
                     </SidebarHeader>
                     <div className="flex-1">
