@@ -26,29 +26,29 @@ export default async function AdminLayout({
 
   return (
     <SidebarProvider>
-        <div className="grid min-h-screen w-full group/layout transition-[grid-template-columns] md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr] md:group-[[data-state=collapsed]]/layout:grid-cols-[56px_1fr]">
-            <Sidebar side="left" className="hidden border-r bg-gray-900 text-white md:block group-data-[state=collapsed]:bg-transparent group-data-[state=collapsed]:border-0">
+        <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+            <Sidebar side="left" className="hidden border-r bg-gray-900 text-white md:block" collapsible="icon">
                 <SidebarContent className="flex h-full max-h-screen flex-col gap-2">
                     <SidebarHeader className="flex h-14 items-start justify-center border-b border-gray-800 px-4 lg:h-[60px] lg:px-6">
                         <Link href="/admin-portal" className="flex items-start gap-2 font-semibold text-white">
-                            <span className="text-2xl group-data-[state=collapsed]:hidden">Admin Panel</span>
+                            <span className="text-2xl group-data-[collapsible=icon]:hidden">Admin Panel</span>
                         </Link>
                     </SidebarHeader>
                     <div className="flex-1">
                         <SidebarMenu className="px-2 py-4 text-sm font-medium text-gray-300 lg:px-4">
                             <SidebarMenuItem>
                                 <Link href="/admin-portal" className="w-full">
-                                    <SidebarMenuButton className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800">
-                                        <Home className="mr-2 h-4 w-4" />
-                                        <span className="group-data-[state=collapsed]:hidden">Dashboard</span>
+                                    <SidebarMenuButton className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800" tooltip="Dashboard">
+                                        <Home />
+                                        <span className="group-data-[collapsible=icon]:hidden">Dashboard</span>
                                     </SidebarMenuButton>
                                 </Link>
                             </SidebarMenuItem>
                             <SidebarMenuItem>
                                 <Link href="/admin-portal/users" className="w-full">
-                                    <SidebarMenuButton className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800">
-                                        <Users className="mr-2 h-4 w-4" />
-                                        <span className="group-data-[state=collapsed]:hidden">Users</span>
+                                    <SidebarMenuButton className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800" tooltip="Users">
+                                        <Users />
+                                        <span className="group-data-[collapsible=icon]:hidden">Users</span>
                                     </SidebarMenuButton>
                                 </Link>
                             </SidebarMenuItem>
@@ -56,10 +56,12 @@ export default async function AdminLayout({
                     </div>
                      <SidebarFooter className="mt-auto p-4 border-t border-gray-800">
                         <form action={handleLogout} className="w-full">
-                            <Button variant="ghost" className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800">
-                                <LogOut className="mr-2 h-4 w-4" />
-                                <span className="group-data-[state=collapsed]:hidden">Logout</span>
-                            </Button>
+                            <SidebarMenuButton asChild className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800" tooltip="Logout">
+                                <button type="submit" className="w-full">
+                                    <LogOut />
+                                    <span className="group-data-[collapsible=icon]:hidden">Logout</span>
+                                </button>
+                            </SidebarMenuButton>
                         </form>
                     </SidebarFooter>
                 </SidebarContent>
