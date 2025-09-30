@@ -21,7 +21,6 @@ export async function getUsers(): Promise<AppUser[]> {
   }
 
   try {
-    // Removed orderBy('createdAt', 'desc') to prevent missing index error.
     const usersSnapshot = await adminDb.collection('users').get();
     
     if (usersSnapshot.empty) {
@@ -47,6 +46,11 @@ export async function getUsers(): Promise<AppUser[]> {
           return 'No Subscription';
       }
 
+      // Defensive check for createdAt field
+      const joinedDate = (data.createdAt && typeof data.createdAt.toDate === 'function')
+        ? data.createdAt.toDate().toLocaleDateString()
+        : 'Unknown';
+
       return {
         id: doc.id,
         name: data.displayName || 'N/A',
@@ -54,7 +58,7 @@ export async function getUsers(): Promise<AppUser[]> {
         status: getStatus(),
         plan: getPlanName(),
         proposals: data.proposalCount || 0,
-        joined: data.createdAt?.toDate().toLocaleDateString() || 'Unknown',
+        joined: joinedDate,
       };
     });
 
