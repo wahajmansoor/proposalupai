@@ -30,10 +30,10 @@ export default async function AdminLayout({
         <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
             <Sidebar side="left" className="hidden border-r bg-gray-900 text-white md:block">
                 <SidebarContent className="flex h-full max-h-screen flex-col gap-2">
-                    <SidebarHeader className="flex h-14 items-center border-b border-gray-800 px-4 lg:h-[60px] lg:px-6">
+                    <SidebarHeader className="flex h-14 items-center justify-center border-b border-gray-800 px-4 lg:h-[60px] lg:px-6">
                         <Link href="/admin-portal" className="flex items-center gap-2 font-semibold text-white">
                             <ProposalUpLogo className="h-6 w-6 text-primary" />
-                            Admin Panel
+                            <span className="text-lg">Admin Panel</span>
                         </Link>
                     </SidebarHeader>
                     <div className="flex-1">
