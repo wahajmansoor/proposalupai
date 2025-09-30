@@ -1,60 +1,36 @@
 
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
-import { jwtVerify } from 'jose';
 
-const JWT_SECRET = process.env.ADMIN_JWT_SECRET || 'your-super-secret-jwt-key-for-admin';
 const ADMIN_SESSION_COOKIE = 'admin-session';
-
-async function verifyJWT(token: string) {
-    const secret = new TextEncoder().encode(JWT_SECRET);
-    try {
-        await jwtVerify(token, secret);
-        return true;
-    } catch (error) {
-        return false;
-    }
-}
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
   const sessionCookie = request.cookies.get(ADMIN_SESSION_COOKIE)?.value;
 
-  // Only apply admin protection logic to routes under /admin-portal
+  // Check if the requested path is within the admin portal
   if (pathname.startsWith('/admin-portal')) {
-    
-    // If the request is for the admin login page, do nothing. Let it pass.
-    if (pathname === '/admin-portal/login') {
+    const isLoginPage = pathname === '/admin-portal/login';
+
+    // If on the login page, do nothing special.
+    // Let the page render, regardless of session status.
+    if (isLoginPage) {
       return NextResponse.next();
     }
 
-    // For any other page under /admin-portal, a valid session is required.
-    const hasVerifiedSession = sessionCookie && (await verifyJWT(sessionCookie));
-
-    if (!hasVerifiedSession) {
-      // If no valid session, redirect to the admin login page.
+    // For any OTHER admin page, check for a valid session.
+    // If there is no session cookie, redirect to the login page.
+    if (!sessionCookie) {
       const loginUrl = new URL('/admin-portal/login', request.url);
-      const response = NextResponse.redirect(loginUrl);
-      // Clear the invalid cookie just in case.
-      response.cookies.delete(ADMIN_SESSION_COOKIE);
-      return response;
+      return NextResponse.redirect(loginUrl);
     }
   }
 
-  // Allow all other non-admin requests to proceed
+  // For all non-admin routes, do nothing.
   return NextResponse.next();
 }
 
 // Configure the middleware to run on specific paths
 export const config = {
-  matcher: [
-    /*
-     * Match all request paths except for the ones starting with:
-     * - api (API routes)
-     * - _next/static (static files)
-     * - _next/image (image optimization files)
-     * - favicon.ico (favicon file)
-     */
-    '/((?!api|_next/static|_next/image|favicon.ico).*)',
-  ],
+  matcher: ['/admin-portal/:path*'],
 };
