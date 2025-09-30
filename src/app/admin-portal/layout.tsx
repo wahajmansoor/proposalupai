@@ -1,4 +1,5 @@
 
+import Link from 'next/link';
 import { getAdminSession } from '@/app/login/actions';
 import { redirect } from 'next/navigation';
 import { Sidebar, SidebarProvider, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarHeader, SidebarTrigger, SidebarContent, SidebarFooter } from '@/components/ui/sidebar';
@@ -37,16 +38,20 @@ export default async function AdminLayout({
                     </SidebarHeader>
                     <SidebarMenu className="flex-1 p-4">
                         <SidebarMenuItem>
-                            <SidebarMenuButton href="/admin-portal" className="text-white hover:bg-gray-700">
-                                <Home />
-                                <span>Dashboard</span>
-                            </SidebarMenuButton>
+                            <Link href="/admin-portal" className="w-full">
+                                <SidebarMenuButton className="text-white hover:bg-gray-700 w-full">
+                                    <Home />
+                                    <span>Dashboard</span>
+                                </SidebarMenuButton>
+                            </Link>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
-                            <SidebarMenuButton href="/admin-portal/users" className="text-white hover:bg-gray-700">
-                                <Users />
-                                <span>Users</span>
-                            </SidebarMenuButton>
+                             <Link href="/admin-portal/users" className="w-full">
+                                <SidebarMenuButton className="text-white hover:bg-gray-700 w-full">
+                                    <Users />
+                                    <span>Users</span>
+                                </SidebarMenuButton>
+                            </Link>
                         </SidebarMenuItem>
                     </SidebarMenu>
                     <SidebarFooter className="p-4 border-t border-gray-700">
