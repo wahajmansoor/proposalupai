@@ -15,13 +15,13 @@ export default async function AdminLayout({
   const session = await getAdminSession();
   
   if (!session) {
-    redirect('/login');
+    redirect('/admin-login');
   }
 
   const handleLogout = async () => {
     'use server';
     await adminLogout();
-    redirect('/login');
+    redirect('/admin-login');
   }
 
   return (
