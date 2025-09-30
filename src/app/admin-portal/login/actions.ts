@@ -3,7 +3,7 @@
 
 import { z } from 'zod';
 import { cookies } from 'next/headers';
-import { sign, verify } from 'jsonwebtoken';
+import { SignJWT } from 'jose';
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -34,8 +34,13 @@ export async function adminLogin(formData: FormData): Promise<{ success: boolean
   if (isAdminEmailValid && isAdminPasswordValid) {
     // Create a session token (JWT)
     const payload = { sub: email, admin: true };
-    const token = sign(payload, JWT_SECRET, { expiresIn: '1d' }); // Token expires in 1 day
-
+    const secret = new TextEncoder().encode(JWT_SECRET);
+    const token = await new SignJWT(payload)
+        .setProtectedHeader({ alg: 'HS256' })
+        .setIssuedAt()
+        .setExpirationTime('1d')
+        .sign(secret);
+    
     // Set the token in a secure, httpOnly cookie
     cookies().set(ADMIN_SESSION_COOKIE, token, {
       httpOnly: true,
@@ -60,8 +65,9 @@ export async function getAdminSession() {
   if (!token) return null;
 
   try {
-    const decoded = verify(token, JWT_SECRET);
-    return decoded as { sub: string; admin: boolean };
+    const secret = new TextEncoder().encode(JWT_SECRET);
+    const { payload } = await jwtVerify(token, secret);
+    return payload as { sub: string; admin: boolean; iat: number; exp: number };
   } catch (error) {
     return null;
   }
