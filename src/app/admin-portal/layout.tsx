@@ -26,7 +26,7 @@ export default async function AdminLayout({
   return (
     <SidebarProvider>
         <div className="group flex min-h-screen w-full bg-muted/40">
-            <Sidebar side="left" className="hidden shrink-0 md:flex md:flex-col" collapsible="icon">
+            <Sidebar side="left" className="shrink-0" collapsible="icon">
                 <SidebarContent className="flex h-full max-h-screen flex-col gap-2 bg-gray-900 text-white overflow-hidden">
                     <SidebarHeader className="flex h-14 items-start justify-start border-b border-gray-800 px-4 lg:h-[60px] lg:px-6">
                         <Link href="/admin-portal" className="flex items-start gap-2 font-semibold text-white whitespace-nowrap">
@@ -65,9 +65,9 @@ export default async function AdminLayout({
                     </SidebarFooter>
                 </SidebarContent>
             </Sidebar>
-            <div className="flex flex-1 flex-col">
+            <div className="flex-1 flex flex-col">
                  <header className="sticky top-0 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6 z-10">
-                    <SidebarTrigger className="shrink-0 md:hidden">
+                    <SidebarTrigger className="shrink-0">
                         <PanelLeft />
                         <span className="sr-only">Toggle Menu</span>
                     </SidebarTrigger>
