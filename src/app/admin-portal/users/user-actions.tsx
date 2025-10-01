@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash2, Loader2, CreditCard } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, Loader2, CreditCard, Mail } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
@@ -14,16 +14,18 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { deleteUser, updateUser, AppUser, createAdminCustomerPortalSession } from './actions';
+import { deleteUser, updateUser, AppUser, createAdminCustomerPortalSession, sendPasswordResetLink } from './actions';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 
 export function UserActions({ user }: { user: AppUser }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isPasswordResetDialogOpen, setIsPasswordResetDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isManagingBilling, setIsManagingBilling] = useState(false);
+  const [isSendingReset, setIsSendingReset] = useState(false);
   const { toast } = useToast();
 
   const handleDelete = async () => {
@@ -71,6 +73,25 @@ export function UserActions({ user }: { user: AppUser }) {
     setIsManagingBilling(false);
   };
 
+  const handleSendPasswordReset = async () => {
+    if (!user.email) {
+      toast({ title: 'No Email Found', description: "This user doesn't have an email address.", variant: 'destructive' });
+      return;
+    }
+    setIsSendingReset(true);
+    const formData = new FormData();
+    formData.append('email', user.email);
+
+    const result = await sendPasswordResetLink(formData);
+    if (result.success) {
+      toast({ title: 'Email Sent', description: `A password reset email has been sent to ${user.email}.` });
+    } else {
+      toast({ title: 'Error', description: result.error, variant: 'destructive' });
+    }
+    setIsSendingReset(false);
+    setIsPasswordResetDialogOpen(false);
+  };
+
   return (
     <>
       <DropdownMenu>
@@ -88,6 +109,10 @@ export function UserActions({ user }: { user: AppUser }) {
            <DropdownMenuItem onSelect={handleManageBilling} disabled={!user.stripeCustomerId || isManagingBilling}>
             {isManagingBilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
             Manage Billing
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => setIsPasswordResetDialogOpen(true)}>
+            <Mail className="mr-2 h-4 w-4" />
+            Send Password Reset
           </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => setIsDeleteDialogOpen(true)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
@@ -143,6 +168,24 @@ export function UserActions({ user }: { user: AppUser }) {
             </form>
         </DialogContent>
       </Dialog>
+      
+      <AlertDialog open={isPasswordResetDialogOpen} onOpenChange={setIsPasswordResetDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Send Password Reset?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will send a password reset link to <span className="font-semibold">{user.email}</span>. Are you sure you want to continue?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSendPasswordReset} disabled={isSendingReset}>
+              {isSendingReset && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Send Email
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </>
   );
 }
