@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useAuth } from "@/context/auth-context";
@@ -34,7 +35,9 @@ export default function DashboardLayout({
       <Header />
       <DashboardNav />
       <main className="flex-1 w-full p-4 md:p-8">
-        {children}
+        <div className="container mx-auto">
+          {children}
+        </div>
       </main>
     </div>
   );
