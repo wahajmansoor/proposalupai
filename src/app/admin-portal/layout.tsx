@@ -26,7 +26,7 @@ export default async function AdminLayout({
   return (
     <SidebarProvider>
         <div className="group flex min-h-screen w-full bg-muted/40">
-            <Sidebar side="left" className="hidden shrink-0 md:flex md:flex-col transition-[width] duration-300 ease-in-out w-[30%] group-data-[state=collapsed]:w-0" collapsible="icon">
+            <Sidebar side="left" className="hidden shrink-0 md:flex md:flex-col" collapsible="icon">
                 <SidebarContent className="flex h-full max-h-screen flex-col gap-2 bg-gray-900 text-white overflow-hidden">
                     <SidebarHeader className="flex h-14 items-start justify-start border-b border-gray-800 px-4 lg:h-[60px] lg:px-6">
                         <Link href="/admin-portal" className="flex items-start gap-2 font-semibold text-white whitespace-nowrap">
@@ -65,7 +65,7 @@ export default async function AdminLayout({
                     </SidebarFooter>
                 </SidebarContent>
             </Sidebar>
-            <div className="flex flex-col flex-1">
+            <div className="flex flex-1 flex-col transition-[margin-left] duration-300 ease-in-out md:ml-[var(--sidebar-width)] group-data-[state=collapsed]:md:ml-[var(--sidebar-width-icon)]">
                  <header className="sticky top-0 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
                     <SidebarTrigger className="shrink-0">
                         <PanelLeft />
