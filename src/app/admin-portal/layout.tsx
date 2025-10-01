@@ -25,11 +25,11 @@ export default async function AdminLayout({
 
   return (
     <SidebarProvider>
-        <div className="flex min-h-screen w-full group bg-muted/40">
-            <Sidebar side="left" className="hidden md:flex md:flex-col md:shrink-0 md:w-[30%] group-data-[state=collapsed]:md:w-0 transition-all duration-300 ease-in-out" collapsible="icon">
-                <SidebarContent className="flex h-full max-h-screen flex-col gap-2 bg-gray-900 text-white">
+        <div className="group flex min-h-screen w-full bg-muted/40">
+            <Sidebar side="left" className="hidden shrink-0 md:flex md:flex-col transition-[width] duration-300 ease-in-out w-[30%] group-data-[state=collapsed]:w-0" collapsible="icon">
+                <SidebarContent className="flex h-full max-h-screen flex-col gap-2 bg-gray-900 text-white overflow-hidden">
                     <SidebarHeader className="flex h-14 items-start justify-start border-b border-gray-800 px-4 lg:h-[60px] lg:px-6">
-                        <Link href="/admin-portal" className="flex items-start gap-2 font-semibold text-white">
+                        <Link href="/admin-portal" className="flex items-start gap-2 font-semibold text-white whitespace-nowrap">
                             <span className="text-2xl">Admin Panel</span>
                         </Link>
                     </SidebarHeader>
@@ -37,7 +37,7 @@ export default async function AdminLayout({
                         <SidebarMenu className="px-2 py-4 text-sm font-medium lg:px-4">
                             <SidebarMenuItem>
                                 <Link href="/admin-portal" className="w-full">
-                                    <SidebarMenuButton className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800" tooltip="Dashboard">
+                                    <SidebarMenuButton className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800 whitespace-nowrap" tooltip="Dashboard">
                                         <Home />
                                         <span className="group-data-[collapsible=icon]:hidden">Dashboard</span>
                                     </SidebarMenuButton>
@@ -45,7 +45,7 @@ export default async function AdminLayout({
                             </SidebarMenuItem>
                             <SidebarMenuItem>
                                 <Link href="/admin-portal/users" className="w-full">
-                                    <SidebarMenuButton className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800" tooltip="Users">
+                                    <SidebarMenuButton className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800 whitespace-nowrap" tooltip="Users">
                                         <Users />
                                         <span className="group-data-[collapsible=icon]:hidden">Users</span>
                                     </SidebarMenuButton>
@@ -55,7 +55,7 @@ export default async function AdminLayout({
                     </div>
                      <SidebarFooter className="mt-auto p-4 border-t border-gray-800">
                         <form action={handleLogout} className="w-full">
-                            <SidebarMenuButton asChild className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800" tooltip="Logout">
+                            <SidebarMenuButton asChild className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800 whitespace-nowrap" tooltip="Logout">
                                 <button type="submit" className="w-full">
                                     <LogOut />
                                     <span className="group-data-[collapsible=icon]:hidden">Logout</span>
@@ -66,7 +66,7 @@ export default async function AdminLayout({
                 </SidebarContent>
             </Sidebar>
             <div className="flex flex-col flex-1">
-                 <header className="sticky top-0 flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
+                 <header className="sticky top-0 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6">
                     <SidebarTrigger className="shrink-0">
                         <PanelLeft />
                         <span className="sr-only">Toggle Menu</span>
