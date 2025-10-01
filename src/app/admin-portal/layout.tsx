@@ -25,15 +25,15 @@ export default async function AdminLayout({
 
   return (
     <SidebarProvider>
-        <div className="grid md:grid-cols-[auto_1fr] min-h-screen w-full group">
-            <Sidebar side="left" className="hidden md:block w-[30%] group-data-[state=collapsed]:w-0 transition-[width] duration-300 ease-in-out" collapsible="icon">
+        <div className="flex min-h-screen w-full group bg-muted/40">
+            <Sidebar side="left" className="hidden md:flex md:flex-col md:shrink-0 md:w-[30%] group-data-[state=collapsed]:md:w-0 transition-all duration-300 ease-in-out" collapsible="icon">
                 <SidebarContent className="flex h-full max-h-screen flex-col gap-2 bg-gray-900 text-white">
                     <SidebarHeader className="flex h-14 items-start justify-start border-b border-gray-800 px-4 lg:h-[60px] lg:px-6">
                         <Link href="/admin-portal" className="flex items-start gap-2 font-semibold text-white">
                             <span className="text-2xl">Admin Panel</span>
                         </Link>
                     </SidebarHeader>
-                    <div className="flex-1">
+                    <div className="flex-1 overflow-y-auto">
                         <SidebarMenu className="px-2 py-4 text-sm font-medium lg:px-4">
                             <SidebarMenuItem>
                                 <Link href="/admin-portal" className="w-full">
@@ -65,8 +65,8 @@ export default async function AdminLayout({
                     </SidebarFooter>
                 </SidebarContent>
             </Sidebar>
-            <div className="flex flex-col transition-all duration-300 ease-in-out">
-                 <header className="sticky top-0 flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+            <div className="flex flex-col flex-1">
+                 <header className="sticky top-0 flex h-14 items-center gap-4 border-b bg-background px-4 lg:h-[60px] lg:px-6">
                     <SidebarTrigger className="shrink-0">
                         <PanelLeft />
                         <span className="sr-only">Toggle Menu</span>
