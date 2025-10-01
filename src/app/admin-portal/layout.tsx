@@ -25,12 +25,12 @@ export default async function AdminLayout({
 
   return (
     <SidebarProvider>
-        <div className="min-h-screen w-full">
-            <Sidebar side="left" className="hidden md:block" collapsible="icon">
+        <div className="grid md:grid-cols-[auto_1fr] min-h-screen w-full group">
+            <Sidebar side="left" className="hidden md:block w-[30%] group-data-[state=collapsed]:w-0 transition-[width] duration-300 ease-in-out" collapsible="icon">
                 <SidebarContent className="flex h-full max-h-screen flex-col gap-2 bg-gray-900 text-white">
-                    <SidebarHeader className="flex h-14 items-start justify-center border-b border-gray-800 px-4 lg:h-[60px] lg:px-6">
+                    <SidebarHeader className="flex h-14 items-start justify-start border-b border-gray-800 px-4 lg:h-[60px] lg:px-6">
                         <Link href="/admin-portal" className="flex items-start gap-2 font-semibold text-white">
-                            <span className="text-2xl group-data-[collapsible=icon]:hidden">Admin Panel</span>
+                            <span className="text-2xl">Admin Panel</span>
                         </Link>
                     </SidebarHeader>
                     <div className="flex-1">
@@ -65,13 +65,9 @@ export default async function AdminLayout({
                     </SidebarFooter>
                 </SidebarContent>
             </Sidebar>
-            <div className="flex flex-col md:ml-[var(--sidebar-width)] group-data-[state=collapsed]:md:ml-[var(--sidebar-width-icon)] transition-[margin-left] duration-300 ease-in-out">
+            <div className="flex flex-col transition-all duration-300 ease-in-out">
                  <header className="sticky top-0 flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
-                    <SidebarTrigger className="shrink-0 md:hidden">
-                        <PanelLeft />
-                        <span className="sr-only">Toggle Menu</span>
-                    </SidebarTrigger>
-                    <SidebarTrigger className="shrink-0 hidden md:flex">
+                    <SidebarTrigger className="shrink-0">
                         <PanelLeft />
                         <span className="sr-only">Toggle Menu</span>
                     </SidebarTrigger>
