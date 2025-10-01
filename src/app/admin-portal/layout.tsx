@@ -65,9 +65,9 @@ export default async function AdminLayout({
                     </SidebarFooter>
                 </SidebarContent>
             </Sidebar>
-            <div className="flex-1 flex flex-col transition-[margin-left] duration-300 ease-in-out md:ml-0 group-data-[state=expanded]:md:ml-[var(--sidebar-width)]">
+            <div className="flex flex-1 flex-col">
                  <header className="sticky top-0 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6 z-10">
-                    <SidebarTrigger className="shrink-0 md:hidden">
+                    <SidebarTrigger className="shrink-0">
                         <PanelLeft />
                         <span className="sr-only">Toggle Menu</span>
                     </SidebarTrigger>
