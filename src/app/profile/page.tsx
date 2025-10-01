@@ -77,11 +77,11 @@ export default function ProfilePage() {
   const interval = userProfile?.subscriptionInterval;
 
   const getPlanName = () => {
-    if (subscriptionStatus === 'active' || subscriptionStatus === 'canceled' || subscriptionStatus === 'trialing') {
+    if (subscriptionStatus === 'active' || (subscriptionStatus === 'canceled' && renewalDate && new Date(renewalDate) > new Date()) || subscriptionStatus === 'trialing') {
         if (interval === 'year') return 'Pro Yearly';
         if (interval === 'month') return 'Pro Monthly';
     }
-    return 'Free Plan';
+    return 'N/A';
   }
 
   const getRenewalText = () => {
