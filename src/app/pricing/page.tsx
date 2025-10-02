@@ -1,12 +1,12 @@
 
 "use client";
 
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Loader2, Briefcase, ArrowLeft } from 'lucide-react';
-import { createCheckoutSession, activateTrialAction, createCustomerPortalSession, upgradeSubscriptionAction, changeTrialPlanAction } from '@/lib/stripe-actions';
+import { Check, Loader2, Briefcase, ArrowLeft, Tag, X } from 'lucide-react';
+import { createCheckoutSession, activateTrialAction, createCustomerPortalSession, upgradeSubscriptionAction, changeTrialPlanAction, validateCouponAction } from '@/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
@@ -16,21 +16,18 @@ import { format } from 'date-fns';
 import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
+import { Input } from '@/components/ui/input';
 
 const plans = {
   monthly: {
     name: "Pro Monthly",
-    price: "$20",
+    price: 20,
     priceDescription: "/month",
-    description: "Unlock unlimited access to all our AI-powered features and generate winning proposals in seconds.",
-    buttonText: "Start a 2-day free trial",
   },
   yearly: {
     name: "Pro Yearly",
-    price: "$200",
+    price: 200,
     priceDescription: "/year",
-    description: "Get two months free! Unlock a full year of unlimited access and maximize your proposal win rate.",
-    buttonText: "Start a 2-day free trial",
   }
 };
 
@@ -47,6 +44,12 @@ const sharedFeatures = {
     personaDescription: "For the serious freelancer who wants to save time, automate their workflow, and increase their win rate with high-quality proposals."
 };
 
+type ValidCoupon = {
+    id: string;
+    name: string | null;
+    percent_off: number | null;
+    amount_off: number | null;
+};
 
 export default function PricingPage() {
   const { user, userProfile, loading: authLoading } = useAuth();
@@ -55,6 +58,12 @@ export default function PricingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
   
+  const [showCouponInput, setShowCouponInput] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<ValidCoupon | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
+
   const subscriptionStatus = userProfile?.subscriptionStatus;
   const renewalDate = userProfile?.subscriptionCurrentPeriodEnd;
   const currentInterval = userProfile?.subscriptionInterval;
@@ -71,6 +80,36 @@ export default function PricingPage() {
 
   const currentPlan = plans[billingInterval];
 
+  const handleCouponValidation = async () => {
+    if (!couponCode.trim()) return;
+
+    setIsValidatingCoupon(true);
+    setCouponError(null);
+    setAppliedCoupon(null);
+
+    const formData = new FormData();
+    formData.append('code', couponCode.trim());
+    formData.append('plan', billingInterval);
+
+    const result = await validateCouponAction(formData);
+    
+    if (result.success && result.coupon) {
+        setAppliedCoupon(result.coupon);
+        toast({ title: 'Coupon Applied!', description: `The coupon "${result.coupon.name}" has been successfully applied.`});
+    } else {
+        setCouponError(result.error || 'An unexpected error occurred.');
+    }
+
+    setIsValidatingCoupon(false);
+  };
+
+  const removeCoupon = () => {
+    setAppliedCoupon(null);
+    setCouponCode('');
+    setCouponError(null);
+    setShowCouponInput(false);
+  };
+
   const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!user) {
@@ -81,6 +120,9 @@ export default function PricingPage() {
     
     setIsSubmitting(true);
     const formData = new FormData(event.currentTarget);
+    if (appliedCoupon) {
+      formData.append('coupon', appliedCoupon.id);
+    }
 
     if (isTrialing) {
         const result = await activateTrialAction(formData);
@@ -103,6 +145,19 @@ export default function PricingPage() {
     setIsSubmitting(false);
   };
 
+  const discountedPrice = useMemo(() => {
+    if (!appliedCoupon) return currentPlan.price;
+
+    let newPrice = currentPlan.price;
+    if (appliedCoupon.percent_off) {
+      newPrice = newPrice * (1 - appliedCoupon.percent_off / 100);
+    } else if (appliedCoupon.amount_off) {
+      newPrice = newPrice - (appliedCoupon.amount_off / 100);
+    }
+
+    return newPrice > 0 ? newPrice : 0;
+  }, [appliedCoupon, currentPlan.price]);
+
   const getButtonText = () => {
     if (isTrialing) {
         return billingInterval === 'monthly' ? 'Activate Monthly Plan' : 'Activate Yearly Plan';
@@ -111,7 +166,7 @@ export default function PricingPage() {
     if (isYearlyActive && billingInterval === 'monthly') return 'Manage Subscription';
     if (isSubscribedAndActive) return 'Your Current Plan';
     if (isCanceledButActive) return 'Reactivate Plan';
-    return currentPlan.buttonText;
+    return isTrialing ? 'Start Free Trial' : 'Get Started';
   }
 
   const getPlanName = () => {
@@ -177,6 +232,7 @@ export default function PricingPage() {
             id="billing-interval" 
             checked={billingInterval === 'yearly'}
             onCheckedChange={(checked) => setBillingInterval(checked ? 'yearly' : 'monthly')}
+            disabled={!!appliedCoupon}
           />
           <Label htmlFor="billing-interval" className={cn(billingInterval === 'yearly' ? 'text-foreground' : 'text-muted-foreground')}>Yearly</Label>
           <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">Save 16%</Badge>
@@ -186,14 +242,60 @@ export default function PricingPage() {
             <Card className="flex flex-col shadow-lg w-full border border-border">
                 <CardHeader className="pb-4">
                     <CardTitle className="text-xl font-semibold">{currentPlan.name}</CardTitle>
-                    <CardDescription className="min-h-[40px]">{currentPlan.description}</CardDescription>
+                    <CardDescription className="min-h-[40px]">Unlock unlimited access to all our AI-powered features and generate winning proposals in seconds.</CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col flex-1">
                     <div className="my-4">
-                        <span className="text-5xl font-bold tracking-tight">{currentPlan.price}</span>
-                        <span className="text-lg font-medium text-muted-foreground ml-1">USD</span>
-                        <p className="text-sm text-muted-foreground">{currentPlan.priceDescription}</p>
+                      {appliedCoupon ? (
+                        <div className="flex items-baseline">
+                          <span className="text-2xl font-bold tracking-tight text-muted-foreground line-through">${currentPlan.price}</span>
+                          <span className="text-5xl font-bold tracking-tight ml-2">${discountedPrice.toFixed(2)}</span>
+                          <span className="text-lg font-medium text-muted-foreground ml-1">USD</span>
+                        </div>
+                      ) : (
+                        <div>
+                          <span className="text-5xl font-bold tracking-tight">${currentPlan.price}</span>
+                          <span className="text-lg font-medium text-muted-foreground ml-1">USD</span>
+                        </div>
+                      )}
+                      <p className="text-sm text-muted-foreground">{currentPlan.priceDescription}</p>
                     </div>
+
+                    {isTrialing && (
+                      <div className="my-4 space-y-2">
+                        {!showCouponInput && !appliedCoupon ? (
+                          <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => setShowCouponInput(true)}>
+                            Have a promotion code?
+                          </Button>
+                        ) : appliedCoupon ? (
+                          <div className="flex items-center justify-between text-sm p-2 bg-green-50 text-green-800 border border-green-200 rounded-md">
+                            <div className="flex items-center gap-2">
+                              <Tag className="h-4 w-4" />
+                              <span className="font-medium">Coupon Applied: {appliedCoupon.name}</span>
+                            </div>
+                            <Button variant="ghost" size="icon" className="h-6 w-6 text-green-800 hover:bg-green-100" onClick={removeCoupon}>
+                              <X className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        ) : (
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <Input 
+                                placeholder="Enter coupon code"
+                                value={couponCode}
+                                onChange={(e) => setCouponCode(e.target.value)}
+                                disabled={isValidatingCoupon}
+                                className="h-9"
+                              />
+                              <Button onClick={handleCouponValidation} disabled={isValidatingCoupon || !couponCode.trim()} size="sm">
+                                {isValidatingCoupon ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Apply'}
+                              </Button>
+                            </div>
+                            {couponError && <p className="text-xs text-destructive mt-1">{couponError}</p>}
+                          </div>
+                        )}
+                      </div>
+                    )}
                     
                     {isManageButton ? (
                         <Button 

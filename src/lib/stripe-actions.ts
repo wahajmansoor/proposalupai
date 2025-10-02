@@ -61,7 +61,7 @@ export async function createCheckoutSession(formData: FormData) {
     client_reference_id: user.uid,
     success_url: successUrl,
     cancel_url: cancelUrl,
-    allow_promotion_codes: true, // <-- This is the fix
+    allow_promotion_codes: true,
   };
   
   // Case 1: User has an active subscription and is upgrading/changing plans
@@ -119,17 +119,19 @@ export async function createCheckoutSession(formData: FormData) {
 
 const activateTrialSchema = z.object({
   interval: z.enum(['monthly', 'yearly']),
+  coupon: z.string().optional(),
 });
 
 export async function activateTrialAction(formData: FormData): Promise<{ success?: boolean; error?: string }> {
   const validatedFields = activateTrialSchema.safeParse({
     interval: formData.get('interval'),
+    coupon: formData.get('coupon'),
   });
 
   if (!validatedFields.success) {
     return { error: 'Invalid billing interval selected.' };
   }
-  const { interval } = validatedFields.data;
+  const { interval, coupon } = validatedFields.data;
 
   const currentUser = await getCurrentUser();
   if (!currentUser || !currentUser.userDoc) {
@@ -150,14 +152,20 @@ export async function activateTrialAction(formData: FormData): Promise<{ success
   try {
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
     
-    await stripe.subscriptions.update(subscriptionId, {
-      items: [{
-        id: subscription.items.data[0].id,
-        price: newPriceId,
-      }],
-      trial_end: 'now',
-      proration_behavior: 'none',
-    });
+    const updateParams: Stripe.SubscriptionUpdateParams = {
+        items: [{
+            id: subscription.items.data[0].id,
+            price: newPriceId,
+        }],
+        trial_end: 'now',
+        proration_behavior: 'none',
+    };
+    
+    if (coupon) {
+        updateParams.coupon = coupon;
+    }
+
+    await stripe.subscriptions.update(subscriptionId, updateParams);
     
     revalidatePath('/pricing');
     
@@ -299,4 +307,59 @@ export async function createCustomerPortalSession(): Promise<{ url?: string; err
         'An unexpected error occurred while creating the billing portal session.',
     };
   }
+}
+
+const couponValidationSchema = z.object({
+    code: z.string().min(1, 'Coupon code cannot be empty.'),
+    plan: z.enum(['monthly', 'yearly']),
+});
+
+export async function validateCouponAction(formData: FormData): Promise<{
+    success: boolean;
+    error?: string;
+    coupon?: {
+        id: string;
+        name: string | null;
+        percent_off: number | null;
+        amount_off: number | null;
+    };
+}> {
+    const validatedFields = couponValidationSchema.safeParse({
+        code: formData.get('code'),
+        plan: formData.get('plan'),
+    });
+
+    if (!validatedFields.success) {
+        return { success: false, error: 'Invalid input.' };
+    }
+
+    const { code, plan } = validatedFields.data;
+
+    try {
+        const coupons = await stripe.coupons.list({ code: code, active: true, limit: 1 });
+        const coupon = coupons.data[0];
+
+        if (!coupon) {
+            return { success: false, error: 'This coupon code is not valid.' };
+        }
+
+        const appliesTo = coupon.metadata.applies_to_plan || 'any';
+        if (appliesTo !== 'any' && appliesTo !== plan) {
+            return { success: false, error: `This coupon is only valid for the ${appliesTo} plan.` };
+        }
+
+        return {
+            success: true,
+            coupon: {
+                id: coupon.id,
+                name: coupon.name,
+                percent_off: coupon.percent_off,
+                amount_off: coupon.amount_off,
+            },
+        };
+
+    } catch (e: any) {
+        console.error('Error validating coupon:', e);
+        return { success: false, error: 'Could not validate coupon code.' };
+    }
 }
