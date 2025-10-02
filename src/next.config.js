@@ -5,7 +5,6 @@ const nextConfig = {
     serverActions: {
       maxDuration: 120, // Increase timeout to 2 minutes for AI operations
     },
-    serverComponentsExternalPackages: ['openai'],
   },
   typescript: {
     ignoreBuildErrors: true,
