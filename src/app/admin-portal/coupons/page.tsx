@@ -143,7 +143,6 @@ export default function CouponsPage() {
                   <div className="space-y-2">
                     <Label htmlFor="code">Promotion Code</Label>
                     <Input id="code" name="code" type="text" placeholder="e.g., SUMMER25" disabled={isSubmitting} required/>
-                    <p className="text-xs text-muted-foreground">This is the code your customers will enter at checkout.</p>
                   </div>
                   
                   <div className="space-y-2">

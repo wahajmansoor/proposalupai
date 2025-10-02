@@ -57,7 +57,8 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
   });
 
   if (!validatedFields.success) {
-    const errorMessage = validatedFields.error.flatten().fieldErrors.code?.[0] || "Invalid form data.";
+    const errorPath = validatedFields.error.errors[0].path[0];
+    const errorMessage = validatedFields.error.flatten().fieldErrors[errorPath]?.[0] || "Invalid form data.";
     return { success: false, error: errorMessage };
   }
 
