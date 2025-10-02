@@ -8,6 +8,7 @@ import { getCurrentUser } from '@/lib/firebase/server-auth';
 import { z } from 'zod';
 import type Stripe from 'stripe';
 import { revalidatePath } from 'next/cache';
+import { adminDb } from '@/lib/firebase/admin';
 
 const checkoutSessionSchema = z.object({
   interval: z.enum(['monthly', 'yearly']),
@@ -123,6 +124,13 @@ export async function createCheckoutSession(formData: FormData) {
     throw new Error('Could not create checkout session');
   }
 
+  // Store the price in Firestore before redirecting
+  const price = await stripe.prices.retrieve(priceId);
+  if (price.unit_amount) {
+    const userRef = adminDb.collection('users').doc(user.uid);
+    await userRef.update({ lastPrice: price.unit_amount / 100 });
+  }
+
   redirect(checkoutSession.url);
 }
 
@@ -147,7 +155,7 @@ export async function activateTrialAction(formData: FormData): Promise<{ success
     return { error: 'You must be logged in to activate a plan.' };
   }
   
-  const { userDoc } = currentUser;
+  const { user, userDoc } = currentUser;
   const { subscriptionStatus, subscriptionId } = userDoc;
 
   if (subscriptionStatus !== 'trialing' || !subscriptionId) {
@@ -174,8 +182,15 @@ export async function activateTrialAction(formData: FormData): Promise<{ success
       updateParams.promotion_code = coupon;
     }
 
-    await stripe.subscriptions.update(subscriptionId, updateParams);
+    const updatedSubscription = await stripe.subscriptions.update(subscriptionId, updateParams);
     
+    // Store the price in Firestore
+    const price = updatedSubscription.items.data[0].price;
+    if (price.unit_amount) {
+        const userRef = adminDb.collection('users').doc(user.uid);
+        await userRef.update({ lastPrice: price.unit_amount / 100 });
+    }
+
     revalidatePath('/pricing');
     
     return { success: true };
@@ -204,7 +219,8 @@ export async function upgradeSubscriptionAction(formData: FormData): Promise<{ s
     return { error: 'You must be logged in to upgrade your plan.' };
   }
 
-  const { subscriptionStatus, subscriptionId, subscriptionInterval } = currentUser.userDoc;
+  const { user, userDoc } = currentUser;
+  const { subscriptionStatus, subscriptionId, subscriptionInterval } = userDoc;
 
   if (subscriptionStatus !== 'active' || subscriptionInterval !== 'month' || !subscriptionId) {
     return { error: 'You are not on an active monthly plan eligible for an upgrade.' };
@@ -231,7 +247,14 @@ export async function upgradeSubscriptionAction(formData: FormData): Promise<{ s
       updateParams.promotion_code = coupon;
     }
 
-    await stripe.subscriptions.update(subscriptionId, updateParams);
+    const updatedSubscription = await stripe.subscriptions.update(subscriptionId, updateParams);
+
+    // Store the price in Firestore
+    const price = updatedSubscription.items.data[0].price;
+    if (price.unit_amount) {
+        const userRef = adminDb.collection('users').doc(user.uid);
+        await userRef.update({ lastPrice: price.unit_amount / 100 });
+    }
 
     revalidatePath('/pricing');
     return { success: true };
@@ -402,42 +425,5 @@ export async function validateCouponAction(formData: FormData): Promise<{
   } catch (error: any) {
     console.error("Stripe API error validating coupon:", error);
     return { success: false, error: 'Could not validate coupon code.' };
-  }
-}
-
-export interface InvoiceDetails {
-  id: string;
-  date: string;
-  total: string;
-  status: string;
-  invoiceUrl: string | null;
-}
-
-export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]; error?: string }> {
-  const currentUser = await getCurrentUser();
-  if (!currentUser?.userDoc?.stripeCustomerId) {
-    return { error: 'Stripe customer ID not found.' };
-  }
-
-  const { stripeCustomerId } = currentUser.userDoc;
-
-  try {
-    const invoices = await stripe.invoices.list({
-      customer: stripeCustomerId,
-      limit: 20, // Get the last 20 invoices
-    });
-
-    const invoiceDetails: InvoiceDetails[] = invoices.data.map(invoice => ({
-      id: invoice.id,
-      date: new Date(invoice.created * 1000).toLocaleDateString(),
-      total: `$${(invoice.total / 100).toFixed(2)}`,
-      status: invoice.status || 'unknown',
-      invoiceUrl: invoice.hosted_invoice_url,
-    }));
-
-    return { invoices: invoiceDetails };
-  } catch (error: any) {
-    console.error('Error fetching billing history from Stripe:', error);
-    return { error: 'Could not retrieve billing history.' };
   }
 }
