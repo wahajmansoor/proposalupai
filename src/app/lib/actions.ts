@@ -14,7 +14,6 @@ import { getCurrentUser } from '@/lib/firebase/server-auth';
 import { revalidatePath } from 'next/cache';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { incrementProposalCount } from '@/lib/firebase/usage';
-import { stripe } from '@/lib/stripe/config';
 
 const projectDetailsSchema = z.object({
   projectTitle: z.string().min(1, 'Project title is required.'),
@@ -248,39 +247,4 @@ export async function updateUserDisplayNameAction(formData: FormData) {
     }
 }
 
-export interface InvoiceDetails {
-  id: string;
-  date: string;
-  total: string;
-  status: string;
-  invoiceUrl: string | null;
-}
-
-export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]; error?: string }> {
-  const currentUser = await getCurrentUser();
-  if (!currentUser?.userDoc?.stripeCustomerId) {
-    return { error: 'Stripe customer ID not found.' };
-  }
-
-  const { stripeCustomerId } = currentUser.userDoc;
-
-  try {
-    const invoices = await stripe.invoices.list({
-      customer: stripeCustomerId,
-      limit: 20, // Get the last 20 invoices
-    });
-
-    const invoiceDetails: InvoiceDetails[] = invoices.data.map(invoice => ({
-      id: invoice.id,
-      date: new Date(invoice.created * 1000).toLocaleDateString(),
-      total: `$${(invoice.total / 100).toFixed(2)}`,
-      status: invoice.status || 'unknown',
-      invoiceUrl: invoice.hosted_invoice_url,
-    }));
-
-    return { invoices: invoiceDetails };
-  } catch (error: any) {
-    console.error('Error fetching billing history from Stripe:', error);
-    return { error: 'Could not retrieve billing history.' };
-  }
-}
+    

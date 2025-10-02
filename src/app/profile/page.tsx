@@ -13,11 +13,53 @@ import { createCustomerPortalSession } from '@/app/lib/stripe-actions';
 import { format } from 'date-fns';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { updateUserDisplayNameAction, getBillingHistory, type InvoiceDetails } from '@/app/lib/actions';
+import { updateUserDisplayNameAction } from '@/app/lib/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { getCurrentUser } from '@/lib/firebase/server-auth';
+import { stripe } from '@/lib/stripe/config';
+
+// Define the type and action here to co-locate it with the component
+export interface InvoiceDetails {
+  id: string;
+  date: string;
+  total: string;
+  status: string;
+  invoiceUrl: string | null;
+}
+
+async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]; error?: string }> {
+  'use server';
+  const currentUser = await getCurrentUser();
+  if (!currentUser?.userDoc?.stripeCustomerId) {
+    return { error: 'Stripe customer ID not found.' };
+  }
+
+  const { stripeCustomerId } = currentUser.userDoc;
+
+  try {
+    const invoices = await stripe.invoices.list({
+      customer: stripeCustomerId,
+      limit: 20, // Get the last 20 invoices
+    });
+
+    const invoiceDetails: InvoiceDetails[] = invoices.data.map(invoice => ({
+      id: invoice.id,
+      date: new Date(invoice.created * 1000).toLocaleDateString(),
+      total: `$${(invoice.total / 100).toFixed(2)}`,
+      status: invoice.status || 'unknown',
+      invoiceUrl: invoice.hosted_invoice_url,
+    }));
+
+    return { invoices: invoiceDetails };
+  } catch (error: any) {
+    console.error('Error fetching billing history from Stripe:', error);
+    return { error: 'Could not retrieve billing history.' };
+  }
+}
+
 
 export default function ProfilePage() {
   const { user, userProfile } = useAuth();
@@ -267,3 +309,5 @@ export default function ProfilePage() {
     </div>
   );
 }
+
+    
