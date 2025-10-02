@@ -24,6 +24,7 @@ const couponSchema = z.object({
   amount_off: z.coerce.number().optional(),
   duration: z.enum(["once", "repeating", "forever"]),
   duration_in_months: z.coerce.number().optional(),
+  applies_to: z.enum(['any', 'monthly', 'yearly']).default('any'),
 });
 
 export async function createCoupon(formData: FormData): Promise<{ success: boolean; error?: string }> {
@@ -35,19 +36,23 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
     amount_off: formData.get('amount_off'),
     duration: formData.get('duration'),
     duration_in_months: formData.get('duration_in_months'),
+    applies_to: formData.get('applies_to'),
   });
 
   if (!validatedFields.success) {
     return { success: false, error: "Invalid form data." };
   }
 
-  const { couponId, name, type, percent_off, amount_off, duration, duration_in_months } = validatedFields.data;
+  const { couponId, name, type, percent_off, amount_off, duration, duration_in_months, applies_to } = validatedFields.data;
 
   try {
     const couponParams: Stripe.CouponCreateParams = {
       id: couponId || undefined,
       name: name || undefined,
       duration,
+      metadata: {
+        applies_to_plan: applies_to,
+      }
     };
 
     if (type === 'percentage') {
@@ -80,6 +85,42 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
     return { success: false, error: error.message };
   }
 }
+
+const updateCouponSchema = z.object({
+    name: z.string().optional(),
+    applies_to: z.enum(['any', 'monthly', 'yearly']).default('any'),
+});
+
+
+export async function updateCoupon(couponId: string, formData: FormData): Promise<{ success: boolean; error?: string }> {
+    const validatedFields = updateCouponSchema.safeParse({
+        name: formData.get('name'),
+        applies_to: formData.get('applies_to'),
+    });
+
+    if (!validatedFields.success) {
+        return { success: false, error: "Invalid form data for update." };
+    }
+    
+    const { name, applies_to } = validatedFields.data;
+    
+    try {
+        const updateParams: Stripe.CouponUpdateParams = {
+            name: name || undefined,
+            metadata: {
+                applies_to_plan: applies_to,
+            }
+        };
+
+        await stripe.coupons.update(couponId, updateParams);
+        revalidatePath('/admin-portal/coupons');
+        return { success: true };
+    } catch (error: any) {
+        console.error("Failed to update coupon:", error);
+        return { success: false, error: error.message };
+    }
+}
+
 
 export async function deleteCoupon(couponId: string): Promise<{ success: boolean; error?: string }> {
   try {
