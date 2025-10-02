@@ -35,7 +35,7 @@ export async function getCoupons(): Promise<CouponWithPromotionCode[]> {
 }
 
 const couponSchema = z.object({
-  code: z.string().min(1, "Promotion code is required.").regex(/^[a-zA-Z0-9-_]+$/, "Code can only contain letters, numbers, hyphens, and underscores."),
+  code: z.string().min(1, "Promotion code is required."),
   name: z.string().min(1, "Coupon name is required."),
   type: z.enum(['percentage', 'fixed']),
   percent_off: z.coerce.number().optional(),
