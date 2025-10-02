@@ -26,7 +26,6 @@ export default function CouponsPage() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const { toast } = useToast();
 
-  // State for edit dialog
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<CouponWithPromotionCode | null>(null);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
@@ -70,7 +69,7 @@ export default function CouponsPage() {
   const handleDelete = async (couponId: string) => {
     const result = await deleteCoupon(couponId);
     if(result.success) {
-        toast({ title: 'Coupon Deactivated', description: 'The coupon has been deactivated.' });
+        toast({ title: 'Coupon Deleted', description: 'The coupon has been deleted.' });
         await loadCoupons();
     } else {
         toast({ title: 'Error', description: result.error, variant: 'destructive' });
@@ -144,7 +143,7 @@ export default function CouponsPage() {
                   <div className="space-y-2">
                     <Label htmlFor="code">Promotion Code</Label>
                     <Input id="code" name="code" type="text" placeholder="e.g., SUMMER25" disabled={isSubmitting} required/>
-                    <p className="text-xs text-muted-foreground">Customer-facing code. Stripe may have character limitations.</p>
+                     <p className="text-xs text-muted-foreground">This is the code your customers will enter at checkout.</p>
                   </div>
                   
                   <div className="space-y-2">
@@ -247,7 +246,7 @@ export default function CouponsPage() {
                         <TableRow key={coupon.id}>
                           <TableCell>
                             <div className="font-medium">{coupon.promotion_code}</div>
-                            <div className="text-xs text-muted-foreground">{coupon.name || `ID: ${coupon.id}`}</div>
+                            {coupon.name && <div className="text-xs text-muted-foreground">{coupon.name}</div>}
                           </TableCell>
                           <TableCell>{renderDiscount(coupon)}</TableCell>
                           <TableCell>{renderDuration(coupon)}</TableCell>
@@ -277,7 +276,7 @@ export default function CouponsPage() {
                                   <AlertDialogFooter>
                                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                                       <AlertDialogAction onClick={() => handleDelete(coupon.id)}>
-                                      Deactivate
+                                      Delete
                                       </AlertDialogAction>
                                   </AlertDialogFooter>
                               </AlertDialogContent>
@@ -335,5 +334,3 @@ export default function CouponsPage() {
     </>
   );
 }
-
-    

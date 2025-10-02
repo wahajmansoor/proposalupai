@@ -23,30 +23,6 @@ export async function getCoupons(): Promise<CouponWithPromotionCode[]> {
         };
     });
 
-    // It's possible some coupons don't have active promotion codes.
-    // To ensure we show all coupons, we can also fetch coupons directly.
-    const allCoupons = await stripe.coupons.list({ limit: 100 });
-    for (const coupon of allCoupons.data) {
-        if (!coupons.some(c => c.id === coupon.id)) {
-            // Find a promotion code for this coupon if it exists
-             const relatedPromoCodes = await stripe.promotionCodes.list({ coupon: coupon.id, active: true, limit: 1 });
-             if (relatedPromoCodes.data.length > 0) {
-                 coupons.push({
-                     ...coupon,
-                     promotion_code: relatedPromoCodes.data[0].code,
-                 });
-             } else {
-                 // Coupon exists but has no active promotion code, we can show it as invalid.
-                  coupons.push({
-                     ...coupon,
-                     valid: false, // Mark as invalid if no active promo code
-                     promotion_code: coupon.name || 'No active code',
-                 });
-             }
-        }
-    }
-    
-    // Filter out duplicates and sort
     const uniqueCoupons = Array.from(new Map(coupons.map(c => [c.id, c])).values());
     uniqueCoupons.sort((a, b) => (b.created || 0) - (a.created || 0));
 
@@ -81,8 +57,7 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
   });
 
   if (!validatedFields.success) {
-    const fieldErrors = validatedFields.error.flatten().fieldErrors;
-    const errorMessage = fieldErrors.code?.[0] || fieldErrors.percent_off?.[0] || fieldErrors.amount_off?.[0] || "Invalid form data.";
+    const errorMessage = validatedFields.error.flatten().fieldErrors.code?.[0] || "Invalid form data.";
     return { success: false, error: errorMessage };
   }
 
@@ -90,7 +65,7 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
 
   try {
     const couponParams: Stripe.CouponCreateParams = {
-      name: code, // Use the code as the internal name for simplicity
+      name: code, 
       duration,
       metadata: {
         applies_to_plan: applies_to,
@@ -102,7 +77,7 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
         return { success: false, error: "Percentage discount must be between 1% and 100%." };
       }
       couponParams.percent_off = percent_off;
-    } else { // Fixed amount
+    } else { 
       if (!amount_off || amount_off <= 0) {
         return { success: false, error: "Fixed amount must be a positive number." };
       }
@@ -185,5 +160,3 @@ export async function deleteCoupon(couponId: string): Promise<{ success: boolean
     return { success: false, error: error.message };
   }
 }
-
-    
