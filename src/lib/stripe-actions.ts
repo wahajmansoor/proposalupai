@@ -5,31 +5,18 @@ import { stripe } from '@/lib/stripe/config';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/firebase/server-auth';
-import { z } from 'zod';
 import type Stripe from 'stripe';
 import { revalidatePath } from 'next/cache';
 import { adminDb } from '@/lib/firebase/admin';
-
-const planChangeSchema = z.object({
-  interval: z.enum(['monthly', 'yearly']).optional(),
-  coupon: z.string().optional(),
-});
 
 export async function handlePlanChange(formData: FormData): Promise<{
     success?: boolean;
     error?: string;
     redirectUrl?: string;
 }> {
-    const validatedFields = planChangeSchema.safeParse({
-        interval: formData.get('interval') || undefined,
-        coupon: formData.get('coupon'),
-    });
-
-    if (!validatedFields.success) {
-        return { error: 'Invalid plan or coupon selected.' };
-    }
-
-    let { interval, coupon } = validatedFields.data;
+    // Manually get and validate form data instead of using Zod
+    let interval = formData.get('interval') as 'monthly' | 'yearly' | null;
+    const coupon = formData.get('coupon') as string | null;
 
     const currentUser = await getCurrentUser();
     if (!currentUser || !currentUser.userDoc) {
@@ -43,13 +30,18 @@ export async function handlePlanChange(formData: FormData): Promise<{
         return { error: 'Could not find Stripe customer ID. Please contact support.' };
     }
     
-    // If interval isn't specified, try to infer it or default it.
+    // If interval isn't specified (e.g., new user trial form), infer it or default it.
     if (!interval) {
         if (subscriptionInterval) {
             interval = subscriptionInterval;
         } else {
             interval = 'monthly'; // Default for new users
         }
+    }
+
+    // Validate the interval manually
+    if (interval !== 'monthly' && interval !== 'yearly') {
+        return { error: 'Invalid billing interval selected.' };
     }
 
 
@@ -288,5 +280,7 @@ export async function validateCouponAction(formData: FormData): Promise<{
     return { success: false, error: 'Could not validate coupon code.' };
   }
 }
+
+    
 
     
