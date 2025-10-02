@@ -30,7 +30,7 @@ export async function createCheckoutSession(formData: FormData) {
   }
 
   const { user, userDoc } = currentUser;
-  const { stripeCustomerId, subscriptionStatus, subscriptionId, proposalCount = 0 } = userDoc;
+  const { stripeCustomerId, subscriptionStatus, subscriptionId } = userDoc;
 
   if (!stripeCustomerId) {
     throw new Error('Could not find Stripe customer ID. Please contact support.');
@@ -62,7 +62,7 @@ export async function createCheckoutSession(formData: FormData) {
     success_url: successUrl,
     cancel_url: cancelUrl,
   };
-
+  
   // Case 1: User has an active subscription and is upgrading/changing plans
   if (subscriptionStatus === 'active' && subscriptionId) {
     const subscription = await stripe.subscriptions.retrieve(subscriptionId);
@@ -94,11 +94,12 @@ export async function createCheckoutSession(formData: FormData) {
   sessionParams.mode = 'subscription';
   sessionParams.line_items = [{ price: priceId, quantity: 1 }];
   
-  const subscriptionData: Stripe.Checkout.SessionCreateParams.SubscriptionData = {};
-  if (subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing' && proposalCount < 5) {
-    subscriptionData.trial_period_days = 2;
+  // Only give trials to users who are not active or trialing
+  if (subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing') {
+    sessionParams.subscription_data = {
+      trial_period_days: 2,
+    };
   }
-  sessionParams.subscription_data = subscriptionData;
   
   let checkoutSession: Stripe.Checkout.Session;
   try {
@@ -115,7 +116,20 @@ export async function createCheckoutSession(formData: FormData) {
   redirect(checkoutSession.url);
 }
 
-export async function activateTrialAction(): Promise<{ success?: boolean; error?: string }> {
+const activateTrialSchema = z.object({
+  interval: z.enum(['monthly', 'yearly']),
+});
+
+export async function activateTrialAction(formData: FormData): Promise<{ success?: boolean; error?: string }> {
+  const validatedFields = activateTrialSchema.safeParse({
+    interval: formData.get('interval'),
+  });
+
+  if (!validatedFields.success) {
+    return { error: 'Invalid billing interval selected.' };
+  }
+  const { interval } = validatedFields.data;
+
   const currentUser = await getCurrentUser();
   if (!currentUser || !currentUser.userDoc) {
     return { error: 'You must be logged in to activate a plan.' };
@@ -128,8 +142,18 @@ export async function activateTrialAction(): Promise<{ success?: boolean; error?
     return { error: 'You are not in a trial period or the subscription is missing.' };
   }
 
+  const monthlyPriceId = process.env.STRIPE_MONTHLY_PRICE_ID;
+  const yearlyPriceId = process.env.STRIPE_YEARLY_PRICE_ID;
+  const newPriceId = interval === 'yearly' ? yearlyPriceId : monthlyPriceId;
+
   try {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    
     await stripe.subscriptions.update(subscriptionId, {
+      items: [{
+        id: subscription.items.data[0].id,
+        price: newPriceId,
+      }],
       trial_end: 'now',
       proration_behavior: 'none',
     });
@@ -141,6 +165,44 @@ export async function activateTrialAction(): Promise<{ success?: boolean; error?
   } catch (error: any) {
     console.error('Error activating trial subscription:', error);
     return { error: error.message || 'An unexpected error occurred while activating your plan.' };
+  }
+}
+
+export async function upgradeSubscriptionAction(): Promise<{ success?: boolean; error?: string }> {
+  const currentUser = await getCurrentUser();
+  if (!currentUser || !currentUser.userDoc) {
+    return { error: 'You must be logged in to upgrade your plan.' };
+  }
+
+  const { subscriptionStatus, subscriptionId, subscriptionInterval } = currentUser.userDoc;
+
+  if (subscriptionStatus !== 'active' || subscriptionInterval !== 'month' || !subscriptionId) {
+    return { error: 'You are not on an active monthly plan eligible for an upgrade.' };
+  }
+
+  const yearlyPriceId = process.env.STRIPE_YEARLY_PRICE_ID;
+  if (!yearlyPriceId) {
+    return { error: 'Yearly plan is not configured.' };
+  }
+
+  try {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    
+    await stripe.subscriptions.update(subscriptionId, {
+      items: [{
+        id: subscription.items.data[0].id,
+        price: yearlyPriceId,
+      }],
+      proration_behavior: 'create_prorations',
+      trial_end: 'now', // Ensure any residual trial is ended
+    });
+
+    revalidatePath('/pricing');
+    return { success: true };
+    
+  } catch (error: any) {
+    console.error('Error upgrading subscription:', error);
+    return { error: 'Failed to upgrade your plan. Please try again.' };
   }
 }
 
