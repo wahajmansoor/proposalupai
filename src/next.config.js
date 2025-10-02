@@ -34,7 +34,7 @@ const nextConfig = {
         hostname: 'proposalup.wahajmansoor.com',
         port: '',
         pathname: '/**',
-      },
+      }
     ],
   },
 };
