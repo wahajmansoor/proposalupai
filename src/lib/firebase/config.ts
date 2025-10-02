@@ -12,23 +12,25 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-// Validate the Firebase config
-for (const [key, value] of Object.entries(firebaseConfig)) {
-    if (!value || value.includes('your_')) {
-        const errorMessage = `Missing or invalid Firebase config value for ${key} in .env file. Please check your Firebase project settings.`;
-        // Only throw an error on the server-side to prevent app crash during build/dev
-        if (typeof window === 'undefined') {
-            throw new Error(errorMessage);
-        } else {
-            // Log a prominent error in the browser console
-            console.error(errorMessage);
-        }
-    }
+let app;
+let db;
+let auth;
+
+// Check if all Firebase config values are provided
+const isFirebaseConfigured = Object.values(firebaseConfig).every(
+  (value) => value && !value.includes('your_')
+);
+
+if (isFirebaseConfigured) {
+  // Initialize Firebase for SSR
+  app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
+  db = getFirestore(app);
+  auth = getAuth(app);
+} else {
+  console.error(
+    'Firebase is not fully configured. Please add your NEXT_PUBLIC_FIREBASE_* variables to your .env file. The app will run without Firebase functionality on the client.'
+  );
 }
 
-// Initialize Firebase for SSR
-const app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-const db = getFirestore(app);
-const auth = getAuth(app);
 
 export { app, db, auth };
