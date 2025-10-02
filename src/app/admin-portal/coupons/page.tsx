@@ -142,14 +142,9 @@ export default function CouponsPage() {
               <CardContent>
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
-                    <Label htmlFor="name">Coupon Name (Internal)</Label>
-                    <Input id="name" name="name" type="text" placeholder="e.g., 'Summer Sale'" disabled={isSubmitting} required/>
-                  </div>
-
-                   <div className="space-y-2">
                     <Label htmlFor="code">Promotion Code</Label>
                     <Input id="code" name="code" type="text" placeholder="e.g., SUMMER25" disabled={isSubmitting} required/>
-                    <p className="text-xs text-muted-foreground">Customer-facing code. No spaces or special characters other than - and _.</p>
+                    <p className="text-xs text-muted-foreground">This is the code customers will enter. No spaces.</p>
                   </div>
                   
                   <div className="space-y-2">
@@ -252,7 +247,7 @@ export default function CouponsPage() {
                         <TableRow key={coupon.id}>
                           <TableCell>
                             <div className="font-medium">{coupon.promotion_code}</div>
-                            <div className="text-xs text-muted-foreground">{coupon.name || 'N/A'}</div>
+                            <div className="text-xs text-muted-foreground">ID: {coupon.id}</div>
                           </TableCell>
                           <TableCell>{renderDiscount(coupon)}</TableCell>
                           <TableCell>{renderDuration(coupon)}</TableCell>
@@ -276,7 +271,7 @@ export default function CouponsPage() {
                                   <AlertDialogHeader>
                                       <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                       <AlertDialogDescription>
-                                      This will permanently delete the coupon "{coupon.name}" and deactivate its promotion code "{coupon.promotion_code}". This action cannot be undone.
+                                      This will permanently delete the coupon with code "{coupon.promotion_code}". This action cannot be undone.
                                       </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
@@ -311,7 +306,7 @@ export default function CouponsPage() {
             <form onSubmit={handleEditSubmit}>
                 <div className="grid gap-4 py-4">
                     <div className="space-y-2">
-                        <Label htmlFor="edit-name">Coupon Name (Internal)</Label>
+                        <Label htmlFor="edit-name">Internal Name (Was: {editingCoupon.name})</Label>
                         <Input id="edit-name" name="name" defaultValue={editingCoupon.name || ''} required />
                     </div>
                     <div className="space-y-2">
@@ -340,5 +335,3 @@ export default function CouponsPage() {
     </>
   );
 }
-
-    
