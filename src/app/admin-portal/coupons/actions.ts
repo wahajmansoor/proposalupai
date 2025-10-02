@@ -36,7 +36,6 @@ export async function getCoupons(): Promise<CouponWithPromotionCode[]> {
 
 const couponSchema = z.object({
   code: z.string().min(1, "Promotion code is required."),
-  name: z.string().min(1, "Coupon name is required."),
   type: z.enum(['percentage', 'fixed']),
   percent_off: z.coerce.number().optional(),
   amount_off: z.coerce.number().optional(),
@@ -49,7 +48,6 @@ const couponSchema = z.object({
 export async function createCoupon(formData: FormData): Promise<{ success: boolean; error?: string }> {
   const validatedFields = couponSchema.safeParse({
     code: formData.get('code'),
-    name: formData.get('name'),
     type: formData.get('type'),
     percent_off: formData.get('percent_off'),
     amount_off: formData.get('amount_off'),
@@ -59,16 +57,15 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
   });
 
   if (!validatedFields.success) {
-    const fieldErrors = validatedFields.error.flatten().fieldErrors;
-    const errorMessage = fieldErrors.code?.[0] || fieldErrors.name?.[0] || "Invalid form data.";
+    const errorMessage = validatedFields.error.flatten().fieldErrors.code?.[0] || "Invalid form data.";
     return { success: false, error: errorMessage };
   }
 
-  const { code, name, type, percent_off, amount_off, duration, duration_in_months, applies_to } = validatedFields.data;
+  const { code, type, percent_off, amount_off, duration, duration_in_months, applies_to } = validatedFields.data;
 
   try {
     const couponParams: Stripe.CouponCreateParams = {
-      name: name,
+      name: code, // Use the code as the internal name for simplicity
       duration,
       metadata: {
         applies_to_plan: applies_to,

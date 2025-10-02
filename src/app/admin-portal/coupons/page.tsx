@@ -143,12 +143,7 @@ export default function CouponsPage() {
                   <div className="space-y-2">
                     <Label htmlFor="code">Promotion Code</Label>
                     <Input id="code" name="code" type="text" placeholder="e.g., SUMMER25" disabled={isSubmitting} required/>
-                    <p className="text-xs text-muted-foreground">This is the code your customers will enter at checkout. No spaces or special symbols like '%'.</p>
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Internal Name</Label>
-                    <Input id="name" name="name" type="text" placeholder="e.g., 25% Off Summer Sale" disabled={isSubmitting} required/>
-                    <p className="text-xs text-muted-foreground">For your internal reference.</p>
+                    <p className="text-xs text-muted-foreground">This is the code your customers will enter at checkout.</p>
                   </div>
                   
                   <div className="space-y-2">
