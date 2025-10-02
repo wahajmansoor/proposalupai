@@ -11,13 +11,15 @@ import { revalidatePath } from 'next/cache';
 import { adminDb } from '@/lib/firebase/admin';
 
 const checkoutSessionSchema = z.object({
-  interval: z.enum(['monthly', 'yearly']).optional(),
+  interval: z.enum(['monthly', 'yearly']),
   coupon: z.string().optional(),
 });
 
 export async function createCheckoutSession(formData: FormData) {
+  const intervalValue = formData.get('interval') || 'monthly';
+
   const validatedFields = checkoutSessionSchema.safeParse({
-    interval: formData.get('interval'),
+    interval: intervalValue,
     coupon: formData.get('coupon'),
   });
 
@@ -25,9 +27,7 @@ export async function createCheckoutSession(formData: FormData) {
     throw new Error('Invalid billing interval or coupon selected.');
   }
 
-  // If interval is not provided (e.g., new user trial), default to monthly.
-  const interval = validatedFields.data.interval || 'monthly';
-  const { coupon } = validatedFields.data;
+  const { interval, coupon } = validatedFields.data;
 
   const currentUser = await getCurrentUser();
   if (!currentUser || !currentUser.userDoc) {
