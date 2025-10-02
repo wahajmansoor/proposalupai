@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, Loader2, Briefcase, ArrowLeft, Tag, X } from 'lucide-react';
-import { createCheckoutSession, upgradeSubscriptionAction, createCustomerPortalSession } from '@/lib/stripe-actions';
+import { handlePlanChange, validateCouponAction } from '@/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
@@ -17,8 +17,6 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
-import { validateCouponAction, activateTrialAction } from '@/lib/stripe-actions';
-
 
 const plans = {
   monthly: {
@@ -91,7 +89,7 @@ export default function PricingPage() {
 
   const isUpgrading = isMonthlyActive && billingInterval === 'yearly';
   const isNewSubscription = !isSubscribedAndActive && !isCanceledButActive && !isTrialing;
-  const canShowCoupon = isUpgrading || isTrialing;
+  const canShowCoupon = isUpgrading || isTrialing || isNewSubscription;
 
 
   const handleCouponValidation = async () => {
@@ -133,30 +131,20 @@ export default function PricingPage() {
     }
     
     setIsSubmitting(true);
+    
     const formData = new FormData(event.currentTarget);
-    if (appliedCoupon) {
-      formData.append('coupon', appliedCoupon.id);
+    const result = await handlePlanChange(formData);
+
+    if (result?.error) {
+      toast({ title: 'An error occurred', description: result.error, variant: 'destructive' });
+      setIsSubmitting(false);
+    } else if (result?.redirectUrl) {
+      router.push(result.redirectUrl);
+    } else if (result?.success) {
+        toast({ title: 'Success!', description: 'Your plan has been updated.' });
+        // Optionally, re-fetch user profile data here to update UI instantly
+        setIsSubmitting(false);
     }
-    
-    if (isTrialing) {
-        const result = await activateTrialAction(formData);
-        if (result.error) {
-            toast({ title: 'Activation Failed', description: result.error, variant: 'destructive' });
-        } else {
-            toast({ title: 'Plan Activated!', description: `Your trial has ended and your new ${billingInterval} subscription has begun.` });
-        }
-    } else if (isMonthlyActive && billingInterval === 'yearly') {
-        const result = await upgradeSubscriptionAction(formData);
-        if (result.error) {
-            toast({ title: 'Upgrade Failed', description: result.error, variant: 'destructive' });
-        } else {
-            toast({ title: 'Upgrade Successful!', description: 'You are now on the Pro Yearly plan.' });
-        }
-    } else if (isCanceledButActive) {
-        await createCheckoutSession(formData);
-    }
-    
-    setIsSubmitting(false);
   };
 
   const discountedPrice = useMemo(() => {
@@ -281,82 +269,74 @@ export default function PricingPage() {
                       <p className="text-sm text-muted-foreground">{currentPlan.priceDescription}</p>
                     </div>
 
-                    {isNewSubscription ? (
-                        <form action={createCheckoutSession}>
-                            <input type="hidden" name="interval" value={billingInterval} />
-                            <Button type="submit" size="lg" className="w-full text-sm font-medium" disabled={isSubmitting}>
+                    <form onSubmit={handleFormSubmit}>
+                        <input type="hidden" name="interval" value={billingInterval} />
+                        {appliedCoupon && <input type="hidden" name="coupon" value={appliedCoupon.id} />}
+                        
+                        {canShowCoupon && (
+                          <div className="my-4 space-y-2">
+                            {!showCouponInput && !appliedCoupon ? (
+                              <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => setShowCouponInput(true)}>
+                                Have a promotion code?
+                              </Button>
+                            ) : appliedCoupon ? (
+                              <div className="flex items-center justify-between text-sm p-2 bg-green-50 text-green-800 border border-green-200 rounded-md">
+                                <div className="flex items-center gap-2">
+                                  <Tag className="h-4 w-4" />
+                                  <span className="font-medium">Coupon Applied: {appliedCoupon.name}</span>
+                                </div>
+                                <Button variant="ghost" size="icon" className="h-6 w-6 text-green-800 hover:bg-green-100" onClick={removeCoupon}>
+                                  <X className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            ) : (
+                              <div>
+                                <div className="flex items-center gap-2">
+                                  <Input 
+                                    placeholder="Enter coupon code"
+                                    value={couponCode}
+                                    onChange={(e) => setCouponCode(e.target.value)}
+                                    disabled={isValidatingCoupon}
+                                    className="h-9"
+                                  />
+                                  <Button onClick={handleCouponValidation} disabled={isValidatingCoupon || !couponCode.trim()} size="sm" type="button">
+                                    {isValidatingCoupon ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Apply'}
+                                  </Button>
+                                </div>
+                                {couponError && <p className="text-xs text-destructive mt-1">{couponError}</p>}
+                              </div>
+                            )}
+                          </div>
+                        )}
+                        
+                        {isYearlyActive ? (
+                           <Button 
+                                size="lg" 
+                                className="w-full text-sm font-medium"
+                                disabled={isSubmitting}
+                                onClick={handleManageClick}
+                                type="button"
+                            >
+                                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                                Manage Subscription
+                            </Button>
+                        ) : (
+                           <Button 
+                                type="submit"
+                                size="lg" 
+                                className="w-full text-sm font-medium"
+                                disabled={isButtonDisabled}
+                            >
                                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                                 {getButtonText()}
                             </Button>
-                        </form>
-                    ) : (
-                      <form onSubmit={handleFormSubmit}>
-                          {canShowCoupon && (
-                            <div className="my-4 space-y-2">
-                              {!showCouponInput && !appliedCoupon ? (
-                                <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => setShowCouponInput(true)}>
-                                  Have a promotion code?
-                                </Button>
-                              ) : appliedCoupon ? (
-                                <div className="flex items-center justify-between text-sm p-2 bg-green-50 text-green-800 border border-green-200 rounded-md">
-                                  <div className="flex items-center gap-2">
-                                    <Tag className="h-4 w-4" />
-                                    <span className="font-medium">Coupon Applied: {appliedCoupon.name}</span>
-                                  </div>
-                                  <Button variant="ghost" size="icon" className="h-6 w-6 text-green-800 hover:bg-green-100" onClick={removeCoupon}>
-                                    <X className="h-4 w-4" />
-                                  </Button>
-                                </div>
-                              ) : (
-                                <div>
-                                  <div className="flex items-center gap-2">
-                                    <Input 
-                                      placeholder="Enter coupon code"
-                                      value={couponCode}
-                                      onChange={(e) => setCouponCode(e.target.value)}
-                                      disabled={isValidatingCoupon}
-                                      className="h-9"
-                                    />
-                                    <Button onClick={handleCouponValidation} disabled={isValidatingCoupon || !couponCode.trim()} size="sm" type="button">
-                                      {isValidatingCoupon ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Apply'}
-                                    </Button>
-                                  </div>
-                                  {couponError && <p className="text-xs text-destructive mt-1">{couponError}</p>}
-                                </div>
-                              )}
-                            </div>
-                          )}
-                          
-                          <input type="hidden" name="interval" value={billingInterval} />
-                          {isYearlyActive ? (
-                            <Button 
-                                  size="lg" 
-                                  className="w-full text-sm font-medium"
-                                  disabled={isSubmitting}
-                                  onClick={handleManageClick}
-                                  type="button"
-                              >
-                                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                  Manage Subscription
-                              </Button>
-                          ) : (
-                              <Button 
-                                  type="submit"
-                                  size="lg" 
-                                  className="w-full text-sm font-medium"
-                                  disabled={isButtonDisabled}
-                              >
-                                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                  {getButtonText()}
-                              </Button>
-                          )}
-                           {isTrialing && (
-                              <p className="text-xs text-center text-muted-foreground mt-2">
-                                This will end your trial and charge the card on file. To change your payment method, please visit your <Link href="/profile" className="underline">profile page</Link>.
-                              </p>
-                          )}
-                      </form>
-                    )}
+                        )}
+                         {isTrialing && (
+                            <p className="text-xs text-center text-muted-foreground mt-2">
+                              This will end your trial and charge the card on file. To change your payment method, please visit your <Link href="/profile" className="underline">profile page</Link>.
+                            </p>
+                        )}
+                    </form>
                     
                     <div className="border-t my-6"></div>
 
@@ -397,4 +377,3 @@ export default function PricingPage() {
     </div>
   );
 }
-
