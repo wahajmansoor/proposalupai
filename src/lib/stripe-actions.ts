@@ -68,7 +68,7 @@ export async function createCheckoutSession(formData: FormData) {
   };
 
   if (coupon) {
-    sessionParams.discounts = [{ promotion_code: coupon }];
+    sessionParams.discounts = [{ coupon: coupon }];
   }
   
   // Case 1: User has an active subscription and is upgrading/changing plans
