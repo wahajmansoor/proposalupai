@@ -61,6 +61,7 @@ export async function createCheckoutSession(formData: FormData) {
     client_reference_id: user.uid,
     success_url: successUrl,
     cancel_url: cancelUrl,
+    allow_promotion_codes: true, // <-- This is the fix
   };
   
   // Case 1: User has an active subscription and is upgrading/changing plans
