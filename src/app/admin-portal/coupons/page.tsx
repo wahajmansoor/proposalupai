@@ -245,7 +245,6 @@ export default function CouponsPage() {
                         <TableRow key={coupon.id}>
                           <TableCell>
                             <div className="font-medium">{coupon.promotion_code}</div>
-                            {coupon.name && <div className="text-xs text-muted-foreground">{coupon.name}</div>}
                           </TableCell>
                           <TableCell>{renderDiscount(coupon)}</TableCell>
                           <TableCell>{renderDuration(coupon)}</TableCell>

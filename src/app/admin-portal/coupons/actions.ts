@@ -66,7 +66,7 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
 
   try {
     const couponParams: Stripe.CouponCreateParams = {
-      name: code, 
+      name: code, // Use the code as the internal name for simplicity
       duration,
       metadata: {
         applies_to_plan: applies_to,
