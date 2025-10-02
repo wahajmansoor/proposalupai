@@ -16,25 +16,34 @@ const couponFormSchema = z.object({
   type: z.enum(['percentage', 'fixed']),
   percent_off: z.preprocess(
     (val) => (val === '' ? undefined : Number(val)),
-    z.number({ invalid_type_error: "Percentage must be a number." }).min(1).max(100).optional()
+    z.number({ invalid_type_error: "Percentage must be a number." }).min(1, "Percentage must be at least 1.").max(100, "Percentage cannot exceed 100.").optional()
   ),
   amount_off: z.preprocess(
     (val) => (val === '' ? undefined : Number(val)),
-    z.number({ invalid_type_error: "Amount must be a number." }).positive().optional()
+    z.number({ invalid_type_error: "Amount must be a number." }).positive("Amount must be a positive number.").optional()
   ),
   duration: z.enum(['once', 'repeating', 'forever']),
   duration_in_months: z.preprocess(
     (val) => (val === '' ? undefined : Number(val)),
-    z.number({ invalid_type_error: "Duration must be a number." }).positive().optional()
+    z.number({ invalid_type_error: "Duration must be a number." }).positive().int().optional()
   ),
   applies_to: z.enum(['any', 'monthly', 'yearly']).default('any')
-}).refine(data => data.type !== 'percentage' || (data.percent_off !== undefined && data.percent_off > 0), {
+}).refine(data => {
+  if (data.type === 'percentage') return data.percent_off !== undefined;
+  return true;
+}, {
   message: "Percentage is required for percentage-type coupons.",
   path: ["percent_off"],
-}).refine(data => data.type !== 'fixed' || (data.amount_off !== undefined && data.amount_off > 0), {
+}).refine(data => {
+  if (data.type === 'fixed') return data.amount_off !== undefined;
+  return true;
+}, {
   message: "Amount is required for fixed-amount coupons.",
   path: ["amount_off"],
-}).refine(data => data.duration !== 'repeating' || data.duration_in_months, {
+}).refine(data => {
+    if (data.duration === 'repeating') return data.duration_in_months !== undefined;
+    return true;
+}, {
   message: "Duration in months is required for repeating coupons.",
   path: ["duration_in_months"],
 });
