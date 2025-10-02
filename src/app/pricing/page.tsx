@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, Loader2, Briefcase, ArrowLeft, Tag, X } from 'lucide-react';
-import { createCheckoutSession, upgradeSubscriptionAction, createCustomerPortalSession, validateCouponAction, activateTrialAction } from '@/lib/stripe-actions';
+import { createCheckoutSession, upgradeSubscriptionAction, createCustomerPortalSession } from '@/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
@@ -17,6 +17,8 @@ import { Switch } from '@/components/ui/switch';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { Input } from '@/components/ui/input';
+import { validateCouponAction, activateTrialAction } from '@/lib/stripe-actions';
+
 
 const plans = {
   monthly: {
@@ -178,7 +180,7 @@ export default function PricingPage() {
     if (isYearlyActive) return 'Your Current Plan';
     if (isSubscribedAndActive) return 'Your Current Plan';
     if (isCanceledButActive) return 'Reactivate Plan';
-    return 'Get Started';
+    return 'Start a 2-day free trial!';
   }
 
   const getPlanName = () => {
@@ -280,11 +282,11 @@ export default function PricingPage() {
                     </div>
 
                     {isNewSubscription ? (
-                         <form action={createCheckoutSession}>
+                        <form action={createCheckoutSession}>
                             <input type="hidden" name="interval" value={billingInterval} />
                             <Button type="submit" size="lg" className="w-full text-sm font-medium" disabled={isSubmitting}>
                                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                Start a 2-day free trial!
+                                {getButtonText()}
                             </Button>
                         </form>
                     ) : (
@@ -395,3 +397,4 @@ export default function PricingPage() {
     </div>
   );
 }
+
