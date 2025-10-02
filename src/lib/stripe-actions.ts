@@ -5,6 +5,7 @@ import { stripe } from '@/lib/stripe/config';
 import { headers } from 'next/headers';
 import { redirect } from 'next/navigation';
 import { getCurrentUser } from '@/lib/firebase/server-auth';
+import { z } from 'zod';
 import type Stripe from 'stripe';
 import { revalidatePath } from 'next/cache';
 import { adminDb } from '@/lib/firebase/admin';
@@ -14,7 +15,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
     error?: string;
     redirectUrl?: string;
 }> {
-    // Manually get and validate form data instead of using Zod
+    // Manually get and validate form data
     let interval = formData.get('interval') as 'monthly' | 'yearly' | null;
     const coupon = formData.get('coupon') as string | null;
 
@@ -32,11 +33,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
     
     // If interval isn't specified (e.g., new user trial form), infer it or default it.
     if (!interval) {
-        if (subscriptionInterval) {
-            interval = subscriptionInterval;
-        } else {
-            interval = 'monthly'; // Default for new users
-        }
+        interval = 'monthly'; // Default for new users
     }
 
     // Validate the interval manually
@@ -280,7 +277,5 @@ export async function validateCouponAction(formData: FormData): Promise<{
     return { success: false, error: 'Could not validate coupon code.' };
   }
 }
-
-    
 
     
