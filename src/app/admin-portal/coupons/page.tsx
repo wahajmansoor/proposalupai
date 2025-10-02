@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import type Stripe from 'stripe';
-import { getCoupons, createCoupon, deleteCoupon, updateCoupon } from './actions';
+import { getCoupons, createCoupon, deleteCoupon, updateCoupon, CouponWithPromotionCode } from './actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -16,16 +16,9 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash2, Edit } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { format } from 'date-fns';
-
-type CouponWithMetadata = Stripe.Coupon & {
-  metadata: {
-    applies_to_plan?: 'any' | 'monthly' | 'yearly';
-  }
-}
 
 export default function CouponsPage() {
-  const [coupons, setCoupons] = useState<CouponWithMetadata[]>([]);
+  const [coupons, setCoupons] = useState<CouponWithPromotionCode[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [couponType, setCouponType] = useState('percentage');
@@ -35,14 +28,14 @@ export default function CouponsPage() {
 
   // State for edit dialog
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [editingCoupon, setEditingCoupon] = useState<CouponWithMetadata | null>(null);
+  const [editingCoupon, setEditingCoupon] = useState<CouponWithPromotionCode | null>(null);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
 
   const loadCoupons = async () => {
       setIsLoading(true);
       try {
         const fetchedCoupons = await getCoupons();
-        setCoupons(fetchedCoupons as CouponWithMetadata[]);
+        setCoupons(fetchedCoupons);
       } catch (error: any) {
         setFetchError(error.message);
       } finally {
@@ -75,7 +68,7 @@ export default function CouponsPage() {
   const handleDelete = async (couponId: string) => {
     const result = await deleteCoupon(couponId);
     if(result.success) {
-        toast({ title: 'Coupon Deleted', description: 'The coupon has been removed.' });
+        toast({ title: 'Coupon Deactivated', description: 'The coupon has been deactivated.' });
         await loadCoupons();
     } else {
         toast({ title: 'Error', description: result.error, variant: 'destructive' });
@@ -120,7 +113,7 @@ export default function CouponsPage() {
     return 'N/A';
   };
   
-  const renderAppliesTo = (coupon: CouponWithMetadata) => {
+  const renderAppliesTo = (coupon: CouponWithPromotionCode) => {
     const plan = coupon.metadata?.applies_to_plan || 'any';
     switch(plan) {
         case 'monthly': return <Badge variant="outline">Monthly Only</Badge>;
@@ -204,14 +197,15 @@ export default function CouponsPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="couponId">Coupon ID (Optional)</Label>
-                    <Input id="couponId" name="couponId" type="text" placeholder="e.g., gfKh2yp0" disabled={isSubmitting}/>
-                    <p className="text-xs text-muted-foreground">If left blank, Stripe will generate one.</p>
+                    <Label htmlFor="code">Coupon Code</Label>
+                    <Input id="code" name="code" type="text" placeholder="e.g., SUMMER25" disabled={isSubmitting} required />
+                    <p className="text-xs text-muted-foreground">This is the code customers will enter.</p>
                   </div>
 
                   <div className="space-y-2">
                     <Label htmlFor="name">Coupon Name</Label>
-                    <Input id="name" name="name" type="text" placeholder="e.g., 'Summer Sale'" disabled={isSubmitting} required/>
+                    <Input id="name" name="name" type="text" placeholder="e.g., 'Summer Sale 25% Off'" disabled={isSubmitting} required/>
+                    <p className="text-xs text-muted-foreground">An internal name for the coupon.</p>
                   </div>
                   <Button type="submit" className="w-full" disabled={isSubmitting}>
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -243,7 +237,7 @@ export default function CouponsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>Name</TableHead>
+                        <TableHead>Code</TableHead>
                         <TableHead>Discount</TableHead>
                         <TableHead>Duration</TableHead>
                         <TableHead>Applies To</TableHead>
@@ -255,8 +249,8 @@ export default function CouponsPage() {
                       {coupons.map((coupon) => (
                         <TableRow key={coupon.id}>
                           <TableCell>
-                            <div className="font-medium">{coupon.name || 'N/A'}</div>
-                            <div className="text-xs text-muted-foreground font-mono">{coupon.id}</div>
+                            <div className="font-medium">{coupon.promotion_code}</div>
+                            <div className="text-xs text-muted-foreground">{coupon.name || 'N/A'}</div>
                           </TableCell>
                           <TableCell>{renderDiscount(coupon)}</TableCell>
                           <TableCell>{renderDuration(coupon)}</TableCell>
@@ -280,13 +274,13 @@ export default function CouponsPage() {
                                   <AlertDialogHeader>
                                       <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                       <AlertDialogDescription>
-                                      This will permanently delete the coupon "{coupon.name || coupon.id}". This action cannot be undone.
+                                      This will deactivate the coupon code "{coupon.promotion_code}". This action cannot be undone, but you can create a new one.
                                       </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
                                       <AlertDialogCancel>Cancel</AlertDialogCancel>
                                       <AlertDialogAction onClick={() => handleDelete(coupon.id)}>
-                                      Delete
+                                      Deactivate
                                       </AlertDialogAction>
                                   </AlertDialogFooter>
                               </AlertDialogContent>
@@ -308,14 +302,14 @@ export default function CouponsPage() {
           <DialogHeader>
             <DialogTitle>Edit Coupon</DialogTitle>
             <DialogDescription>
-              Editing coupon: <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">{editingCoupon?.id}</span>
+              Editing coupon: <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">{editingCoupon?.promotion_code}</span>
             </DialogDescription>
           </DialogHeader>
           {editingCoupon && (
             <form onSubmit={handleEditSubmit}>
                 <div className="grid gap-4 py-4">
                     <div className="space-y-2">
-                        <Label htmlFor="edit-name">Coupon Name</Label>
+                        <Label htmlFor="edit-name">Coupon Name (Internal)</Label>
                         <Input id="edit-name" name="name" defaultValue={editingCoupon.name || ''} required />
                     </div>
                     <div className="space-y-2">

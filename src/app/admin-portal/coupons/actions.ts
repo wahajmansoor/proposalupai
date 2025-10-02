@@ -6,10 +6,22 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type Stripe from "stripe";
 
-export async function getCoupons(): Promise<Stripe.Coupon[]> {
+export interface CouponWithPromotionCode extends Stripe.Coupon {
+    promotion_code: string;
+}
+
+
+export async function getCoupons(): Promise<CouponWithPromotionCode[]> {
   try {
-    const coupons = await stripe.coupons.list({ limit: 100, expand: ['data.applies_to'] });
-    return coupons.data;
+    const promoCodes = await stripe.promotionCodes.list({ active: true, limit: 100, expand: ['data.coupon'] });
+
+    return promoCodes.data.map(promoCode => {
+        const coupon = promoCode.coupon as Stripe.Coupon;
+        return {
+            ...coupon,
+            promotion_code: promoCode.code,
+        };
+    });
   } catch (error: any) {
     console.error("Failed to fetch coupons from Stripe:", error);
     throw new Error(`Failed to fetch coupons: ${error.message}`);
@@ -17,7 +29,7 @@ export async function getCoupons(): Promise<Stripe.Coupon[]> {
 }
 
 const couponSchema = z.object({
-  couponId: z.string().optional(),
+  code: z.string().min(1, "Coupon code is required."),
   name: z.string().min(1, "Coupon name is required."),
   type: z.enum(['percentage', 'fixed']),
   percent_off: z.coerce.number().optional(),
@@ -29,7 +41,7 @@ const couponSchema = z.object({
 
 export async function createCoupon(formData: FormData): Promise<{ success: boolean; error?: string }> {
   const validatedFields = couponSchema.safeParse({
-    couponId: formData.get('couponId'),
+    code: formData.get('code'),
     name: formData.get('name'),
     type: formData.get('type'),
     percent_off: formData.get('percent_off'),
@@ -43,11 +55,10 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
     return { success: false, error: "Invalid form data." };
   }
 
-  const { couponId, name, type, percent_off, amount_off, duration, duration_in_months, applies_to } = validatedFields.data;
+  const { code, name, type, percent_off, amount_off, duration, duration_in_months, applies_to } = validatedFields.data;
 
   try {
     const couponParams: Stripe.CouponCreateParams = {
-      id: couponId || undefined,
       name: name,
       duration,
       metadata: {
@@ -65,7 +76,7 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
         return { success: false, error: "Fixed amount must be a positive number." };
       }
       couponParams.amount_off = amount_off * 100; // Stripe expects cents
-      couponParams.currency = 'usd'; // Or your desired currency
+      couponParams.currency = 'usd'; 
     }
 
     if (duration === "repeating" && (!duration_in_months || duration_in_months <= 0)) {
@@ -76,7 +87,13 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
       couponParams.duration_in_months = duration_in_months;
     }
     
-    await stripe.coupons.create(couponParams);
+    const coupon = await stripe.coupons.create(couponParams);
+    
+    // Create a promotion code for the coupon
+    await stripe.promotionCodes.create({
+      coupon: coupon.id,
+      code: code,
+    });
 
     revalidatePath('/admin-portal/coupons');
     return { success: true };
@@ -124,7 +141,8 @@ export async function updateCoupon(couponId: string, formData: FormData): Promis
 
 export async function deleteCoupon(couponId: string): Promise<{ success: boolean; error?: string }> {
   try {
-    await stripe.coupons.del(couponId);
+    // In Stripe, deleting a coupon automatically deactivates associated promotion codes.
+    await stripe.coupons.update(couponId, { active: false });
     revalidatePath('/admin-portal/coupons');
     return { success: true };
   } catch (error: any) {

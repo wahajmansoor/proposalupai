@@ -4,6 +4,7 @@ import { adminDb } from '@/lib/firebase/admin';
 import { headers } from 'next/headers';
 import type Stripe from 'stripe';
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -136,6 +137,14 @@ export async function POST(req: Request) {
                     });
                      console.log(`Successfully marked subscription as canceled for user ${userDocRef.id}.`);
                 }
+                break;
+
+            case 'coupon.created':
+            case 'coupon.deleted':
+            case 'coupon.updated':
+                // We can revalidate the coupons page to show the latest data
+                revalidatePath('/admin-portal/coupons');
+                console.log(`Coupon event received: ${event.type}`);
                 break;
             
             default:

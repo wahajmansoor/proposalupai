@@ -162,7 +162,11 @@ export async function activateTrialAction(formData: FormData): Promise<{ success
     };
     
     if (coupon) {
-        updateParams.coupon = coupon;
+      // Find the promotion code to get the coupon id
+      const promotionCodes = await stripe.promotionCodes.list({ code: coupon, active: true });
+      if (promotionCodes.data.length > 0) {
+        updateParams.coupon = promotionCodes.data[0].coupon.id;
+      }
     }
 
     await stripe.subscriptions.update(subscriptionId, updateParams);
@@ -245,7 +249,7 @@ export async function changeTrialPlanAction(formData: FormData): Promise<{ succe
   const newPriceId = interval === 'yearly' ? yearlyPriceId : monthlyPriceId;
   
   try {
-    const subscription = await stripe.subscriptions.retrieve(subscription.id, {
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId, {
       expand: ['items.data.price']
     });
     
@@ -320,7 +324,7 @@ export async function validateCouponAction(formData: FormData): Promise<{
     success: boolean;
     error?: string;
     coupon?: {
-        id: string;
+        id: string; // This will be the promotion code itself
         name: string | null;
         percent_off: number | null;
         amount_off: number | null;
@@ -338,11 +342,22 @@ export async function validateCouponAction(formData: FormData): Promise<{
     const { code, plan } = validatedFields.data;
 
     try {
-        const coupons = await stripe.coupons.list({ active: true });
-        const coupon = coupons.data.find(c => c.id === code || c.name === code);
+        const promotionCodes = await stripe.promotionCodes.list({
+            active: true,
+            code: code,
+            limit: 1,
+            expand: ["data.coupon"],
+        });
 
-        if (!coupon) {
+        if (promotionCodes.data.length === 0) {
             return { success: false, error: 'This coupon code is not valid or has expired.' };
+        }
+
+        const promoCode = promotionCodes.data[0];
+        const coupon = promoCode.coupon;
+
+        if (!coupon.valid) {
+             return { success: false, error: 'This coupon code is not valid or has expired.' };
         }
         
         const appliesTo = coupon.metadata.applies_to_plan || 'any';
@@ -353,7 +368,7 @@ export async function validateCouponAction(formData: FormData): Promise<{
         return {
             success: true,
             coupon: {
-                id: coupon.id,
+                id: promoCode.code, // Return the promotion code itself
                 name: coupon.name,
                 percent_off: coupon.percent_off,
                 amount_off: coupon.amount_off,
