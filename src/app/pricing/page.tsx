@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -55,14 +55,14 @@ export default function PricingPage() {
   const { user, userProfile, loading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting = useState(false);
-  const [billingInterval, setBillingInterval = useState<'monthly' | 'yearly'>('monthly');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
   
-  const [showCouponInput, setShowCouponInput = useState(false);
-  const [couponCode, setCouponCode = useState('');
-  const [isValidatingCoupon, setIsValidatingCoupon = useState(false);
-  const [appliedCoupon, setAppliedCoupon = useState<ValidCoupon | null>(null);
-  const [couponError, setCouponError = useState<string | null>(null);
+  const [showCouponInput, setShowCouponInput] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<ValidCoupon | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
 
   const subscriptionStatus = userProfile?.subscriptionStatus;
   const renewalDate = userProfile?.subscriptionCurrentPeriodEnd;
@@ -81,11 +81,11 @@ export default function PricingPage() {
   const currentPlan = plans[billingInterval];
 
   // Set initial state based on user's plan
-  useState(() => {
+  useEffect(() => {
     if (isYearlyActive) {
       setBillingInterval('yearly');
     }
-  });
+  }, [isYearlyActive]);
 
   const isUpgrading = isMonthlyActive && billingInterval === 'yearly';
   const isNewSubscription = !isSubscribedAndActive && !isCanceledButActive;
@@ -242,7 +242,7 @@ export default function PricingPage() {
         )}
 
         <div className="flex items-center space-x-2 mb-8">
-          <Label htmlFor="billing-interval" className={cn(billingInterval === 'monthly' ? 'text-foreground' : 'text-muted-foreground', isYearlyActive && 'opacity-50')}>Monthly</Label>
+          <Label htmlFor="billing-interval" className={cn(billingInterval === 'monthly' ? 'text-foreground' : 'text-muted-foreground', isYearlyActive && 'opacity-50 cursor-not-allowed')}>Monthly</Label>
           <Switch 
             id="billing-interval" 
             checked={billingInterval === 'yearly'}
@@ -383,3 +383,5 @@ export default function PricingPage() {
     </div>
   );
 }
+
+    
