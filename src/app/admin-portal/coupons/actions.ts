@@ -14,38 +14,39 @@ export interface CouponWithPromotionCode extends Stripe.Coupon {
 const couponFormSchema = z.object({
   code: z.string().min(1, "Promotion code is required.").regex(/^[a-zA-Z0-9-%_]+$/, "Code can only contain letters, numbers, -, _, and %."),
   type: z.enum(['percentage', 'fixed']),
-  percent_off: z.preprocess(
-    (val) => val === '' ? undefined : Number(val),
-    z.number({ invalid_type_error: "Percentage must be a number." }).min(1).max(100).optional()
-  ),
-  amount_off: z.preprocess(
-    (val) => val === '' ? undefined : Number(val),
-    z.number({ invalid_type_error: "Amount must be a number." }).positive().optional()
-  ),
+  percent_off: z.string().optional(),
+  amount_off: z.string().optional(),
   duration: z.enum(['once', 'repeating', 'forever']),
-  duration_in_months: z.preprocess(
-    (val) => val === '' ? undefined : Number(val),
-    z.number({ invalid_type_error: "Duration must be a number." }).positive().int().optional()
-  ),
+  duration_in_months: z.string().optional(),
   applies_to: z.enum(['any', 'monthly', 'yearly']).default('any')
-}).refine(data => {
-  if (data.type === 'percentage') return data.percent_off != null;
-  return true;
-}, {
-  message: "Percentage is required for percentage-type coupons.",
-  path: ["percent_off"],
-}).refine(data => {
-  if (data.type === 'fixed') return data.amount_off != null;
-  return true;
-}, {
-  message: "Amount is required for fixed-amount coupons.",
-  path: ["amount_off"],
-}).refine(data => {
-    if (data.duration === 'repeating') return data.duration_in_months != null;
-    return true;
-}, {
-  message: "Duration in months is required for repeating coupons.",
-  path: ["duration_in_months"],
+}).superRefine((data, ctx) => {
+    if (data.type === 'percentage') {
+        if (!data.percent_off || isNaN(Number(data.percent_off))) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Percentage is required and must be a number.",
+                path: ["percent_off"],
+            });
+        }
+    }
+    if (data.type === 'fixed') {
+        if (!data.amount_off || isNaN(Number(data.amount_off))) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Amount is required and must be a number.",
+                path: ["amount_off"],
+            });
+        }
+    }
+    if (data.duration === 'repeating') {
+        if (!data.duration_in_months || isNaN(Number(data.duration_in_months))) {
+            ctx.addIssue({
+                code: z.ZodIssueCode.custom,
+                message: "Duration in months is required and must be a number.",
+                path: ["duration_in_months"],
+            });
+        }
+    }
 });
 
 
@@ -87,7 +88,11 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
     return { success: false, error: firstError || "Invalid form data." };
   }
   
-  const { code, type, percent_off, amount_off, duration, duration_in_months, applies_to } = validatedFields.data;
+  const { code, type, duration, applies_to } = validatedFields.data;
+  const percent_off = validatedFields.data.percent_off ? Number(validatedFields.data.percent_off) : undefined;
+  const amount_off = validatedFields.data.amount_off ? Number(validatedFields.data.amount_off) : undefined;
+  const duration_in_months = validatedFields.data.duration_in_months ? Number(validatedFields.data.duration_in_months) : undefined;
+
 
   let createdCouponId: string | null = null;
   try {
