@@ -49,13 +49,20 @@ export default function CouponsPage() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    const form = event.currentTarget as HTMLFormElement;
+    const formData = new FormData(form);
+    
+    if (!formData.get('name')) {
+        toast({ title: 'Error', description: "Coupon name is required.", variant: 'destructive' });
+        return;
+    }
+    
     setIsSubmitting(true);
-    const formData = new FormData(event.currentTarget);
     const result = await createCoupon(formData);
     
     if (result.success) {
       toast({ title: 'Coupon Created', description: 'The new coupon has been successfully added.' });
-      (event.target as HTMLFormElement).reset();
+      form.reset();
       setCouponType('percentage');
       setDuration('forever');
       await loadCoupons();
@@ -141,8 +148,8 @@ export default function CouponsPage() {
                 <form onSubmit={handleSubmit} className="space-y-4">
                   <div className="space-y-2">
                     <Label htmlFor="name">Coupon Name</Label>
-                    <Input id="name" name="name" type="text" placeholder="e.g., '5% Off Summer Sale'" disabled={isSubmitting} required/>
-                    <p className="text-xs text-muted-foreground">An internal name for this discount.</p>
+                    <Input id="name" name="name" type="text" placeholder="e.g., 'Summer Sale'" disabled={isSubmitting} required/>
+                    <p className="text-xs text-muted-foreground">An internal name for this discount. A unique, customer-facing code will be auto-generated.</p>
                   </div>
                   
                   <div className="space-y-2">
@@ -333,3 +340,5 @@ export default function CouponsPage() {
     </>
   );
 }
+
+    
