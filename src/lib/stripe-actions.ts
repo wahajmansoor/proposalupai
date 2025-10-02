@@ -245,7 +245,9 @@ export async function changeTrialPlanAction(formData: FormData): Promise<{ succe
   const newPriceId = interval === 'yearly' ? yearlyPriceId : monthlyPriceId;
   
   try {
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+    const subscription = await stripe.subscriptions.retrieve(subscription.id, {
+      expand: ['items.data.price']
+    });
     
     await stripe.subscriptions.update(subscription.id, {
       items: [{
@@ -336,21 +338,11 @@ export async function validateCouponAction(formData: FormData): Promise<{
     const { code, plan } = validatedFields.data;
 
     try {
-        const promoCodes = await stripe.promotionCodes.list({
-            code: code,
-            active: true,
-            limit: 1,
-            expand: ['data.coupon']
-        });
+        const coupons = await stripe.coupons.list({ active: true });
+        const coupon = coupons.data.find(c => c.id === code || c.name === code);
 
-        if (promoCodes.data.length === 0) {
+        if (!coupon) {
             return { success: false, error: 'This coupon code is not valid or has expired.' };
-        }
-        
-        const coupon = promoCodes.data[0].coupon;
-
-        if (!coupon || coupon.object !== 'coupon') {
-             return { success: false, error: 'This coupon code is not valid.' };
         }
         
         const appliesTo = coupon.metadata.applies_to_plan || 'any';
