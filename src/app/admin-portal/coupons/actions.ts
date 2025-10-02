@@ -61,19 +61,22 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
   });
 
   if (!validatedFields.success) {
-    const errorPath = validatedFields.error.errors[0].path[0];
-    const errorMessage = validatedFields.error.flatten().fieldErrors[errorPath]?.[0] || "Invalid form data.";
-    return { success: false, error: errorMessage };
+    const firstError = validatedFields.error.errors[0];
+    return { success: false, error: `${firstError.path.join('.')} : ${firstError.message}` };
   }
 
   const { code, type, percent_off, amount_off, duration, duration_in_months, applies_to } = validatedFields.data;
 
   try {
+    // SINGLE, ATOMIC API CALL
     const couponParams: Stripe.CouponCreateParams = {
-      name: code, 
+      name: code, // Use the code as the internal name for simplicity
       duration,
       metadata: {
         applies_to_plan: applies_to,
+      },
+      promotion_code: {
+        code: code,
       }
     };
 
@@ -98,19 +101,15 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
       couponParams.duration_in_months = duration_in_months;
     }
     
-    // Create the Coupon in Stripe
-    const coupon = await stripe.coupons.create(couponParams);
+    // Create the Coupon and Promotion Code in one go.
+    await stripe.coupons.create(couponParams);
     
-    // Create the Promotion Code associated with the Coupon
-    await stripe.promotionCodes.create({
-      coupon: coupon.id,
-      code: code,
-    });
-
     revalidatePath('/admin-portal/coupons');
     return { success: true };
+
   } catch (error: any) {
     console.error("Failed to create coupon:", error);
+    // Return the actual error message from Stripe
     return { success: false, error: error.raw?.message || error.message || "An unknown error occurred while creating the coupon." };
   }
 }
@@ -153,11 +152,19 @@ export async function updateCoupon(couponId: string, formData: FormData): Promis
 
 export async function deleteCoupon(couponId: string): Promise<{ success: boolean; error?: string }> {
   try {
+    // First, find and deactivate the promotion code associated with the coupon.
+    const promoCodes = await stripe.promotionCodes.list({ coupon: couponId, active: true });
+    for (const promoCode of promoCodes.data) {
+      await stripe.promotionCodes.update(promoCode.id, { active: false });
+    }
+    
+    // Then, delete the coupon itself.
     await stripe.coupons.del(couponId);
+
     revalidatePath('/admin-portal/coupons');
     return { success: true };
   } catch (error: any) {
     console.error("Failed to delete coupon:", error);
-    return { success: false, error: error.message };
+    return { success: false, error: error.raw?.message || error.message };
   }
 }

@@ -61,7 +61,7 @@ export default function CouponsPage() {
       setDuration('forever');
       await loadCoupons();
     } else {
-      toast({ title: 'Error', description: result.error, variant: 'destructive' });
+      toast({ title: 'Error Creating Coupon', description: result.error, variant: 'destructive' });
     }
     setIsSubmitting(false);
   };
@@ -72,7 +72,7 @@ export default function CouponsPage() {
         toast({ title: 'Coupon Deleted', description: 'The coupon has been deleted.' });
         await loadCoupons();
     } else {
-        toast({ title: 'Error', description: result.error, variant: 'destructive' });
+        toast({ title: 'Error Deleting Coupon', description: result.error, variant: 'destructive' });
     }
   }
 
@@ -296,7 +296,7 @@ export default function CouponsPage() {
           <DialogHeader>
             <DialogTitle>Edit Coupon</DialogTitle>
             <DialogDescription>
-              Editing coupon code: <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">{editingCoupon?.promotion_code}</span>
+              You can only edit the internal name and plan restrictions for a coupon. To change other details, please create a new coupon. The promotion code is: <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">{editingCoupon?.promotion_code}</span>
             </DialogDescription>
           </DialogHeader>
           {editingCoupon && (
