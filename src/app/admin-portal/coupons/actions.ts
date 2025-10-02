@@ -29,7 +29,6 @@ export async function getCoupons(): Promise<CouponWithPromotionCode[]> {
 }
 
 const couponSchema = z.object({
-  code: z.string().min(1, "Coupon code is required."),
   name: z.string().min(1, "Coupon name is required."),
   type: z.enum(['percentage', 'fixed']),
   percent_off: z.coerce.number().optional(),
@@ -39,9 +38,20 @@ const couponSchema = z.object({
   applies_to: z.enum(['any', 'monthly', 'yearly']).default('any'),
 });
 
+function generateStripeCompliantCode(name: string): string {
+    const baseCode = name
+        .toUpperCase()
+        .replace(/[^A-Z0-9]/g, '-') // Replace non-alphanumeric with hyphens
+        .replace(/-+/g, '-')       // Collapse multiple hyphens
+        .substring(0, 20);         // Truncate to a reasonable length
+
+    // Add a short random suffix to ensure uniqueness
+    const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
+    return `${baseCode}-${randomSuffix}`;
+}
+
 export async function createCoupon(formData: FormData): Promise<{ success: boolean; error?: string }> {
   const validatedFields = couponSchema.safeParse({
-    code: formData.get('code'),
     name: formData.get('name'),
     type: formData.get('type'),
     percent_off: formData.get('percent_off'),
@@ -55,7 +65,7 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
     return { success: false, error: "Invalid form data." };
   }
 
-  const { code, name, type, percent_off, amount_off, duration, duration_in_months, applies_to } = validatedFields.data;
+  const { name, type, percent_off, amount_off, duration, duration_in_months, applies_to } = validatedFields.data;
 
   try {
     const couponParams: Stripe.CouponCreateParams = {
@@ -89,10 +99,13 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
     
     const coupon = await stripe.coupons.create(couponParams);
     
+    // Auto-generate a compliant code from the name
+    const promotionCode = generateStripeCompliantCode(name);
+    
     // Create a promotion code for the coupon
     await stripe.promotionCodes.create({
       coupon: coupon.id,
-      code: code,
+      code: promotionCode,
     });
 
     revalidatePath('/admin-portal/coupons');
