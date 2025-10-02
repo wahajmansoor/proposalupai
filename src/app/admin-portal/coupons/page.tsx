@@ -210,9 +210,8 @@ export default function CouponsPage() {
                   </div>
 
                   <div className="space-y-2">
-                    <Label htmlFor="name">Coupon Name (Optional)</Label>
-                    <Input id="name" name="name" type="text" placeholder="e.g., 'Summer Sale'" disabled={isSubmitting}/>
-                    <p className="text-xs text-muted-foreground">This is for internal reference.</p>
+                    <Label htmlFor="name">Coupon Name</Label>
+                    <Input id="name" name="name" type="text" placeholder="e.g., 'Summer Sale'" disabled={isSubmitting} required/>
                   </div>
                   <Button type="submit" className="w-full" disabled={isSubmitting}>
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -244,7 +243,7 @@ export default function CouponsPage() {
                   <Table>
                     <TableHeader>
                       <TableRow>
-                        <TableHead>ID</TableHead>
+                        <TableHead>Name</TableHead>
                         <TableHead>Discount</TableHead>
                         <TableHead>Duration</TableHead>
                         <TableHead>Applies To</TableHead>
@@ -255,7 +254,10 @@ export default function CouponsPage() {
                     <TableBody>
                       {coupons.map((coupon) => (
                         <TableRow key={coupon.id}>
-                          <TableCell className="font-mono text-xs">{coupon.id}</TableCell>
+                          <TableCell>
+                            <div className="font-medium">{coupon.name || 'N/A'}</div>
+                            <div className="text-xs text-muted-foreground font-mono">{coupon.id}</div>
+                          </TableCell>
                           <TableCell>{renderDiscount(coupon)}</TableCell>
                           <TableCell>{renderDuration(coupon)}</TableCell>
                           <TableCell>{renderAppliesTo(coupon)}</TableCell>
@@ -313,8 +315,8 @@ export default function CouponsPage() {
             <form onSubmit={handleEditSubmit}>
                 <div className="grid gap-4 py-4">
                     <div className="space-y-2">
-                        <Label htmlFor="edit-name">Coupon Name (Optional)</Label>
-                        <Input id="edit-name" name="name" defaultValue={editingCoupon.name || ''} />
+                        <Label htmlFor="edit-name">Coupon Name</Label>
+                        <Input id="edit-name" name="name" defaultValue={editingCoupon.name || ''} required />
                     </div>
                     <div className="space-y-2">
                         <Label htmlFor="edit-applies_to">Applies To</Label>

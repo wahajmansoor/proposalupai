@@ -18,7 +18,7 @@ export async function getCoupons(): Promise<Stripe.Coupon[]> {
 
 const couponSchema = z.object({
   couponId: z.string().optional(),
-  name: z.string().optional(),
+  name: z.string().min(1, "Coupon name is required."),
   type: z.enum(['percentage', 'fixed']),
   percent_off: z.coerce.number().optional(),
   amount_off: z.coerce.number().optional(),
@@ -48,7 +48,7 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
   try {
     const couponParams: Stripe.CouponCreateParams = {
       id: couponId || undefined,
-      name: name || undefined,
+      name: name,
       duration,
       metadata: {
         applies_to_plan: applies_to,
@@ -87,7 +87,7 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
 }
 
 const updateCouponSchema = z.object({
-    name: z.string().optional(),
+    name: z.string().min(1, "Coupon name cannot be empty."),
     applies_to: z.enum(['any', 'monthly', 'yearly']).default('any'),
 });
 
@@ -106,7 +106,7 @@ export async function updateCoupon(couponId: string, formData: FormData): Promis
     
     try {
         const updateParams: Stripe.CouponUpdateParams = {
-            name: name || undefined,
+            name: name,
             metadata: {
                 applies_to_plan: applies_to,
             }
