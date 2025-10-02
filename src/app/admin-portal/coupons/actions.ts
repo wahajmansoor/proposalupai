@@ -10,6 +10,35 @@ export interface CouponWithPromotionCode extends Stripe.Coupon {
     promotion_code: string;
 }
 
+// Schema for form validation
+const couponFormSchema = z.object({
+  code: z.string().min(1, "Promotion code is required."),
+  type: z.enum(['percentage', 'fixed']),
+  percent_off: z.preprocess(
+    (val) => (val === '' ? undefined : Number(val)),
+    z.number({ invalid_type_error: "Percentage must be a number." }).min(1).max(100).optional()
+  ),
+  amount_off: z.preprocess(
+    (val) => (val === '' ? undefined : Number(val)),
+    z.number({ invalid_type_error: "Amount must be a number." }).positive().optional()
+  ),
+  duration: z.enum(['once', 'repeating', 'forever']),
+  duration_in_months: z.preprocess(
+    (val) => (val === '' ? undefined : Number(val)),
+    z.number({ invalid_type_error: "Duration must be a number." }).positive().optional()
+  ),
+  applies_to: z.enum(['any', 'monthly', 'yearly']).default('any')
+}).refine(data => data.type !== 'percentage' || data.percent_off, {
+  message: "Percentage is required for percentage-type coupons.",
+  path: ["percent_off"],
+}).refine(data => data.type !== 'fixed' || data.amount_off, {
+  message: "Amount is required for fixed-amount coupons.",
+  path: ["amount_off"],
+}).refine(data => data.duration !== 'repeating' || data.duration_in_months, {
+  message: "Duration in months is required for repeating coupons.",
+  path: ["duration_in_months"],
+});
+
 
 export async function getCoupons(): Promise<CouponWithPromotionCode[]> {
   try {
@@ -39,25 +68,18 @@ export async function getCoupons(): Promise<CouponWithPromotionCode[]> {
 }
 
 export async function createCoupon(formData: FormData): Promise<{ success: boolean; error?: string }> {
-  const code = formData.get('code') as string;
-  const type = formData.get('type') as string;
-  const percent_off = formData.get('percent_off') ? Number(formData.get('percent_off')) : undefined;
-  const amount_off = formData.get('amount_off') ? Number(formData.get('amount_off')) : undefined;
-  const duration = formData.get('duration') as "once" | "repeating" | "forever";
-  const duration_in_months = formData.get('duration_in_months') ? Number(formData.get('duration_in_months')) : undefined;
-  const applies_to = (formData.get('applies_to') as string) || 'any';
+  const data = Object.fromEntries(formData.entries());
+  
+  const validatedFields = couponFormSchema.safeParse(data);
 
-  // Basic form data validation
-  if (!code) return { success: false, error: "Promotion code is required." };
-  if (type === 'percentage' && (!percent_off || percent_off < 1 || percent_off > 100)) {
-    return { success: false, error: "Percentage discount must be between 1% and 100%." };
+  if (!validatedFields.success) {
+    // Return a user-friendly error message from Zod's flattened errors.
+    const error = validatedFields.error.flatten().fieldErrors;
+    const firstError = Object.values(error)[0]?.[0];
+    return { success: false, error: firstError || "Invalid form data." };
   }
-  if (type === 'fixed' && (!amount_off || amount_off <= 0)) {
-    return { success: false, error: "Fixed amount must be a positive number." };
-  }
-  if (duration === "repeating" && (!duration_in_months || duration_in_months <= 0)) {
-    return { success: false, error: "Duration in months is required for repeating duration." };
-  }
+  
+  const { code, type, percent_off, amount_off, duration, duration_in_months, applies_to } = validatedFields.data;
 
   let createdCouponId: string | null = null;
   try {
@@ -70,14 +92,14 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
       }
     };
 
-    if (type === 'percentage') {
+    if (type === 'percentage' && percent_off) {
       couponParams.percent_off = percent_off;
-    } else { 
+    } else if (type === 'fixed' && amount_off){ 
       couponParams.amount_off = amount_off * 100; // Stripe expects cents
       couponParams.currency = 'usd'; 
     }
 
-    if (duration === "repeating") {
+    if (duration === "repeating" && duration_in_months) {
       couponParams.duration_in_months = duration_in_months;
     }
     
@@ -111,6 +133,7 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
     return { success: false, error: error.raw?.message || error.message || "An unknown error occurred." };
   }
 }
+
 
 const updateCouponSchema = z.object({
     name: z.string().min(1, "Coupon name cannot be empty."),
@@ -166,4 +189,3 @@ export async function deleteCoupon(couponId: string): Promise<{ success: boolean
     return { success: false, error: error.raw?.message || error.message };
   }
 }
-
