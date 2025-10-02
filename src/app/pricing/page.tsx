@@ -55,14 +55,14 @@ export default function PricingPage() {
   const { user, userProfile, loading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
+  const [isSubmitting, setIsSubmitting = useState(false);
+  const [billingInterval, setBillingInterval = useState<'monthly' | 'yearly'>('monthly');
   
-  const [showCouponInput, setShowCouponInput] = useState(false);
-  const [couponCode, setCouponCode] = useState('');
-  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
-  const [appliedCoupon, setAppliedCoupon] = useState<ValidCoupon | null>(null);
-  const [couponError, setCouponError] = useState<string | null>(null);
+  const [showCouponInput, setShowCouponInput = useState(false);
+  const [couponCode, setCouponCode = useState('');
+  const [isValidatingCoupon, setIsValidatingCoupon = useState(false);
+  const [appliedCoupon, setAppliedCoupon = useState<ValidCoupon | null>(null);
+  const [couponError, setCouponError = useState<string | null>(null);
 
   const subscriptionStatus = userProfile?.subscriptionStatus;
   const renewalDate = userProfile?.subscriptionCurrentPeriodEnd;
@@ -86,6 +86,10 @@ export default function PricingPage() {
       setBillingInterval('yearly');
     }
   });
+
+  const isUpgrading = isMonthlyActive && billingInterval === 'yearly';
+  const isNewSubscription = !isSubscribedAndActive && !isCanceledButActive;
+  const canShowCoupon = isNewSubscription || isUpgrading;
 
 
   const handleCouponValidation = async () => {
@@ -272,7 +276,7 @@ export default function PricingPage() {
                       <p className="text-sm text-muted-foreground">{currentPlan.priceDescription}</p>
                     </div>
 
-                    {!isSubscribedAndActive && !isCanceledButActive &&(
+                    {canShowCoupon &&(
                       <div className="my-4 space-y-2">
                         {!showCouponInput && !appliedCoupon ? (
                           <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => setShowCouponInput(true)}>
