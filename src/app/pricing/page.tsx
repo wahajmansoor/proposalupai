@@ -155,18 +155,19 @@ export default function PricingPage() {
 
         {showPlanManagement && (
             <div className="w-full max-w-md mb-8 border rounded-lg p-4 flex items-center justify-between bg-card">
-                <div>
-                  <p className="text-sm font-semibold">Your Current Plan:</p>
-                  <div className="flex items-center gap-2 mt-1">
-                     <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground">{getPlanName()}{isTrialing && " Trial"}</Badge>
-                  </div>
+              <div>
+                <p className="text-sm font-semibold">Your Current Plan:</p>
+                <div className="flex items-center gap-2 mt-1">
+                  <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground">{getPlanName()}</Badge>
+                  {isTrialing && <Badge variant="outline" className="border-green-600 text-green-600">2 Days Free Trial</Badge>}
                 </div>
-                {renewalDate && (
-                    <div className="text-right">
-                      <p className="text-sm font-semibold">{isTrialing ? 'Trial Ends' : 'Renews On'}</p>
-                      <p className="text-xs text-muted-foreground">{format(new Date(renewalDate), 'MMMM d, yyyy')}</p>
-                    </div>
-                )}
+              </div>
+              {renewalDate && (
+                  <div className="text-right">
+                    <p className="text-sm font-semibold">{isTrialing ? 'Trial Ends' : 'Renews On'}</p>
+                    <p className="text-xs text-muted-foreground">{format(new Date(renewalDate), 'MMMM d, yyyy')}</p>
+                  </div>
+              )}
             </div>
         )}
 
