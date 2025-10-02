@@ -15,13 +15,43 @@ export async function getCoupons(): Promise<CouponWithPromotionCode[]> {
   try {
     const promoCodes = await stripe.promotionCodes.list({ active: true, limit: 100, expand: ['data.coupon'] });
 
-    return promoCodes.data.map(promoCode => {
+    const coupons = promoCodes.data.map(promoCode => {
         const coupon = promoCode.coupon as Stripe.Coupon;
         return {
             ...coupon,
             promotion_code: promoCode.code,
         };
     });
+
+    // It's possible some coupons don't have active promotion codes.
+    // To ensure we show all coupons, we can also fetch coupons directly.
+    const allCoupons = await stripe.coupons.list({ limit: 100 });
+    for (const coupon of allCoupons.data) {
+        if (!coupons.some(c => c.id === coupon.id)) {
+            // Find a promotion code for this coupon if it exists
+             const relatedPromoCodes = await stripe.promotionCodes.list({ coupon: coupon.id, active: true, limit: 1 });
+             if (relatedPromoCodes.data.length > 0) {
+                 coupons.push({
+                     ...coupon,
+                     promotion_code: relatedPromoCodes.data[0].code,
+                 });
+             } else {
+                 // Coupon exists but has no active promotion code, we can show it as invalid.
+                  coupons.push({
+                     ...coupon,
+                     valid: false, // Mark as invalid if no active promo code
+                     promotion_code: coupon.name || 'No active code',
+                 });
+             }
+        }
+    }
+    
+    // Filter out duplicates and sort
+    const uniqueCoupons = Array.from(new Map(coupons.map(c => [c.id, c])).values());
+    uniqueCoupons.sort((a, b) => (b.created || 0) - (a.created || 0));
+
+    return uniqueCoupons;
+
   } catch (error: any) {
     console.error("Failed to fetch coupons from Stripe:", error);
     throw new Error(`Failed to fetch coupons: ${error.message}`);
@@ -29,7 +59,8 @@ export async function getCoupons(): Promise<CouponWithPromotionCode[]> {
 }
 
 const couponSchema = z.object({
-  code: z.string().min(1, "Promotion code is required.").refine(s => !s.includes(' '), "Promotion code cannot contain spaces."),
+  code: z.string().min(1, "Promotion code is required.").refine(s => !s.includes(' '), "Promotion code cannot contain spaces.").refine(s => /^[a-zA-Z0-9\-_]+$/.test(s), "Code can only contain letters, numbers, hyphens, and underscores."),
+  name: z.string().min(1, "Internal name is required."),
   type: z.enum(['percentage', 'fixed']),
   percent_off: z.coerce.number().optional(),
   amount_off: z.coerce.number().optional(),
@@ -42,6 +73,7 @@ const couponSchema = z.object({
 export async function createCoupon(formData: FormData): Promise<{ success: boolean; error?: string }> {
   const validatedFields = couponSchema.safeParse({
     code: formData.get('code'),
+    name: formData.get('name'),
     type: formData.get('type'),
     percent_off: formData.get('percent_off'),
     amount_off: formData.get('amount_off'),
@@ -52,15 +84,15 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
 
   if (!validatedFields.success) {
     const fieldErrors = validatedFields.error.flatten().fieldErrors;
-    const errorMessage = fieldErrors.code?.[0] || fieldErrors.percent_off?.[0] || fieldErrors.amount_off?.[0] || "Invalid form data.";
+    const errorMessage = fieldErrors.code?.[0] || fieldErrors.name?.[0] || fieldErrors.percent_off?.[0] || fieldErrors.amount_off?.[0] || "Invalid form data.";
     return { success: false, error: errorMessage };
   }
 
-  const { code, type, percent_off, amount_off, duration, duration_in_months, applies_to } = validatedFields.data;
+  const { code, name, type, percent_off, amount_off, duration, duration_in_months, applies_to } = validatedFields.data;
 
   try {
     const couponParams: Stripe.CouponCreateParams = {
-      name: code, // Use the code as the internal name as well for simplicity
+      name: name,
       duration,
       metadata: {
         applies_to_plan: applies_to,
@@ -101,9 +133,6 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
     console.error("Failed to create coupon:", error);
     if (error.code === 'promotion_code_already_exists' || (error.raw?.code === 'resource_already_exists' && error.raw.param === 'code')) {
         return { success: false, error: "This promotion code already exists. Please choose a unique one." };
-    }
-    if (error.raw?.code === 'parameter_invalid_string' && error.raw?.param === 'code') {
-       return { success: false, error: "Invalid characters in promotion code. Use only letters, numbers, hyphens, and underscores." };
     }
     return { success: false, error: error.message };
   }

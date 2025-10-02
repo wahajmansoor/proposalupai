@@ -144,7 +144,13 @@ export default function CouponsPage() {
                   <div className="space-y-2">
                     <Label htmlFor="code">Promotion Code</Label>
                     <Input id="code" name="code" type="text" placeholder="e.g., SUMMER25" disabled={isSubmitting} required/>
-                    <p className="text-xs text-muted-foreground">This is the code customers will enter. No spaces.</p>
+                    <p className="text-xs text-muted-foreground">Customer-facing code. No spaces. Use only letters, numbers, hyphens, and underscores.</p>
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="name">Internal Name</Label>
+                    <Input id="name" name="name" type="text" placeholder="e.g., Summer 25% Off" disabled={isSubmitting} required/>
+                     <p className="text-xs text-muted-foreground">For your reference. Can include spaces and symbols.</p>
                   </div>
                   
                   <div className="space-y-2">
@@ -247,7 +253,7 @@ export default function CouponsPage() {
                         <TableRow key={coupon.id}>
                           <TableCell>
                             <div className="font-medium">{coupon.promotion_code}</div>
-                            <div className="text-xs text-muted-foreground">ID: {coupon.id}</div>
+                            <div className="text-xs text-muted-foreground">{coupon.name || `ID: ${coupon.id}`}</div>
                           </TableCell>
                           <TableCell>{renderDiscount(coupon)}</TableCell>
                           <TableCell>{renderDuration(coupon)}</TableCell>
@@ -271,7 +277,7 @@ export default function CouponsPage() {
                                   <AlertDialogHeader>
                                       <AlertDialogTitle>Are you sure?</AlertDialogTitle>
                                       <AlertDialogDescription>
-                                      This will permanently delete the coupon with code "{coupon.promotion_code}". This action cannot be undone.
+                                      This will permanently delete the coupon "{coupon.name || coupon.promotion_code}". This action cannot be undone.
                                       </AlertDialogDescription>
                                   </AlertDialogHeader>
                                   <AlertDialogFooter>
@@ -299,14 +305,14 @@ export default function CouponsPage() {
           <DialogHeader>
             <DialogTitle>Edit Coupon</DialogTitle>
             <DialogDescription>
-              Editing coupon: <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">{editingCoupon?.promotion_code}</span>
+              Editing coupon code: <span className="font-mono text-xs bg-muted px-1 py-0.5 rounded">{editingCoupon?.promotion_code}</span>
             </DialogDescription>
           </DialogHeader>
           {editingCoupon && (
             <form onSubmit={handleEditSubmit}>
                 <div className="grid gap-4 py-4">
                     <div className="space-y-2">
-                        <Label htmlFor="edit-name">Internal Name (Was: {editingCoupon.name})</Label>
+                        <Label htmlFor="edit-name">Internal Name</Label>
                         <Input id="edit-name" name="name" defaultValue={editingCoupon.name || ''} required />
                     </div>
                     <div className="space-y-2">
