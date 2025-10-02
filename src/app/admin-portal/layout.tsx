@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { getAdminSession } from '@/app/login/actions';
 import { redirect } from 'next/navigation';
 import { Sidebar, SidebarProvider, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarHeader, SidebarTrigger, SidebarContent, SidebarFooter } from '@/components/ui/sidebar';
-import { Home, Users, LogOut, PanelLeft } from 'lucide-react';
+import { Home, Users, LogOut, PanelLeft, Ticket } from 'lucide-react';
 import { adminLogout } from '@/app/login/actions';
 
 export default async function AdminLayout({
@@ -48,6 +48,14 @@ export default async function AdminLayout({
                                     <SidebarMenuButton className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800 whitespace-nowrap" tooltip="Users">
                                         <Users />
                                         <span className="group-data-[collapsible=icon]:hidden">Users</span>
+                                    </SidebarMenuButton>
+                                </Link>
+                            </SidebarMenuItem>
+                             <SidebarMenuItem>
+                                <Link href="/admin-portal/coupons" className="w-full">
+                                    <SidebarMenuButton className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800 whitespace-nowrap" tooltip="Coupons">
+                                        <Ticket />
+                                        <span className="group-data-[collapsible=icon]:hidden">Coupons</span>
                                     </SidebarMenuButton>
                                 </Link>
                             </SidebarMenuItem>
