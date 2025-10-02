@@ -68,15 +68,12 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
   const { code, type, percent_off, amount_off, duration, duration_in_months, applies_to } = validatedFields.data;
 
   try {
-    // SINGLE, ATOMIC API CALL
+    // Step 1: Create the Coupon with discount details
     const couponParams: Stripe.CouponCreateParams = {
       name: code, // Use the code as the internal name for simplicity
       duration,
       metadata: {
         applies_to_plan: applies_to,
-      },
-      promotion_code: {
-        code: code,
       }
     };
 
@@ -101,8 +98,13 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
       couponParams.duration_in_months = duration_in_months;
     }
     
-    // Create the Coupon and Promotion Code in one go.
-    await stripe.coupons.create(couponParams);
+    const coupon = await stripe.coupons.create(couponParams);
+    
+    // Step 2: Create the Promotion Code and link it to the coupon
+    await stripe.promotionCodes.create({
+      coupon: coupon.id,
+      code: code,
+    });
     
     revalidatePath('/admin-portal/coupons');
     return { success: true };
