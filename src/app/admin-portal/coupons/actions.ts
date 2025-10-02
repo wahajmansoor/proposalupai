@@ -41,13 +41,12 @@ const couponSchema = z.object({
 function generateStripeCompliantCode(name: string): string {
     const baseCode = name
         .toUpperCase()
-        .replace(/[^A-Z0-9]/g, '-') // Replace non-alphanumeric with hyphens
-        .replace(/-+/g, '-')       // Collapse multiple hyphens
+        .replace(/[^A-Z0-9]/g, '') // Remove non-alphanumeric characters
         .substring(0, 20);         // Truncate to a reasonable length
 
     // Add a short random suffix to ensure uniqueness
     const randomSuffix = Math.random().toString(36).substring(2, 8).toUpperCase();
-    return `${baseCode}-${randomSuffix}`;
+    return `${baseCode}${randomSuffix}`;
 }
 
 export async function createCoupon(formData: FormData): Promise<{ success: boolean; error?: string }> {
@@ -154,8 +153,9 @@ export async function updateCoupon(couponId: string, formData: FormData): Promis
 
 export async function deleteCoupon(couponId: string): Promise<{ success: boolean; error?: string }> {
   try {
-    // In Stripe, deleting a coupon automatically deactivates associated promotion codes.
-    await stripe.coupons.update(couponId, { active: false });
+    // Deleting a coupon will prevent it from being applied to future subscriptions.
+    // It does not affect existing subscriptions.
+    await stripe.coupons.del(couponId);
     revalidatePath('/admin-portal/coupons');
     return { success: true };
   } catch (error: any) {
