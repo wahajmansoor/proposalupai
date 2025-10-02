@@ -336,13 +336,23 @@ export async function validateCouponAction(formData: FormData): Promise<{
     const { code, plan } = validatedFields.data;
 
     try {
-        const coupons = await stripe.coupons.list({ code: code, active: true, limit: 1 });
-        const coupon = coupons.data[0];
+        const promoCodes = await stripe.promotionCodes.list({
+            code: code,
+            active: true,
+            limit: 1,
+            expand: ['data.coupon']
+        });
 
-        if (!coupon) {
-            return { success: false, error: 'This coupon code is not valid.' };
+        if (promoCodes.data.length === 0) {
+            return { success: false, error: 'This coupon code is not valid or has expired.' };
         }
+        
+        const coupon = promoCodes.data[0].coupon;
 
+        if (!coupon || coupon.object !== 'coupon') {
+             return { success: false, error: 'This coupon code is not valid.' };
+        }
+        
         const appliesTo = coupon.metadata.applies_to_plan || 'any';
         if (appliesTo !== 'any' && appliesTo !== plan) {
             return { success: false, error: `This coupon is only valid for the ${appliesTo} plan.` };
