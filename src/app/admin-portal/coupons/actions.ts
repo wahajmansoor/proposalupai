@@ -59,24 +59,29 @@ const couponFormSchema = z.object({
 
 export async function getCoupons(): Promise<CouponWithPromotionCode[]> {
   try {
-    const promoCodes = await stripe.promotionCodes.list({ active: true, limit: 100, expand: ['data.coupon'] });
+    const [coupons, promoCodes] = await Promise.all([
+        stripe.coupons.list({ limit: 100 }),
+        stripe.promotionCodes.list({ limit: 100, active: true })
+    ]);
 
-    const coupons = promoCodes.data.map(promoCode => {
-        // Ensure that coupon is an object before spreading
-        if (typeof promoCode.coupon === 'object' && promoCode.coupon !== null) {
-            const coupon = promoCode.coupon as Stripe.Coupon;
-            return {
-                ...coupon,
-                promotion_code: promoCode.code,
-            };
+    const promoCodeMap = new Map<string, string>();
+    promoCodes.data.forEach(promo => {
+        // A coupon can have multiple promo codes, we'll just show the first one we find.
+        if (promo.coupon.id && !promoCodeMap.has(promo.coupon.id)) {
+            promoCodeMap.set(promo.coupon.id, promo.code);
         }
-        return null;
-    }).filter((c): c is CouponWithPromotionCode => c !== null);
+    });
 
-    const uniqueCoupons = Array.from(new Map(coupons.map(c => [c.id, c])).values());
-    uniqueCoupons.sort((a, b) => (b.created || 0) - (a.created || 0));
+    const couponsWithCodes = coupons.data.map(coupon => {
+      return {
+        ...coupon,
+        promotion_code: promoCodeMap.get(coupon.id) || coupon.name || 'N/A',
+      };
+    });
 
-    return uniqueCoupons;
+    couponsWithCodes.sort((a, b) => (b.created || 0) - (a.created || 0));
+
+    return couponsWithCodes;
 
   } catch (error: any) {
     console.error("Failed to fetch coupons from Stripe:", error);
