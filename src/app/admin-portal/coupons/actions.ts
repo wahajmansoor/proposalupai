@@ -16,12 +16,16 @@ export async function getCoupons(): Promise<CouponWithPromotionCode[]> {
     const promoCodes = await stripe.promotionCodes.list({ active: true, limit: 100, expand: ['data.coupon'] });
 
     const coupons = promoCodes.data.map(promoCode => {
-        const coupon = promoCode.coupon as Stripe.Coupon;
-        return {
-            ...coupon,
-            promotion_code: promoCode.code,
-        };
-    });
+        // Ensure that coupon is an object before spreading
+        if (typeof promoCode.coupon === 'object' && promoCode.coupon !== null) {
+            const coupon = promoCode.coupon as Stripe.Coupon;
+            return {
+                ...coupon,
+                promotion_code: promoCode.code,
+            };
+        }
+        return null;
+    }).filter((c): c is CouponWithPromotionCode => c !== null);
 
     const uniqueCoupons = Array.from(new Map(coupons.map(c => [c.id, c])).values());
     uniqueCoupons.sort((a, b) => (b.created || 0) - (a.created || 0));
@@ -94,8 +98,10 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
       couponParams.duration_in_months = duration_in_months;
     }
     
+    // Create the Coupon in Stripe
     const coupon = await stripe.coupons.create(couponParams);
     
+    // Create the Promotion Code associated with the Coupon
     await stripe.promotionCodes.create({
       coupon: coupon.id,
       code: code,
