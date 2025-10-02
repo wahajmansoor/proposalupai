@@ -9,6 +9,7 @@
  */
 import { openai } from '@/lib/openai';
 import { z } from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 const AutofillProposalSectionsInputSchema = z.object({
   projectTitle: z.string().describe('The title of the project being applied for.'),
@@ -48,16 +49,7 @@ Output a comma-separated string of the most relevant skills (e.g., "React, Proje
         function: {
           name: 'extract_skills',
           description: 'Extracts relevant skills from text.',
-          parameters: {
-            type: 'object',
-            properties: {
-              skills: {
-                type: 'string',
-                description: 'A comma-separated string of relevant skills.',
-              },
-            },
-            required: ['skills'],
-          },
+          parameters: zodToJsonSchema(SkillsSchema),
         },
       },
     ],
@@ -68,13 +60,14 @@ Output a comma-separated string of the most relevant skills (e.g., "React, Proje
   if (toolCall?.function.arguments) {
     const args = JSON.parse(toolCall.function.arguments);
     const parsedSkills = SkillsSchema.parse(args);
-    const skillsArray = parsedSkills.skills
+    const skillsArray = (parsedSkills.skills || '')
       .split(',')
       .map((skill) => {
           const trimmedSkill = skill.trim();
+          if (!trimmedSkill) return null;
           return trimmedSkill.charAt(0).toUpperCase() + trimmedSkill.slice(1);
       })
-      .filter(Boolean);
+      .filter(Boolean) as string[];
     return { skillsAndExpertise: skillsArray };
   }
 
