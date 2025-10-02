@@ -144,13 +144,7 @@ export default function CouponsPage() {
                   <div className="space-y-2">
                     <Label htmlFor="code">Promotion Code</Label>
                     <Input id="code" name="code" type="text" placeholder="e.g., SUMMER25" disabled={isSubmitting} required/>
-                    <p className="text-xs text-muted-foreground">Customer-facing code. No spaces. Use only letters, numbers, hyphens, and underscores.</p>
-                  </div>
-                  
-                  <div className="space-y-2">
-                    <Label htmlFor="name">Internal Name</Label>
-                    <Input id="name" name="name" type="text" placeholder="e.g., Summer 25% Off" disabled={isSubmitting} required/>
-                     <p className="text-xs text-muted-foreground">For your reference. Can include spaces and symbols.</p>
+                    <p className="text-xs text-muted-foreground">Customer-facing code. Stripe may have character limitations.</p>
                   </div>
                   
                   <div className="space-y-2">
@@ -341,3 +335,5 @@ export default function CouponsPage() {
     </>
   );
 }
+
+    
