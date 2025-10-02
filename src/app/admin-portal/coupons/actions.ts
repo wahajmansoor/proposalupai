@@ -28,10 +28,10 @@ const couponFormSchema = z.object({
     z.number({ invalid_type_error: "Duration must be a number." }).positive().optional()
   ),
   applies_to: z.enum(['any', 'monthly', 'yearly']).default('any')
-}).refine(data => data.type !== 'percentage' || data.percent_off, {
+}).refine(data => data.type !== 'percentage' || (data.percent_off !== undefined && data.percent_off > 0), {
   message: "Percentage is required for percentage-type coupons.",
   path: ["percent_off"],
-}).refine(data => data.type !== 'fixed' || data.amount_off, {
+}).refine(data => data.type !== 'fixed' || (data.amount_off !== undefined && data.amount_off > 0), {
   message: "Amount is required for fixed-amount coupons.",
   path: ["amount_off"],
 }).refine(data => data.duration !== 'repeating' || data.duration_in_months, {
