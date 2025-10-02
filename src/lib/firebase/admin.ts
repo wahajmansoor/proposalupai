@@ -6,24 +6,26 @@ import { getFirestore, Firestore } from 'firebase-admin/firestore';
 let adminAuth: Auth;
 let adminDb: Firestore;
 
-const projectId = process.env.FIREBASE_PROJECT_ID;
-const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-const privateKey = process.env.FIREBASE_PRIVATE_KEY;
+// Use the full service account key from the environment variable.
+const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
-if (!projectId || !clientEmail || !privateKey) {
-  console.error("Firebase Admin SDK Error: One or more required environment variables (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY) are not set.");
-  // Assign undefined to exports if initialization fails
+if (!serviceAccountString || serviceAccountString.includes('your_firebase_service_account_key_here')) {
+  console.error("Firebase Admin SDK Error: FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set or is a placeholder.");
+  // Assign undefined to exports if initialization fails so the app can still start
   // @ts-ignore
   adminAuth = undefined;
   // @ts-ignore
   adminDb = undefined;
+
 } else if (getApps().length === 0) {
   try {
-    const serviceAccount: ServiceAccount = {
-      projectId,
-      clientEmail,
-      privateKey: privateKey.replace(/\\n/g, '\n'), // Replace escaped newlines
-    };
+    // Parse the JSON string into a ServiceAccount object
+    const serviceAccount: ServiceAccount = JSON.parse(serviceAccountString);
+    
+    // Vercel might escape newlines in the private key, so we need to replace them back.
+    if (serviceAccount.private_key) {
+      serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+    }
 
     const app: App = initializeApp({
       credential: cert(serviceAccount),
@@ -31,6 +33,7 @@ if (!projectId || !clientEmail || !privateKey) {
     
     adminAuth = getAuth(app);
     adminDb = getFirestore(app);
+
   } catch (error: any) {
     console.error('Firebase Admin SDK initialization failed:', error);
     // @ts-ignore
