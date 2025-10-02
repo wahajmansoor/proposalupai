@@ -10,6 +10,7 @@
  */
 import { openai } from '@/lib/openai';
 import { z } from 'zod';
+import { zodToJsonSchema } from 'zod-to-json-schema';
 
 const AnswerClientQuestionsInputSchema = z.object({
   jobDescription: z.string().describe('The job description for the proposal.'),
@@ -63,19 +64,7 @@ ${input.clientQuestions.map((q) => `- ${q}`).join('\n')}
         function: {
           name: 'provide_answers_to_client_questions',
           description: 'Provides answers to a list of client questions.',
-          parameters: {
-            type: 'object',
-            properties: {
-              answers: {
-                type: 'array',
-                items: {
-                  type: 'string',
-                },
-                description: 'An array of answers to the client questions.',
-              },
-            },
-            required: ['answers'],
-          },
+          parameters: zodToJsonSchema(AnswerClientQuestionsOutputSchema),
         },
       },
     ],
