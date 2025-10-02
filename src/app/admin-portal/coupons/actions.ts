@@ -66,7 +66,7 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
 
   try {
     const couponParams: Stripe.CouponCreateParams = {
-      name: code, // Use the code as the internal name for simplicity
+      name: code, 
       duration,
       metadata: {
         applies_to_plan: applies_to,
@@ -153,8 +153,6 @@ export async function updateCoupon(couponId: string, formData: FormData): Promis
 
 export async function deleteCoupon(couponId: string): Promise<{ success: boolean; error?: string }> {
   try {
-    // This is the correct way to delete a coupon.
-    // Deleting the coupon will also deactivate associated promotion codes.
     await stripe.coupons.del(couponId);
     revalidatePath('/admin-portal/coupons');
     return { success: true };
