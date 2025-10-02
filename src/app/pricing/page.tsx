@@ -89,7 +89,7 @@ export default function PricingPage() {
 
   const isUpgrading = isMonthlyActive && billingInterval === 'yearly';
   const isNewSubscription = !isSubscribedAndActive && !isCanceledButActive && !isTrialing;
-  const canShowCoupon = isUpgrading || isTrialing || (isMonthlyActive && billingInterval === 'yearly');
+  const canShowCoupon = isUpgrading || (isTrialing && !isNewSubscription) || (isMonthlyActive && billingInterval === 'yearly');
 
 
   const handleCouponValidation = async () => {
@@ -135,8 +135,10 @@ export default function PricingPage() {
     if (appliedCoupon) {
       formData.append('coupon', appliedCoupon.id);
     }
-
-    if (isTrialing) {
+    
+    if (isNewSubscription) {
+        await createCheckoutSession(formData);
+    } else if (isTrialing) {
         const result = await activateTrialAction(formData);
         if (result.error) {
             toast({ title: 'Activation Failed', description: result.error, variant: 'destructive' });
@@ -150,7 +152,7 @@ export default function PricingPage() {
         } else {
             toast({ title: 'Upgrade Successful!', description: 'You are now on the Pro Yearly plan.' });
         }
-    } else if (isCanceledButActive || !isSubscribedAndActive) {
+    } else if (isCanceledButActive) {
         await createCheckoutSession(formData);
     }
     
@@ -258,6 +260,7 @@ export default function PricingPage() {
         </div>
 
         <div className="flex justify-center w-full max-w-md">
+          <form onSubmit={handleFormSubmit} className="w-full">
             <Card className="flex flex-col shadow-lg w-full border border-border">
                 <CardHeader className="pb-4">
                     <CardTitle className="text-xl font-semibold">{currentPlan.name}</CardTitle>
@@ -280,7 +283,7 @@ export default function PricingPage() {
                       <p className="text-sm text-muted-foreground">{currentPlan.priceDescription}</p>
                     </div>
 
-                    {canShowCoupon && !isNewSubscription && (
+                    {canShowCoupon && (
                       <div className="my-4 space-y-2">
                         {!showCouponInput && !appliedCoupon ? (
                           <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => setShowCouponInput(true)}>
@@ -306,7 +309,7 @@ export default function PricingPage() {
                                 disabled={isValidatingCoupon}
                                 className="h-9"
                               />
-                              <Button onClick={handleCouponValidation} disabled={isValidatingCoupon || !couponCode.trim()} size="sm">
+                              <Button onClick={handleCouponValidation} disabled={isValidatingCoupon || !couponCode.trim()} size="sm" type="button">
                                 {isValidatingCoupon ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Apply'}
                               </Button>
                             </div>
@@ -316,29 +319,28 @@ export default function PricingPage() {
                       </div>
                     )}
                     
+                    <input type="hidden" name="interval" value={billingInterval} />
                     {isYearlyActive ? (
                        <Button 
                             size="lg" 
                             className="w-full text-sm font-medium"
                             disabled={isSubmitting}
                             onClick={handleManageClick}
+                            type="button"
                         >
                              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                              Manage Subscription
                         </Button>
                     ) : (
-                        <form onSubmit={handleFormSubmit} className="w-full flex flex-col gap-4">
-                            <input type="hidden" name="interval" value={billingInterval} />
-                            <Button 
-                                type="submit"
-                                size="lg" 
-                                className="w-full text-sm font-medium"
-                                disabled={isButtonDisabled}
-                            >
-                                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                                {getButtonText()}
-                            </Button>
-                        </form>
+                        <Button 
+                            type="submit"
+                            size="lg" 
+                            className="w-full text-sm font-medium"
+                            disabled={isButtonDisabled}
+                        >
+                            {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                            {getButtonText()}
+                        </Button>
                     )}
                     
                     
@@ -372,6 +374,7 @@ export default function PricingPage() {
                     </div>
                 </CardContent>
             </Card>
+          </form>
         </div>
         
         {showPlanManagement && (
