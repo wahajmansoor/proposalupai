@@ -47,13 +47,23 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
   const duration_in_months = formData.get('duration_in_months') ? Number(formData.get('duration_in_months')) : undefined;
   const applies_to = (formData.get('applies_to') as string) || 'any';
 
-  if (!code) {
-      return { success: false, error: "Promotion code is required." };
+  // Basic form data validation
+  if (!code) return { success: false, error: "Promotion code is required." };
+  if (type === 'percentage' && (!percent_off || percent_off < 1 || percent_off > 100)) {
+    return { success: false, error: "Percentage discount must be between 1% and 100%." };
+  }
+  if (type === 'fixed' && (!amount_off || amount_off <= 0)) {
+    return { success: false, error: "Fixed amount must be a positive number." };
+  }
+  if (duration === "repeating" && (!duration_in_months || duration_in_months <= 0)) {
+    return { success: false, error: "Duration in months is required for repeating duration." };
   }
 
+  let createdCouponId: string | null = null;
   try {
+    // Step 1: Create the Coupon object
     const couponParams: Stripe.CouponCreateParams = {
-      name: code, 
+      name: code, // Use the code as the internal name for simplicity
       duration,
       metadata: {
         applies_to_plan: applies_to,
@@ -61,39 +71,44 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
     };
 
     if (type === 'percentage') {
-      if (!percent_off || percent_off < 1 || percent_off > 100) {
-        return { success: false, error: "Percentage discount must be between 1% and 100%." };
-      }
       couponParams.percent_off = percent_off;
     } else { 
-      if (!amount_off || amount_off <= 0) {
-        return { success: false, error: "Fixed amount must be a positive number." };
-      }
       couponParams.amount_off = amount_off * 100; // Stripe expects cents
       couponParams.currency = 'usd'; 
     }
 
-    if (duration === "repeating" && (!duration_in_months || duration_in_months <= 0)) {
-      return { success: false, error: "Duration in months is required for repeating duration." };
-    }
-    
     if (duration === "repeating") {
       couponParams.duration_in_months = duration_in_months;
     }
     
     const coupon = await stripe.coupons.create(couponParams);
-    
+    createdCouponId = coupon.id;
+
+    // Step 2: Create the Promotion Code and associate it with the coupon
     await stripe.promotionCodes.create({
       coupon: coupon.id,
       code: code,
     });
     
+    // If both steps succeed, revalidate the path and return success
     revalidatePath('/admin-portal/coupons');
     return { success: true };
 
   } catch (error: any) {
-    console.error("Failed to create coupon:", error);
-    return { success: false, error: error.raw?.message || error.message || "An unknown error occurred while creating the coupon." };
+    // If any step fails, return the error from Stripe's API
+    console.error("Failed to create coupon or promotion code:", error);
+    
+    // Attempt to clean up the orphaned coupon if the promotion code creation failed
+    if (createdCouponId) {
+      try {
+        await stripe.coupons.del(createdCouponId);
+        console.log(`Cleaned up orphaned coupon: ${createdCouponId}`);
+      } catch (cleanupError: any) {
+        console.error(`Failed to clean up orphaned coupon ${createdCouponId}:`, cleanupError);
+      }
+    }
+
+    return { success: false, error: error.raw?.message || error.message || "An unknown error occurred." };
   }
 }
 
@@ -151,3 +166,4 @@ export async function deleteCoupon(couponId: string): Promise<{ success: boolean
     return { success: false, error: error.raw?.message || error.message };
   }
 }
+
