@@ -80,6 +80,14 @@ export default function PricingPage() {
 
   const currentPlan = plans[billingInterval];
 
+  // Set initial state based on user's plan
+  useState(() => {
+    if (isYearlyActive) {
+      setBillingInterval('yearly');
+    }
+  });
+
+
   const handleCouponValidation = async () => {
     if (!couponCode.trim()) return;
 
@@ -163,7 +171,7 @@ export default function PricingPage() {
         return billingInterval === 'monthly' ? 'Activate Monthly Plan' : 'Activate Yearly Plan';
     }
     if (isMonthlyActive && billingInterval === 'yearly') return 'Switch to Yearly Plan';
-    if (isYearlyActive && billingInterval === 'monthly') return 'Manage Subscription';
+    if (isYearlyActive) return 'Your Current Plan';
     if (isSubscribedAndActive) return 'Your Current Plan';
     if (isCanceledButActive) return 'Reactivate Plan';
     return isTrialing ? 'Start Free Trial' : 'Get Started';
@@ -187,7 +195,7 @@ export default function PricingPage() {
   }
 
   const isButtonDisabled = isSubmitting || (isMonthlyActive && billingInterval === 'monthly') || (isYearlyActive && billingInterval === 'yearly');
-  const isManageButton = isYearlyActive && billingInterval === 'monthly';
+
 
   if (authLoading) {
     return (
@@ -227,12 +235,12 @@ export default function PricingPage() {
         )}
 
         <div className="flex items-center space-x-2 mb-8">
-          <Label htmlFor="billing-interval" className={cn(billingInterval === 'monthly' ? 'text-foreground' : 'text-muted-foreground')}>Monthly</Label>
+          <Label htmlFor="billing-interval" className={cn(billingInterval === 'monthly' ? 'text-foreground' : 'text-muted-foreground', isYearlyActive && 'opacity-50')}>Monthly</Label>
           <Switch 
             id="billing-interval" 
             checked={billingInterval === 'yearly'}
             onCheckedChange={(checked) => setBillingInterval(checked ? 'yearly' : 'monthly')}
-            disabled={!!appliedCoupon}
+            disabled={!!appliedCoupon || isYearlyActive}
           />
           <Label htmlFor="billing-interval" className={cn(billingInterval === 'yearly' ? 'text-foreground' : 'text-muted-foreground')}>Yearly</Label>
           <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">Save 16%</Badge>
@@ -297,8 +305,8 @@ export default function PricingPage() {
                       </div>
                     )}
                     
-                    {isManageButton ? (
-                        <Button 
+                    {isYearlyActive ? (
+                       <Button 
                             size="lg" 
                             className="w-full text-sm font-medium"
                             disabled={isSubmitting}
@@ -328,13 +336,7 @@ export default function PricingPage() {
                            This will end your trial and charge the card on file. To change your payment method, please visit your <Link href="/profile" className="underline">profile page</Link>.
                         </p>
                     )}
-                    {isYearlyActive && billingInterval === 'monthly' && (
-                        <p className="text-xs text-center text-muted-foreground mt-2">
-                            Downgrades are handled in the billing portal and take effect at the end of your current term.
-                        </p>
-                    )}
-
-
+                    
                     <div className="border-t my-6"></div>
 
                     <ul className="space-y-3 mb-8 text-sm">
