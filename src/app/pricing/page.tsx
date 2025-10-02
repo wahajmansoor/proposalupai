@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, Loader2, Briefcase, ArrowLeft, Tag, X } from 'lucide-react';
-import { createCheckoutSession, activateTrialAction, createCustomerPortalSession, upgradeSubscriptionAction, changeTrialPlanAction } from '@/lib/stripe-actions';
+import { createCheckoutSession, upgradeSubscriptionAction, createCustomerPortalSession, validateCouponAction, activateTrialAction } from '@/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
@@ -88,8 +88,8 @@ export default function PricingPage() {
   }, [isYearlyActive]);
 
   const isUpgrading = isMonthlyActive && billingInterval === 'yearly';
-  const isNewSubscription = !isSubscribedAndActive && !isCanceledButActive;
-  const canShowCoupon = isNewSubscription || isUpgrading;
+  const isNewSubscription = !isSubscribedAndActive && !isCanceledButActive && !isTrialing;
+  const canShowCoupon = isNewSubscription || isUpgrading || isTrialing;
 
 
   const handleCouponValidation = async () => {
@@ -103,15 +103,14 @@ export default function PricingPage() {
     formData.append('code', couponCode.trim());
     formData.append('plan', billingInterval);
 
-    // This action does not exist in the provided codebase.
-    // const result = await validateCouponAction(formData);
+    const result = await validateCouponAction(formData);
     
-    // if (result.success && result.coupon) {
-    //     setAppliedCoupon(result.coupon);
-    //     toast({ title: 'Coupon Applied!', description: `The coupon "${result.coupon.name}" has been successfully applied.`});
-    // } else {
-    //     setCouponError(result.error || 'An unexpected error occurred.');
-    // }
+    if (result.success && result.coupon) {
+        setAppliedCoupon(result.coupon);
+        toast({ title: 'Coupon Applied!', description: `The coupon "${result.coupon.name}" has been successfully applied.`});
+    } else {
+        setCouponError(result.error || 'An unexpected error occurred.');
+    }
 
     setIsValidatingCoupon(false);
   };
@@ -134,8 +133,6 @@ export default function PricingPage() {
     setIsSubmitting(true);
     const formData = new FormData(event.currentTarget);
     if (appliedCoupon) {
-      // The coupon id should be the promotion code ID from stripe, not the code string.
-      // Since we are returning the code string in `validateCouponAction` as `id`, this might be incorrect depending on implementation
       formData.append('coupon', appliedCoupon.id);
     }
 
@@ -147,7 +144,7 @@ export default function PricingPage() {
             toast({ title: 'Plan Activated!', description: `Your trial has ended and your new ${billingInterval} subscription has begun.` });
         }
     } else if (isMonthlyActive && billingInterval === 'yearly') {
-        const result = await upgradeSubscriptionAction();
+        const result = await upgradeSubscriptionAction(formData);
         if (result.error) {
             toast({ title: 'Upgrade Failed', description: result.error, variant: 'destructive' });
         } else {
@@ -187,6 +184,7 @@ export default function PricingPage() {
   const getPlanName = () => {
     if (currentInterval === 'year') return 'Pro Yearly';
     if (currentInterval === 'month') return 'Pro Monthly';
+    if (isTrialing) return 'Trial';
     return 'Free Plan';
   };
   
