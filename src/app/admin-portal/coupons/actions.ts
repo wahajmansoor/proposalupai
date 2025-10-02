@@ -12,7 +12,11 @@ export interface CouponWithPromotionCode extends Stripe.Coupon {
 
 // Schema for form validation
 const couponFormSchema = z.object({
-  code: z.string().min(1, "Promotion code is required.").regex(/^[a-zA-Z0-9-%_]+$/, "Code can only contain letters, numbers, -, _, and %."),
+  code: z
+  .string()
+  .min(1, "Promotion code is required.")
+  .regex(/^[A-Z0-9_%-]+$/, "Code can only contain uppercase letters, numbers, hyphens (-), underscores (_), and percent signs (%).")
+  .transform((val) => val.toUpperCase()),
   type: z.enum(['percentage', 'fixed']),
   percent_off: z.string().optional(),
   amount_off: z.string().optional(),
