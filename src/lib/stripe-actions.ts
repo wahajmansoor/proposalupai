@@ -11,7 +11,7 @@ import { revalidatePath } from 'next/cache';
 import { adminDb } from '@/lib/firebase/admin';
 
 const planChangeSchema = z.object({
-  interval: z.enum(['monthly', 'yearly']),
+  interval: z.enum(['monthly', 'yearly']).optional(),
   coupon: z.string().optional(),
 });
 
@@ -21,7 +21,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
     redirectUrl?: string;
 }> {
     const validatedFields = planChangeSchema.safeParse({
-        interval: formData.get('interval'),
+        interval: formData.get('interval') || undefined,
         coupon: formData.get('coupon'),
     });
 
@@ -29,7 +29,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
         return { error: 'Invalid plan or coupon selected.' };
     }
 
-    const { interval, coupon } = validatedFields.data;
+    let { interval, coupon } = validatedFields.data;
 
     const currentUser = await getCurrentUser();
     if (!currentUser || !currentUser.userDoc) {
@@ -37,11 +37,21 @@ export async function handlePlanChange(formData: FormData): Promise<{
     }
 
     const { user, userDoc } = currentUser;
-    const { stripeCustomerId, subscriptionStatus, subscriptionId } = userDoc;
+    const { stripeCustomerId, subscriptionStatus, subscriptionId, subscriptionInterval } = userDoc;
 
     if (!stripeCustomerId) {
         return { error: 'Could not find Stripe customer ID. Please contact support.' };
     }
+    
+    // If interval isn't specified, try to infer it or default it.
+    if (!interval) {
+        if (subscriptionInterval) {
+            interval = subscriptionInterval;
+        } else {
+            interval = 'monthly'; // Default for new users
+        }
+    }
+
 
     const monthlyPriceId = process.env.STRIPE_MONTHLY_PRICE_ID!;
     const yearlyPriceId = process.env.STRIPE_YEARLY_PRICE_ID!;
@@ -278,3 +288,5 @@ export async function validateCouponAction(formData: FormData): Promise<{
     return { success: false, error: 'Could not validate coupon code.' };
   }
 }
+
+    
