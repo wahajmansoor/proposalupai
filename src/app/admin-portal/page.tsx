@@ -31,7 +31,7 @@ export default async function AdminDashboardPage() {
 
   const totalUsers = users.length;
   const activeSubscriptions = users.filter(u => u.subscriptionStatus === 'active').length;
-  const totalProposals = users.reduce((acc, user) => acc + user.proposalCount, 0);
+  const totalProposals = users.reduce((acc, user) => acc + (user.proposalCount || 0), 0);
 
   const recentUsers = users
     .filter(u => u.createdAt)
@@ -106,42 +106,43 @@ export default async function AdminDashboardPage() {
             </Button>
         </CardHeader>
         <CardContent>
-            <Table>
-                <TableHeader>
-                    <TableRow>
-                        <TableHead>User</TableHead>
-                        <TableHead>Email</TableHead>
-                        <TableHead>Plan</TableHead>
-                        <TableHead className="text-right">Time</TableHead>
-                    </TableRow>
-                </TableHeader>
-                <TableBody>
-                    {recentUsers.map(user => (
-                        <TableRow key={user.id}>
-                            <TableCell>
-                                <div className="flex items-center gap-3">
-                                    <Avatar className="h-9 w-9">
-                                        <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-                                    </Avatar>
-                                    <div className="font-medium">{user.name || "N/A"}</div>
-                                </div>
-                            </TableCell>
-                            <TableCell>{user.email}</TableCell>
-                            <TableCell>
-                                {user.subscriptionStatus === 'active' ? (
-                                    <Badge>Pro {user.subscriptionInterval}</Badge>
-                                ) : (
-                                    <Badge variant="outline">{user.subscriptionStatus || 'N/A'}</Badge>
-                                )}
-                            </TableCell>
-                            <TableCell className="text-right">
-                                {formatDistanceToNow(new Date(user.createdAt!), { addSuffix: true })}
-                            </TableCell>
-                        </TableRow>
-                    ))}
-                </TableBody>
-            </Table>
-             {recentUsers.length === 0 && (
+          {recentUsers.length > 0 ? (
+              <Table>
+                  <TableHeader>
+                      <TableRow>
+                          <TableHead>User</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Plan</TableHead>
+                          <TableHead className="text-right">Time</TableHead>
+                      </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                      {recentUsers.map(user => (
+                          <TableRow key={user.id}>
+                              <TableCell>
+                                  <div className="flex items-center gap-3">
+                                      <Avatar className="h-9 w-9">
+                                          <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                                      </Avatar>
+                                      <div className="font-medium">{user.name || "N/A"}</div>
+                                  </div>
+                              </TableCell>
+                              <TableCell>{user.email}</TableCell>
+                              <TableCell>
+                                  {user.subscriptionStatus === 'active' ? (
+                                      <Badge>Pro {user.subscriptionInterval}</Badge>
+                                  ) : (
+                                      <Badge variant="outline">{user.subscriptionStatus || 'N/A'}</Badge>
+                                  )}
+                              </TableCell>
+                              <TableCell className="text-right">
+                                  {user.createdAt ? formatDistanceToNow(new Date(user.createdAt), { addSuffix: true }) : 'N/A'}
+                              </TableCell>
+                          </TableRow>
+                      ))}
+                  </TableBody>
+              </Table>
+            ) : (
                 <div className="text-center p-8 text-muted-foreground">
                     No recent user signups.
                 </div>
