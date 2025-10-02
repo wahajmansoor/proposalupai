@@ -89,7 +89,7 @@ export default function PricingPage() {
 
   const isUpgrading = isMonthlyActive && billingInterval === 'yearly';
   const isNewSubscription = !isSubscribedAndActive && !isCanceledButActive && !isTrialing;
-  const canShowCoupon = isNewSubscription || isUpgrading || isTrialing;
+  const canShowCoupon = isUpgrading || isTrialing;
 
 
   const handleCouponValidation = async () => {
@@ -171,6 +171,7 @@ export default function PricingPage() {
   }, [appliedCoupon, currentPlan.price]);
 
   const getButtonText = () => {
+    if (isNewSubscription) return 'Start a 2-day free trial!';
     if (isTrialing) {
         return billingInterval === 'monthly' ? 'Activate Monthly Plan' : 'Activate Yearly Plan';
     }
@@ -178,7 +179,7 @@ export default function PricingPage() {
     if (isYearlyActive) return 'Your Current Plan';
     if (isSubscribedAndActive) return 'Your Current Plan';
     if (isCanceledButActive) return 'Reactivate Plan';
-    return isTrialing ? 'Start Free Trial' : 'Get Started';
+    return 'Get Started';
   }
 
   const getPlanName = () => {
