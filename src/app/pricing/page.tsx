@@ -89,7 +89,7 @@ export default function PricingPage() {
 
   const isUpgrading = isMonthlyActive && billingInterval === 'yearly';
   const isNewSubscription = !isSubscribedAndActive && !isCanceledButActive && !isTrialing;
-  const canShowCoupon = isUpgrading || isTrialing;
+  const canShowCoupon = isUpgrading || isTrialing || (isMonthlyActive && billingInterval === 'yearly');
 
 
   const handleCouponValidation = async () => {
@@ -229,6 +229,11 @@ export default function PricingPage() {
                 <div className="flex items-center gap-2 mt-1">
                   <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground">{getPlanName()}</Badge>
                   {isTrialing && <Badge variant="outline" className="border-green-600 text-green-600">2 Days Free Trial</Badge>}
+                   {isSubscribedAndActive && userProfile?.lastPrice && (
+                    <Badge variant="secondary">
+                        ${userProfile.lastPrice.toFixed(2)}/{currentInterval === 'year' ? 'yr' : 'mo'}
+                    </Badge>
+                  )}
                 </div>
               </div>
               {renewalDate && (
@@ -275,7 +280,7 @@ export default function PricingPage() {
                       <p className="text-sm text-muted-foreground">{currentPlan.priceDescription}</p>
                     </div>
 
-                    {canShowCoupon &&(
+                    {canShowCoupon && !isNewSubscription && (
                       <div className="my-4 space-y-2">
                         {!showCouponInput && !appliedCoupon ? (
                           <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => setShowCouponInput(true)}>
@@ -382,5 +387,3 @@ export default function PricingPage() {
     </div>
   );
 }
-
-    
