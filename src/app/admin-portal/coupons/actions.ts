@@ -38,39 +38,22 @@ export async function getCoupons(): Promise<CouponWithPromotionCode[]> {
   }
 }
 
-const couponSchema = z.object({
-  code: z.string().min(1, "Promotion code is required."),
-  type: z.enum(['percentage', 'fixed']),
-  percent_off: z.coerce.number().optional(),
-  amount_off: z.coerce.number().optional(),
-  duration: z.enum(["once", "repeating", "forever"]),
-  duration_in_months: z.coerce.number().optional(),
-  applies_to: z.enum(['any', 'monthly', 'yearly']).default('any'),
-});
-
-
 export async function createCoupon(formData: FormData): Promise<{ success: boolean; error?: string }> {
-  const validatedFields = couponSchema.safeParse({
-    code: formData.get('code'),
-    type: formData.get('type'),
-    percent_off: formData.get('percent_off'),
-    amount_off: formData.get('amount_off'),
-    duration: formData.get('duration'),
-    duration_in_months: formData.get('duration_in_months'),
-    applies_to: formData.get('applies_to'),
-  });
+  const code = formData.get('code') as string;
+  const type = formData.get('type') as string;
+  const percent_off = formData.get('percent_off') ? Number(formData.get('percent_off')) : undefined;
+  const amount_off = formData.get('amount_off') ? Number(formData.get('amount_off')) : undefined;
+  const duration = formData.get('duration') as "once" | "repeating" | "forever";
+  const duration_in_months = formData.get('duration_in_months') ? Number(formData.get('duration_in_months')) : undefined;
+  const applies_to = (formData.get('applies_to') as string) || 'any';
 
-  if (!validatedFields.success) {
-    const firstError = validatedFields.error.errors[0];
-    return { success: false, error: `${firstError.path.join('.')} : ${firstError.message}` };
+  if (!code) {
+      return { success: false, error: "Promotion code is required." };
   }
 
-  const { code, type, percent_off, amount_off, duration, duration_in_months, applies_to } = validatedFields.data;
-
   try {
-    // Step 1: Create the Coupon with discount details
     const couponParams: Stripe.CouponCreateParams = {
-      name: code, // Use the code as the internal name for simplicity
+      name: code, 
       duration,
       metadata: {
         applies_to_plan: applies_to,
@@ -100,7 +83,6 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
     
     const coupon = await stripe.coupons.create(couponParams);
     
-    // Step 2: Create the Promotion Code and link it to the coupon
     await stripe.promotionCodes.create({
       coupon: coupon.id,
       code: code,
@@ -111,7 +93,6 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
 
   } catch (error: any) {
     console.error("Failed to create coupon:", error);
-    // Return the actual error message from Stripe
     return { success: false, error: error.raw?.message || error.message || "An unknown error occurred while creating the coupon." };
   }
 }
@@ -170,4 +151,3 @@ export async function deleteCoupon(couponId: string): Promise<{ success: boolean
     return { success: false, error: error.raw?.message || error.message };
   }
 }
-
