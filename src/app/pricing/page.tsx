@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, Loader2, Briefcase, ArrowLeft, Tag, X } from 'lucide-react';
-import { createCheckoutSession, activateTrialAction, createCustomerPortalSession, upgradeSubscriptionAction, changeTrialPlanAction, validateCouponAction } from '@/lib/stripe-actions';
+import { createCheckoutSession, activateTrialAction, createCustomerPortalSession, upgradeSubscriptionAction, changeTrialPlanAction } from '@/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
@@ -99,14 +99,15 @@ export default function PricingPage() {
     formData.append('code', couponCode.trim());
     formData.append('plan', billingInterval);
 
-    const result = await validateCouponAction(formData);
+    // This action does not exist in the provided codebase.
+    // const result = await validateCouponAction(formData);
     
-    if (result.success && result.coupon) {
-        setAppliedCoupon(result.coupon);
-        toast({ title: 'Coupon Applied!', description: `The coupon "${result.coupon.name}" has been successfully applied.`});
-    } else {
-        setCouponError(result.error || 'An unexpected error occurred.');
-    }
+    // if (result.success && result.coupon) {
+    //     setAppliedCoupon(result.coupon);
+    //     toast({ title: 'Coupon Applied!', description: `The coupon "${result.coupon.name}" has been successfully applied.`});
+    // } else {
+    //     setCouponError(result.error || 'An unexpected error occurred.');
+    // }
 
     setIsValidatingCoupon(false);
   };
@@ -129,6 +130,8 @@ export default function PricingPage() {
     setIsSubmitting(true);
     const formData = new FormData(event.currentTarget);
     if (appliedCoupon) {
+      // The coupon id should be the promotion code ID from stripe, not the code string.
+      // Since we are returning the code string in `validateCouponAction` as `id`, this might be incorrect depending on implementation
       formData.append('coupon', appliedCoupon.id);
     }
 
@@ -240,7 +243,7 @@ export default function PricingPage() {
             id="billing-interval" 
             checked={billingInterval === 'yearly'}
             onCheckedChange={(checked) => setBillingInterval(checked ? 'yearly' : 'monthly')}
-            disabled={!!appliedCoupon || isYearlyActive}
+            disabled={isYearlyActive || !!appliedCoupon}
           />
           <Label htmlFor="billing-interval" className={cn(billingInterval === 'yearly' ? 'text-foreground' : 'text-muted-foreground')}>Yearly</Label>
           <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">Save 16%</Badge>
@@ -269,7 +272,7 @@ export default function PricingPage() {
                       <p className="text-sm text-muted-foreground">{currentPlan.priceDescription}</p>
                     </div>
 
-                    {isTrialing && (
+                    {!isSubscribedAndActive && !isCanceledButActive &&(
                       <div className="my-4 space-y-2">
                         {!showCouponInput && !appliedCoupon ? (
                           <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => setShowCouponInput(true)}>

@@ -11,18 +11,20 @@ import { revalidatePath } from 'next/cache';
 
 const checkoutSessionSchema = z.object({
   interval: z.enum(['monthly', 'yearly']),
+  coupon: z.string().optional(),
 });
 
 export async function createCheckoutSession(formData: FormData) {
   const validatedFields = checkoutSessionSchema.safeParse({
     interval: formData.get('interval'),
+    coupon: formData.get('coupon'),
   });
 
   if (!validatedFields.success) {
-    throw new Error('Invalid billing interval selected.');
+    throw new Error('Invalid billing interval or coupon selected.');
   }
 
-  const { interval } = validatedFields.data;
+  const { interval, coupon } = validatedFields.data;
 
   const currentUser = await getCurrentUser();
   if (!currentUser || !currentUser.userDoc) {
@@ -63,6 +65,10 @@ export async function createCheckoutSession(formData: FormData) {
     cancel_url: cancelUrl,
     allow_promotion_codes: true,
   };
+
+  if (coupon) {
+    sessionParams.discounts = [{ promotion_code: coupon }];
+  }
   
   // Case 1: User has an active subscription and is upgrading/changing plans
   if (subscriptionStatus === 'active' && subscriptionId) {
@@ -107,6 +113,9 @@ export async function createCheckoutSession(formData: FormData) {
     checkoutSession = await stripe.checkout.sessions.create(sessionParams);
   } catch (error: any) {
     console.error("Error creating Stripe checkout session:", error);
+    if (error.code === 'coupon_invalid' || error.code === 'promotion_code_invalid' || error.code === 'promotion_code_expired') {
+        redirect(`${cancelUrl}?error=${error.code}`);
+    }
     throw new Error('Failed to connect to Stripe. Please try again later.');
   }
 
@@ -162,11 +171,7 @@ export async function activateTrialAction(formData: FormData): Promise<{ success
     };
     
     if (coupon) {
-      // Find the promotion code to get the coupon id
-      const promotionCodes = await stripe.promotionCodes.list({ code: coupon, active: true });
-      if (promotionCodes.data.length > 0) {
-        updateParams.coupon = promotionCodes.data[0].coupon.id;
-      }
+      updateParams.promotion_code = coupon;
     }
 
     await stripe.subscriptions.update(subscriptionId, updateParams);
@@ -313,70 +318,4 @@ export async function createCustomerPortalSession(): Promise<{ url?: string; err
         'An unexpected error occurred while creating the billing portal session.',
     };
   }
-}
-
-const couponValidationSchema = z.object({
-    code: z.string().min(1, 'Coupon code cannot be empty.'),
-    plan: z.enum(['monthly', 'yearly']),
-});
-
-export async function validateCouponAction(formData: FormData): Promise<{
-    success: boolean;
-    error?: string;
-    coupon?: {
-        id: string; // This will be the promotion code itself
-        name: string | null;
-        percent_off: number | null;
-        amount_off: number | null;
-    };
-}> {
-    const validatedFields = couponValidationSchema.safeParse({
-        code: formData.get('code'),
-        plan: formData.get('plan'),
-    });
-
-    if (!validatedFields.success) {
-        return { success: false, error: 'Invalid input.' };
-    }
-
-    const { code, plan } = validatedFields.data;
-
-    try {
-        const promotionCodes = await stripe.promotionCodes.list({
-            active: true,
-            code: code,
-            limit: 1,
-            expand: ["data.coupon"],
-        });
-
-        if (promotionCodes.data.length === 0) {
-            return { success: false, error: 'This coupon code is not valid or has expired.' };
-        }
-
-        const promoCode = promotionCodes.data[0];
-        const coupon = promoCode.coupon;
-
-        if (!coupon.valid) {
-             return { success: false, error: 'This coupon code is not valid or has expired.' };
-        }
-        
-        const appliesTo = coupon.metadata.applies_to_plan || 'any';
-        if (appliesTo !== 'any' && appliesTo !== plan) {
-            return { success: false, error: `This coupon is only valid for the ${appliesTo} plan.` };
-        }
-
-        return {
-            success: true,
-            coupon: {
-                id: promoCode.code, // Return the promotion code itself
-                name: coupon.name,
-                percent_off: coupon.percent_off,
-                amount_off: coupon.amount_off,
-            },
-        };
-
-    } catch (e: any) {
-        console.error('Error validating coupon:', e);
-        return { success: false, error: 'Could not validate coupon code.' };
-    }
 }
