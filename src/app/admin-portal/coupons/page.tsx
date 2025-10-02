@@ -10,15 +10,18 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash2 } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import { format } from 'date-fns';
 
 export default function CouponsPage() {
   const [coupons, setCoupons] = useState<Stripe.Coupon[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [couponType, setCouponType] = useState('percentage');
   const [duration, setDuration] = useState('forever');
   const [fetchError, setFetchError] = useState<string | null>(null);
   const { toast } = useToast();
@@ -47,6 +50,7 @@ export default function CouponsPage() {
     if (result.success) {
       toast({ title: 'Coupon Created', description: 'The new coupon has been successfully added.' });
       (event.target as HTMLFormElement).reset();
+      setCouponType('percentage');
       setDuration('forever');
       const fetchedCoupons = await getCoupons();
       setCoupons(fetchedCoupons);
@@ -64,6 +68,16 @@ export default function CouponsPage() {
     } else {
         toast({ title: 'Error', description: result.error, variant: 'destructive' });
     }
+  }
+
+  const renderDiscount = (coupon: Stripe.Coupon) => {
+    if (coupon.percent_off) {
+      return `${coupon.percent_off}% off`;
+    }
+    if (coupon.amount_off) {
+      return `$${(coupon.amount_off / 100).toFixed(2)} off`;
+    }
+    return 'N/A';
   }
 
   const renderDuration = (coupon: Stripe.Coupon) => {
@@ -92,26 +106,56 @@ export default function CouponsPage() {
             <CardContent>
               <form onSubmit={handleSubmit} className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="percent_off">Discount (%)</Label>
-                  <Input id="percent_off" name="percent_off" type="number" placeholder="e.g., 25" required disabled={isSubmitting} />
+                    <Label>Type</Label>
+                    <RadioGroup name="type" value={couponType} onValueChange={setCouponType} className="flex gap-4">
+                        <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="percentage" id="r-percentage" />
+                        <Label htmlFor="r-percentage">Percentage</Label>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                        <RadioGroupItem value="fixed" id="r-fixed" />
+                        <Label htmlFor="r-fixed">Fixed Amount</Label>
+                        </div>
+                    </RadioGroup>
                 </div>
+
+                {couponType === 'percentage' ? (
+                  <div className="space-y-2">
+                    <Label htmlFor="percent_off">Discount (%)</Label>
+                    <Input id="percent_off" name="percent_off" type="number" placeholder="e.g., 25" disabled={isSubmitting} />
+                  </div>
+                ) : (
+                  <div className="space-y-2">
+                    <Label htmlFor="amount_off">Amount (USD)</Label>
+                     <Input id="amount_off" name="amount_off" type="number" placeholder="e.g., 50" disabled={isSubmitting} />
+                  </div>
+                )}
+                
                 <div className="space-y-2">
                   <Label htmlFor="duration">Duration</Label>
                    <Select name="duration" value={duration} onValueChange={setDuration} required disabled={isSubmitting}>
                     <SelectTrigger><SelectValue /></SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="forever">Forever</SelectItem>
                       <SelectItem value="once">Once</SelectItem>
-                      <SelectItem value="repeating">Repeating</SelectItem>
+                      <SelectItem value="repeating">Multiple months</SelectItem>
+                      <SelectItem value="forever">Forever</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
+
                 {duration === 'repeating' && (
                   <div className="space-y-2">
                     <Label htmlFor="duration_in_months">Duration in Months</Label>
-                    <Input id="duration_in_months" name="duration_in_months" type="number" placeholder="e.g., 3" required disabled={isSubmitting} />
+                    <Input id="duration_in_months" name="duration_in_months" type="number" placeholder="e.g., 3" disabled={isSubmitting} />
                   </div>
                 )}
+
+                 <div className="space-y-2">
+                  <Label htmlFor="couponId">Coupon ID (Optional)</Label>
+                  <Input id="couponId" name="couponId" type="text" placeholder="e.g., gfKh2yp0" disabled={isSubmitting}/>
+                  <p className="text-xs text-muted-foreground">If left blank, Stripe will generate one.</p>
+                </div>
+
                  <div className="space-y-2">
                   <Label htmlFor="name">Coupon Name (Optional)</Label>
                   <Input id="name" name="name" type="text" placeholder="e.g., 'Summer Sale'" disabled={isSubmitting}/>
@@ -147,8 +191,10 @@ export default function CouponsPage() {
                 <Table>
                   <TableHeader>
                     <TableRow>
-                      <TableHead>Code</TableHead>
+                      <TableHead>ID</TableHead>
+                      <TableHead>Name</TableHead>
                       <TableHead>Discount</TableHead>
+                      <TableHead>Created</TableHead>
                       <TableHead>Duration</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead className="text-right">Actions</TableHead>
@@ -157,8 +203,10 @@ export default function CouponsPage() {
                   <TableBody>
                     {coupons.map((coupon) => (
                       <TableRow key={coupon.id}>
-                        <TableCell className="font-medium">{coupon.name || coupon.id}</TableCell>
-                        <TableCell>{coupon.percent_off}%</TableCell>
+                        <TableCell className="font-mono text-xs">{coupon.id}</TableCell>
+                        <TableCell className="font-medium">{coupon.name || 'N/A'}</TableCell>
+                        <TableCell>{renderDiscount(coupon)}</TableCell>
+                        <TableCell>{format(new Date(coupon.created * 1000), 'd LLL')}</TableCell>
                         <TableCell>{renderDuration(coupon)}</TableCell>
                         <TableCell>
                           <Badge variant={coupon.valid ? 'default' : 'destructive'}>
