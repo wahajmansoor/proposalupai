@@ -66,7 +66,7 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
 
   try {
     const couponParams: Stripe.CouponCreateParams = {
-      name: code, // Use the code as the internal name for simplicity
+      name: code, 
       duration,
       metadata: {
         applies_to_plan: applies_to,
@@ -105,7 +105,6 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
     return { success: true };
   } catch (error: any) {
     console.error("Failed to create coupon:", error);
-    // This will catch errors from Stripe, such as if a promotion code truly is invalid by their standards.
     return { success: false, error: error.raw?.message || error.message || "An unknown error occurred while creating the coupon." };
   }
 }
@@ -148,7 +147,6 @@ export async function updateCoupon(couponId: string, formData: FormData): Promis
 
 export async function deleteCoupon(couponId: string): Promise<{ success: boolean; error?: string }> {
   try {
-    // This is the correct way to delete a coupon.
     await stripe.coupons.del(couponId);
     revalidatePath('/admin-portal/coupons');
     return { success: true };
