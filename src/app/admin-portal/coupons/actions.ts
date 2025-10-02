@@ -21,28 +21,31 @@ const couponFormSchema = z.object({
   applies_to: z.enum(['any', 'monthly', 'yearly']).default('any')
 }).superRefine((data, ctx) => {
     if (data.type === 'percentage') {
-        if (!data.percent_off || isNaN(Number(data.percent_off))) {
+        const percent = Number(data.percent_off);
+        if (!data.percent_off || isNaN(percent) || percent <= 0 || percent > 100) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
-                message: "Percentage is required and must be a number.",
+                message: "Percentage must be a number between 1 and 100.",
                 path: ["percent_off"],
             });
         }
     }
     if (data.type === 'fixed') {
-        if (!data.amount_off || isNaN(Number(data.amount_off))) {
+        const amount = Number(data.amount_off);
+        if (!data.amount_off || isNaN(amount) || amount <= 0) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
-                message: "Amount is required and must be a number.",
+                message: "Amount must be a positive number.",
                 path: ["amount_off"],
             });
         }
     }
     if (data.duration === 'repeating') {
-        if (!data.duration_in_months || isNaN(Number(data.duration_in_months))) {
+        const months = Number(data.duration_in_months);
+        if (!data.duration_in_months || isNaN(months) || months <= 0) {
             ctx.addIssue({
                 code: z.ZodIssueCode.custom,
-                message: "Duration in months is required and must be a number.",
+                message: "Duration must be a positive number of months.",
                 path: ["duration_in_months"],
             });
         }
