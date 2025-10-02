@@ -105,13 +105,8 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
     return { success: true };
   } catch (error: any) {
     console.error("Failed to create coupon:", error);
-    if (error.code === 'promotion_code_already_exists' || (error.raw?.code === 'resource_already_exists' && error.raw.param === 'code')) {
-        return { success: false, error: "This promotion code already exists. Please choose a unique one." };
-    }
-    if (error.raw?.param === 'code') {
-        return { success: false, error: `Invalid Promotion Code: ${error.message}` };
-    }
-    return { success: false, error: error.message };
+    // This will catch errors from Stripe, such as if a promotion code truly is invalid by their standards.
+    return { success: false, error: error.raw?.message || error.message || "An unknown error occurred while creating the coupon." };
   }
 }
 
