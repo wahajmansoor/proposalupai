@@ -10,7 +10,7 @@ let adminDb: Firestore;
 const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
 if (!serviceAccountString || serviceAccountString.includes('your_firebase_service_account_key_here')) {
-  console.error("Firebase Admin SDK Error: FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set or is a placeholder.");
+  console.error("Firebase Admin SDK Error: FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not set or is a placeholder. The app will run, but server-side Firebase operations will fail.");
   // Assign undefined to exports if initialization fails so the app can still start
   // @ts-ignore
   adminAuth = undefined;
@@ -36,6 +36,7 @@ if (!serviceAccountString || serviceAccountString.includes('your_firebase_servic
 
   } catch (error: any) {
     console.error('Firebase Admin SDK initialization failed:', error);
+    // Assign undefined to exports if initialization fails so the app can still start
     // @ts-ignore
     adminAuth = undefined;
     // @ts-ignore
