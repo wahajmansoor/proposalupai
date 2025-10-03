@@ -1,8 +1,7 @@
 
 import Link from 'next/link';
-import { getAdminSession } from '@/app/login/actions';
+import { getAdminSession, adminLogout } from '@/app/login/actions';
 import { redirect } from 'next/navigation';
-import { adminLogout } from '@/app/login/actions';
 import { Home, Users, LogOut, PanelLeft, Ticket, Search, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -49,7 +48,7 @@ function SidebarNav() {
         </div>
       </div>
       <div className="mt-auto p-4 border-t border-border">
-        <form action={async () => { 'use server'; await adminLogout(); redirect('/admin-login'); }}>
+        <form action={adminLogout}>
             <button type="submit" className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-foreground hover:bg-muted">
                 <LogOut className="h-4 w-4" />
                 Logout
@@ -130,7 +129,7 @@ export default async function AdminLayout({
                 <DropdownMenuItem>Settings</DropdownMenuItem>
                 <DropdownMenuItem>Support</DropdownMenuItem>
                 <DropdownMenuSeparator />
-                <form action={async () => { 'use server'; await adminLogout(); redirect('/admin-login'); }}>
+                <form action={adminLogout}>
                   <DropdownMenuItem asChild>
                     <button type="submit" className="w-full">Logout</button>
                   </DropdownMenuItem>

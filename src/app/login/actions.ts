@@ -4,6 +4,7 @@
 import { z } from 'zod';
 import { cookies } from 'next/headers';
 import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
+import { redirect } from 'next/navigation';
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -71,6 +72,7 @@ export async function adminLogin(formData: FormData): Promise<{ success: boolean
 
 export async function adminLogout() {
     cookies().delete(ADMIN_SESSION_COOKIE);
+    redirect('/admin-login');
 }
 
 export async function getAdminSession(): Promise<JWTPayload | null> {
