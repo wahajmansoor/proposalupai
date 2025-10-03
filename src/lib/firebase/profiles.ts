@@ -44,6 +44,7 @@ export async function addSkillProfile(userId: string, profileData: Omit<SkillPro
   const profilesRef = getProfilesRef(userId);
   await addDoc(profilesRef, {
     ...profileData,
+    tone: profileData.tone.toLowerCase(),
     createdAt: serverTimestamp(),
   });
 }
@@ -55,6 +56,9 @@ export async function updateSkillProfile(
   data: Partial<Omit<SkillProfile, 'id' | 'createdAt'>>
 ) {
   const profileDocRef = doc(db, 'users', userId, 'skillProfiles', profileId);
+  if (data.tone) {
+      data.tone = data.tone.toLowerCase();
+  }
   await updateDoc(profileDocRef, data);
 }
 
