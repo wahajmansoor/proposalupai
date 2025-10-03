@@ -28,11 +28,17 @@ export default function DashboardLayout({
 
     const isSubscribed = userProfile?.subscriptionStatus === 'active' || userProfile?.subscriptionStatus === 'trialing';
 
-    // Pages accessible to non-subscribed users even within the dashboard layout context
-    const allowedPaths = ['/pricing', '/profile', '/dashboard/subscription', '/dashboard/skill-profiles', '/dashboard/proposals'];
+    // Define paths that are PROTECTED and require a subscription.
+    const protectedPaths = ['/dashboard', '/dashboard/skill-profiles', '/dashboard/proposals'];
 
-    // If user is not subscribed and is trying to access a page that is not explicitly allowed
-    if (!isSubscribed && !allowedPaths.some(path => pathname.startsWith(path))) {
+    // Check if the user is trying to access a protected path.
+    // We use `pathname === path` for `/dashboard` to avoid matching `/dashboard/subscription`.
+    const isAccessingProtectedPath = protectedPaths.some(path => 
+        path === '/dashboard' ? pathname === path : pathname.startsWith(path)
+    );
+
+    // If user is NOT subscribed and is trying to access a protected path, redirect them.
+    if (!isSubscribed && isAccessingProtectedPath) {
         router.replace('/pricing');
     }
     
