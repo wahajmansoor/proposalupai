@@ -94,6 +94,44 @@ export default function SubscriptionPage() {
         <p className="text-muted-foreground">View and manage your subscription and billing details.</p>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
+        <div className="lg:col-span-2">
+          <Card>
+            <CardHeader>
+              <CardTitle>Subscription Details</CardTitle>
+              <CardDescription>Your current plan and billing information.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+               <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div className="flex flex-col items-start gap-2">
+                    <h3 className="font-semibold text-sm">Your Current Plan:</h3>
+                    <div className="flex items-center gap-2">
+                        <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground">{getPlanName()}</Badge>
+                        {isTrial && <Badge variant="outline" className="border-green-600 text-green-600">2 Days Free Trial</Badge>}
+                    </div>
+                </div>
+                {renewalDate && getRenewalText() && (
+                  <div className="text-right">
+                    <p className="font-semibold text-sm">
+                      {getRenewalText()}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {format(new Date(renewalDate), 'MMMM d, yyyy')}
+                    </p>
+                  </div>
+                )}
+              </div>
+
+              {userProfile?.stripeCustomerId && (
+                <form onSubmit={handleBillingSubmit}>
+                  <Button type="submit" disabled={isManagingBilling} className="w-full">
+                    {isManagingBilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2" />}
+                    Manage Billing & Subscription
+                  </Button>
+                </form>
+              )}
+            </CardContent>
+          </Card>
+        </div>
         <div className="lg:col-span-3 space-y-8">
            <Card>
             <CardHeader>
@@ -146,45 +184,6 @@ export default function SubscriptionPage() {
                     ))}
                   </TableBody>
                 </Table>
-              )}
-            </CardContent>
-          </Card>
-        </div>
-        
-        <div className="lg:col-span-2">
-          <Card>
-            <CardHeader>
-              <CardTitle>Subscription Details</CardTitle>
-              <CardDescription>Your current plan and billing information.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-               <div className="flex items-center justify-between p-4 border rounded-lg">
-                <div className="flex flex-col items-start gap-2">
-                    <h3 className="font-semibold text-sm">Your Current Plan:</h3>
-                    <div className="flex items-center gap-2">
-                        <Badge className="bg-primary hover:bg-primary/90 text-primary-foreground">{getPlanName()}</Badge>
-                        {isTrial && <Badge variant="outline" className="border-green-600 text-green-600">2 Days Free Trial</Badge>}
-                    </div>
-                </div>
-                {renewalDate && getRenewalText() && (
-                  <div className="text-right">
-                    <p className="font-semibold text-sm">
-                      {getRenewalText()}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {format(new Date(renewalDate), 'MMMM d, yyyy')}
-                    </p>
-                  </div>
-                )}
-              </div>
-
-              {userProfile?.stripeCustomerId && (
-                <form onSubmit={handleBillingSubmit}>
-                  <Button type="submit" disabled={isManagingBilling} className="w-full">
-                    {isManagingBilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2" />}
-                    Manage Billing & Subscription
-                  </Button>
-                </form>
               )}
             </CardContent>
           </Card>
