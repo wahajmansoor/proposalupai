@@ -608,7 +608,7 @@ function DashboardContent() {
                         </SelectContent>
                     </Select>
                      <p className="text-sm text-muted-foreground mt-2">
-                          Manage your profiles on the <Link href="/dashboard/portfolio" className="underline">Skill Profiles page</Link>.
+                          Manage your profiles on the <Link href="/dashboard/skill-profiles" className="underline">Skill Profiles page</Link>.
                         </p>
                   </div>
                   <div>
