@@ -3,20 +3,23 @@ import Link from 'next/link';
 import { getAdminSession } from '@/app/login/actions';
 import { redirect } from 'next/navigation';
 import { adminLogout } from '@/app/login/actions';
-import { Home, Users, LogOut, PanelLeft, Ticket, Search, Bell, Moon } from 'lucide-react';
+import { Home, Users, LogOut, PanelLeft, Ticket, Search, Bell } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { ProposalUpLogo } from '@/components/icons';
+import { ThemeToggle } from '@/components/theme-toggle';
+import { NotificationBell } from './notification-bell';
+import { getUsers } from './users/actions';
 
 function SidebarNav() {
   return (
     <nav className="flex flex-col h-full text-sm font-medium">
       <div className="flex-1">
         <div className="px-4 py-6">
-          <Link href="/admin-portal" className="flex items-center gap-2 font-semibold text-white">
+          <Link href="/admin-portal" className="flex items-center gap-2 font-semibold text-sidebar-foreground">
             <ProposalUpLogo className="h-8 w-8" />
             <span className="text-xl">Admin Panel</span>
           </Link>
@@ -24,30 +27,30 @@ function SidebarNav() {
         <div className="px-3 py-4 space-y-1">
           <Link
             href="/admin-portal"
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-400 transition-all hover:text-white hover:bg-gray-800"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-foreground hover:bg-muted"
           >
             <Home className="h-4 w-4" />
             Dashboard
           </Link>
           <Link
             href="/admin-portal/users"
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-400 transition-all hover:text-white hover:bg-gray-800"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-foreground hover:bg-muted"
           >
             <Users className="h-4 w-4" />
             Users
           </Link>
           <Link
             href="/admin-portal/coupons"
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-400 transition-all hover:text-white hover:bg-gray-800"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-foreground hover:bg-muted"
           >
             <Ticket className="h-4 w-4" />
             Coupons
           </Link>
         </div>
       </div>
-      <div className="mt-auto p-4 border-t border-gray-800">
+      <div className="mt-auto p-4 border-t border-border">
         <form action={async () => { 'use server'; await adminLogout(); redirect('/admin-login'); }}>
-            <button type="submit" className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-gray-400 transition-all hover:text-white hover:bg-gray-800">
+            <button type="submit" className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-foreground hover:bg-muted">
                 <LogOut className="h-4 w-4" />
                 Logout
             </button>
@@ -68,9 +71,16 @@ export default async function AdminLayout({
     redirect('/admin-login');
   }
 
+  const allUsers = await getUsers();
+  const recentUsers = allUsers
+    .filter(u => u.createdAt)
+    .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
+    .slice(0, 5);
+
+
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
-      <div className="hidden border-r bg-sidebar md:block">
+      <div className="hidden border-r bg-muted/40 md:block">
           <SidebarNav />
       </div>
       <div className="flex flex-col">
@@ -86,7 +96,7 @@ export default async function AdminLayout({
                 <span className="sr-only">Toggle navigation menu</span>
               </Button>
             </SheetTrigger>
-            <SheetContent side="left" className="flex flex-col p-0 bg-sidebar text-white">
+            <SheetContent side="left" className="flex flex-col p-0">
               <SidebarNav />
             </SheetContent>
           </Sheet>
@@ -103,14 +113,8 @@ export default async function AdminLayout({
             </form>
           </div>
           <div className="flex items-center gap-2">
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <Moon className="h-5 w-5" />
-              <span className="sr-only">Toggle theme</span>
-            </Button>
-            <Button variant="ghost" size="icon" className="rounded-full">
-              <Bell className="h-5 w-5" />
-              <span className="sr-only">Notifications</span>
-            </Button>
+            <ThemeToggle />
+            <NotificationBell recentUsers={recentUsers} />
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="secondary" size="icon" className="rounded-full">
@@ -135,7 +139,7 @@ export default async function AdminLayout({
             </DropdownMenu>
           </div>
         </header>
-        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-admin-background">
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-background">
           {children}
         </main>
       </div>

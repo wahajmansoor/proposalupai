@@ -5,6 +5,7 @@ import { Open_Sans } from 'next/font/google';
 import { AuthProvider } from '@/context/auth-context';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
+import { ThemeProvider } from '@/components/theme-provider';
 
 const openSans = Open_Sans({
   subsets: ['latin'],
@@ -23,15 +24,22 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className={openSans.variable}>
+    <html lang="en" className={openSans.variable} suppressHydrationWarning>
       <head />
       <body>
-        <AuthProvider>
-          {children}
-          <Toaster />
-        </AuthProvider>
-        <SpeedInsights />
-        <Analytics />
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <AuthProvider>
+            {children}
+            <Toaster />
+          </AuthProvider>
+          <SpeedInsights />
+          <Analytics />
+        </ThemeProvider>
       </body>
     </html>
   );
