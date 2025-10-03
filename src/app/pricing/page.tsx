@@ -23,13 +23,13 @@ const plans = {
     name: "Pro Monthly",
     price: 20,
     priceDescription: "/month",
-    description: "Billed monthly. Ideal for flexibility and short-term projects."
+    description: "Access all AI-powered features with no limits and craft proposals in seconds."
   },
   yearly: {
     name: "Pro Yearly",
     price: 200,
     priceDescription: "/year",
-    description: "Billed annually. The best value for long-term growth."
+    description: "The best value for long-term growth with AI-powered features to generate winning proposals in seconds."
   }
 };
 
@@ -91,7 +91,7 @@ export default function PricingPage() {
 
   const isUpgrading = isMonthlyActive && billingInterval === 'yearly';
   const isNewSubscription = !isSubscribedAndActive && !isCanceledButActive && !isTrialing;
-  const canShowCoupon = isUpgrading || isTrialing || isNewSubscription;
+  const canShowCoupon = (isUpgrading || isNewSubscription) && !isTrialing;
 
 
   const handleCouponValidation = async () => {
@@ -251,7 +251,14 @@ export default function PricingPage() {
         <div className="flex justify-center w-full max-w-md">
              <Card className="flex flex-col shadow-lg w-full border border-border">
                 <CardHeader className="pb-4">
-                    <CardTitle className="text-xl font-semibold">{currentPlan.name}</CardTitle>
+                    <CardTitle className="flex items-center gap-2 text-xl font-semibold">
+                      <span>{currentPlan.name}</span>
+                      {billingInterval === 'yearly' && (
+                        <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
+                          +2 months free
+                        </Badge>
+                      )}
+                    </CardTitle>
                     <CardDescription className="min-h-[40px]">{currentPlan.description}</CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col flex-1">
@@ -275,7 +282,7 @@ export default function PricingPage() {
                         <input type="hidden" name="interval" value={billingInterval} />
                         {appliedCoupon && <input type="hidden" name="coupon" value={appliedCoupon.id} />}
                         
-                        {canShowCoupon && !isNewSubscription && (
+                        {canShowCoupon && (
                           <div className="my-4 space-y-2">
                             {!showCouponInput && !appliedCoupon ? (
                               <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => setShowCouponInput(true)}>
