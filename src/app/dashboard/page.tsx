@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuote, CheckCircle, Phone, Globe, Users, Calendar, BarChart, ShoppingCart, Code, Search, Lightbulb, Mail, BarChart2, ExternalLink, LayoutDashboard, FolderKanban, Save, AlertCircle, RefreshCcw, X } from 'lucide-react';
+import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuote, CheckCircle, Phone, Globe, Users, Calendar, BarChart, ShoppingCart, Code, Search, Lightbulb, Mail, BarChart2, ExternalLink, LayoutDashboard, FolderKanban, Save, AlertCircle, RefreshCcw, X, Link as LinkIcon } from 'lucide-react';
 import type { ClientQuestion, SkillProfile, PortfolioLink } from '@/app/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -202,7 +202,10 @@ function DashboardContent() {
       }
     } else {
       // Reset if no profile is selected
+      setSkillsAndExpertise('');
       setProfileLinks([]);
+      setTone(tones[0]);
+      setWordLimit([50, 120]);
     }
   }, [selectedProfile, skillProfiles]);
   
@@ -467,6 +470,7 @@ function DashboardContent() {
       Skill Profile: ${profile.title}
       Experience: ${profile.experience} years
       Summary: ${profile.description}
+      User Name: ${profileName}
     ` : `Name: ${profileName}`;
 
     const result = await generateProposalAction({
@@ -683,11 +687,14 @@ function DashboardContent() {
                   {selectedProfile !== 'none' && profileLinks.length > 0 && (
                     <div>
                       <Label className="text-xs text-muted-foreground">From Skill Profile</Label>
-                      <div className="space-y-2 mt-1">
+                      <div className="space-y-1 mt-1">
                         {profileLinks.map((link, index) => (
-                          <div key={`profile-link-${index}`} className="flex items-center gap-2 p-2 border rounded-md bg-muted/50">
-                            <Input value={link.title} className="bg-transparent border-0 font-medium" readOnly />
-                            <Input value={link.url} className="bg-transparent border-0 text-muted-foreground" readOnly />
+                          <div key={`profile-link-${index}`} className="flex items-center gap-2 text-sm">
+                             <a href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 group p-2 flex-1 rounded-md hover:bg-muted">
+                                <LinkIcon className="h-4 w-4 text-muted-foreground" />
+                                <span className="font-medium group-hover:underline text-primary truncate flex-1">{link.title || link.url}</span>
+                                <span className="text-muted-foreground truncate hidden md:block">{link.url}</span>
+                              </a>
                              <Button type="button" variant="ghost" size="icon" onClick={() => removeProfileLink(index)} className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive">
                                 <Trash2 className="h-4 w-4" />
                             </Button>
