@@ -32,6 +32,7 @@ export default {
         'sidebar': 'hsl(var(--sidebar))',
         'sidebar-foreground': 'hsl(var(--sidebar-foreground))',
         'admin-background': 'hsl(var(--admin-background))',
+        'main-background': 'hsl(var(--main-background))',
         primary: {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',

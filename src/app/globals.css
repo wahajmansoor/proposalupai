@@ -24,6 +24,7 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
+    --main-background: 220 14% 98%;
 
     /* Custom vars for admin */
     --admin-background: 220 13% 97%;
@@ -51,6 +52,7 @@
     --border: 217.2 32.6% 17.5%;
     --input: 217.2 32.6% 17.5%;
     --ring: 114 70% 40%;
+    --main-background: 220 13% 10%;
     
     /* Custom vars for admin */
     --admin-background: 224 71% 4%;

@@ -43,7 +43,7 @@ export default function ProfileLayout({
       <Sidebar />
       <div className="flex-1 flex flex-col">
         <Header />
-        <main className="flex-1 p-4 md:p-8 container mx-auto">
+        <main className="flex-1 p-4 md:p-8 bg-main-background">
           {children}
         </main>
       </div>

@@ -40,9 +40,9 @@ export default function SubscriptionLayout({
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
-       <main className="flex-1 flex flex-col">
+       <main className="flex-1 flex flex-col bg-main-background">
         <Header />
-        <div className="flex-1 p-4 md:p-8 container mx-auto">
+        <div className="flex-1 p-4 md:p-8">
           {children}
         </div>
       </main>
