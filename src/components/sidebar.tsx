@@ -14,11 +14,11 @@ import {
   Sheet,
   SheetContent,
 } from "@/components/ui/sheet"
-import { PanelLeft, LogOut, FileText, Bookmark, User, CreditCard } from "lucide-react";
+import { PanelLeft, LogOut, FilePlus2, Bookmark, User, CreditCard } from "lucide-react";
 
 
 const navItems = [
-  { href: "/dashboard", label: "Create Proposal", icon: FileText },
+  { href: "/dashboard", label: "Create Proposal", icon: FilePlus2 },
   { href: "/dashboard/proposals", label: "Saved Proposals", icon: Bookmark },
   { href: "/dashboard/skill-profiles", label: "Skill Profiles", icon: User },
   { href: "/pricing", label: "Plans & Pricing", icon: CreditCard },
