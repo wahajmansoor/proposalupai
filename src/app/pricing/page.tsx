@@ -57,14 +57,14 @@ export default function PricingPage() {
   const { user, userProfile, loading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting = useState(false);
-  const [billingInterval, setBillingInterval = useState<'monthly' | 'yearly'>('monthly');
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
   
-  const [showCouponInput, setShowCouponInput = useState(false);
-  const [couponCode, setCouponCode = useState('');
-  const [isValidatingCoupon, setIsValidatingCoupon = useState(false);
-  const [appliedCoupon, setAppliedCoupon = useState<ValidCoupon | null>(null);
-  const [couponError, setCouponError = useState<string | null>(null);
+  const [showCouponInput, setShowCouponInput] = useState(false);
+  const [couponCode, setCouponCode] = useState('');
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<ValidCoupon | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
 
   const subscriptionStatus = userProfile?.subscriptionStatus;
   const renewalDate = userProfile?.subscriptionCurrentPeriodEnd;
@@ -249,7 +249,7 @@ export default function PricingPage() {
         </div>
 
         <div className="flex justify-center w-full max-w-md">
-            <Card className="flex flex-col shadow-lg w-full border border-border">
+             <Card className="flex flex-col shadow-lg w-full border border-border">
                 <CardHeader className="pb-4">
                     <CardTitle className="text-xl font-semibold">{currentPlan.name}</CardTitle>
                     <CardDescription className="min-h-[40px]">{currentPlan.description}</CardDescription>
@@ -275,7 +275,7 @@ export default function PricingPage() {
                         <input type="hidden" name="interval" value={billingInterval} />
                         {appliedCoupon && <input type="hidden" name="coupon" value={appliedCoupon.id} />}
                         
-                        {canShowCoupon && !showPlanManagement && (
+                        {canShowCoupon && !isNewSubscription && (
                           <div className="my-4 space-y-2">
                             {!showCouponInput && !appliedCoupon ? (
                               <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => setShowCouponInput(true)}>
