@@ -6,7 +6,7 @@ import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ProposalUpLogo } from "@/components/icons";
 import { Header } from "@/components/header";
-import { DashboardNav } from "@/components/dashboard-nav";
+import { Sidebar } from "@/components/sidebar";
 
 export default function DashboardLayout({
   children,
@@ -48,8 +48,6 @@ export default function DashboardLayout({
     
   }, [user, userProfile, loading, router, pathname]);
   
-  // Conditionally render children only when authorized.
-  // This prevents the "jumping" effect.
   if (!isAuthorized) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -59,14 +57,16 @@ export default function DashboardLayout({
   }
   
   return (
-    <div className="flex flex-col min-h-screen bg-background">
-      <Header />
-      <DashboardNav />
-      <main className="flex-1 w-full p-4 md:p-8">
-        <div className="container mx-auto">
-          {children}
-        </div>
-      </main>
+    <div className="flex min-h-screen bg-background">
+      <Sidebar />
+      <div className="flex-1 flex flex-col">
+        <Header />
+        <main className="flex-1 w-full p-4 md:p-8">
+          <div className="container mx-auto">
+            {children}
+          </div>
+        </main>
+      </div>
     </div>
   );
 }
