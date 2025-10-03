@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -88,7 +89,7 @@ export default function PricingPage() {
 
   const isUpgrading = isMonthlyActive && billingInterval === 'yearly';
   const isNewSubscription = !isSubscribedAndActive && !isCanceledButActive && !isTrialing;
-  const canShowCoupon = isUpgrading || isTrialing || isNewSubscription;
+  const canShowCoupon = isUpgrading || isTrialing;
 
 
   const handleCouponValidation = async () => {
