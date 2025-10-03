@@ -63,3 +63,5 @@ export async function deleteSkillProfile(userId: string, profileId: string) {
   const profileDocRef = doc(db, 'users', userId, 'skillProfiles', profileId);
   await deleteDoc(profileDocRef);
 }
+
+    

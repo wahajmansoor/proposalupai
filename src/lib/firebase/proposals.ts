@@ -1,3 +1,4 @@
+
 // src/lib/firebase/proposals.ts
 import {
   collection,
@@ -60,3 +61,5 @@ export async function deleteSavedProposal(userId: string, proposalId: string) {
   const proposalDocRef = doc(db, 'users', userId, 'savedProposals', proposalId);
   await deleteDoc(proposalDocRef);
 }
+
+    
