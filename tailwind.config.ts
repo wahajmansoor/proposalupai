@@ -21,7 +21,7 @@ export default {
         'button-gradient': 'linear-gradient(135deg,#52dc1c,#3cd828,#00cc4a,#00c12b,#00ca4f,#47dc26)',
       },
       fontFamily: {
-        sans: ["var(--font-open-sans)", ...fontFamily.sans],
+        sans: ["var(--font-outfit)", ...fontFamily.sans],
       },
       colors: {
         border: 'hsl(var(--border))',
