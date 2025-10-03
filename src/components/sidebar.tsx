@@ -1,4 +1,3 @@
-
 // src/components/sidebar.tsx
 "use client";
 
@@ -55,7 +54,7 @@ function SidebarNav() {
                 pathname.startsWith(item.href) && item.href !== '/dashboard' ? "bg-muted text-primary" : pathname === '/dashboard' && item.href === '/dashboard' ? "bg-muted text-primary" : ""
               )}
             >
-              <item.icon className="h-4 w-4" />
+              <item.icon className="h-6 w-6" />
               {item.label}
             </Link>
           ))}
@@ -64,7 +63,7 @@ function SidebarNav() {
       {user && (
         <div className="mt-auto border-t p-4">
           <Button variant="ghost" className="w-full justify-start gap-3" onClick={handleLogout}>
-            <LogOut className="h-4 w-4" />
+            <LogOut className="h-6 w-6" />
             Logout
           </Button>
         </div>
