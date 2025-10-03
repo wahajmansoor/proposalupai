@@ -58,7 +58,7 @@ Project Title: ${input.projectTitle}
 Project Summary: ${input.summary}
 Profile Summary: ${input.profileSummary}
 Relevant Skills: ${input.relevantSkills}
-Past Successes: ${input.pastSuccesses}
+Relevant Experience / Past Successes: ${input.pastSuccesses}
 Portfolio Links: ${input.portfolioLinks}
 
 **CRITICAL INSTRUCTIONS - YOU MUST FOLLOW THESE FORMATTING RULES:**

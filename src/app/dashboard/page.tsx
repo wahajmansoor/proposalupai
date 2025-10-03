@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuote, CheckCircle, Phone, Globe, Users, Calendar, BarChart, ShoppingCart, Code, Search, Lightbulb, Mail, BarChart2, ExternalLink, LayoutDashboard, FolderKanban, Save, AlertCircle, RefreshCcw } from 'lucide-react';
-import type { ClientQuestion, SkillProfile } from '@/app/lib/types';
+import type { ClientQuestion, SkillProfile, PortfolioLink } from '@/app/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -108,10 +108,11 @@ function DashboardContent() {
   const [profileName, setProfileName] = useState('Jane Doe');
   const [clientName, setClientName] = useState('');
   const [skillsAndExpertise, setSkillsAndExpertise] = useState('');
+  const [relevantExperience, setRelevantExperience] = useState('');
   
   const [skillProfiles, setSkillProfiles] = useState<SkillProfile[]>([]);
   const [selectedProfile, setSelectedProfile] = useState<string>('none');
-  const [manualPortfolioLinks, setManualPortfolioLinks] = useState('');
+  const [manualLinks, setManualLinks] = useState<PortfolioLink[]>([{ title: '', url: '' }]);
 
 
   const [greeting, setGreeting] = useState('hi');
@@ -231,7 +232,8 @@ function DashboardContent() {
     setClientName('');
     setSkillsAndExpertise('');
     setSelectedProfile('none');
-    setManualPortfolioLinks('');
+    setManualLinks([{ title: '', url: '' }]);
+    setRelevantExperience('');
     setGreeting('hi');
     setClosingCta('looking-forward');
     setClosingCta2('best-regards');
@@ -267,7 +269,26 @@ function DashboardContent() {
   const handleInputChange = (setter: React.Dispatch<React.SetStateAction<string>>) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setter(e.target.value);
   };
-  
+
+  const handleLinkChange = (index: number, field: 'title' | 'url', value: string) => {
+    const newLinks = [...manualLinks];
+    newLinks[index][field] = value;
+    setManualLinks(newLinks);
+  };
+
+  const addManualLink = () => {
+    setManualLinks([...manualLinks, { title: '', url: '' }]);
+  };
+
+  const removeManualLink = (index: number) => {
+    const newLinks = manualLinks.filter((_, i) => i !== index);
+    if (newLinks.length === 0) {
+        setManualLinks([{ title: '', url: '' }]);
+    } else {
+        setManualLinks(newLinks);
+    }
+  };
+
   const addClientQuestion = () => {
     setClientQuestions(prev => [...prev, { id: Date.now(), question: '', answer: '' }]);
   };
@@ -429,20 +450,17 @@ function DashboardContent() {
       Summary: ${profile.description}
     ` : `Name: ${profileName}`;
 
-    let portfolioLinks: string;
-    if (profile && profile.links) {
-        portfolioLinks = profile.links.map(l => `${l.title}: ${l.url}`).join(', ');
-    } else {
-        portfolioLinks = manualPortfolioLinks;
-    }
+    const profileLinks = (profile?.links || []).map(l => `${l.title}: ${l.url}`);
+    const finalManualLinks = manualLinks.filter(l => l.url.trim()).map(l => l.title ? `${l.title}: ${l.url}` : l.url);
+    const allLinks = [...profileLinks, ...finalManualLinks].join(', ');
       
     const result = await generateProposalAction({
         projectTitle: projectDetails.projectTitle,
         summary: projectDetails.summary,
         profileSummary: profileSummary,
         relevantSkills: skillsAndExpertise,
-        pastSuccesses: '', // This seems deprecated by skill profiles
-        portfolioLinks: portfolioLinks,
+        pastSuccesses: relevantExperience, // Using new field
+        portfolioLinks: allLinks,
         greeting: clientName ? `${selectedGreeting} ${clientName}` : selectedGreeting,
         openingStrategy: (openingStrategy !== 'none' && openingStrategy !== 'video') ? selectedOpeningStrategy : undefined,
         closingCta: selectedClosing,
@@ -484,6 +502,8 @@ function DashboardContent() {
   const stepTitles = ["Project Details", "Your Profile", "Client Questions", "Preferences & Strategy"];
   const hasAnsweredQuestions = clientQuestions.some(q => q.answer);
   const hasQuestions = clientQuestions.some(q => q.question);
+
+  const selectedProfileData = skillProfiles.find(p => p.id === selectedProfile);
 
   return (
     <>
@@ -592,7 +612,7 @@ function DashboardContent() {
                   <CardTitle className="text-lg">Your Profile</CardTitle>
                 </div>
               </CardHeader>
-              <CardContent className="space-y-4">
+              <CardContent className="space-y-6">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                    <div>
                     <Label htmlFor="skillProfile">Skill Profile</Label>
@@ -620,7 +640,7 @@ function DashboardContent() {
                 </div>
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <Label htmlFor="skillsAndExpertise">Relevant Skills (from Profile)</Label>
+                    <Label htmlFor="skillsAndExpertise">Skills & Expertise Tags</Label>
                     <Button variant="outline" size="sm" onClick={handleAutofillSkills} disabled={isSuggestingSkills || selectedProfile === 'none'}>
                       {isSuggestingSkills ? 'Thinking...' : <><Sparkles className="mr-2 h-4 w-4" /> Auto-match</>}
                     </Button>
@@ -634,15 +654,54 @@ function DashboardContent() {
                     </div>
                   )}
                 </div>
-                 <div className={selectedProfile !== 'none' ? 'hidden' : ''}>
-                    <Label className="mb-2 block">Portfolio / Relevant Links (Manual)</Label>
-                    <Textarea 
-                        value={manualPortfolioLinks}
-                        onChange={handleInputChange(setManualPortfolioLinks)}
-                        placeholder="Paste relevant links, one per line."
-                        className="min-h-[100px]"
-                      />
+                <div>
+                    <Label htmlFor="relevantExperience">Relevant Experience</Label>
+                    <Textarea id="relevantExperience" value={relevantExperience} onChange={handleInputChange(setRelevantExperience)} placeholder="Briefly describe 1-2 past successes or experiences that are highly relevant to this specific job." />
+                </div>
+                <div className="space-y-4">
+                  <Label>Portfolio / Relevant Links</Label>
+                  {selectedProfile !== 'none' && selectedProfileData && selectedProfileData.links.length > 0 && (
+                    <div>
+                      <Label className="text-xs text-muted-foreground">From Skill Profile</Label>
+                      <div className="space-y-2 mt-1">
+                        {selectedProfileData.links.map((link, index) => (
+                          <div key={`profile-link-${index}`} className="flex items-center gap-2 p-2 border rounded-md bg-muted/50">
+                            <Input value={link.title} className="bg-transparent border-0" readOnly />
+                            <Input value={link.url} className="bg-transparent border-0" readOnly />
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  <div>
+                      <Label className="text-xs text-muted-foreground">Manual Links</Label>
+                      <div className="space-y-2 mt-1">
+                        {manualLinks.map((link, index) => (
+                          <div key={index} className="flex items-center gap-2">
+                              <Input 
+                                value={link.title} 
+                                onChange={(e) => handleLinkChange(index, 'title', e.target.value)} 
+                                placeholder="Title" 
+                                className="w-1/3"
+                              />
+                              <Input 
+                                value={link.url}
+                                onChange={(e) => handleLinkChange(index, 'url', e.target.value)}
+                                placeholder="https://example.com"
+                                type="url"
+                                className="flex-1"
+                              />
+                              <Button type="button" variant="ghost" size="icon" onClick={() => removeManualLink(index)} className="shrink-0">
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                          </div>
+                        ))}
+                      </div>
+                      <Button type="button" variant="outline" size="sm" onClick={addManualLink} className="w-full mt-2">
+                          <Plus className="mr-2 h-4 w-4" /> Add Link
+                      </Button>
                   </div>
+                </div>
               </CardContent>
             </Card>
           )}
