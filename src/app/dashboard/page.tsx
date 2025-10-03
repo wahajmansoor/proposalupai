@@ -260,7 +260,7 @@ function DashboardContent() {
 
   const prevStep = () => {
     if (currentStep > 1) {
-      setCurrentStep(prev => prev + 1);
+      setCurrentStep(prev => prev - 1);
     }
   };
 
@@ -429,9 +429,11 @@ function DashboardContent() {
       Summary: ${profile.description}
     ` : `Name: ${profileName}`;
 
-    let portfolioLinks = manualPortfolioLinks;
-    if (profile) {
-      portfolioLinks = profile.links.join(', ');
+    let portfolioLinks: string;
+    if (profile && profile.links) {
+        portfolioLinks = profile.links.map(l => `${l.title}: ${l.url}`).join(', ');
+    } else {
+        portfolioLinks = manualPortfolioLinks;
     }
       
     const result = await generateProposalAction({
@@ -984,5 +986,3 @@ export default function DashboardPage() {
         </Suspense>
     )
 }
-
-    

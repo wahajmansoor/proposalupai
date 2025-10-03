@@ -10,13 +10,18 @@ export interface JobAnalysis {
     answer: string;
   }
 
+  export interface PortfolioLink {
+    title: string;
+    url: string;
+  }
+
   export interface SkillProfile {
     id: string;
     title: string;
     description: string;
     experience: number;
     keywords: string[];
-    links: string[];
+    links: PortfolioLink[];
     tone: string;
     length: string;
     createdAt: string;
@@ -28,4 +33,3 @@ export interface JobAnalysis {
     content: string;
     createdAt: string;
   }
-
