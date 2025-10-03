@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useAuth } from "@/context/auth-context";
@@ -28,8 +27,10 @@ export default function DashboardLayout({
 
     const isSubscribed = userProfile?.subscriptionStatus === 'active' || userProfile?.subscriptionStatus === 'trialing';
 
-    if (!isSubscribed) {
-        if (pathname !== '/pricing' && !pathname.startsWith('/profile') && !pathname.startsWith('/dashboard/subscription') && !pathname.startsWith('/dashboard/skill-profiles')) {
+    const allowedPaths = ['/pricing', '/profile', '/dashboard/subscription', '/dashboard/skill-profiles'];
+
+    if (!isSubscribed && !allowedPaths.some(path => pathname.startsWith(path))) {
+        if (pathname !== '/dashboard') {
             router.replace('/pricing');
         }
     }
