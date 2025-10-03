@@ -89,9 +89,8 @@ export default function PricingPage() {
     }
   }, [isYearlyActive]);
 
-  const isUpgrading = isMonthlyActive && billingInterval === 'yearly';
-  const isNewSubscription = !isSubscribedAndActive && !isCanceledButActive && !isTrialing;
-  const canShowCoupon = (isUpgrading || isNewSubscription) && !isTrialing;
+  const isNewSubscription = !userProfile?.subscriptionStatus;
+  const canShowCoupon = !isNewSubscription;
 
 
   const handleCouponValidation = async () => {
@@ -386,6 +385,8 @@ export default function PricingPage() {
     </div>
   );
 }
+
+    
 
     
 
