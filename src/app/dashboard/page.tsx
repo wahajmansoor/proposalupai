@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuote, CheckCircle, Phone, Globe, Users, Calendar, BarChart, ShoppingCart, Code, Search, Lightbulb, Mail, BarChart2, ExternalLink, LayoutDashboard, FolderKanban, Save, AlertCircle, RefreshCcw } from 'lucide-react';
+import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuote, CheckCircle, Phone, Globe, Users, Calendar, BarChart, ShoppingCart, Code, Search, Lightbulb, Mail, BarChart2, ExternalLink, LayoutDashboard, FolderKanban, Save, AlertCircle, RefreshCcw, X } from 'lucide-react';
 import type { ClientQuestion, SkillProfile, PortfolioLink } from '@/app/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -89,6 +89,8 @@ const signOffCtas = [
     { value: 'warm-regards', label: 'Warm regards,' },
 ];
 
+const tones = ["Professional", "Friendly", "Assertive", "Persuasive", "Creative", "Concise", "Formal"];
+
 function DashboardContent() {
   const { user, userProfile, loading } = useAuth();
   const { toast } = useToast();
@@ -112,13 +114,14 @@ function DashboardContent() {
   
   const [skillProfiles, setSkillProfiles] = useState<SkillProfile[]>([]);
   const [selectedProfile, setSelectedProfile] = useState<string>('none');
+  const [profileLinks, setProfileLinks] = useState<PortfolioLink[]>([]);
   const [manualLinks, setManualLinks] = useState<PortfolioLink[]>([{ title: '', url: '' }]);
 
 
   const [greeting, setGreeting] = useState('hi');
   const [closingCta, setClosingCta] = useState('looking-forward');
   const [closingCta2, setClosingCta2] = useState('best-regards');
-  const [tone, setTone] = useState('professional');
+  const [tone, setTone] = useState('Professional');
   const [wordLimit, setWordLimit] = useState([50, 120]);
   
   const [clientQuestions, setClientQuestions] = useState<ClientQuestion[]>([{ id: 1, question: '', answer: '' }]);
@@ -186,6 +189,7 @@ function DashboardContent() {
       if (profile) {
         setSkillsAndExpertise(profile.keywords.join(', '));
         setTone(profile.tone);
+        setProfileLinks(profile.links);
         // A simple mapping from "Detailed" to a word count range
         const lengthMap = {
             "Very Short": [50, 80],
@@ -196,6 +200,9 @@ function DashboardContent() {
         // @ts-ignore
         setWordLimit(lengthMap[profile.length] || [100, 150]);
       }
+    } else {
+      // Reset if no profile is selected
+      setProfileLinks([]);
     }
   }, [selectedProfile, skillProfiles]);
   
@@ -232,12 +239,13 @@ function DashboardContent() {
     setClientName('');
     setSkillsAndExpertise('');
     setSelectedProfile('none');
+    setProfileLinks([]);
     setManualLinks([{ title: '', url: '' }]);
     setRelevantExperience('');
     setGreeting('hi');
     setClosingCta('looking-forward');
     setClosingCta2('best-regards');
-    setTone('professional');
+    setTone('Professional');
     setWordLimit([50, 120]);
     setClientQuestions([{ id: 1, question: '', answer: '' }]);
     setGeneratedProposal('');
@@ -262,13 +270,24 @@ function DashboardContent() {
 
   const prevStep = () => {
     if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1);
+      setCurrentStep(prev => prev + 1);
     }
   };
 
   const handleInputChange = (setter: React.Dispatch<React.SetStateAction<string>>) => (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
     setter(e.target.value);
   };
+  
+  const removeSkillTag = (tagToRemove: string) => {
+    const currentSkills = skillsAndExpertise.split(',').map(s => s.trim()).filter(Boolean);
+    const newSkills = currentSkills.filter(skill => skill !== tagToRemove);
+    setSkillsAndExpertise(newSkills.join(', '));
+  };
+  
+  const removeProfileLink = (index: number) => {
+    setProfileLinks(profileLinks.filter((_, i) => i !== index));
+  };
+
 
   const handleLinkChange = (index: number, field: 'title' | 'url', value: string) => {
     const newLinks = [...manualLinks];
@@ -450,9 +469,9 @@ function DashboardContent() {
       Summary: ${profile.description}
     ` : `Name: ${profileName}`;
 
-    const profileLinks = (profile?.links || []).map(l => `${l.title}: ${l.url}`);
+    const finalProfileLinks = profileLinks.map(l => l.title ? `${l.title}: ${l.url}` : l.url);
     const finalManualLinks = manualLinks.filter(l => l.url.trim()).map(l => l.title ? `${l.title}: ${l.url}` : l.url);
-    const allLinks = [...profileLinks, ...finalManualLinks].join(', ');
+    const allLinks = [...finalProfileLinks, ...finalManualLinks].join(', ');
       
     const result = await generateProposalAction({
         projectTitle: projectDetails.projectTitle,
@@ -502,8 +521,6 @@ function DashboardContent() {
   const stepTitles = ["Project Details", "Your Profile", "Client Questions", "Preferences & Strategy"];
   const hasAnsweredQuestions = clientQuestions.some(q => q.answer);
   const hasQuestions = clientQuestions.some(q => q.question);
-
-  const selectedProfileData = skillProfiles.find(p => p.id === selectedProfile);
 
   return (
     <>
@@ -649,7 +666,10 @@ function DashboardContent() {
                   {skillsAndExpertise.trim() && (
                     <div className="mt-2 flex flex-wrap gap-2">
                       {skillsAndExpertise.split(',').map(skill => skill.trim()).filter(Boolean).map((skill, index) => (
-                        <Badge key={index} variant="secondary" className="font-normal">{skill}</Badge>
+                        <Badge key={index} variant="secondary" className="font-normal gap-1">
+                            {skill}
+                            <button type="button" onClick={() => removeSkillTag(skill)} className="rounded-full hover:bg-black/10"><X className="h-3 w-3"/></button>
+                        </Badge>
                       ))}
                     </div>
                   )}
@@ -660,14 +680,17 @@ function DashboardContent() {
                 </div>
                 <div className="space-y-4">
                   <Label>Portfolio / Relevant Links</Label>
-                  {selectedProfile !== 'none' && selectedProfileData && selectedProfileData.links.length > 0 && (
+                  {selectedProfile !== 'none' && profileLinks.length > 0 && (
                     <div>
                       <Label className="text-xs text-muted-foreground">From Skill Profile</Label>
                       <div className="space-y-2 mt-1">
-                        {selectedProfileData.links.map((link, index) => (
+                        {profileLinks.map((link, index) => (
                           <div key={`profile-link-${index}`} className="flex items-center gap-2 p-2 border rounded-md bg-muted/50">
-                            <Input value={link.title} className="bg-transparent border-0" readOnly />
-                            <Input value={link.url} className="bg-transparent border-0" readOnly />
+                            <Input value={link.title} className="bg-transparent border-0 font-medium" readOnly />
+                            <Input value={link.url} className="bg-transparent border-0 text-muted-foreground" readOnly />
+                             <Button type="button" variant="ghost" size="icon" onClick={() => removeProfileLink(index)} className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive">
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         ))}
                       </div>
@@ -691,7 +714,7 @@ function DashboardContent() {
                                 type="url"
                                 className="flex-1"
                               />
-                              <Button type="button" variant="ghost" size="icon" onClick={() => removeManualLink(index)} className="shrink-0">
+                              <Button type="button" variant="ghost" size="icon" onClick={() => removeManualLink(index)} className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive">
                                 <Trash2 className="h-4 w-4" />
                               </Button>
                           </div>
@@ -797,13 +820,9 @@ function DashboardContent() {
                       <Select value={tone} onValueChange={setTone}>
                           <SelectTrigger><SelectValue /></SelectTrigger>
                           <SelectContent>
-                              <SelectItem value="professional">Professional</SelectItem>
-                              <SelectItem value="friendly">Friendly</SelectItem>
-                              <SelectItem value="assertive">Assertive</SelectItem>
-                              <SelectItem value="persuasive">Persuasive</SelectItem>
-                              <SelectItem value="creative">Creative</SelectItem>
-                              <SelectItem value="concise">Concise</SelectItem>
-                              <SelectItem value="formal">Formal</SelectItem>
+                              {tones.map(t => (
+                                <SelectItem key={t} value={t}>{t}</SelectItem>
+                              ))}
                           </SelectContent>
                       </Select>
                   </div>
