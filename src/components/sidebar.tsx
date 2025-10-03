@@ -1,4 +1,3 @@
-
 // src/components/sidebar.tsx
 "use client";
 
@@ -15,21 +14,14 @@ import {
   Sheet,
   SheetContent,
 } from "@/components/ui/sheet"
-import { PanelLeft, LogOut } from "lucide-react";
-import { HugeiconsIcon } from '@hugeicons/react';
-import { 
-  NewFile02Icon, 
-  Bookmark02Icon, 
-  User01Icon, 
-  BillIcon 
-} from '@hugeicons/core-free-icons';
+import { PanelLeft, LogOut, FilePlus2, Bookmark, User, CreditCard } from "lucide-react";
 
 
 const navItems = [
-  { href: "/dashboard", label: "Create Proposal", icon: NewFile02Icon },
-  { href: "/dashboard/proposals", label: "Saved Proposals", icon: Bookmark02Icon },
-  { href: "/dashboard/skill-profiles", label: "Skill Profiles", icon: User01Icon },
-  { href: "/pricing", label: "Plans & Pricing", icon: BillIcon },
+  { href: "/dashboard", label: "Create Proposal", icon: FilePlus2 },
+  { href: "/dashboard/proposals", label: "Saved Proposals", icon: Bookmark },
+  { href: "/dashboard/skill-profiles", label: "Skill Profiles", icon: User },
+  { href: "/pricing", label: "Plans & Pricing", icon: CreditCard },
 ];
 
 function SidebarNav() {
@@ -62,7 +54,7 @@ function SidebarNav() {
                 pathname.startsWith(item.href) && item.href !== '/dashboard' ? "bg-muted text-primary" : pathname === '/dashboard' && item.href === '/dashboard' ? "bg-muted text-primary" : ""
               )}
             >
-              <HugeiconsIcon icon={item.icon} size={24} />
+              <item.icon className="h-6 w-6" />
               {item.label}
             </Link>
           ))}
