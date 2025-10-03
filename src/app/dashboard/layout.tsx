@@ -3,7 +3,7 @@
 
 import { useAuth } from "@/context/auth-context";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ProposalUpLogo } from "@/components/icons";
 import { Header } from "@/components/header";
 import { DashboardNav } from "@/components/dashboard-nav";
@@ -16,6 +16,7 @@ export default function DashboardLayout({
   const { user, userProfile, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
     if (loading) {
@@ -27,12 +28,11 @@ export default function DashboardLayout({
     }
 
     const isSubscribed = userProfile?.subscriptionStatus === 'active' || userProfile?.subscriptionStatus === 'trialing';
-
+    
     // Define paths that are PROTECTED and require a subscription.
     const protectedPaths = ['/dashboard', '/dashboard/skill-profiles', '/dashboard/proposals'];
 
     // Check if the user is trying to access a protected path.
-    // We use `pathname === path` for `/dashboard` to avoid matching `/dashboard/subscription`.
     const isAccessingProtectedPath = protectedPaths.some(path => 
         path === '/dashboard' ? pathname === path : pathname.startsWith(path)
     );
@@ -40,18 +40,24 @@ export default function DashboardLayout({
     // If user is NOT subscribed and is trying to access a protected path, redirect them.
     if (!isSubscribed && isAccessingProtectedPath) {
         router.replace('/pricing');
+        return; // Important: stop further execution
     }
     
+    // If we've passed all checks, the user is authorized to see the content.
+    setIsAuthorized(true);
+    
   }, [user, userProfile, loading, router, pathname]);
-
-  if (loading || !user) {
+  
+  // Conditionally render children only when authorized.
+  // This prevents the "jumping" effect.
+  if (!isAuthorized) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />
       </div>
     );
   }
-
+  
   return (
     <div className="flex flex-col min-h-screen bg-background">
       <Header />
