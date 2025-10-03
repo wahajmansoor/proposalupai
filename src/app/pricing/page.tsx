@@ -23,11 +23,13 @@ const plans = {
     name: "Pro Monthly",
     price: 20,
     priceDescription: "/month",
+    description: "Billed monthly. Ideal for flexibility and short-term projects."
   },
   yearly: {
     name: "Pro Yearly",
     price: 200,
     priceDescription: "/year",
+    description: "Billed annually. The best value for long-term growth."
   }
 };
 
@@ -55,14 +57,14 @@ export default function PricingPage() {
   const { user, userProfile, loading: authLoading } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
+  const [isSubmitting, setIsSubmitting = useState(false);
+  const [billingInterval, setBillingInterval = useState<'monthly' | 'yearly'>('monthly');
   
-  const [showCouponInput, setShowCouponInput] = useState(false);
-  const [couponCode, setCouponCode] = useState('');
-  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
-  const [appliedCoupon, setAppliedCoupon] = useState<ValidCoupon | null>(null);
-  const [couponError, setCouponError] = useState<string | null>(null);
+  const [showCouponInput, setShowCouponInput = useState(false);
+  const [couponCode, setCouponCode = useState('');
+  const [isValidatingCoupon, setIsValidatingCoupon = useState(false);
+  const [appliedCoupon, setAppliedCoupon = useState<ValidCoupon | null>(null);
+  const [couponError, setCouponError = useState<string | null>(null);
 
   const subscriptionStatus = userProfile?.subscriptionStatus;
   const renewalDate = userProfile?.subscriptionCurrentPeriodEnd;
@@ -89,7 +91,7 @@ export default function PricingPage() {
 
   const isUpgrading = isMonthlyActive && billingInterval === 'yearly';
   const isNewSubscription = !isSubscribedAndActive && !isCanceledButActive && !isTrialing;
-  const canShowCoupon = isUpgrading || isTrialing;
+  const canShowCoupon = isUpgrading || isTrialing || isNewSubscription;
 
 
   const handleCouponValidation = async () => {
@@ -250,7 +252,7 @@ export default function PricingPage() {
             <Card className="flex flex-col shadow-lg w-full border border-border">
                 <CardHeader className="pb-4">
                     <CardTitle className="text-xl font-semibold">{currentPlan.name}</CardTitle>
-                    <CardDescription className="min-h-[40px]">Unlock unlimited access to all our AI-powered features and generate winning proposals in seconds.</CardDescription>
+                    <CardDescription className="min-h-[40px]">{currentPlan.description}</CardDescription>
                 </CardHeader>
                 <CardContent className="flex flex-col flex-1">
                     <div className="my-4">
@@ -273,7 +275,7 @@ export default function PricingPage() {
                         <input type="hidden" name="interval" value={billingInterval} />
                         {appliedCoupon && <input type="hidden" name="coupon" value={appliedCoupon.id} />}
                         
-                        {canShowCoupon && (
+                        {canShowCoupon && !showPlanManagement && (
                           <div className="my-4 space-y-2">
                             {!showCouponInput && !appliedCoupon ? (
                               <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => setShowCouponInput(true)}>
@@ -377,3 +379,5 @@ export default function PricingPage() {
     </div>
   );
 }
+
+    
