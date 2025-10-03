@@ -4,32 +4,25 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
 import { ProposalUpLogo } from "@/components/icons";
-import {
-  AddFile02Icon,
-  Bookmark01Icon,
-  User01Icon,
-  Billing01Icon,
-  Logout03Icon,
-} from 'hugeicons-react';
 import { useAuth } from "@/context/auth-context";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
 import {
   Sheet,
   SheetContent,
-  SheetTrigger,
 } from "@/components/ui/sheet"
-import { PanelLeft } from "lucide-react";
-import { useState } from "react";
+import { PanelLeft, FilePlus2, Bookmark, User, CreditCard, LogOut } from "lucide-react";
+
 
 const navItems = [
-  { href: "/dashboard", label: "Create Proposal", icon: AddFile02Icon },
-  { href: "/dashboard/proposals", label: "Saved Proposals", icon: Bookmark01Icon },
-  { href: "/dashboard/skill-profiles", label: "Skill Profiles", icon: User01Icon },
-  { href: "/pricing", label: "Plans & Pricing", icon: Billing01Icon },
+  { href: "/dashboard", label: "Create Proposal", icon: FilePlus2 },
+  { href: "/dashboard/proposals", label: "Saved Proposals", icon: Bookmark },
+  { href: "/dashboard/skill-profiles", label: "Skill Profiles", icon: User },
+  { href: "/pricing", label: "Plans & Pricing", icon: CreditCard },
 ];
 
 function SidebarNav() {
@@ -71,7 +64,7 @@ function SidebarNav() {
       {user && (
         <div className="mt-auto border-t p-4">
           <Button variant="ghost" className="w-full justify-start gap-3" onClick={handleLogout}>
-            <Logout03Icon className="h-4 w-4" />
+            <LogOut className="h-4 w-4" />
             Logout
           </Button>
         </div>
@@ -94,7 +87,7 @@ export function Sidebar() {
       </Sheet>
       
       {/* Desktop Sidebar */}
-      <aside className="fixed top-0 left-0 z-50 h-full flex-col border-r border-border bg-background text-foreground transition-all duration-300 ease-in-out -translate-x-full md:flex w-[290px] xl:mt-0 dark:bg-gray-900 dark:border-gray-800 md:translate-x-0">
+      <aside className="fixed top-0 left-0 z-50 h-full flex-col border-r border-border bg-background text-foreground transition-all duration-300 ease-in-out md:flex w-[290px] md:-translate-x-full md:translate-x-0">
         <SidebarNav />
       </aside>
 
@@ -112,3 +105,4 @@ export function Sidebar() {
     </>
   );
 }
+
