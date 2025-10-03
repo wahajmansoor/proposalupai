@@ -29,7 +29,7 @@ export default function DashboardLayout({
     const isSubscribed = userProfile?.subscriptionStatus === 'active' || userProfile?.subscriptionStatus === 'trialing';
 
     if (!isSubscribed) {
-        if (pathname !== '/pricing' && !pathname.startsWith('/profile') && !pathname.startsWith('/dashboard/subscription')) {
+        if (pathname !== '/pricing' && !pathname.startsWith('/profile') && !pathname.startsWith('/dashboard/subscription') && !pathname.startsWith('/dashboard/skill-profiles')) {
             router.replace('/pricing');
         }
     }
