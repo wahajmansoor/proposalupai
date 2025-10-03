@@ -28,15 +28,12 @@ export default function DashboardLayout({
 
     const isSubscribed = userProfile?.subscriptionStatus === 'active' || userProfile?.subscriptionStatus === 'trialing';
 
-    // Pages accessible to non-subscribed users
-    const allowedPaths = ['/pricing', '/profile', '/dashboard/subscription'];
+    // Pages accessible to non-subscribed users even within the dashboard layout context
+    const allowedPaths = ['/pricing', '/profile', '/dashboard/subscription', '/dashboard/skill-profiles', '/dashboard/proposals'];
 
-    // If user is not subscribed and is trying to access a restricted page
+    // If user is not subscribed and is trying to access a page that is not explicitly allowed
     if (!isSubscribed && !allowedPaths.some(path => pathname.startsWith(path))) {
-        // Allow access to the main dashboard page, but redirect from any other restricted page
-        if (pathname !== '/dashboard') {
-            router.replace('/pricing');
-        }
+        router.replace('/pricing');
     }
     
   }, [user, userProfile, loading, router, pathname]);
