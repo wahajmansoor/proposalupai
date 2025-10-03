@@ -1,22 +1,22 @@
 
-// src/app/dashboard/portfolio/page.tsx
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Plus, Trash2, X, Link as LinkIcon } from 'lucide-react';
-import type { PortfolioCollection } from '@/app/lib/types';
+import { Loader2, Plus, Trash2, X, Link as LinkIcon, Edit, Info } from 'lucide-react';
+import type { SkillProfile } from '@/app/lib/types';
 import {
-  addPortfolioCollection,
-  deletePortfolioCollection,
-  getPortfolioCollections,
-  updatePortfolioCollection,
-} from '@/lib/firebase/portfolio';
+  addSkillProfile,
+  deleteSkillProfile,
+  getSkillProfiles,
+  updateSkillProfile,
+} from '@/lib/firebase/profiles';
 import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
@@ -28,26 +28,36 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
   AlertDialogTrigger,
-} from "@/components/ui/alert-dialog"
+} from "@/components/ui/alert-dialog";
+import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
-export default function PortfolioPage() {
+const tones = ["Professional", "Friendly", "Assertive", "Persuasive", "Creative", "Concise", "Formal"];
+const lengths = ["Very Short", "Short", "Detailed", "Very Detailed"];
+
+export default function SkillProfilesPage() {
   const { user } = useAuth();
   const { toast } = useToast();
 
-  const [collections, setCollections] = useState<PortfolioCollection[]>([]);
+  const [profiles, setProfiles] = useState<SkillProfile[]>([]);
+  const [selectedProfile, setSelectedProfile] = useState<SkillProfile | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+  const [isFormOpen, setIsFormOpen] = useState(false);
+  const [editingProfile, setEditingProfile] = useState<SkillProfile | null>(null);
 
-  const [newCollectionName, setNewCollectionName] = useState('');
-
-  const fetchCollections = useCallback(async () => {
+  const fetchProfiles = useCallback(async () => {
     if (!user) return;
     setIsLoading(true);
     try {
-      const userCollections = await getPortfolioCollections(user.uid);
-      setCollections(userCollections);
+      const userProfiles = await getSkillProfiles(user.uid);
+      setProfiles(userProfiles);
+      if (userProfiles.length > 0) {
+        setSelectedProfile(userProfiles[0]);
+      }
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to fetch collections.', variant: 'destructive' });
+      toast({ title: 'Error', description: 'Failed to fetch profiles.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
@@ -55,204 +65,275 @@ export default function PortfolioPage() {
 
   useEffect(() => {
     if (user) {
-      fetchCollections();
+      fetchProfiles();
     } else {
-        // If no user, stop loading, layout will handle redirect.
-        setIsLoading(false);
+      setIsLoading(false);
     }
-  }, [user, fetchCollections]);
+  }, [user, fetchProfiles]);
 
-
-  const handleAddCollection = async (e: React.FormEvent) => {
+  const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!user || !newCollectionName.trim()) return;
+    if (!user) return;
+
+    const formData = new FormData(e.currentTarget);
+    const data = {
+      title: formData.get('title') as string,
+      description: formData.get('description') as string,
+      experience: Number(formData.get('experience')),
+      keywords: (formData.get('keywords') as string).split(',').map(k => k.trim()).filter(Boolean),
+      links: (formData.get('links') as string).split('\n').map(l => l.trim()).filter(Boolean),
+      tone: formData.get('tone') as string,
+      length: formData.get('length') as string,
+    };
+    
+    // Validate URLs
+    for (const link of data.links) {
+        try {
+            new URL(link);
+        } catch (_) {
+            toast({ title: "Invalid URL", description: `Please enter a valid URL: ${link}`, variant: "destructive" });
+            return;
+        }
+    }
 
     setIsSaving(true);
     try {
-      await addPortfolioCollection(user.uid, newCollectionName.trim());
-      setNewCollectionName('');
-      toast({ title: 'Success', description: 'Collection created.' });
-      await fetchCollections();
+      if (editingProfile) {
+        await updateSkillProfile(user.uid, editingProfile.id, data);
+        toast({ title: 'Success', description: 'Profile updated.' });
+      } else {
+        await addSkillProfile(user.uid, data as Omit<SkillProfile, 'id' | 'createdAt'>);
+        toast({ title: 'Success', description: 'Profile created.' });
+      }
+      setIsFormOpen(false);
+      setEditingProfile(null);
+      await fetchProfiles();
     } catch (error) {
-      toast({ title: 'Error', description: 'Failed to create collection.', variant: 'destructive' });
+      toast({ title: 'Error', description: `Failed to ${editingProfile ? 'update' : 'create'} profile.`, variant: 'destructive' });
     } finally {
       setIsSaving(false);
     }
   };
-  
-  const handleDeleteCollection = async (collectionId: string) => {
-    if(!user) return;
+
+  const handleDeleteProfile = async (profileId: string) => {
+    if (!user) return;
     try {
-        await deletePortfolioCollection(user.uid, collectionId);
-        toast({ title: "Collection Deleted", description: "The portfolio collection has been removed." });
-        fetchCollections();
+      await deleteSkillProfile(user.uid, profileId);
+      toast({ title: "Profile Deleted", description: "The skill profile has been removed." });
+      if (selectedProfile?.id === profileId) {
+        setSelectedProfile(null);
+      }
+      fetchProfiles();
     } catch (error) {
-        toast({ title: "Error", description: "Failed to delete collection.", variant: "destructive"});
+      toast({ title: "Error", description: "Failed to delete profile.", variant: "destructive" });
     }
+  };
+  
+  const handleEditClick = (profile: SkillProfile) => {
+    setEditingProfile(profile);
+    setIsFormOpen(true);
   }
   
-  const handleAddLink = async (collectionId: string, newLink: string) => {
-    if (!user || !newLink.trim()) return;
-
-    const collection = collections.find(c => c.id === collectionId);
-    if (!collection) return;
-    
-    try {
-        new URL(newLink); // Validate URL
-    } catch (_) {
-        toast({ title: "Invalid URL", description: "Please enter a valid URL.", variant: "destructive" });
-        return;
-    }
-
-    const updatedLinks = [...collection.links, newLink.trim()];
-    
-    try {
-        await updatePortfolioCollection(user.uid, collectionId, { links: updatedLinks });
-        fetchCollections();
-    } catch (error) {
-        toast({ title: "Error", description: "Failed to add link.", variant: "destructive" });
-    }
-  };
-
-  const handleRemoveLink = async (collectionId: string, linkToRemove: string) => {
-    if(!user) return;
-    const collection = collections.find(c => c.id === collectionId);
-    if (!collection) return;
-
-    const updatedLinks = collection.links.filter(link => link !== linkToRemove);
-     try {
-        await updatePortfolioCollection(user.uid, collectionId, { links: updatedLinks });
-        fetchCollections();
-    } catch (error) {
-        toast({ title: "Error", description: "Failed to remove link.", variant: "destructive" });
-    }
-  };
-
-  const AddLinkForm = ({ collectionId }: { collectionId: string }) => {
-    const [link, setLink] = useState('');
-    const handleSubmit = (e: React.FormEvent) => {
-        e.preventDefault();
-        handleAddLink(collectionId, link);
-        setLink('');
-    };
-    return (
-        <form onSubmit={handleSubmit} className="flex items-center gap-2 mt-2">
-            <Input 
-                value={link}
-                onChange={(e) => setLink(e.target.value)}
-                placeholder="https://example.com"
-                className="h-8"
-            />
-            <Button type="submit" size="sm" variant="outline">Add Link</Button>
-        </form>
-    );
-  };
-
+  const handleCreateClick = () => {
+    setEditingProfile(null);
+    setIsFormOpen(true);
+  }
 
   if (isLoading) {
     return (
-      <div className="max-w-4xl mx-auto space-y-8">
-        <div className="space-y-2">
-            <div className="h-8 bg-gray-200 rounded w-1/3 animate-pulse"></div>
-        </div>
-        <Card>
-            <CardHeader>
-                <div className="h-6 bg-gray-200 rounded w-1/4 animate-pulse"></div>
-                <div className="h-4 bg-gray-200 rounded w-1/2 animate-pulse mt-2"></div>
-            </CardHeader>
-            <CardContent>
-                <div className="flex items-center gap-4">
-                    <div className="flex-1 h-10 bg-gray-200 rounded animate-pulse"></div>
-                    <div className="h-10 bg-gray-200 rounded w-24 animate-pulse"></div>
-                </div>
-            </CardContent>
-        </Card>
+      <div className="flex items-center justify-center min-h-[50vh]">
+        <Loader2 className="h-10 w-10 animate-spin text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
-        <h1 className="text-3xl font-bold tracking-tight">Portfolio Collections</h1>
-        
-        <Card>
-            <CardHeader>
-                <CardTitle>Create New Collection</CardTitle>
-                <CardDescription>Organize your portfolio links into named collections.</CardDescription>
+    <>
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start">
+        <div className="md:col-span-1">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <div className='flex items-center gap-2'>
+                <CardTitle className="text-lg">Profiles</CardTitle>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger>
+                            <Info className="h-4 w-4 text-muted-foreground" />
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>Create different profiles for your various skills (e.g., "Web Developer", "Graphic Designer").</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
+              </div>
+              <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
+                <DialogTrigger asChild>
+                    <Button size="sm" onClick={handleCreateClick}><Plus className="mr-2 h-4 w-4" />Create</Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-2xl">
+                    <DialogHeader>
+                        <DialogTitle>{editingProfile ? 'Edit' : 'Create'} Skill Profile</DialogTitle>
+                        <DialogDescription>
+                            Define a profile for a specific skill set to generate tailored proposals.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <form onSubmit={handleFormSubmit} className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4 max-h-[70vh] overflow-y-auto pr-2">
+                      <div className="space-y-2">
+                        <Label htmlFor="title">Profile Title</Label>
+                        <Input id="title" name="title" defaultValue={editingProfile?.title} placeholder="e.g., Senior Web Developer" required />
+                      </div>
+                       <div className="space-y-2">
+                        <Label htmlFor="experience">Experience (Years)</Label>
+                        <Input id="experience" name="experience" type="number" defaultValue={editingProfile?.experience} placeholder="e.g., 5" required />
+                      </div>
+                      <div className="md:col-span-2 space-y-2">
+                        <Label htmlFor="description">Profile Description</Label>
+                        <Textarea id="description" name="description" defaultValue={editingProfile?.description} placeholder="Describe your skills and experience for this profile..." className="min-h-[120px]" required />
+                      </div>
+                       <div className="md:col-span-2 space-y-2">
+                        <Label htmlFor="keywords">Keywords</Label>
+                        <Input id="keywords" name="keywords" defaultValue={editingProfile?.keywords.join(', ')} placeholder="e.g., React, Node.js, Project Management" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="tone">Proposal Tone</Label>
+                        <Select name="tone" defaultValue={editingProfile?.tone || tones[0]} required>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                {tones.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                      </div>
+                       <div className="space-y-2">
+                        <Label htmlFor="length">Proposal Length</Label>
+                        <Select name="length" defaultValue={editingProfile?.length || lengths[2]} required>
+                            <SelectTrigger><SelectValue /></SelectTrigger>
+                            <SelectContent>
+                                {lengths.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                            </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="md:col-span-2 space-y-2">
+                        <Label htmlFor="links">Portfolio Links</Label>
+                        <Textarea id="links" name="links" defaultValue={editingProfile?.links.join('\n')} placeholder="Enter one URL per line" className="min-h-[100px]" />
+                      </div>
+                      <DialogFooter className="md:col-span-2">
+                        <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>Cancel</Button>
+                        <Button type="submit" disabled={isSaving}>
+                          {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Save Profile'}
+                        </Button>
+                      </DialogFooter>
+                    </form>
+                </DialogContent>
+            </Dialog>
             </CardHeader>
             <CardContent>
-                <form onSubmit={handleAddCollection} className="flex items-center gap-4">
-                    <div className="flex-1 space-y-2">
-                        <Label htmlFor="collectionName" className="sr-only">Collection Name</Label>
-                        <Input 
-                            id="collectionName"
-                            value={newCollectionName}
-                            onChange={(e) => setNewCollectionName(e.target.value)}
-                            placeholder="e.g., eCommerce Websites"
-                        />
-                    </div>
-                    <Button type="submit" disabled={isSaving || !newCollectionName.trim()}>
-                        {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Plus className="mr-2 h-4 w-4" />}
-                        Create
-                    </Button>
-                </form>
+              {profiles.length > 0 ? (
+                <ul className="space-y-2">
+                  {profiles.map(profile => (
+                    <li key={profile.id}>
+                      <button 
+                        className={`w-full text-left p-2 rounded-md text-sm ${selectedProfile?.id === profile.id ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted'}`}
+                        onClick={() => setSelectedProfile(profile)}
+                      >
+                        {profile.title}
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              ) : (
+                <p className="text-sm text-muted-foreground text-center py-4">No profiles yet. Click "Create Profile" to start.</p>
+              )}
             </CardContent>
-        </Card>
-
-         <div className="space-y-6">
-            <h2 className="text-2xl font-semibold tracking-tight">Your Collections</h2>
-            {collections.length === 0 && !isLoading ? (
-                <p className="text-muted-foreground">You haven't created any collections yet.</p>
-            ) : (
-                collections.map(collection => (
-                    <Card key={collection.id}>
-                        <CardHeader className="flex flex-row items-center justify-between">
-                            <CardTitle className="text-xl">{collection.name}</CardTitle>
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <Button variant="ghost" size="icon" className="text-destructive hover:bg-destructive/10 hover:text-destructive">
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    This will permanently delete the "{collection.name}" collection and all its links. This action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction onClick={() => handleDeleteCollection(collection.id)}>
-                                    Delete
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
-                        </CardHeader>
-                        <CardContent>
-                            <ul className="space-y-2">
-                              {collection.links.map((link, index) => (
-                                <li key={index} className="flex items-center justify-between group">
-                                  <div className="flex items-center gap-2">
-                                    <LinkIcon className="h-4 w-4 text-muted-foreground"/>
-                                    <a href={link} target="_blank" rel="noopener noreferrer" className="text-sm text-blue-600 hover:underline truncate">
-                                      {link}
-                                    </a>
-                                  </div>
-                                  <Button variant="ghost" size="icon" className="h-6 w-6 opacity-0 group-hover:opacity-100" onClick={() => handleRemoveLink(collection.id, link)}>
-                                      <X className="h-4 w-4"/>
-                                  </Button>
-                                </li>
-                              ))}
-                            </ul>
-                            {collection.links.length === 0 && <p className="text-sm text-muted-foreground">No links added yet.</p>}
-                           <AddLinkForm collectionId={collection.id} />
-                        </CardContent>
-                    </Card>
-                ))
-            )}
+          </Card>
         </div>
-    </div>
+        <div className="md:col-span-3">
+          {selectedProfile ? (
+            <Card>
+                <CardHeader>
+                    <div className="flex items-start justify-between">
+                        <div>
+                            <CardTitle className="text-2xl">{selectedProfile.title}</CardTitle>
+                        </div>
+                        <div className="flex items-center gap-2">
+                            <Button variant="outline" size="icon" onClick={() => handleEditClick(selectedProfile)}>
+                                <Edit className="h-4 w-4" />
+                            </Button>
+                            <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                    <Button variant="destructive" size="icon">
+                                        <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                        This will permanently delete the "{selectedProfile.title}" profile. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <AlertDialogFooter>
+                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                    <AlertDialogAction onClick={() => handleDeleteProfile(selectedProfile.id)} className="bg-destructive hover:bg-destructive/90">
+                                        Delete
+                                    </AlertDialogAction>
+                                    </AlertDialogFooter>
+                                </AlertDialogContent>
+                            </AlertDialog>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                    <p className="text-muted-foreground whitespace-pre-wrap">{selectedProfile.description}</p>
+                    
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                        <div>
+                            <p className="font-semibold">Experience</p>
+                            <p>{selectedProfile.experience} years</p>
+                        </div>
+                        <div>
+                            <p className="font-semibold">Default Length</p>
+                            <p>{selectedProfile.length}</p>
+                        </div>
+                        <div>
+                            <p className="font-semibold">Default Tone</p>
+                            <p>{selectedProfile.tone}</p>
+                        </div>
+                    </div>
+
+                    <div>
+                        <p className="font-semibold mb-2">Keywords</p>
+                        <div className="flex flex-wrap gap-2">
+                        {selectedProfile.keywords.map((keyword, index) => (
+                            <Badge key={index} variant="secondary">{keyword}</Badge>
+                        ))}
+                        </div>
+                    </div>
+                    
+                    <div>
+                        <p className="font-semibold mb-2">Websites</p>
+                        <div className="flex flex-wrap gap-2">
+                        {selectedProfile.links.map((link, index) => (
+                             <Badge key={index} variant="outline" className="bg-purple-100 border-purple-200 text-purple-800 font-normal">
+                                <a href={link} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1">
+                                    {link}
+                                </a>
+                            </Badge>
+                        ))}
+                        </div>
+                    </div>
+                </CardContent>
+            </Card>
+          ) : (
+            <Card className="flex items-center justify-center h-96">
+                <div className="text-center">
+                    <p className="text-lg font-semibold text-muted-foreground">Select a profile to view its details</p>
+                    <p className="text-sm text-muted-foreground">or create a new one to get started.</p>
+                    <Button className="mt-4" onClick={handleCreateClick}><Plus className="mr-2 h-4 w-4" />Create Your First Profile</Button>
+                </div>
+            </Card>
+          )}
+        </div>
+      </div>
+    </>
   );
 }

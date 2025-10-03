@@ -1,3 +1,4 @@
+
 "use client";
 
 import Link from "next/link";
@@ -8,7 +9,7 @@ import { FilePlus2, FolderKanban, Save, User, CreditCard, DollarSign } from "luc
 const leftNavItems = [
   { href: "/dashboard", label: "Create Proposal", icon: FilePlus2 },
   { href: "/dashboard/proposals", label: "Saved Proposals", icon: Save },
-  { href: "/dashboard/portfolio", label: "Portfolio Collections", icon: FolderKanban },
+  { href: "/dashboard/portfolio", label: "Skill Profiles", icon: User },
 ];
 
 const rightNavItems = [

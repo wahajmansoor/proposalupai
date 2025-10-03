@@ -1,3 +1,4 @@
+
 export interface JobAnalysis {
     keyRequirements: string[];
     themes: string[];
@@ -9,10 +10,16 @@ export interface JobAnalysis {
     answer: string;
   }
 
-  export interface PortfolioCollection {
+  export interface SkillProfile {
     id: string;
-    name: string;
+    title: string;
+    description: string;
+    experience: number;
+    keywords: string[];
     links: string[];
+    tone: string;
+    length: string;
+    createdAt: string;
   }
 
   export interface SavedProposal {
@@ -21,3 +28,4 @@ export interface JobAnalysis {
     content: string;
     createdAt: string;
   }
+

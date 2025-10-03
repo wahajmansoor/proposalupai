@@ -16,7 +16,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuote, CheckCircle, Phone, Globe, Users, Calendar, BarChart, ShoppingCart, Code, Search, Lightbulb, Mail, BarChart2, ExternalLink, LayoutDashboard, FolderKanban, Save, AlertCircle, RefreshCcw } from 'lucide-react';
-import type { ClientQuestion, PortfolioCollection } from '@/app/lib/types';
+import type { ClientQuestion, SkillProfile } from '@/app/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -25,7 +25,7 @@ import { Progress } from '@/components/ui/progress';
 import { ProTips } from '@/components/pro-tips';
 import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
-import { getPortfolioCollections } from '@/lib/firebase/portfolio';
+import { getSkillProfiles } from '@/lib/firebase/profiles';
 import { Slider } from '@/components/ui/slider';
 import { ProposalUpLogo, LinkedInIcon } from '@/components/icons';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -108,11 +108,9 @@ function DashboardContent() {
   const [profileName, setProfileName] = useState('Jane Doe');
   const [clientName, setClientName] = useState('');
   const [skillsAndExpertise, setSkillsAndExpertise] = useState('');
-  const [relevantExperience, setRelevantExperience] = useState('');
   
-  const [portfolioCollections, setPortfolioCollections] = useState<PortfolioCollection[]>([]);
-  const [selectedPortfolio, setSelectedPortfolio] = useState<string>('none');
-  const [portfolioLinkOption, setPortfolioLinkOption] = useState<'manual' | 'collection'>('manual');
+  const [skillProfiles, setSkillProfiles] = useState<SkillProfile[]>([]);
+  const [selectedProfile, setSelectedProfile] = useState<string>('none');
   const [manualPortfolioLinks, setManualPortfolioLinks] = useState('');
 
 
@@ -171,14 +169,34 @@ function DashboardContent() {
       if (user.displayName) {
         setProfileName(user.displayName);
       }
-      // Fetch portfolio collections
-      const fetchCollections = async () => {
-        const collections = await getPortfolioCollections(user.uid);
-        setPortfolioCollections(collections);
+      // Fetch skill profiles
+      const fetchProfiles = async () => {
+        const profiles = await getSkillProfiles(user.uid);
+        setSkillProfiles(profiles);
       };
-      fetchCollections();
+      fetchProfiles();
     }
   }, [user]);
+
+  // When a skill profile is selected, update relevant fields
+  useEffect(() => {
+    if (selectedProfile !== 'none') {
+      const profile = skillProfiles.find(p => p.id === selectedProfile);
+      if (profile) {
+        setSkillsAndExpertise(profile.keywords.join(', '));
+        setTone(profile.tone);
+        // A simple mapping from "Detailed" to a word count range
+        const lengthMap = {
+            "Very Short": [50, 80],
+            "Short": [80, 120],
+            "Detailed": [120, 200],
+            "Very Detailed": [200, 300],
+        }
+        // @ts-ignore
+        setWordLimit(lengthMap[profile.length] || [100, 150]);
+      }
+    }
+  }, [selectedProfile, skillProfiles]);
   
   useEffect(() => {
     if (summaryTextareaRef.current) {
@@ -212,9 +230,7 @@ function DashboardContent() {
     setStrategySuggestionReasoning('');
     setClientName('');
     setSkillsAndExpertise('');
-    setRelevantExperience('');
-    setSelectedPortfolio('none');
-    setPortfolioLinkOption('manual');
+    setSelectedProfile('none');
     setManualPortfolioLinks('');
     setGreeting('hi');
     setClosingCta('looking-forward');
@@ -244,7 +260,7 @@ function DashboardContent() {
 
   const prevStep = () => {
     if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1);
+      setCurrentStep(prev => prev + 1);
     }
   };
 
@@ -319,18 +335,25 @@ function DashboardContent() {
       setCurrentStep(1);
       return;
     }
+    if (selectedProfile === 'none') {
+        toast({ title: 'No Profile Selected', description: 'Please select a Skill Profile to autofill from.', variant: 'destructive' });
+        return;
+    }
+    const profile = skillProfiles.find(p => p.id === selectedProfile);
+    if (!profile) return;
+
     setIsSuggestingSkills(true);
     const result = await autofillSkillsAction({
       projectTitle: projectDetails.projectTitle,
       summary: projectDetails.summary,
-      profileInformation: relevantExperience,
+      profileInformation: profile.description,
     });
 
     if (result.error) {
       toast({ title: 'Error filling skills', description: result.error, variant: 'destructive' });
     } else if (result.data) {
       setSkillsAndExpertise(result.data.skillsAndExpertise.join(', '));
-      toast({ title: 'Skills Auto-filled!', description: 'Relevant skills have been added based on the project summary.' });
+      toast({ title: 'Skills Auto-filled!', description: 'Relevant skills have been added based on the project and your profile.' });
     }
     setIsSuggestingSkills(false);
   };
@@ -346,12 +369,14 @@ function DashboardContent() {
       setCurrentStep(1);
       return;
     }
+    const profile = skillProfiles.find(p => p.id === selectedProfile);
+    const profileInfo = profile ? `${profile.title}: ${profile.description}` : '';
     
     setIsAnsweringQuestions(true);
     const result = await answerQuestionsAction({
       jobDescription: projectDetails.summary,
       clientQuestions: questionsToAnswer.map(q => q.question),
-      profileInformation: `My name is ${profileName}. My skills are ${skillsAndExpertise}. My experience is: ${relevantExperience}`,
+      profileInformation: `My name is ${profileName}. My selected skill profile is ${profileInfo}`,
     });
     
     if (result.error) {
@@ -397,19 +422,24 @@ function DashboardContent() {
     const selectedOpeningStrategy = openingStrategies.find(s => s.id === openingStrategy)?.description;
 
     
-    let portfolioLinks = '';
-    if (portfolioLinkOption === 'collection' && selectedPortfolio !== 'none') {
-      portfolioLinks = portfolioCollections.find(c => c.id === selectedPortfolio)?.links.join(', ') || '';
-    } else if (portfolioLinkOption === 'manual') {
-      portfolioLinks = manualPortfolioLinks;
+    const profile = skillProfiles.find(p => p.id === selectedProfile);
+    const profileSummary = profile ? `
+      Skill Profile: ${profile.title}
+      Experience: ${profile.experience} years
+      Summary: ${profile.description}
+    ` : `Name: ${profileName}`;
+
+    let portfolioLinks = manualPortfolioLinks;
+    if (profile) {
+      portfolioLinks = profile.links.join(', ');
     }
       
     const result = await generateProposalAction({
         projectTitle: projectDetails.projectTitle,
         summary: projectDetails.summary,
-        profileSummary: `Name: ${profileName}\nRelevant Experience: ${relevantExperience}`,
+        profileSummary: profileSummary,
         relevantSkills: skillsAndExpertise,
-        pastSuccesses: '',
+        pastSuccesses: '', // This seems deprecated by skill profiles
         portfolioLinks: portfolioLinks,
         greeting: clientName ? `${selectedGreeting} ${clientName}` : selectedGreeting,
         openingStrategy: (openingStrategy !== 'none' && openingStrategy !== 'video') ? selectedOpeningStrategy : undefined,
@@ -562,9 +592,24 @@ function DashboardContent() {
               </CardHeader>
               <CardContent className="space-y-4">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <Label htmlFor="yourName">Your Name</Label>
-                    <Input id="yourName" value={profileName} onChange={handleInputChange(setProfileName)} placeholder="Your name"/>
+                   <div>
+                    <Label htmlFor="skillProfile">Skill Profile</Label>
+                     <Select value={selectedProfile} onValueChange={setSelectedProfile}>
+                        <SelectTrigger>
+                            <SelectValue placeholder="Select a profile" />
+                        </SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="none">None (Use manual inputs)</SelectItem>
+                            {skillProfiles.map(profile => (
+                            <SelectItem key={profile.id} value={profile.id}>
+                                {profile.title}
+                            </SelectItem>
+                            ))}
+                        </SelectContent>
+                    </Select>
+                     <p className="text-sm text-muted-foreground mt-2">
+                          Manage your profiles on the <Link href="/dashboard/portfolio" className="underline">Skill Profiles page</Link>.
+                        </p>
                   </div>
                   <div>
                     <Label htmlFor="clientName">Client's Name (Optional)</Label>
@@ -573,12 +618,12 @@ function DashboardContent() {
                 </div>
                 <div>
                   <div className="flex justify-between items-center mb-1">
-                    <Label htmlFor="skillsAndExpertise">Skills and Expertise</Label>
-                    <Button variant="outline" size="sm" onClick={handleAutofillSkills} disabled={isSuggestingSkills}>
-                      {isSuggestingSkills ? 'Thinking...' : <><Sparkles className="mr-2 h-4 w-4" /> Auto Fill</>}
+                    <Label htmlFor="skillsAndExpertise">Relevant Skills (from Profile)</Label>
+                    <Button variant="outline" size="sm" onClick={handleAutofillSkills} disabled={isSuggestingSkills || selectedProfile === 'none'}>
+                      {isSuggestingSkills ? 'Thinking...' : <><Sparkles className="mr-2 h-4 w-4" /> Auto-match</>}
                     </Button>
                   </div>
-                  <Input id="skillsAndExpertise" value={skillsAndExpertise} onChange={handleInputChange(setSkillsAndExpertise)} placeholder="Enter skills separated by commas (e.g., React, Node.js)" />
+                  <Input id="skillsAndExpertise" value={skillsAndExpertise} onChange={handleInputChange(setSkillsAndExpertise)} placeholder="Select a profile or enter skills manually" />
                   {skillsAndExpertise.trim() && (
                     <div className="mt-2 flex flex-wrap gap-2">
                       {skillsAndExpertise.split(',').map(skill => skill.trim()).filter(Boolean).map((skill, index) => (
@@ -587,50 +632,14 @@ function DashboardContent() {
                     </div>
                   )}
                 </div>
-                <div>
-                  <Label htmlFor="relevantExperience">My Style / Relevant Experience</Label>
-                  <Textarea id="relevantExperience" value={relevantExperience} onChange={handleInputChange(setRelevantExperience)} placeholder="Briefly describe your relevant experience or paste a sample of your writing. The AI will adapt to your style." className="min-h-[120px]" />
-                </div>
-                 <div>
-                    <Label className="mb-2 block">Portfolio / Relevant Links</Label>
-                    <RadioGroup value={portfolioLinkOption} onValueChange={(value) => setPortfolioLinkOption(value as 'collection' | 'manual')} className="flex items-center space-x-4 mb-2">
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="manual" id="r2" />
-                        <Label htmlFor="r2">Manual Links</Label>
-                      </div>
-                      <div className="flex items-center space-x-2">
-                        <RadioGroupItem value="collection" id="r1" />
-                        <Label htmlFor="r1">Portfolio Collection</Label>
-                      </div>
-                    </RadioGroup>
-
-                    {portfolioLinkOption === 'collection' ? (
-                      <div>
-                        <Select value={selectedPortfolio} onValueChange={setSelectedPortfolio}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select a collection" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            <SelectItem value="none">None</SelectItem>
-                            {portfolioCollections.map(collection => (
-                              <SelectItem key={collection.id} value={collection.id}>
-                                {collection.name}
-                              </SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                        <p className="text-sm text-muted-foreground mt-2">
-                          Manage your collections on the <a href="/dashboard/portfolio" className="underline">Portfolio page</a>.
-                        </p>
-                      </div>
-                    ) : (
-                      <Textarea 
+                 <div className={selectedProfile !== 'none' ? 'hidden' : ''}>
+                    <Label className="mb-2 block">Portfolio / Relevant Links (Manual)</Label>
+                    <Textarea 
                         value={manualPortfolioLinks}
                         onChange={handleInputChange(setManualPortfolioLinks)}
                         placeholder="Paste relevant links, one per line."
                         className="min-h-[100px]"
                       />
-                    )}
                   </div>
               </CardContent>
             </Card>

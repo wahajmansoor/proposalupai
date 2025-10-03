@@ -12,8 +12,8 @@ service cloud.firestore {
       allow create: if request.auth != null;
     }
 
-    // Users can only manage their own portfolio collections.
-    match /users/{userId}/portfolioCollections/{collectionId} {
+    // Users can only manage their own skill profiles.
+    match /users/{userId}/skillProfiles/{profileId} {
         allow read, write, delete: if request.auth != null && request.auth.uid == userId;
     }
 
