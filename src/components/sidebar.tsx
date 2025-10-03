@@ -16,6 +16,7 @@ import {
   SheetTrigger,
 } from "@/components/ui/sheet"
 import { PanelLeft } from "lucide-react";
+import { useState } from "react";
 
 const navItems = [
   { href: "/dashboard", label: "Create Proposal", icon: FilePlus2 },
