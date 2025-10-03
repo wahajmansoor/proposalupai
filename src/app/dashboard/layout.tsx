@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useAuth } from "@/context/auth-context";
@@ -27,9 +28,12 @@ export default function DashboardLayout({
 
     const isSubscribed = userProfile?.subscriptionStatus === 'active' || userProfile?.subscriptionStatus === 'trialing';
 
-    const allowedPaths = ['/pricing', '/profile', '/dashboard/subscription', '/dashboard/skill-profiles'];
+    // Pages accessible to non-subscribed users
+    const allowedPaths = ['/pricing', '/profile', '/dashboard/subscription'];
 
+    // If user is not subscribed and is trying to access a restricted page
     if (!isSubscribed && !allowedPaths.some(path => pathname.startsWith(path))) {
+        // Allow access to the main dashboard page, but redirect from any other restricted page
         if (pathname !== '/dashboard') {
             router.replace('/pricing');
         }
