@@ -14,8 +14,6 @@ const leftNavItems = [
 
 const rightNavItems = [
   { href: "/pricing", label: "Plans & Pricing", icon: DollarSign },
-  { href: "/subscription", label: "Subscription", icon: CreditCard },
-  { href: "/profile", label: "General Profile", icon: User },
 ];
 
 export function DashboardNav() {

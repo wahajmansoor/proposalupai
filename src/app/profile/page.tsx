@@ -52,9 +52,9 @@ export default function ProfilePage() {
   };
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 max-w-2xl mx-auto">
       <div>
-        <h1 className="text-3xl font-bold tracking-tight">General Profile</h1>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">General Profile</h1>
         <p className="text-muted-foreground">View and manage your account details.</p>
       </div>
       <form onSubmit={handleSubmit}>

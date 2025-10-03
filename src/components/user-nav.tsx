@@ -51,7 +51,7 @@ export function UserNav() {
     return (
         <div className="flex items-center gap-2">
             <Skeleton className="h-9 w-9 rounded-full" />
-            <div className="flex flex-col gap-1">
+            <div className="hidden sm:flex flex-col gap-1">
               <Skeleton className="h-4 w-20" />
               <Skeleton className="h-3 w-28" />
             </div>
@@ -84,7 +84,7 @@ export function UserNav() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative flex items-center gap-2 p-1 h-auto rounded-full border border-transparent hover:border-border hover:bg-transparent focus-visible:bg-transparent">
+        <Button variant="ghost" className="relative flex items-center gap-2 p-1 h-auto rounded-full border border-transparent hover:border-border focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0">
           <Avatar className="h-9 w-9">
             {photoURL && (
               <AvatarImage src={photoURL} alt={displayName || 'User avatar'} />

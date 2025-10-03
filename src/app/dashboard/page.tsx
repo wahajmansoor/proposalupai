@@ -555,7 +555,7 @@ function DashboardContent() {
           </CardHeader>
         </Card>
       )}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
+      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
@@ -910,7 +910,7 @@ function DashboardContent() {
           </div>
         </div>
         
-        <div className="space-y-6 sticky top-24">
+        <div className="space-y-6 xl:sticky xl:top-24">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between">
               <div className="flex items-center gap-2">
