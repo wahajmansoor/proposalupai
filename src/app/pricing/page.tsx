@@ -42,8 +42,8 @@ const sharedFeatures = {
         "Email & Community Support",
     ],
     personaIcon: Briefcase,
-    personaTitle: "Full-time Freelancer",
-    personaDescription: "For the serious freelancer who wants to save time, automate their workflow, and increase their win rate with high-quality proposals."
+    personaTitle: "Hey Freelancers",
+    personaDescription: "Stop drafting from scratch, Proposal Up AI creates tailored proposals and cover letters that win attention fast."
 };
 
 type ValidCoupon = {

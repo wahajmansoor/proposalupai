@@ -10,7 +10,7 @@ const navItems = [
   { href: "/dashboard/proposals", label: "Saved Proposals", icon: Save },
   { href: "/dashboard/portfolio", label: "Portfolio Collections", icon: FolderKanban },
   { href: "/pricing", label: "Plans & Pricing", icon: CreditCard },
-  { href: "/profile", label: "Profile", icon: User },
+  { href: "/profile", label: "General Profile", icon: User },
 ];
 
 export function DashboardNav() {

@@ -16,7 +16,7 @@ import { auth } from '@/lib/firebase/config';
 import Link from 'next/link';
 import { Skeleton } from './ui/skeleton';
 import { ChevronDown, CreditCard, LogOut, User, Loader2 } from 'lucide-react';
-import { createCustomerPortalSession } from '@/app/lib/stripe-actions';
+import { createCustomerPortalSession } from '@/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 
@@ -112,7 +112,7 @@ export function UserNav() {
            <DropdownMenuItem asChild>
               <Link href="/profile">
                   <User className="mr-2 h-4 w-4" />
-                  Profile
+                  General Profile
               </Link>
            </DropdownMenuItem>
           {userProfile?.stripeCustomerId && (
