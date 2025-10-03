@@ -115,7 +115,8 @@ function DashboardContent() {
   const [skillProfiles, setSkillProfiles] = useState<SkillProfile[]>([]);
   const [selectedProfile, setSelectedProfile] = useState<string>('none');
   const [profileLinks, setProfileLinks] = useState<PortfolioLink[]>([]);
-  const [manualLinks, setManualLinks] = useState<PortfolioLink[]>([{ title: '', url: '' }]);
+  const [manualLinks, setManualLinks] = useState<PortfolioLink[]>([]);
+  const [manualLinkInput, setManualLinkInput] = useState('');
 
 
   const [greeting, setGreeting] = useState('hi');
@@ -243,7 +244,8 @@ function DashboardContent() {
     setSkillsAndExpertise('');
     setSelectedProfile('none');
     setProfileLinks([]);
-    setManualLinks([{ title: '', url: '' }]);
+    setManualLinks([]);
+    setManualLinkInput('');
     setRelevantExperience('');
     setGreeting('hi');
     setClosingCta('looking-forward');
@@ -292,23 +294,29 @@ function DashboardContent() {
   };
 
 
-  const handleLinkChange = (index: number, field: 'title' | 'url', value: string) => {
-    const newLinks = [...manualLinks];
-    newLinks[index][field] = value;
-    setManualLinks(newLinks);
-  };
-
-  const addManualLink = () => {
-    setManualLinks([...manualLinks, { title: '', url: '' }]);
+  const handleManualLinkKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter' && manualLinkInput.trim()) {
+      e.preventDefault();
+      const url = manualLinkInput.trim();
+      if (!manualLinks.some(link => link.url === url)) {
+        try {
+          // Basic URL validation
+          new URL(url);
+          setManualLinks([...manualLinks, { title: '', url: url }]);
+        } catch (_) {
+          toast({
+            title: "Invalid URL",
+            description: "Please enter a valid URL.",
+            variant: "destructive"
+          });
+        }
+      }
+      setManualLinkInput('');
+    }
   };
 
   const removeManualLink = (index: number) => {
-    const newLinks = manualLinks.filter((_, i) => i !== index);
-    if (newLinks.length === 0) {
-        setManualLinks([{ title: '', url: '' }]);
-    } else {
-        setManualLinks(newLinks);
-    }
+    setManualLinks(manualLinks.filter((_, i) => i !== index));
   };
 
   const addClientQuestion = () => {
@@ -689,8 +697,8 @@ function DashboardContent() {
                       <Label className="text-xs text-muted-foreground">From Skill Profile</Label>
                       <div className="space-y-1 mt-1">
                         {profileLinks.map((link, index) => (
-                          <div key={`profile-link-${index}`} className="flex items-center gap-2 text-sm">
-                             <a href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 group p-2 flex-1 rounded-md hover:bg-muted">
+                          <div key={`profile-link-${index}`} className="flex items-center gap-2 text-sm p-2 rounded-md hover:bg-muted group">
+                             <a href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 flex-1 min-w-0">
                                 <LinkIcon className="h-4 w-4 text-muted-foreground" />
                                 <span className="font-medium group-hover:underline text-primary truncate flex-1">{link.title || link.url}</span>
                                 <span className="text-muted-foreground truncate hidden md:block">{link.url}</span>
@@ -704,32 +712,30 @@ function DashboardContent() {
                     </div>
                   )}
                   <div>
-                      <Label className="text-xs text-muted-foreground">Manual Links</Label>
-                      <div className="space-y-2 mt-1">
+                    <Label htmlFor="manualLinks" className="text-xs text-muted-foreground">Manual Links</Label>
+                    <Input 
+                      id="manualLinks"
+                      value={manualLinkInput}
+                      onChange={(e) => setManualLinkInput(e.target.value)}
+                      onKeyDown={handleManualLinkKeyDown}
+                      placeholder="Enter a URL and press Enter..."
+                      type="url"
+                    />
+                     {manualLinks.length > 0 && (
+                      <div className="mt-2 flex flex-col gap-1">
                         {manualLinks.map((link, index) => (
-                          <div key={index} className="flex items-center gap-2">
-                              <Input 
-                                value={link.title} 
-                                onChange={(e) => handleLinkChange(index, 'title', e.target.value)} 
-                                placeholder="Title" 
-                                className="w-1/3"
-                              />
-                              <Input 
-                                value={link.url}
-                                onChange={(e) => handleLinkChange(index, 'url', e.target.value)}
-                                placeholder="https://example.com"
-                                type="url"
-                                className="flex-1"
-                              />
-                              <Button type="button" variant="ghost" size="icon" onClick={() => removeManualLink(index)} className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive">
-                                <Trash2 className="h-4 w-4" />
-                              </Button>
+                          <div key={`manual-link-${index}`} className="flex items-center gap-2 text-sm p-2 rounded-md hover:bg-muted group">
+                            <a href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 flex-1 min-w-0">
+                              <LinkIcon className="h-4 w-4 text-muted-foreground" />
+                              <span className="font-medium group-hover:underline text-primary truncate">{link.url}</span>
+                            </a>
+                            <Button type="button" variant="ghost" size="icon" onClick={() => removeManualLink(index)} className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive">
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
                           </div>
                         ))}
                       </div>
-                      <Button type="button" variant="outline" size="sm" onClick={addManualLink} className="w-full mt-2">
-                          <Plus className="mr-2 h-4 w-4" /> Add Link
-                      </Button>
+                    )}
                   </div>
                 </div>
               </CardContent>
