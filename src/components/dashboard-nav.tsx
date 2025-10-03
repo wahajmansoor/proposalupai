@@ -9,7 +9,7 @@ const navItems = [
   { href: "/dashboard", label: "Create Proposal", icon: FilePlus2 },
   { href: "/dashboard/proposals", label: "Saved Proposals", icon: Save },
   { href: "/dashboard/portfolio", label: "Portfolio Collections", icon: FolderKanban },
-  { href: "/pricing", label: "Plans & Pricing", icon: CreditCard },
+  { href: "/dashboard/subscription", label: "Subscription", icon: CreditCard },
   { href: "/profile", label: "General Profile", icon: User },
 ];
 

@@ -89,7 +89,7 @@ export default function PricingPage() {
     }
   }, [isYearlyActive]);
 
-  const isNewSubscription = !userProfile?.subscriptionStatus;
+  const isNewSubscription = !userProfile;
   const canShowCoupon = !isNewSubscription;
 
 
@@ -385,9 +385,3 @@ export default function PricingPage() {
     </div>
   );
 }
-
-    
-
-    
-
-    
