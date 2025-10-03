@@ -1,9 +1,9 @@
 
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getUsers, AppUser } from "./users/actions";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Users, BarChart3, FileText, Activity } from "lucide-react";
+import { Users, FileText, Activity } from "lucide-react";
 import { formatDistanceToNow } from 'date-fns';
 import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
@@ -55,9 +55,8 @@ export default async function AdminDashboardPage() {
 
   return (
     <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
-        <p className="text-muted-foreground">An overview of your application's key metrics.</p>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
       </div>
       
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
@@ -97,7 +96,7 @@ export default async function AdminDashboardPage() {
         <CardHeader className="flex flex-row items-center justify-between">
             <div>
                 <CardTitle>Recent Signups</CardTitle>
-                <p className="text-sm text-muted-foreground pt-1">The latest users to join your application.</p>
+                <CardDescription className="text-sm text-muted-foreground pt-1">The latest users to join your application.</CardDescription>
             </div>
             <Button asChild variant="outline" size="sm">
                 <Link href="/admin-portal/users">

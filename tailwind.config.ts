@@ -24,6 +24,9 @@ export default {
         sans: ["var(--font-open-sans)", ...fontFamily.sans],
       },
       colors: {
+        'admin-background': 'hsl(var(--admin-background))',
+        'sidebar': 'hsl(var(--sidebar))',
+        'sidebar-foreground': 'hsl(var(--sidebar-foreground))',
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
         card: {

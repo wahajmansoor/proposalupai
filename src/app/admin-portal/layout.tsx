@@ -2,9 +2,60 @@
 import Link from 'next/link';
 import { getAdminSession } from '@/app/login/actions';
 import { redirect } from 'next/navigation';
-import { Sidebar, SidebarProvider, SidebarMenu, SidebarMenuItem, SidebarMenuButton, SidebarHeader, SidebarTrigger, SidebarContent, SidebarFooter } from '@/components/ui/sidebar';
-import { Home, Users, LogOut, PanelLeft, Ticket } from 'lucide-react';
 import { adminLogout } from '@/app/login/actions';
+import { Home, Users, LogOut, PanelLeft, Ticket, Search, Bell, Moon } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Input } from '@/components/ui/input';
+import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ProposalUpLogo } from '@/components/icons';
+
+function SidebarNav() {
+  return (
+    <nav className="flex flex-col h-full text-sm font-medium">
+      <div className="flex-1">
+        <div className="px-4 py-6">
+          <Link href="/admin-portal" className="flex items-center gap-2 font-semibold text-white">
+            <ProposalUpLogo className="h-8 w-8" />
+            <span className="text-xl">Admin Panel</span>
+          </Link>
+        </div>
+        <div className="px-3 py-4 space-y-1">
+          <Link
+            href="/admin-portal"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-400 transition-all hover:text-white hover:bg-gray-800"
+          >
+            <Home className="h-4 w-4" />
+            Dashboard
+          </Link>
+          <Link
+            href="/admin-portal/users"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-400 transition-all hover:text-white hover:bg-gray-800"
+          >
+            <Users className="h-4 w-4" />
+            Users
+          </Link>
+          <Link
+            href="/admin-portal/coupons"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-gray-400 transition-all hover:text-white hover:bg-gray-800"
+          >
+            <Ticket className="h-4 w-4" />
+            Coupons
+          </Link>
+        </div>
+      </div>
+      <div className="mt-auto p-4 border-t border-gray-800">
+        <form action={async () => { 'use server'; await adminLogout(); redirect('/admin-login'); }}>
+            <button type="submit" className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-gray-400 transition-all hover:text-white hover:bg-gray-800">
+                <LogOut className="h-4 w-4" />
+                Logout
+            </button>
+        </form>
+      </div>
+    </nav>
+  )
+}
 
 export default async function AdminLayout({
   children,
@@ -17,77 +68,77 @@ export default async function AdminLayout({
     redirect('/admin-login');
   }
 
-  const handleLogout = async () => {
-    'use server';
-    await adminLogout();
-    redirect('/admin-login');
-  }
-
   return (
-    <SidebarProvider>
-        <div className="group flex min-h-screen w-full bg-muted/40">
-            <Sidebar side="left" className="shrink-0" collapsible="offcanvas">
-                <SidebarContent className="flex h-full max-h-screen flex-col gap-2 bg-gray-900 text-white overflow-hidden">
-                    <SidebarHeader className="flex h-14 items-start justify-center border-b border-gray-800 px-4 lg:h-[60px] lg:px-6">
-                        <Link href="/admin-portal" className="flex items-start gap-2 font-semibold text-white whitespace-nowrap">
-                            <span className="text-2xl">Admin Panel</span>
-                        </Link>
-                    </SidebarHeader>
-                    <div className="flex-1 overflow-y-auto">
-                        <SidebarMenu className="px-2 py-4 text-sm font-medium lg:px-4">
-                            <SidebarMenuItem>
-                                <Link href="/admin-portal" className="w-full">
-                                    <SidebarMenuButton className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800 whitespace-nowrap" tooltip="Dashboard">
-                                        <Home />
-                                        <span className="group-data-[collapsible=icon]:hidden">Dashboard</span>
-                                    </SidebarMenuButton>
-                                </Link>
-                            </SidebarMenuItem>
-                            <SidebarMenuItem>
-                                <Link href="/admin-portal/users" className="w-full">
-                                    <SidebarMenuButton className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800 whitespace-nowrap" tooltip="Users">
-                                        <Users />
-                                        <span className="group-data-[collapsible=icon]:hidden">Users</span>
-                                    </SidebarMenuButton>
-                                </Link>
-                            </SidebarMenuItem>
-                             <SidebarMenuItem>
-                                <Link href="/admin-portal/coupons" className="w-full">
-                                    <SidebarMenuButton className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800 whitespace-nowrap" tooltip="Coupons">
-                                        <Ticket />
-                                        <span className="group-data-[collapsible=icon]:hidden">Coupons</span>
-                                    </SidebarMenuButton>
-                                </Link>
-                            </SidebarMenuItem>
-                        </SidebarMenu>
-                    </div>
-                     <SidebarFooter className="mt-auto p-4 border-t border-gray-800">
-                        <form action={handleLogout} className="w-full">
-                            <SidebarMenuButton asChild className="w-full justify-start text-gray-300 hover:text-white hover:bg-gray-800 whitespace-nowrap" tooltip="Logout">
-                                <button type="submit" className="w-full">
-                                    <LogOut />
-                                    <span className="group-data-[collapsible=icon]:hidden">Logout</span>
-                                </button>
-                            </SidebarMenuButton>
-                        </form>
-                    </SidebarFooter>
-                </SidebarContent>
-            </Sidebar>
-            <div className="flex flex-1 flex-col">
-                 <header className="sticky top-0 flex h-14 items-center gap-4 border-b bg-background px-4 sm:px-6 z-10">
-                    <SidebarTrigger className="shrink-0">
-                        <PanelLeft />
-                        <span className="sr-only">Toggle Menu</span>
-                    </SidebarTrigger>
-                    <div className="w-full flex-1">
-                       {/* You can add breadcrumbs or search here if needed */}
-                    </div>
-                </header>
-                <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-background">
-                    {children}
-                </main>
-            </div>
-        </div>
-    </SidebarProvider>
+    <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
+      <div className="hidden border-r bg-sidebar md:block">
+          <SidebarNav />
+      </div>
+      <div className="flex flex-col">
+        <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button
+                variant="outline"
+                size="icon"
+                className="shrink-0 md:hidden"
+              >
+                <PanelLeft className="h-5 w-5" />
+                <span className="sr-only">Toggle navigation menu</span>
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="left" className="flex flex-col p-0 bg-sidebar text-white">
+              <SidebarNav />
+            </SheetContent>
+          </Sheet>
+          <div className="w-full flex-1">
+            <form>
+              <div className="relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="search"
+                  placeholder="Search or type command..."
+                  className="w-full appearance-none bg-background pl-8 shadow-none md:w-2/3 lg:w-1/3"
+                />
+              </div>
+            </form>
+          </div>
+          <div className="flex items-center gap-2">
+            <Button variant="ghost" size="icon" className="rounded-full">
+              <Moon className="h-5 w-5" />
+              <span className="sr-only">Toggle theme</span>
+            </Button>
+            <Button variant="ghost" size="icon" className="rounded-full">
+              <Bell className="h-5 w-5" />
+              <span className="sr-only">Notifications</span>
+            </Button>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="secondary" size="icon" className="rounded-full">
+                  <Avatar className="h-8 w-8">
+                    <AvatarFallback>A</AvatarFallback>
+                  </Avatar>
+                  <span className="sr-only">Toggle user menu</span>
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>Admin Account</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem>Settings</DropdownMenuItem>
+                <DropdownMenuItem>Support</DropdownMenuItem>
+                <DropdownMenuSeparator />
+                <form action={async () => { 'use server'; await adminLogout(); redirect('/admin-login'); }}>
+                  <DropdownMenuItem asChild>
+                    <button type="submit" className="w-full">Logout</button>
+                  </DropdownMenuItem>
+                </form>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
+        </header>
+        <main className="flex flex-1 flex-col gap-4 p-4 lg:gap-6 lg:p-6 bg-admin-background">
+          {children}
+        </main>
+      </div>
+    </div>
   );
 }
