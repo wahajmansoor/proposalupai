@@ -15,16 +15,14 @@ import {
   Sheet,
   SheetContent,
 } from "@/components/ui/sheet"
-import { PanelLeft, LogOut } from "lucide-react";
-import { HugeiconsIcon } from "hugeicons-react";
-import { NewFile02Icon, Bookmark02Icon, User01Icon, BillIcon } from "hugeicons-react/lib/icon";
+import { PanelLeft, LogOut, FileText, Bookmark, User, CreditCard } from "lucide-react";
 
 
 const navItems = [
-  { href: "/dashboard", label: "Create Proposal", icon: NewFile02Icon },
-  { href: "/dashboard/proposals", label: "Saved Proposals", icon: Bookmark02Icon },
-  { href: "/dashboard/skill-profiles", label: "Skill Profiles", icon: User01Icon },
-  { href: "/pricing", label: "Plans & Pricing", icon: BillIcon },
+  { href: "/dashboard", label: "Create Proposal", icon: FileText },
+  { href: "/dashboard/proposals", label: "Saved Proposals", icon: Bookmark },
+  { href: "/dashboard/skill-profiles", label: "Skill Profiles", icon: User },
+  { href: "/pricing", label: "Plans & Pricing", icon: CreditCard },
 ];
 
 function SidebarNav() {
@@ -57,7 +55,7 @@ function SidebarNav() {
                 pathname.startsWith(item.href) && item.href !== '/dashboard' ? "bg-muted text-primary" : pathname === '/dashboard' && item.href === '/dashboard' ? "bg-muted text-primary" : ""
               )}
             >
-              <HugeiconsIcon icon={item.icon} className="h-4 w-4" />
+              <item.icon className="h-4 w-4" />
               {item.label}
             </Link>
           ))}
@@ -89,7 +87,7 @@ export function Sidebar() {
       </Sheet>
       
       {/* Desktop Sidebar */}
-      <aside className="fixed top-0 left-0 z-50 h-full flex-col border-r border-border bg-background text-foreground transition-all duration-300 ease-in-out hidden md:flex w-[290px] md:-translate-x-full md:translate-x-0">
+      <aside className="fixed top-0 left-0 z-50 h-full flex-col border-r border-border bg-background text-foreground transition-all duration-300 ease-in-out hidden md:flex w-[290px] -translate-x-full md:translate-x-0">
         <SidebarNav />
       </aside>
 
