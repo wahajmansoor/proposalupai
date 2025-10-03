@@ -8,7 +8,6 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel,
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { ProposalUpLogo } from '@/components/icons';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { NotificationBell } from './notification-bell';
 import { getUsers } from './users/actions';
@@ -18,9 +17,8 @@ function SidebarNav() {
     <nav className="flex flex-col h-full text-sm font-medium">
       <div className="flex-1">
         <div className="px-4 py-6">
-          <Link href="/admin-portal" className="flex items-center gap-2 font-semibold text-sidebar-foreground">
-            <ProposalUpLogo className="h-8 w-8" />
-            <span className="text-xl">Admin Panel</span>
+          <Link href="/admin-portal" className="flex items-center gap-2 font-semibold">
+            <span className="text-xl font-bold">Proposal Up Admin</span>
           </Link>
         </div>
         <div className="px-3 py-4 space-y-1">
@@ -100,16 +98,7 @@ export default async function AdminLayout({
             </SheetContent>
           </Sheet>
           <div className="w-full flex-1">
-            <form>
-              <div className="relative">
-                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="search"
-                  placeholder="Search or type command..."
-                  className="w-full appearance-none bg-background pl-8 shadow-none md:w-2/3 lg:w-1/3"
-                />
-              </div>
-            </form>
+            
           </div>
           <div className="flex items-center gap-2">
             <ThemeToggle />
@@ -118,16 +107,13 @@ export default async function AdminLayout({
               <DropdownMenuTrigger asChild>
                 <Button variant="secondary" size="icon" className="rounded-full">
                   <Avatar className="h-8 w-8">
-                    <AvatarFallback>A</AvatarFallback>
+                    <AvatarFallback>PU</AvatarFallback>
                   </Avatar>
                   <span className="sr-only">Toggle user menu</span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end">
-                <DropdownMenuLabel>Admin Account</DropdownMenuLabel>
-                <DropdownMenuSeparator />
-                <DropdownMenuItem>Settings</DropdownMenuItem>
-                <DropdownMenuItem>Support</DropdownMenuItem>
+                <DropdownMenuLabel>Proposal Up Admin</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <form action={adminLogout}>
                   <DropdownMenuItem asChild>

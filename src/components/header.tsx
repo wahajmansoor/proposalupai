@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Button } from './ui/button';
 import { useAuth } from '@/context/auth-context';
 import { Sparkles } from 'lucide-react';
+import { ThemeToggle } from './theme-toggle';
 
 export function Header() {
   const { user, userProfile, loading } = useAuth();
@@ -17,9 +18,12 @@ export function Header() {
               <ProposalUpLogo className="h-8 w-8 text-primary" />
               <h1 className="text-xl font-bold tracking-tight">Proposal Up</h1>
             </div>
-            <Button asChild>
-                <Link href="/login">Login</Link>
-            </Button>
+            <div className="flex items-center gap-2">
+                <ThemeToggle />
+                <Button asChild>
+                    <Link href="/login">Login</Link>
+                </Button>
+            </div>
           </div>
        </header>
     )
@@ -42,6 +46,7 @@ export function Header() {
               </Link>
             </Button>
           )}
+          <ThemeToggle />
           <UserNav />
         </div>
       </div>
