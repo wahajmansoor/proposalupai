@@ -116,9 +116,11 @@ export function UserNav() {
               </Link>
            </DropdownMenuItem>
           {userProfile?.stripeCustomerId && (
-             <DropdownMenuItem onSelect={handleManageBilling} disabled={isManagingBilling}>
-                {isManagingBilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
-                Manage Billing
+             <DropdownMenuItem asChild>
+                <Link href="/dashboard/subscription">
+                    <CreditCard className="mr-2 h-4 w-4" />
+                    Subscription
+                </Link>
             </DropdownMenuItem>
           )}
         </DropdownMenuGroup>
