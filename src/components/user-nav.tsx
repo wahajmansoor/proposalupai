@@ -117,7 +117,7 @@ export function UserNav() {
            </DropdownMenuItem>
           {userProfile?.stripeCustomerId && (
              <DropdownMenuItem asChild>
-                <Link href="/dashboard/subscription">
+                <Link href="/subscription">
                     <CreditCard className="mr-2 h-4 w-4" />
                     Subscription
                 </Link>
