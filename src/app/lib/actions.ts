@@ -15,6 +15,7 @@ import { revalidatePath } from 'next/cache';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { incrementProposalCount } from '@/lib/firebase/usage';
 import { stripe } from '@/lib/stripe/config';
+import type { PortfolioLink } from './types';
 
 export interface InvoiceDetails {
   id: string;
@@ -134,13 +135,19 @@ export async function answerQuestionsAction(input: z.infer<typeof answerQuestion
   }
 }
 
+const linkSchema = z.object({
+  title: z.string(),
+  url: z.string(),
+});
+
 const generateProposalSchema = z.object({
     projectTitle: z.string(),
     summary: z.string(),
     profileSummary: z.string(),
     relevantSkills: z.string(),
     pastSuccesses: z.string(),
-    portfolioLinks: z.string().optional(),
+    profileLinks: z.array(linkSchema),
+    manualLinks: z.array(linkSchema),
     greeting: z.string(),
     openingStrategy: z.string().optional(),
     closingCta: z.string(),
@@ -284,3 +291,5 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
     return { error: 'Could not retrieve billing history.' };
   }
 }
+
+    

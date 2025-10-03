@@ -121,7 +121,7 @@ function DashboardContent() {
   const [greeting, setGreeting] = useState('hi');
   const [closingCta, setClosingCta] = useState('looking-forward');
   const [closingCta2, setClosingCta2] = useState('best-regards');
-  const [tone, setTone] = useState('Professional');
+  const [tone, setTone] = useState(tones[0]);
   const [wordLimit, setWordLimit] = useState([50, 120]);
   
   const [clientQuestions, setClientQuestions] = useState<ClientQuestion[]>([{ id: 1, question: '', answer: '' }]);
@@ -469,24 +469,24 @@ function DashboardContent() {
       Summary: ${profile.description}
     ` : `Name: ${profileName}`;
 
-    const finalProfileLinks = profileLinks.map(l => l.title ? `${l.title}: ${l.url}` : l.url);
-    const finalManualLinks = manualLinks.filter(l => l.url.trim()).map(l => l.title ? `${l.title}: ${l.url}` : l.url);
-    const allLinks = [...finalProfileLinks, ...finalManualLinks].join(', ');
-      
     const result = await generateProposalAction({
-        projectTitle: projectDetails.projectTitle,
-        summary: projectDetails.summary,
-        profileSummary: profileSummary,
-        relevantSkills: skillsAndExpertise,
-        pastSuccesses: relevantExperience, // Using new field
-        portfolioLinks: allLinks,
-        greeting: clientName ? `${selectedGreeting} ${clientName}` : selectedGreeting,
-        openingStrategy: (openingStrategy !== 'none' && openingStrategy !== 'video') ? selectedOpeningStrategy : undefined,
-        closingCta: selectedClosing,
-        closingCta2: selectedClosing2,
-        tone,
-        wordLimit: `${wordLimit[0]}-${wordLimit[1]}`,
-        proposalTemplate,
+      projectTitle: projectDetails.projectTitle,
+      summary: projectDetails.summary,
+      profileSummary: profileSummary,
+      relevantSkills: skillsAndExpertise,
+      pastSuccesses: relevantExperience,
+      profileLinks: profileLinks,
+      manualLinks: manualLinks.filter(l => l.url.trim() !== ''),
+      greeting: clientName ? `${selectedGreeting} ${clientName}` : selectedGreeting,
+      openingStrategy:
+        openingStrategy !== 'none' && openingStrategy !== 'video'
+          ? selectedOpeningStrategy
+          : undefined,
+      closingCta: selectedClosing,
+      closingCta2: selectedClosing2,
+      tone,
+      wordLimit: `${wordLimit[0]}-${wordLimit[1]}`,
+      proposalTemplate,
     });
 
     if (result.error) {
@@ -1064,3 +1064,5 @@ export default function DashboardPage() {
         </Suspense>
     )
 }
+
+    
