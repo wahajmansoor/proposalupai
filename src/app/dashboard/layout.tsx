@@ -1,4 +1,4 @@
-
+// src/app/dashboard/layout.tsx
 "use client";
 
 import { useAuth } from "@/context/auth-context";
@@ -7,6 +7,7 @@ import { useEffect, useState } from "react";
 import { ProposalUpLogo } from "@/components/icons";
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
+import { cn } from "@/lib/utils";
 
 export default function DashboardLayout({
   children,
@@ -50,18 +51,18 @@ export default function DashboardLayout({
   
   if (!isAuthorized) {
     return (
-      <div className="flex items-center justify-center min-h-screen">
+      <div className="flex items-center justify-center min-h-screen bg-background">
         <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />
       </div>
     );
   }
   
   return (
-    <div className="flex min-h-screen bg-background">
+     <div className="min-h-screen flex bg-main-background">
       <Sidebar />
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col md:ml-[290px]">
         <Header />
-        <main className="flex-1 w-full p-4 md:p-8 bg-main-background">
+        <main className="flex-1 w-full p-4 md:p-8">
           {children}
         </main>
       </div>

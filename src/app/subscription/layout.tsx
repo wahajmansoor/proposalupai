@@ -1,4 +1,4 @@
-
+// src/app/subscription/layout.tsx
 "use client";
 
 import { useAuth } from "@/context/auth-context";
@@ -27,20 +27,17 @@ export default function SubscriptionLayout({
   }, [user, loading, router]);
 
   if (loading || !user) {
-    return (
-      <div className="flex flex-col min-h-screen">
-        <Header />
-        <div className="flex-1 flex items-center justify-center">
-            <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />
-        </div>
+     return (
+      <div className="flex items-center justify-center min-h-screen bg-background">
+        <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />
       </div>
     );
   }
 
   return (
-    <div className="flex min-h-screen bg-background">
+    <div className="min-h-screen flex bg-main-background">
       <Sidebar />
-       <main className="flex-1 flex flex-col bg-main-background">
+       <main className="flex-1 flex flex-col md:ml-[290px]">
         <Header />
         <div className="flex-1 p-4 md:p-8">
           {children}
