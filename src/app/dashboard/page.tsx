@@ -149,6 +149,8 @@ function DashboardContent() {
   const [customImprovementInstruction, setCustomImprovementInstruction] = useState('');
   const [improvedProposal, setImprovedProposal] = useState('');
   const [isImproving, setIsImproving] = useState(false);
+  const [improvementCount, setImprovementCount] = useState(0);
+
 
   const isTrial = userProfile?.subscriptionStatus === 'trialing';
   const proposalCount = userProfile?.proposalCount ?? 0;
@@ -265,6 +267,7 @@ function DashboardContent() {
     setClientQuestions([{ id: 1, question: '', answer: '' }]);
     setGeneratedProposal('');
     setImprovedProposal('');
+    setImprovementCount(0);
     setSuggestion(null);
     setAnswersGenerated(false);
     toast({ title: 'Form Cleared', description: 'You can now start a new proposal.' });
@@ -527,6 +530,11 @@ function DashboardContent() {
       toast({ title: 'No Instruction', description: 'Please enter an instruction to improve the proposal.', variant: 'destructive' });
       return;
     }
+     if (improvementCount >= 2) {
+      toast({ title: 'Limit Reached', description: 'You can only improve a proposal up to two times.', variant: 'destructive' });
+      return;
+    }
+
     setIsImproving(true);
     
     // Use the improved proposal as the base if it exists, otherwise use the original.
@@ -541,6 +549,7 @@ function DashboardContent() {
       toast({ title: 'Error Improving Proposal', description: result.error, variant: 'destructive' });
     } else if (result.data) {
       setImprovedProposal(result.data.improvedProposal);
+      setImprovementCount(prev => prev + 1);
       toast({ title: 'Proposal Improved!', description: 'The improved version is ready below.' });
     }
     setIsImproving(false);
@@ -902,7 +911,7 @@ function DashboardContent() {
                       />
                       {suggestion?.wordLimitReasoning && (
                          <div className="mt-4 p-3 bg-green-50 border-l-4 border-green-400 text-green-800 rounded-r-lg text-sm">
-                            <p><span className="font-bold">AI Suggestion: </span>A range of {suggestion.wordLimit[0]} - {suggestion.wordLimit[1]} words is ideal for this project. {suggestion.wordLimitReasoning}</p>
+                            <p><span className="font-bold">AI Suggestion: </span>For this project, a range of {suggestion.wordLimit[0]} - {suggestion.wordLimit[1]} words is ideal. {suggestion.wordLimitReasoning}</p>
                          </div>
                       )}
                   </div>
@@ -1004,7 +1013,7 @@ function DashboardContent() {
                   </div>
               )}
             </CardContent>
-            {generatedProposal && (
+            {generatedProposal && !improvedProposal && improvementCount < 2 && (
               <CardFooter>
                 <div className="flex w-full items-center gap-2">
                   <Input 
@@ -1016,6 +1025,7 @@ function DashboardContent() {
                   <Button 
                     onClick={handleImproveProposal}
                     disabled={isImproving || customImprovementInstruction.trim().split(/\s+/).length < 4}
+                    className="bg-yellow-400 text-yellow-900 hover:bg-yellow-500"
                   >
                     {isImproving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
                     Update
@@ -1027,7 +1037,7 @@ function DashboardContent() {
            
            {improvedProposal && (
             <Card>
-              <CardContent className="p-4 space-y-2">
+              <CardContent className="p-4 space-y-4">
                 <div className="flex flex-row items-center justify-between">
                   <CardTitle>Improved Version</CardTitle>
                   <div className="flex items-center gap-1">
@@ -1043,6 +1053,31 @@ function DashboardContent() {
                 <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap border-t pt-4">
                   {improvedProposal}
                 </div>
+
+                {improvementCount < 2 ? (
+                  <div className="border-t pt-4">
+                    <div className="flex w-full items-center gap-2">
+                      <Input 
+                        placeholder="Improve further..."
+                        value={customImprovementInstruction}
+                        onChange={(e) => setCustomImprovementInstruction(e.target.value)}
+                        disabled={isImproving}
+                      />
+                      <Button 
+                        onClick={handleImproveProposal}
+                        disabled={isImproving || customImprovementInstruction.trim().split(/\s+/).length < 4}
+                         className="bg-yellow-400 text-yellow-900 hover:bg-yellow-500"
+                      >
+                        {isImproving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                        Update
+                      </Button>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="border-t pt-4 text-center text-sm text-muted-foreground">
+                    You've reached the limit of 2 improvements for this proposal.
+                  </div>
+                )}
               </CardContent>
             </Card>
            )}
