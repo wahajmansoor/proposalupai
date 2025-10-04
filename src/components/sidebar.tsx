@@ -49,9 +49,9 @@ function SidebarNav() {
   return (
     <>
       <SidebarHeader>
-        <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
-          <ProposalUpLogo className="h-8 w-8 text-primary" />
-          <span className="text-xl font-bold">Proposal Up</span>
+        <Link href="/dashboard" className="flex items-center gap-2 font-semibold group-data-[collapsible=icon]:justify-center">
+          <ProposalUpLogo className="h-8 w-8 text-primary group-data-[collapsible=icon]:h-12 group-data-[collapsible=icon]:w-12" />
+          <span className="text-xl font-bold group-data-[collapsible=icon]:hidden">Proposal Up</span>
         </Link>
       </SidebarHeader>
       <SidebarContent>
