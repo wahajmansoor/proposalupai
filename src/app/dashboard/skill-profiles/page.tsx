@@ -212,16 +212,17 @@ export default function SkillProfilesPage() {
       if (userProfiles.length > 0 && !selectedProfile) {
         setSelectedProfile(userProfiles[0]);
       } else if (selectedProfile) {
-        // Refresh selected profile data
         const refreshedProfile = userProfiles.find(p => p.id === selectedProfile.id);
-        setSelectedProfile(refreshedProfile || (userProfiles.length > 0 ? userProfiles[0] : null) );
+        setSelectedProfile(refreshedProfile || (userProfiles.length > 0 ? userProfiles[0] : null));
+      } else {
+        setSelectedProfile(null);
       }
     } catch (error) {
       toast({ title: 'Error', description: 'Failed to fetch profiles.', variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }
-  }, [user, toast, selectedProfile]);
+  }, [user, toast]);
 
   useEffect(() => {
     if (user) {
@@ -530,5 +531,7 @@ export default function SkillProfilesPage() {
     </>
   );
 }
+
+    
 
     
