@@ -97,7 +97,6 @@ function SidebarNav() {
              <SidebarMenuItem>
               <form action={handleLogout} className="w-full">
                 <SidebarMenuButton
-                  variant="destructive"
                   tooltip="Logout"
                   className="w-full"
                 >
