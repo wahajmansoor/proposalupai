@@ -8,6 +8,7 @@ import { answerClientQuestions } from '@/ai/flows/answer-client-questions';
 import { generateProposal } from '@/ai/flows/generate-proposal-from-job-analysis';
 import { suggestProposalTemplate } from '@/ai/flows/suggest-proposal-template';
 import { suggestOpeningStrategy } from '@/ai/flows/suggest-opening-strategy';
+import { suggestWordLimit } from '@/ai/flows/suggest-word-limit';
 import { OAuth2Client } from 'google-auth-library';
 import { headers } from 'next/headers';
 import { getCurrentUser } from '@/lib/firebase/server-auth';
@@ -72,12 +73,13 @@ export async function analyzeAndSuggestAction(input: z.infer<typeof analyzeAndSu
         return { error: 'Invalid input for analysis and suggestions.' };
     }
     try {
-        const [templateSuggestion, strategySuggestion] = await Promise.all([
+        const [templateSuggestion, strategySuggestion, wordLimitSuggestion] = await Promise.all([
           suggestProposalTemplate(validatedFields.data.projectDetails),
           suggestOpeningStrategy({
             ...validatedFields.data.projectDetails,
             strategies: validatedFields.data.strategies,
-          })
+          }),
+          suggestWordLimit(validatedFields.data.projectDetails)
         ]);
         
         return { 
@@ -86,6 +88,7 @@ export async function analyzeAndSuggestAction(input: z.infer<typeof analyzeAndSu
             templateReasoning: templateSuggestion.reasoning,
             strategyId: strategySuggestion.strategyId,
             strategyReasoning: strategySuggestion.reasoning,
+            wordLimit: wordLimitSuggestion.wordLimit,
           } 
         };
     } catch (error) {

@@ -43,6 +43,7 @@ type Suggestion = {
   templateReasoning: string;
   strategyId: string;
   strategyReasoning: string;
+  wordLimit: number[];
 }
 
 const openingStrategies = [
@@ -369,6 +370,7 @@ function DashboardContent() {
         setProposalTemplate(result.data.template);
         setOpeningStrategy(result.data.strategyId);
         setStrategySuggestionReasoning(result.data.strategyReasoning);
+        setWordLimit(result.data.wordLimit);
 
         toast({ 
           title: 'Analysis Complete!', 

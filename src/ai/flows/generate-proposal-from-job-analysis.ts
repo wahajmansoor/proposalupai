@@ -79,7 +79,7 @@ export async function generateProposal(
 **CRITICAL INSTRUCTIONS - YOU MUST FOLLOW THESE RULES TO AVOID CREATING A BAD, AI-GENERATED PROPOSAL:**
 
 - **TONE:** You MUST adopt a **${input.tone}** tone. Sound human, not like a robot filling a template. Avoid overly formal or "fluffy" language and jargon. Use "website" not "site".
-- **GREETING:** Always start with the exact greeting provided: "${input.greeting}". This should be followed by a single line break (\\n).
+- **GREETING:** Always start with the exact greeting provided: "${input.greeting},". This should be followed by a single line break (\\n).
 - **AVOID GENERIC OPENERS:** NEVER start with "I am happy to apply...", "I am writing to express my interest...", or other generic, "watery" phrases.
 - **CONCISENESS IS KEY:** Keep the entire proposal short and easy to read. Use multiple short paragraphs (2-3 sentences each) instead of long blocks of text. Respect the word limit.
 - **CLIENT-FOCUSED:** Do not just talk about the user's experience. Focus on the client's problem and how the user will solve it.
