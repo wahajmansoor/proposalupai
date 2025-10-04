@@ -23,6 +23,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { Button } from "./ui/button";
+import { ProposalUpLogo } from "./icons";
 
 
 const navItems = [
@@ -46,7 +47,7 @@ function SidebarNav() {
     <>
       <SidebarHeader>
         <Link href="/dashboard" className="flex items-center gap-2 font-semibold group-data-[collapsible=icon]:justify-center">
-          <img src="https://proposalup.com/wp-content/uploads/2024/07/logo-1-1-e1721118181313.png" alt="Proposal Up" className="h-8 w-8 text-primary group-data-[collapsible=icon]:h-12 group-data-[collapsible=icon]:w-12" />
+          <ProposalUpLogo className="h-8 w-8 text-primary group-data-[collapsible=icon]:h-12 group-data-[collapsible=icon]:w-12" />
           <span className="text-2xl font-bold group-data-[collapsible=icon]:hidden">Proposal Up</span>
         </Link>
       </SidebarHeader>
