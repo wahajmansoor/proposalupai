@@ -29,7 +29,7 @@
 
     /* Custom vars for admin */
     --admin-background: 220 13% 97%;
-    --sidebar: 0 0% 100%;
+    --sidebar: var(--background);
     --sidebar-foreground: var(--foreground);
   }
 
@@ -58,7 +58,7 @@
     
     /* Custom vars for admin */
     --admin-background: 224 71% 4%;
-    --sidebar: 222.2 84% 4.9%;
+    --sidebar: var(--background);
     --sidebar-foreground: var(--foreground);
   }
 }
