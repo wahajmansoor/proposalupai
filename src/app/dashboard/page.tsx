@@ -209,7 +209,7 @@ function DashboardContent() {
             "Very Detailed": [200, 300],
         }
         // @ts-ignore
-        setWordLimit(lengthMap[profile.length] || [100, 150]);
+        setWordLimit(lengthMap[profile.length] || [50, 150]);
       }
     } else {
       // Reset if no profile is selected
@@ -402,7 +402,7 @@ function DashboardContent() {
     }
     
     const profile = skillProfiles.find(p => p.id === selectedProfile);
-    const profileInfo = profile ? profile.description : 'No profile information available.';
+    const profileInfo = profile ? profile.description : '';
 
 
     setIsSuggestingSkills(true);
@@ -900,7 +900,7 @@ function DashboardContent() {
                       />
                       {suggestion?.wordLimitReasoning && (
                          <div className="mt-4 p-3 bg-green-50 border-l-4 border-green-400 text-green-800 rounded-r-lg text-sm">
-                            <p><span className="font-bold">AI Suggestion: </span>For this project, a range of {suggestion.wordLimit[0]} - {suggestion.wordLimit[1]} words is ideal. {suggestion.wordLimitReasoning}</p>
+                            <p><span className="font-bold">AI Suggestion: </span>A range of {suggestion.wordLimit[0]} - {suggestion.wordLimit[1]} words is ideal for this project. {suggestion.wordLimitReasoning}</p>
                          </div>
                       )}
                   </div>
@@ -1170,11 +1170,3 @@ export default function DashboardPage() {
         </Suspense>
     )
 }
-
-    
-
-    
-
-    
-
-    

@@ -24,7 +24,7 @@ const SuggestWordLimitOutputSchema = z.object({
   wordLimit: z
     .array(z.number())
     .length(2)
-    .describe("The suggested word limit range, e.g. [100, 150]."),
+    .describe("The suggested word limit range, e.g. [50, 150]. The minimum must always be 50."),
   reasoning: z
     .string()
     .describe('A brief, one-sentence explanation for the word limit suggestion.'),
@@ -38,16 +38,16 @@ export async function suggestWordLimit(
   input: SuggestWordLimitInput
 ): Promise<SuggestWordLimitOutput> {
   const prompt = `You are an AI assistant that helps freelancers write concise and impactful proposals.
-  Based on the length and complexity of the job summary, suggest a word limit range for the proposal and a brief reason.
+  Based on the length and complexity of the job summary, suggest a word limit range for the proposal and a brief reason. The minimum of the range must ALWAYS be 50.
 
-  - If the summary is very short and direct (under 50 words), suggest a range like [80, 120] and reason that a short job post expects a brief response.
-  - If the summary is of average length (50-200 words), suggest a range like [120, 180] and reason that it's enough to show value without overwhelming the client.
-  - If the summary is long and detailed (over 200 words), suggest a slightly larger range like [180, 250], but reason that it's important to be concise and respect the client's time despite the detailed post.
+  - If the summary is very short and direct (under 50 words), suggest a range of [50, 100] and reason that a short job post expects a brief response.
+  - If the summary is of average length (50-200 words), suggest a range of [50, 150] and reason that it's enough to show value without overwhelming the client.
+  - If the summary is long and detailed (over 200 words), suggest a range of [50, 200], and reason that it's important to be concise and respect the client's time despite the detailed post.
 
   Job Title: ${input.projectTitle}
   Job Summary: ${input.summary}
 
-  CRITICAL: You MUST respond in the format defined by the output schema. The 'wordLimit' field must be an array of two numbers.
+  CRITICAL: You MUST respond in the format defined by the output schema. The 'wordLimit' field must be an array of two numbers, and the first number must be 50.
   `;
 
   try {
@@ -74,7 +74,12 @@ export async function suggestWordLimit(
     const toolCall = completion.choices[0].message.tool_calls?.[0];
     if (toolCall?.function.arguments) {
       const args = JSON.parse(toolCall.function.arguments);
-      return SuggestWordLimitOutputSchema.parse(args);
+      const parsed = SuggestWordLimitOutputSchema.parse(args);
+      // Ensure the lower bound is 50, even if the AI makes a mistake.
+      if (parsed.wordLimit[0] !== 50) {
+          parsed.wordLimit[0] = 50;
+      }
+      return parsed;
     }
   } catch (e) {
     console.warn(
@@ -85,7 +90,7 @@ export async function suggestWordLimit(
 
   // Fallback in case of error or invalid output
   return {
-    wordLimit: [100, 150],
+    wordLimit: [50, 150],
     reasoning: 'A concise proposal is generally more effective.'
   };
 }
