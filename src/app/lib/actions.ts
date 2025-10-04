@@ -136,7 +136,7 @@ export async function answerQuestionsAction(input: z.infer<typeof answerQuestion
 }
 
 const linkSchema = z.object({
-  title: z.string(),
+  title: z.string().optional(),
   url: z.string(),
 });
 

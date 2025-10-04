@@ -12,7 +12,7 @@ import { z } from 'zod';
 import type { PortfolioLink } from '@/app/lib/types';
 
 const linkSchema = z.object({
-  title: z.string(),
+  title: z.string().optional(),
   url: z.string(),
 });
 
