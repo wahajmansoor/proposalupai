@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { ProposalUpLogo } from "@/components/icons";
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
+import { SidebarInset } from "@/components/ui/sidebar";
 
 export default function PricingLayout({
   children,
@@ -35,12 +36,14 @@ export default function PricingLayout({
 
   return (
     <div className="min-h-screen flex bg-main-background">
-      <Sidebar />
-      <div className="flex-1 flex flex-col md:ml-[290px]">
+      <Sidebar collapsible="icon" />
+      <div className="flex-1 flex flex-col">
         <Header />
-        <main className="flex-1">
-          {children}
-        </main>
+        <SidebarInset>
+            <main className="flex-1">
+                {children}
+            </main>
+        </SidebarInset>
       </div>
     </div>
   );

@@ -7,6 +7,7 @@ import { useEffect } from "react";
 import { ProposalUpLogo } from "@/components/icons";
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
+import { SidebarInset } from "@/components/ui/sidebar";
 
 export default function ProfileLayout({
   children,
@@ -37,12 +38,14 @@ export default function ProfileLayout({
   // If all checks pass, render the profile page.
   return (
     <div className="min-h-screen flex bg-main-background">
-      <Sidebar />
-      <div className="flex-1 flex flex-col md:ml-[290px]">
+      <Sidebar collapsible="icon" />
+      <div className="flex-1 flex flex-col">
         <Header />
-        <main className="flex-1 p-4 md:p-8">
-          {children}
-        </main>
+        <SidebarInset>
+            <main className="flex-1 p-4 md:p-8">
+                {children}
+            </main>
+        </SidebarInset>
       </div>
     </div>
   );

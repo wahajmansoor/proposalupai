@@ -6,7 +6,7 @@ import { Button } from './ui/button';
 import { useAuth } from '@/context/auth-context';
 import { Sparkles } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
-import { Sidebar } from './sidebar';
+import { SidebarTrigger } from './ui/sidebar';
 
 export function Header() {
   const { user, userProfile, loading } = useAuth();
@@ -32,9 +32,7 @@ export function Header() {
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur-sm sm:px-6">
-       <div className="md:hidden">
-          <Sidebar />
-       </div>
+       <SidebarTrigger />
         <div className="w-full flex-1">
           {/* Optional: Add a search bar or other header content here */}
         </div>
