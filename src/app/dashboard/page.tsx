@@ -139,6 +139,7 @@ function DashboardContent() {
   const [wordCount, setWordCount] = useState(0);
 
   const [isSaving, setIsSaving] = useState(false);
+  const [isSavingImproved, setIsSavingImproved] = useState(false);
 
   const summaryTextareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -546,19 +547,31 @@ function DashboardContent() {
     setCustomImprovementInstruction('');
   };
 
-  const handleSaveProposal = async () => {
-    if (!user || !projectDetails.projectTitle.trim() || !generatedProposal) {
+  const handleSaveProposal = async (proposalContent: string) => {
+    if (!user || !projectDetails.projectTitle.trim() || !proposalContent) {
       toast({ title: 'Missing Information', description: 'Please provide a project title and generate a proposal first.', variant: 'destructive' });
       return;
     }
-    setIsSaving(true);
+    
+    // Determine which save button was clicked
+    const isSavingOriginal = proposalContent === generatedProposal;
+    if (isSavingOriginal) {
+      setIsSaving(true);
+    } else {
+      setIsSavingImproved(true);
+    }
+
     try {
-      await addSavedProposal(user.uid, projectDetails.projectTitle.trim(), generatedProposal);
+      await addSavedProposal(user.uid, projectDetails.projectTitle.trim(), proposalContent);
       toast({ title: 'Proposal Saved!', description: 'You can view it on the Saved Proposals page.' });
     } catch (error: any) {
       toast({ title: 'Error Saving Proposal', description: error.message || 'Failed to save proposal.', variant: 'destructive' });
     } finally {
-      setIsSaving(false);
+      if (isSavingOriginal) {
+        setIsSaving(false);
+      } else {
+        setIsSavingImproved(false);
+      }
     }
   };
 
@@ -961,7 +974,7 @@ function DashboardContent() {
                 )}
               </div>
               <div className="flex items-center gap-1">
-                  <Button variant="outline" size="sm" onClick={handleSaveProposal} disabled={!generatedProposal || isSaving}>
+                  <Button variant="outline" size="sm" onClick={() => handleSaveProposal(generatedProposal)} disabled={!generatedProposal || isSaving}>
                       {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
                       Save
                   </Button>
@@ -1014,18 +1027,22 @@ function DashboardContent() {
            
            {improvedProposal && (
             <Card>
-              <CardHeader className="flex flex-row items-center justify-between">
-                <CardTitle>
-                  Improved Version
-                </CardTitle>
-                <Button variant="outline" size="sm" onClick={() => copyToClipboard(improvedProposal)}>
-                  <Clipboard className="mr-2 h-4 w-4" /> Copy
-                </Button>
-              </CardHeader>
-              <CardContent>
-                 <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap border-t pt-4">
-                    {improvedProposal}
-                 </div>
+              <CardContent className="p-4 space-y-4">
+                <div className="flex flex-row items-center justify-between">
+                  <CardTitle>Improved Version</CardTitle>
+                  <div className="flex items-center gap-1">
+                    <Button variant="outline" size="sm" onClick={() => handleSaveProposal(improvedProposal)} disabled={!improvedProposal || isSavingImproved}>
+                        {isSavingImproved ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
+                        Save
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => copyToClipboard(improvedProposal)}>
+                      <Clipboard className="mr-2 h-4 w-4" /> Copy
+                    </Button>
+                  </div>
+                </div>
+                <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap border-t pt-4">
+                  {improvedProposal}
+                </div>
               </CardContent>
             </Card>
            )}
@@ -1155,6 +1172,8 @@ export default function DashboardPage() {
         </Suspense>
     )
 }
+
+    
 
     
 
