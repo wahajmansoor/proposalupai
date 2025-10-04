@@ -271,7 +271,7 @@ function DashboardContent() {
 
   const prevStep = () => {
     if (currentStep > 1) {
-      setCurrentStep(prev => prev - 1);
+      setCurrentStep(prev => prev + 1);
     }
   };
 
@@ -298,7 +298,7 @@ function DashboardContent() {
         try {
           // Basic URL validation
           new URL(url);
-          setManualLinks([...manualLinks, { title: '', url: url }]);
+          setManualLinks([...manualLinks, { url: url }]);
         } catch (_) {
           toast({
             title: "Invalid URL",
@@ -696,8 +696,7 @@ function DashboardContent() {
                           <div key={`profile-link-${index}`} className="flex items-center gap-2 text-sm p-2 rounded-md hover:bg-muted group">
                              <a href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 flex-1 min-w-0">
                                 <LinkIcon className="h-4 w-4 text-muted-foreground" />
-                                <span className="font-medium group-hover:underline text-primary truncate flex-1">{link.title || link.url}</span>
-                                <span className="text-muted-foreground truncate hidden md:block">{link.url}</span>
+                                <span className="font-medium group-hover:underline text-primary truncate flex-1">{link.url}</span>
                               </a>
                              <Button type="button" variant="ghost" size="icon" onClick={() => removeProfileLink(index)} className="shrink-0 h-8 w-8 text-muted-foreground hover:text-destructive">
                                 <Trash2 className="h-4 w-4" />

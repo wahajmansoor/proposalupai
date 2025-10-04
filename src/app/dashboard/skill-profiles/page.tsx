@@ -344,14 +344,14 @@ export default function SkillProfilesPage() {
       
       <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
         <DialogContent className="sm:max-w-2xl">
-            <DialogHeader>
+            <DialogHeader className="p-2">
                 <DialogTitle>{editingProfile ? 'Edit' : 'Create'} Skill Profile</DialogTitle>
                 <DialogDescription>
                     Define a profile for a specific skill set to generate tailored proposals.
                 </DialogDescription>
             </DialogHeader>
             <form onSubmit={handleFormSubmit}>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4 max-h-[70vh] overflow-y-auto pr-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4 max-h-[70vh] overflow-y-auto p-2">
                 <div className="space-y-2">
                   <Label htmlFor="title">Profile Title</Label>
                   <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., Senior Web Developer" required />
