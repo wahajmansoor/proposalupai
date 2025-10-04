@@ -25,11 +25,11 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
-    --main-background: 220 14% 98%;
+    --main-background: 210 17% 98%;
 
     /* Custom vars for admin */
     --admin-background: 220 13% 97%;
-    --sidebar: var(--background);
+    --sidebar: 0 0% 100%;
     --sidebar-foreground: var(--foreground);
   }
 
@@ -58,7 +58,7 @@
     
     /* Custom vars for admin */
     --admin-background: 224 71% 4%;
-    --sidebar: var(--background);
+    --sidebar: 222.2 84% 4.9%;
     --sidebar-foreground: var(--foreground);
   }
 }
