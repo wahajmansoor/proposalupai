@@ -29,9 +29,7 @@ export async function improveProposal(
 Your task is to rewrite the provided proposal based on the user's specific instruction. Adhere to the core principles of good proposal writing: be client-focused, concise, and sound human.
 
 **Original Proposal:**
----
 ${input.proposal}
----
 
 **User's Improvement Instruction:** "${input.instruction}"
 
