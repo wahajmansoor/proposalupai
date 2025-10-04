@@ -61,7 +61,7 @@ function SidebarNav() {
               <Link href={item.href} legacyBehavior passHref>
                 <SidebarMenuButton
                   isActive={
-                    item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href)
+                    pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))
                   }
                   tooltip={item.label}
                 >
@@ -75,10 +75,14 @@ function SidebarNav() {
       </SidebarContent>
       {user && (
         <SidebarFooter>
-           <Button variant="ghost" className="w-full justify-start gap-3 h-12 text-base p-3" onClick={handleLogout}>
-            <LogOut className="h-6 w-6" />
-            <span className="group-data-[collapsible=icon]:hidden">Logout</span>
-          </Button>
+          <SidebarMenu>
+            <SidebarMenuItem>
+              <SidebarMenuButton onClick={handleLogout} tooltip="Logout">
+                <LogOut />
+                <span>Logout</span>
+              </SidebarMenuButton>
+            </SidebarMenuItem>
+          </SidebarMenu>
         </SidebarFooter>
       )}
     </>
