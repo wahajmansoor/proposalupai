@@ -184,7 +184,7 @@ export default function SignupPage() {
       <div className="grid grid-cols-1 lg:grid-cols-2 min-h-screen">
         <div className="flex flex-col justify-center p-4 sm:p-12 xl:p-20">
           <div className="w-full max-w-md mx-auto">
-            <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground mb-8">
+            <Link href="https://www.proposalupai.com/" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground mb-8">
               <ArrowLeft className="h-4 w-4" />
               Back to home
             </Link>
@@ -275,7 +275,7 @@ export default function SignupPage() {
               <ProposalUpLogo className="h-20 w-20 text-white" />
             </Link>
             <h2 className="text-3xl font-bold mb-2">Proposal Up</h2>
-            <p className="text-lg text-white/80 max-w-sm">
+            <p className="text-lg text-white/80 max-w-md">
               Generate tailored proposals with the power of AI
             </p>
           </div>

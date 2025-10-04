@@ -1,50 +1,51 @@
-import { Lightbulb, Video, Phone, ShieldCheck, CreditCard, Star, TrendingUp, Sparkles, Target, MessageCircle, FileText, CalendarCheck, PocketKnife } from 'lucide-react';
+import { HugeiconsIcon } from '@hugeicons/react';
+import { BulbIcon, AiBrain01Icon, ComputerVideoCallIcon, Target01Icon, CreditCardIcon, File01Icon, ZapIcon, AnonymousIcon, Suit01Icon, ChatQuestion01Icon } from "@hugeicons/core-free-icons";
 
 const tips = [
   {
-    icon: Sparkles,
+    icon: () => <HugeiconsIcon icon={AiBrain01Icon} size={24} className="h-5 w-5 text-primary shrink-0"/>,
     title: 'Hook with a Strong First Line',
-    text: 'Start by addressing the client’s exact need. Show you’ve read their job post and understand the problem.',
+    text: 'Start with a personalized opener that shows you understand the client’s exact need.',
   },
   {
-    icon: Video,
-    title: 'Use Loom Videos if You’re New',
-    text: 'A short, personal video introduction builds instant trust and helps you stand out.',
+    icon: () => <HugeiconsIcon icon={ComputerVideoCallIcon} size={24} className="h-5 w-5 text-primary shrink-0"/>,
+    title: 'Use a Short Loom Video',
+    text: 'Add a 30–60 sec intro video to build trust and make your proposal stand out.',
   },
   {
-    icon: Target,
+    icon: () => <HugeiconsIcon icon={Target01Icon} size={24} className="h-5 w-5 text-primary shrink-0"/>,
     title: 'Target Low-Proposal Projects',
-    text: 'Focus on jobs with fewer than 10 proposals to increase visibility and response rates.',
+    text: 'Apply to jobs with fewer than 10 proposals to boost visibility and response chances.',
   },
   {
-    icon: CreditCard,
+    icon: () => <HugeiconsIcon icon={CreditCardIcon} size={24} className="h-5 w-5 text-primary shrink-0"/>,
     title: 'Check Client’s Payment & Rating',
-    text: 'Work with verified clients who have good reviews. It reduces risk and ensures you’ll get paid.',
+    text: 'Work only with verified, well-rated clients to stay safe and ensure timely payment.',
   },
   {
-    icon: FileText,
+    icon: () => <HugeiconsIcon icon={File01Icon} size={24} className="h-5 w-5 text-primary shrink-0"/>,
     title: 'Keep Proposals Short & Client-Focused',
-    text: 'Stick to 150–200 words. Talk about their problem and how you’ll solve it, not just about yourself.',
+    text: 'Limit to 150–200 words, talk about their problem and how you’ll solve it, not yourself.',
   },
   {
-    icon: PocketKnife,
+    icon: () => <HugeiconsIcon icon={ZapIcon} size={24} className="h-5 w-5 text-primary shrink-0"/>,
     title: 'Offer Quick Insights or Mini-Solutions',
-    text: 'Share a small idea or suggested approach to prove expertise. It builds credibility fast.',
+    text: 'Share a small actionable idea to prove your expertise right away.',
   },
   {
-    icon: ShieldCheck,
+    icon: () => <HugeiconsIcon icon={AnonymousIcon} size={24} className="h-5 w-5 text-primary shrink-0"/>,
     title: 'Don’t Waste Connects',
-    text: 'Apply only when you’re confident you’re a good fit. Quality beats quantity on Upwork.',
+    text: 'Apply only to projects that fit your skills, quality beats quantity every time.',
   },
   {
-    icon: Phone,
-    title: 'Your Focus is to get them on a Call',
-    text: 'The proposal’s main goal is not to explain everything—it’s to start a conversation and book a call.',
+    icon: () => <HugeiconsIcon icon={Suit01Icon} size={24} className="h-5 w-5 text-primary shrink-0"/>,
+    title: 'Optimize your Profile for Conversion',
+    text: 'Make your profile instantly convincing with a clear headline, solid samples, and social proof.',
   },
   {
-    icon: CalendarCheck,
-    title: 'Structure your Calls Smartly',
-    text: 'When you land a call, prepare an agenda: project goals, your approach, timeline, and next steps.',
+    icon: () => <HugeiconsIcon icon={ChatQuestion01Icon} size={24} className="h-5 w-5 text-primary shrink-0"/>,
+    title: 'Ask Smart, Simple Questions',
+    text: 'End your proposal with one thoughtful question that invites a reply and shows engagement.',
   },
 ];
 
@@ -53,7 +54,7 @@ export function ProTips() {
     <div className="w-full">
       <div className="mb-6 flex items-center gap-4">
         <div className="bg-primary/10 p-3 rounded-full">
-            <Lightbulb className="h-8 w-8 text-primary" />
+            <HugeiconsIcon icon={BulbIcon} size={24} className="h-8 w-8 text-primary"/>
         </div>
         <div>
             <h2 className="text-2xl font-bold tracking-tight">Pro Tips</h2>
@@ -64,11 +65,11 @@ export function ProTips() {
         {tips.map((tip, index) => (
           <div key={index} className="flex items-start gap-3">
             <div className="bg-primary/10 p-2 rounded-full mt-1">
-              <tip.icon className="h-4 w-4 text-primary shrink-0" />
+              <tip.icon />
             </div>
             <div>
-              <h4 className="font-semibold text-sm">{tip.title}</h4>
-              <p className="text-xs text-muted-foreground">{tip.text}</p>
+              <h4 className="font-semibold text-lg">{tip.title}</h4>
+              <p className="text-base text-muted-foreground">{tip.text}</p>
             </div>
           </div>
         ))}

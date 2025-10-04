@@ -20,6 +20,10 @@ import { createCustomerPortalSession } from '@/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 
+import { HugeiconsIcon } from '@hugeicons/react';
+import { Logout01Icon, CreditCardValidationIcon, UserSettings01Icon } from "@hugeicons/core-free-icons";
+
+
 export function UserNav() {
   const { user, userProfile, loading } = useAuth();
   const [isManagingBilling, setIsManagingBilling] = useState(false);
@@ -111,14 +115,14 @@ export function UserNav() {
         <DropdownMenuGroup>
            <DropdownMenuItem asChild>
               <Link href="/profile">
-                  <User className="mr-2 h-4 w-4" />
+                  <HugeiconsIcon icon={UserSettings01Icon} size={24} className="mr-2 h-4 w-4"/>
                   General Profile
               </Link>
            </DropdownMenuItem>
           {userProfile?.stripeCustomerId && (
              <DropdownMenuItem asChild>
                 <Link href="/subscription">
-                    <CreditCard className="mr-2 h-4 w-4" />
+                  <HugeiconsIcon icon={CreditCardValidationIcon} size={24} className="mr-2 h-4 w-4"/>
                     Subscription
                 </Link>
             </DropdownMenuItem>
@@ -126,7 +130,7 @@ export function UserNav() {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={handleLogout}>
-            <LogOut className="mr-2 h-4 w-4" />
+          <HugeiconsIcon icon={Logout01Icon} size={24} className="mr-2 h-4 w-4"/>
             Log out
         </DropdownMenuItem>
       </DropdownMenuContent>

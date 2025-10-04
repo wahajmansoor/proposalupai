@@ -16,6 +16,10 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuote, CheckCircle, Phone, Globe, Users, Calendar, BarChart, ShoppingCart, Code, Search, Lightbulb, Mail, BarChart2, ExternalLink, LayoutDashboard, FolderKanban, Save, AlertCircle, RefreshCcw, X, Link as LinkIcon } from 'lucide-react';
+
+import { HugeiconsIcon } from '@hugeicons/react';
+import { File01Icon } from "@hugeicons/core-free-icons";
+
 import type { ClientQuestion, SkillProfile, PortfolioLink } from '@/app/lib/types';
 import { useToast } from '@/hooks/use-toast';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
@@ -557,7 +561,7 @@ function DashboardContent() {
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
-              <FileText className="h-6 w-6 text-primary" />
+              <HugeiconsIcon icon={File01Icon} size={24} className="h-6 w-6 text-primary"/>
               <div>
                 <h1 className="text-2xl font-bold">Create Your Proposal</h1>
                 <p className="text-muted-foreground">Step {currentStep} of {totalSteps}: {stepTitles[currentStep - 1]}</p>
@@ -941,7 +945,7 @@ function DashboardContent() {
                   </div>
               ) : (
                   <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
-                    <FileText className="h-12 w-12 mb-4" />
+                    <HugeiconsIcon icon={File01Icon} size={32} className="h-12 w-12 mb-4"/>
                     <p className="font-medium">Your proposal will appear here.</p>
                     <p className="text-sm">Fill out the details on the left and click "Generate Proposal".</p>
                   </div>
