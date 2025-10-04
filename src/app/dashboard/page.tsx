@@ -528,10 +528,12 @@ function DashboardContent() {
       return;
     }
     setIsImproving(true);
-    setImprovedProposal('');
+    
+    // Use the improved proposal as the base if it exists, otherwise use the original.
+    const baseProposal = improvedProposal || generatedProposal;
 
     const result = await improveProposalAction({
-      proposal: generatedProposal,
+      proposal: baseProposal,
       instruction: instruction,
     });
 
@@ -1025,7 +1027,7 @@ function DashboardContent() {
            
            {improvedProposal && (
             <Card>
-              <CardContent className="p-4 space-y-4">
+              <CardContent className="p-4 space-y-2">
                 <div className="flex flex-row items-center justify-between">
                   <CardTitle>Improved Version</CardTitle>
                   <div className="flex items-center gap-1">
