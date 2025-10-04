@@ -37,10 +37,9 @@ function SidebarNav() {
 
   return (
     <div className="flex h-full flex-col">
-      <div className="flex items-center border-b p-4 h-16">
+      <div className="flex items-center p-4 h-16">
         <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
-          <ProposalUpLogo className="h-8 w-8" />
-          <span className="text-lg font-bold">Proposal Up</span>
+          <span className="text-2xl font-bold">Proposal Up</span>
         </Link>
       </div>
       <div className="flex-1 overflow-auto py-4">
