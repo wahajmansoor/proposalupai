@@ -39,8 +39,11 @@ export async function suggestOpeningStrategy(
 ): Promise<SuggestOpeningStrategyOutput> {
   const availableStrategies = Object.entries(input.strategies).map(([id, desc]) => `- ID: ${id}, Description: ${desc}`).join('\n');
 
-  const prompt = `You are an AI assistant that helps freelancers choose the best opening strategy for a proposal.
-  Given the job details and a list of available strategies, suggest the most effective one.
+  const prompt = `You are an expert AI assistant specializing in sales psychology for freelancers. Your task is to select the *most impactful* opening strategy for a job proposal.
+
+  Analyze the provided job details and the list of available strategies. Think about what would grab this specific client's attention. Is the job post formal or informal? Does it mention a company milestone? Is there a clear, urgent problem?
+
+  Your goal is to choose the strategy ID that will create the most compelling and tailored opening hook, avoiding generic choices unless they are truly the best fit.
 
   Project Title: ${input.projectTitle}
   Summary: ${input.summary}
@@ -48,8 +51,7 @@ export async function suggestOpeningStrategy(
   Available Strategies:
   ${availableStrategies}
 
-  Analyze the project title and summary and choose the strategy ID that would create the most compelling opening hook.
-  Provide a short, one-sentence reason for your choice.
+  Provide a short, one-sentence reason for your choice, explaining *why* it's the best psychological approach for this client.
 
   CRITICAL: You MUST respond in the format defined by the output schema. The 'strategyId' field must be one of the provided strategy IDs.
   `;
@@ -58,7 +60,7 @@ export async function suggestOpeningStrategy(
     const completion = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0.3,
+        temperature: 0.7,
         tools: [
             {
                 type: 'function',
