@@ -128,7 +128,7 @@ export default function SavedProposalsPage() {
 
   if (isLoading) {
     return (
-        <div className="max-w-4xl mx-auto space-y-8">
+        <div className="space-y-8">
             <div className="space-y-2">
                 <div className="h-8 w-1/2 bg-gray-200 rounded animate-pulse"></div>
                 <div className="h-4 w-3/4 bg-gray-200 rounded animate-pulse"></div>
@@ -152,7 +152,7 @@ export default function SavedProposalsPage() {
   }
 
   return (
-    <div className="max-w-4xl mx-auto space-y-8">
+    <div className="space-y-8">
         <div className="space-y-2">
           <h1 className="text-3xl font-bold tracking-tight">Saved Proposals</h1>
           <p className="text-muted-foreground">Search, view, and edit your saved proposals.</p>
