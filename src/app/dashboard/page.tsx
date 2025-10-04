@@ -1015,21 +1015,23 @@ function DashboardContent() {
             </CardContent>
             {generatedProposal && !improvedProposal && improvementCount < 2 && (
               <CardFooter>
-                <div className="flex w-full items-center gap-2">
-                  <Input 
-                    placeholder="Type your improvement request here..."
-                    value={customImprovementInstruction}
-                    onChange={(e) => setCustomImprovementInstruction(e.target.value)}
-                    disabled={isImproving}
-                  />
-                  <Button 
-                    onClick={handleImproveProposal}
-                    disabled={isImproving || customImprovementInstruction.trim().split(/\s+/).length < 4}
-                    className="bg-yellow-400 text-yellow-900 hover:bg-yellow-500"
-                  >
-                    {isImproving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                    Update
-                  </Button>
+                 <div className="w-full space-y-2">
+                    <p className="text-sm text-muted-foreground">You can improve this proposal {2 - improvementCount} more time(s).</p>
+                    <div className="flex w-full items-center gap-2">
+                        <Input 
+                            placeholder="Type your improvement request here..."
+                            value={customImprovementInstruction}
+                            onChange={(e) => setCustomImprovementInstruction(e.target.value)}
+                            disabled={isImproving}
+                        />
+                        <Button 
+                            onClick={handleImproveProposal}
+                            disabled={isImproving || customImprovementInstruction.trim().split(/\s+/).length < 4}
+                        >
+                            {isImproving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                            Update
+                        </Button>
+                    </div>
                 </div>
               </CardFooter>
             )}
@@ -1055,8 +1057,9 @@ function DashboardContent() {
                 </div>
 
                 {improvementCount < 2 ? (
-                  <div className="border-t pt-4">
-                    <div className="flex w-full items-center gap-2">
+                   <div className="border-t pt-4 space-y-2">
+                     <p className="text-sm text-muted-foreground">You can improve this proposal {2 - improvementCount} more time(s).</p>
+                     <div className="flex w-full items-center gap-2">
                       <Input 
                         placeholder="Improve further..."
                         value={customImprovementInstruction}
@@ -1066,7 +1069,6 @@ function DashboardContent() {
                       <Button 
                         onClick={handleImproveProposal}
                         disabled={isImproving || customImprovementInstruction.trim().split(/\s+/).length < 4}
-                         className="bg-yellow-400 text-yellow-900 hover:bg-yellow-500"
                       >
                         {isImproving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
                         Update
