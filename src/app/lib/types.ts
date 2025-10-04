@@ -11,7 +11,7 @@ export interface JobAnalysis {
   }
 
   export interface PortfolioLink {
-    title: string;
+    title?: string;
     url: string;
   }
 
@@ -33,3 +33,5 @@ export interface JobAnalysis {
     content: string;
     createdAt: string;
   }
+
+    

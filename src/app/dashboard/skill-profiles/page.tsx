@@ -53,7 +53,7 @@ export default function SkillProfilesPage() {
   const [experience, setExperience] = useState<number | ''>('');
   const [keywords, setKeywords] = useState<string[]>([]);
   const [keywordInput, setKeywordInput] = useState('');
-  const [links, setLinks] = useState<PortfolioLink[]>([{ title: '', url: '' }]);
+  const [links, setLinks] = useState<PortfolioLink[]>([{ url: '' }]);
   const [tone, setTone] = useState(tones[0]);
   const [length, setLength] = useState(lengths[2]);
 
@@ -93,7 +93,7 @@ export default function SkillProfilesPage() {
     setExperience('');
     setKeywords([]);
     setKeywordInput('');
-    setLinks([{ title: '', url: '' }]);
+    setLinks([{ url: '' }]);
     setTone(tones[0]);
     setLength(lengths[2]);
   }
@@ -104,7 +104,7 @@ export default function SkillProfilesPage() {
     setDescription(profile.description);
     setExperience(profile.experience);
     setKeywords(profile.keywords);
-    setLinks(profile.links.length > 0 ? profile.links : [{ title: '', url: '' }]);
+    setLinks(profile.links.length > 0 ? profile.links : [{ url: '' }]);
     setTone(profile.tone);
     setLength(profile.length);
     setIsFormOpen(true);
@@ -186,20 +186,20 @@ export default function SkillProfilesPage() {
     setKeywords(keywords.filter(keyword => keyword !== keywordToRemove));
   };
   
-  const handleLinkChange = (index: number, field: 'title' | 'url', value: string) => {
+  const handleLinkChange = (index: number, value: string) => {
     const newLinks = [...links];
-    newLinks[index][field] = value;
+    newLinks[index].url = value;
     setLinks(newLinks);
   };
 
   const addLink = () => {
-    setLinks([...links, { title: '', url: '' }]);
+    setLinks([...links, { url: '' }]);
   };
 
   const removeLink = (index: number) => {
     const newLinks = links.filter((_, i) => i !== index);
     if (newLinks.length === 0) {
-        setLinks([{ title: '', url: '' }]);
+        setLinks([{ url: '' }]);
     } else {
         setLinks(newLinks);
     }
@@ -406,14 +406,8 @@ export default function SkillProfilesPage() {
                   {links.map((link, index) => (
                     <div key={index} className="flex items-center gap-2">
                         <Input 
-                          value={link.title} 
-                          onChange={(e) => handleLinkChange(index, 'title', e.target.value)} 
-                          placeholder="Title" 
-                          className="w-1/3"
-                        />
-                        <Input 
                           value={link.url}
-                          onChange={(e) => handleLinkChange(index, 'url', e.target.value)}
+                          onChange={(e) => handleLinkChange(index, e.target.value)}
                           placeholder="https://example.com"
                           type="url"
                           className="flex-1"
@@ -440,3 +434,5 @@ export default function SkillProfilesPage() {
     </>
   );
 }
+
+    
