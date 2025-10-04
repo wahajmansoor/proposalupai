@@ -11,10 +11,21 @@ import { useAuth } from "@/context/auth-context";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
 import {
-  Sheet,
-  SheetContent,
-} from "@/components/ui/sheet"
-import { PanelLeft, LogOut, FilePlus, Bookmark, User, CreditCard } from "lucide-react";
+  Sidebar as SidebarPrimitive,
+  SidebarContent,
+  SidebarHeader,
+  SidebarMenu,
+  SidebarMenuButton,
+  SidebarMenuItem,
+  SidebarFooter
+} from "@/components/ui/sidebar";
+import {
+  FilePlus,
+  Bookmark,
+  User,
+  CreditCard,
+  LogOut,
+} from "lucide-react";
 
 
 const navItems = [
@@ -36,70 +47,49 @@ function SidebarNav() {
   };
 
   return (
-    <div className="flex h-full flex-col">
-      <div className="flex items-center p-4 h-16">
+    <>
+      <SidebarHeader>
         <Link href="/dashboard" className="flex items-center gap-2 font-semibold">
-          <span className="text-2xl font-bold">Proposal Up</span>
+          <ProposalUpLogo className="h-8 w-8 text-primary" />
+          <span className="text-xl font-bold">Proposal Up</span>
         </Link>
-      </div>
-      <div className="flex-1 overflow-auto py-4">
-        <nav className="grid items-start gap-1 px-4">
+      </SidebarHeader>
+      <SidebarContent>
+        <SidebarMenu>
           {navItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={cn(
-                "flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:bg-muted hover:text-primary",
-                pathname.startsWith(item.href) && item.href !== '/dashboard' ? "bg-muted text-primary" : pathname === '/dashboard' && item.href === '/dashboard' ? "bg-muted text-primary" : ""
-              )}
-            >
-              <item.icon className="h-6 w-6" />
-              {item.label}
-            </Link>
+            <SidebarMenuItem key={item.href}>
+              <Link href={item.href} legacyBehavior passHref>
+                <SidebarMenuButton
+                  isActive={
+                    item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href)
+                  }
+                  tooltip={item.label}
+                >
+                  <item.icon />
+                  <span>{item.label}</span>
+                </SidebarMenuButton>
+              </Link>
+            </SidebarMenuItem>
           ))}
-        </nav>
-      </div>
+        </SidebarMenu>
+      </SidebarContent>
       {user && (
-        <div className="mt-auto border-t p-4">
-          <Button variant="ghost" className="w-full justify-start gap-3" onClick={handleLogout}>
-            <LogOut className="h-6 w-6" />
-            Logout
+        <SidebarFooter>
+           <Button variant="ghost" className="w-full justify-start gap-3" onClick={handleLogout}>
+            <LogOut className="h-5 w-5" />
+            <span className="group-data-[collapsible=icon]:hidden">Logout</span>
           </Button>
-        </div>
+        </SidebarFooter>
       )}
-    </div>
-  )
+    </>
+  );
 }
 
 
-export function Sidebar() {
-  const [open, setOpen] = useState(false);
-
+export function Sidebar({ collapsible, ...props }: { collapsible?: "icon" | "offcanvas" | "none" }) {
   return (
-    <>
-      {/* Mobile Sidebar */}
-      <Sheet open={open} onOpenChange={setOpen}>
-        <SheetContent side="left" className="p-0 w-[290px]">
-          <SidebarNav />
-        </SheetContent>
-      </Sheet>
-      
-      {/* Desktop Sidebar */}
-      <aside className="fixed top-0 left-0 z-50 h-full flex-col border-r border-border bg-background text-foreground transition-all duration-300 ease-in-out hidden md:flex w-[290px] -translate-x-full md:translate-x-0">
-        <SidebarNav />
-      </aside>
-
-       {/* Button to toggle mobile sidebar */}
-       <div className="md:hidden">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={() => setOpen(true)}
-          >
-            <PanelLeft className="h-5 w-5" />
-            <span className="sr-only">Toggle Sidebar</span>
-          </Button>
-      </div>
-    </>
+    <SidebarPrimitive collapsible={collapsible} {...props}>
+      <SidebarNav />
+    </SidebarPrimitive>
   );
 }
