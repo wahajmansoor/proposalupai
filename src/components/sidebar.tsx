@@ -75,8 +75,8 @@ function SidebarNav() {
       </SidebarContent>
       {user && (
         <SidebarFooter>
-           <Button variant="ghost" className="w-full justify-start gap-3" onClick={handleLogout}>
-            <LogOut className="h-5 w-5" />
+           <Button variant="ghost" className="w-full justify-start gap-3 h-12 text-base p-3" onClick={handleLogout}>
+            <LogOut className="h-6 w-6" />
             <span className="group-data-[collapsible=icon]:hidden">Logout</span>
           </Button>
         </SidebarFooter>
