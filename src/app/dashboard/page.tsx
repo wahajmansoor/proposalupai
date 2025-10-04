@@ -675,7 +675,7 @@ function DashboardContent() {
                   <div className="flex justify-between items-center mb-1">
                     <Label htmlFor="skillsAndExpertise">Skills & Expertise Tags</Label>
                     <Button variant="outline" size="sm" onClick={handleAutofillSkills} disabled={isSuggestingSkills || selectedProfile === 'none'}>
-                      {isSuggestingSkills ? 'Thinking...' : <><Sparkles className="mr-2 h-4 w-4" /> Auto-match</>}
+                      {isSuggestingSkills ? 'Thinking...' : <><Sparkles className="mr-2 h-4 w-4" /> AI Suggest Skills</>}
                     </Button>
                   </div>
                   <Input id="skillsAndExpertise" value={skillsAndExpertise} onChange={handleInputChange(setSkillsAndExpertise)} placeholder="Select a profile or enter skills manually" />
