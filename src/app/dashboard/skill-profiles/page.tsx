@@ -79,7 +79,7 @@ function ProfileForm({
   isMobile: boolean;
 }) {
     const formContent = (
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4 px-4">
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-2">
               <Label htmlFor="title">Profile Title</Label>
               <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., Senior Web Developer" required />
@@ -159,23 +159,25 @@ function ProfileForm({
     );
   
   return (
-      <form onSubmit={handleFormSubmit}>
-        {isMobile ? (
-          <div className="overflow-y-auto px-4">{formContent}</div>
-        ) : (
-          <ScrollArea className="h-[70vh] sm:h-auto sm:max-h-[70vh]">
-            {formContent}
-          </ScrollArea>
-        )}
-        <div className="p-4 border-t">
-          <div className="flex justify-end gap-2">
-              <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>Cancel</Button>
-              <Button type="submit" disabled={isSaving}>
-                {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Save Profile'}
-              </Button>
-          </div>
+    <form onSubmit={handleFormSubmit}>
+        <div className={cn(isMobile ? 'overflow-y-auto p-4' : 'p-0')}>
+            {isMobile ? (
+                formContent
+            ) : (
+                <ScrollArea className="h-[60vh] p-6 pr-4">
+                    {formContent}
+                </ScrollArea>
+            )}
         </div>
-      </form>
+        <div className="p-6 border-t bg-background">
+            <div className="flex justify-end gap-2">
+                <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>Cancel</Button>
+                <Button type="submit" disabled={isSaving}>
+                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Save Profile'}
+                </Button>
+            </div>
+        </div>
+    </form>
   )
 }
 
@@ -209,11 +211,10 @@ export default function SkillProfilesPage() {
     try {
       const userProfiles = await getSkillProfiles(user.uid);
       setProfiles(userProfiles);
-      if (userProfiles.length > 0 && !selectedProfile) {
-        setSelectedProfile(userProfiles[0]);
-      } else if (selectedProfile) {
-        const refreshedProfile = userProfiles.find(p => p.id === selectedProfile.id);
-        setSelectedProfile(refreshedProfile || (userProfiles.length > 0 ? userProfiles[0] : null));
+       if (userProfiles.length > 0) {
+        // If a profile is already selected, keep it selected, otherwise default to the first one
+        const currentSelected = userProfiles.find(p => p.id === selectedProfile?.id);
+        setSelectedProfile(currentSelected || userProfiles[0]);
       } else {
         setSelectedProfile(null);
       }
@@ -222,7 +223,7 @@ export default function SkillProfilesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, toast]);
+  }, [user, toast, selectedProfile?.id]);
 
   useEffect(() => {
     if (user) {
@@ -230,7 +231,7 @@ export default function SkillProfilesPage() {
     } else {
       setIsLoading(false);
     }
-  }, [user, fetchProfiles]);
+  }, [user]);
 
   const resetFormState = () => {
     setEditingProfile(null);
@@ -505,7 +506,7 @@ export default function SkillProfilesPage() {
       
       {isMobile ? (
         <Drawer open={isFormOpen} onOpenChange={setIsFormOpen}>
-            <DrawerContent className="max-h-[90vh]">
+            <DrawerContent className="max-h-[90dvh]">
                 <DrawerHeader className="text-left">
                     <DrawerTitle>{editingProfile ? 'Edit' : 'Create'} Skill Profile</DrawerTitle>
                     <DrawerDescription>
@@ -531,7 +532,3 @@ export default function SkillProfilesPage() {
     </>
   );
 }
-
-    
-
-    
