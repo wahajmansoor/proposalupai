@@ -66,74 +66,71 @@ export async function generateProposal(
   const hasManualLinks = input.manualLinks && input.manualLinks.length > 0;
   const hasAnyLinks = hasProfileLinks || hasManualLinks;
 
-  let prompt = `You are an expert proposal writer. Based on the project details and the user's profile, create a compelling proposal.
+  let prompt = `You are an expert proposal writer, crafting short, impactful, and human-sounding proposals that get responses. You are writing on behalf of a user named ${input.userName}.
 
-User's Name: ${input.userName}
-Project Title: ${input.projectTitle}
-Project Summary: ${input.summary}
-Profile Summary: ${input.profileSummary}
-Relevant Skills: ${input.relevantSkills}
-Relevant Experience / Past Successes: ${input.pastSuccesses}
+**CONTEXT FOR THIS PROPOSAL:**
+- User's Name: ${input.userName}
+- Project Title: ${input.projectTitle}
+- Project Summary: ${input.summary}
+- User's Profile Summary: ${input.profileSummary}
+- User's Relevant Skills: ${input.relevantSkills}
+- User's Relevant Experience / Past Successes: ${input.pastSuccesses}
 
-**CRITICAL INSTRUCTIONS - YOU MUST FOLLOW THESE FORMATTING RULES:**
-- **Greeting:** Always start with the exact greeting provided: "${input.greeting}". Capitalize the first letter. This should be followed by a single line break (\\n).
-- **Tone:** You MUST adopt a "${input.tone}" tone throughout the entire proposal.
+**CRITICAL INSTRUCTIONS - YOU MUST FOLLOW THESE RULES TO AVOID CREATING A BAD, AI-GENERATED PROPOSAL:**
+
+- **TONE:** You MUST adopt a **${input.tone}** tone. Sound human, not like a robot filling a template. Avoid overly formal or "fluffy" language.
+- **GREETING:** Always start with the exact greeting provided: "${input.greeting}". This should be followed by a single line break (\\n).
+- **AVOID GENERIC OPENERS:** NEVER start with "I am happy to apply...", "I am writing to express my interest...", or other generic, "watery" phrases.
+- **CONCISENESS IS KEY:** Keep the entire proposal short and easy to read. Use multiple short paragraphs (2-3 sentences each) instead of long blocks of text. Respect the word limit.
+- **CLIENT-FOCUSED:** Do not just talk about the user's experience. Focus on the client's problem and how the user will solve it.
+- **BOLD FORMATTING:** To make the proposal stand out, identify the single most impactful phrase or sentence in the **opening paragraph only** and wrap it in **double asterisks** to make it bold. For example: "I can help you **achieve your goal of increasing leads** with my expertise in..."
+- **NO EMOJIS:** Do not use any emojis like 📃, ✅, or ▶.
 `;
 
   if (isVideo) {
     prompt += `
-- **Video Template:** The user has selected the Video Intro template. You MUST follow this structure:
+- **VIDEO TEMPLATE:** The user has selected the Video Intro template. You MUST follow this structure:
     1.  Start with the line: "Hey! I recorded a quick Loom video for you to check out:"
     2.  On the next line, add a placeholder for the URL: "[ENTER URL]"
     3.  Follow this with a paragraph break (a single \\n).
-    4.  Write a paragraph based on this template, intelligently replacing placeholders like [SKILLSET] with information from the job summary and user profile: "Your project sounds exciting, and I understand how tough it can be to find the right [SKILLSET] specialist, someone reliable, motivated, and ready to get the job done right from the start."
-    5.  Write another paragraph based on this template: "Unlike others who juggle too many clients and go quiet for days, I focus on a smaller, select group of clients. This allows me to work closely with you, ensuring we achieve the results you want without unnecessary stress."
-    6.  Write a concluding paragraph based on this template: "If you’re looking for a dedicated, dependable partner to take this project off your plate and get it done RIGHT, let’s chat!"
-    7.  Follow this with a paragraph break (a single \\n) and the heading: "Here’s how we can get started:"
-    8.  List the following steps, each on a new line:
-        - 1. Send me a message on Upwork
-        - 2. We’ll schedule a call to discuss the details
-        - 3. On the call, we’ll dive deeper into your project and plan the next steps
-    9.  End the proposal by intelligently integrating the closing phrase "${input.closingCta}" into a complete, natural-sounding final sentence. If the provided phrase is short, add a few introductory words to make it a full sentence.
-    10. **Sign-off:** After the closing sentence, add a single line break (\\n) and then write the sign-off phrase: "${input.closingCta2}".
-    11. **Signature:** After the sign-off phrase (or the closing sentence if no sign-off is provided), add one line break and then write the user's name: "${input.userName}".
+    4.  Write a SHORT, natural-sounding paragraph (2-3 sentences) based on this idea, intelligently replacing placeholders like [SKILLSET] with information from the job summary and user profile: "Your project sounds exciting, and I understand how tough it can be to find the right [SKILLSET] specialist, someone reliable, motivated, and ready to get the job done right from the start."
+    5.  Write another SHORT, punchy paragraph based on this idea: "Unlike others who juggle too many clients and go quiet for days, I focus on a smaller, select group of clients. This allows me to work closely with you, ensuring we achieve the results you want without unnecessary stress."
+    6.  Write a concluding paragraph that integrates the user's call to action.
+    7.  **FINAL CTA & SIGN-OFF:** End the proposal by intelligently integrating the closing phrase "${input.closingCta}" into a complete, natural-sounding final sentence. After that sentence, add a single line break (\\n) and then write the sign-off phrase: "${input.closingCta2}".
+    8.  **SIGNATURE:** After the sign-off phrase, add one line break and then write the user's name: "${input.userName}".
 `;
   }
 
   if (isStandard) {
     prompt += `
-- **Standard Template:**
+- **STANDARD TEMPLATE:**
 `;
-    if (input.openingStrategy) {
-      prompt += `    - **Opening Paragraph:** After the greeting, use the following "Opening Strategy" as the first paragraph. You MUST adapt the strategy to the job by intelligently replacing placeholders like [CLIENT'S NAME], [SPECIFIC TASK], or [SPECIFIC SKILL] with relevant information from the job description and user profile. Do not leave the placeholders in the final output. The opening strategy is: "${input.openingStrategy}" This should be followed by a single line break (\\n).\\n`;
+    if (input.openingStrategy && input.openingStrategy !== 'None') {
+      prompt += `    - **OPENING PARAGRAPH:** Start with a powerful first paragraph based on the following strategy: "${input.openingStrategy}". You MUST adapt it to the job by intelligently replacing placeholders like [SPECIFIC TASK] or [SPECIFIC SKILL] with information from the job. Make it catchy and engaging. Do not leave placeholders in the final output. This should be followed by a single line break (\\n).\\n`;
+    } else {
+      prompt += `    - **OPENING PARAGRAPH:** Create a powerful, client-focused opening paragraph that immediately addresses their core need. This should be followed by a single line break (\\n).\\n`
     }
-    prompt += `    - **Body:** The main body of the proposal is the most important part. It MUST be broken into multiple paragraphs for readability. Use a single line break (\\n) to separate paragraphs. DO NOT output a single block of text. Compose a proposal that addresses the key requirements of the job and highlights the user's relevant skills and experiences. Focus on how the user can provide value to the client.\\n`;
+    prompt += `    - **BODY:** The main body must be broken into multiple SHORT paragraphs (2-3 sentences each). Highlight how the user's skills and experience directly solve the client's problem. Ask one or two short, smart questions about the job to show engagement and encourage a reply.
+`;
     if (hasAnyLinks) {
-      prompt += `    - **Portfolio:** You must introduce the portfolio links on a new line with a heading like "Here are some examples of my work:" or "My Portfolio:". Then, you MUST list each link on its own new line.\n`;
+      prompt += `    - **PORTFOLIO:** If providing links, introduce them naturally. Do not just dump a huge list. Pick only 1-2 of the most relevant examples. For instance: "Here is a recent project that is very similar to what you're looking for:". Then, list the link(s) on a new line.\n`;
       if (hasProfileLinks) {
           prompt += `Profile Links:\n${formatLinks(input.profileLinks)}\n`;
       }
       if (hasManualLinks) {
-          prompt += `Additional Links for this project:\n${formatLinks(input.manualLinks)}\n`;
+          prompt += `Additional Links:\n${formatLinks(input.manualLinks)}\n`;
       }
     }
-    prompt += `    - **Closing:** End the proposal by intelligently integrating the closing phrase "${input.closingCta}" into a complete, natural-sounding final sentence. If the provided phrase is short, add a few introductory words to make it a full sentence.\\n`;
-    if (input.closingCta2) {
-      prompt += `    - **Sign-off:** After the closing sentence, add a single line break (\\n) and then write the sign-off phrase: "${input.closingCta2}".\\n`;
-    }
-    prompt += `    - **Signature:** After the sign-off phrase (or the closing sentence if no sign-off is provided), add one line break and then write the user's name: "${input.userName}".\\n`;
+    prompt += `    - **FINAL CTA & SIGN-OFF:** End the proposal by intelligently integrating the closing phrase "${input.closingCta}" into a complete, natural-sounding final sentence. After that sentence, add a single line break (\\n) and then write the sign-off phrase: "${input.closingCta2}".\\n`;
+    prompt += `    - **SIGNATURE:** After the sign-off phrase, add one line break and then write the user's name: "${input.userName}".\\n`;
   }
-
-  prompt += `
-- **Terminology**: Always use the word "website" instead of "site".
-`;
 
   if (input.wordLimit) {
-    prompt += `- **Word Count:** The proposal should be between ${input.wordLimit} words.\\n`;
+    prompt += `- **WORD COUNT:** The total proposal should be between ${input.wordLimit} words. Brevity is critical.\\n`;
   }
 
   prompt += `
-Ensure the final output is well-structured and professional. Output only the proposal text.
+Ensure the final output is well-structured, persuasive, and sounds like a confident human expert, not a generic AI.
 `;
 
   const completion = await openai.chat.completions.create({
@@ -148,3 +145,6 @@ Ensure the final output is well-structured and professional. Output only the pro
 
   return { proposal };
 }
+
+
+    
