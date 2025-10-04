@@ -555,9 +555,9 @@ function DashboardContent() {
     } else if (result.data) {
       setImprovedProposal(result.data.improvedProposal);
       toast({ title: 'Proposal Improved!', description: 'The improved version is ready below.' });
-      setIsImproveDialogOpen(false);
     }
     setIsImproving(false);
+    setIsImproveDialogOpen(false);
   };
 
   const handleSaveProposal = async () => {
@@ -977,21 +977,21 @@ function DashboardContent() {
               <div className="flex items-center gap-1">
                   <Dialog open={isImproveDialogOpen} onOpenChange={setIsImproveDialogOpen}>
                     <DialogTrigger asChild>
-                      <Button variant="outline" size="sm" disabled={!generatedProposal}>
-                          <Star className="mr-2 h-4 w-4" /> Improve
+                      <Button variant="outline" size="sm" disabled={!generatedProposal} className="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 border-yellow-500">
+                          <Wand2 className="mr-2 h-4 w-4" /> Improve
                       </Button>
                     </DialogTrigger>
                     <DialogContent>
                       <DialogHeader>
-                        <DialogTitle>Further improve the Proposal</DialogTitle>
+                        <DialogTitle>Improve Proposal</DialogTitle>
                         <DialogDescription>
-                          Note: You can improve the proposal right away with these suggestions.
+                          Select an option to refine the proposal, or provide your own custom instruction.
                         </DialogDescription>
                       </DialogHeader>
                       <div className="space-y-4">
                          <Select onValueChange={setImprovementInstruction} value={improvementInstruction}>
                           <SelectTrigger>
-                            <SelectValue placeholder="Select Option" />
+                            <SelectValue placeholder="Select an improvement option" />
                           </SelectTrigger>
                           <SelectContent>
                             {improvementOptions.map(opt => (

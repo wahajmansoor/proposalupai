@@ -35,7 +35,7 @@ ${input.proposal}
 
 **User's Improvement Instruction:** "${input.instruction}"
 
-Rewrite the proposal according to this instruction. Do not add any commentary or explanation, only output the improved proposal text.
+Rewrite the proposal according to this instruction, ensuring the final output maintains a professional and persuasive tone. Do not add any commentary or explanation, only output the improved proposal text.
 `;
 
   const completion = await openai.chat.completions.create({
