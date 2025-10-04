@@ -6,6 +6,10 @@ import { Slot } from "@radix-ui/react-slot"
 import { VariantProps, cva } from "class-variance-authority"
 import { PanelLeft } from "lucide-react"
 
+import { HugeiconsIcon } from '@hugeicons/react';
+import { MenuCollapseIcon } from "@hugeicons/core-free-icons";
+
+
 import { useIsMobile } from "@/hooks/use-mobile"
 import { cn } from "@/lib/utils"
 import { Button } from "@/components/ui/button"
@@ -279,7 +283,7 @@ const SidebarTrigger = React.forwardRef<
       }}
       {...props}
     >
-      <PanelLeft />
+      <HugeiconsIcon icon={MenuCollapseIcon} className="h-6 w-6"/>
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   )

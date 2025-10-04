@@ -5,6 +5,8 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
 import { signOut } from "firebase/auth";
+import { HugeiconsIcon } from '@hugeicons/react';
+import { FileEditIcon, BookmarkIcon, Profile02Icon, CreditCardIcon, Logout01Icon, CreditCardValidationIcon, UserSettings01Icon } from "@hugeicons/core-free-icons";
 import { auth } from "@/lib/firebase/config";
 import {
   Sidebar as SidebarPrimitive,
@@ -13,7 +15,8 @@ import {
   SidebarMenu,
   SidebarMenuButton,
   SidebarMenuItem,
-  SidebarFooter
+  SidebarFooter,
+  useSidebar
 } from "@/components/ui/sidebar";
 import {
   FilePlus,
@@ -27,20 +30,25 @@ import { ProposalUpLogo } from "./icons";
 
 
 const navItems = [
-  { href: "/dashboard", label: "Create Proposal", icon: FilePlus },
-  { href: "/dashboard/proposals", label: "Saved Proposals", icon: Bookmark },
-  { href: "/dashboard/skill-profiles", label: "Skill Profiles", icon: User },
-  { href: "/pricing", label: "Plans & Pricing", icon: CreditCard },
+  { href: "/dashboard", label: "Create Proposal", icon: FileEditIcon },
+  { href: "/dashboard/proposals", label: "Saved Proposals", icon: BookmarkIcon },
+  { href: "/dashboard/skill-profiles", label: "Skill Profiles", icon: Profile02Icon },
+  { href: "/pricing", label: "Plans & Pricing", icon: CreditCardIcon },
 ];
 
 function SidebarNav() {
   const pathname = usePathname();
+  const { setOpenMobile } = useSidebar();
   
   const handleLogout = async () => {
     // Clear session cookie on the server
     await fetch('/api/auth/session', { method: 'DELETE' });
     // Sign out from Firebase client-side
     await signOut(auth);
+  };
+  
+  const handleLinkClick = () => {
+    setOpenMobile(false);
   };
 
   return (
@@ -57,12 +65,13 @@ function SidebarNav() {
             <SidebarMenuItem key={item.href}>
               <Link href={item.href} legacyBehavior passHref>
                 <SidebarMenuButton
+                  onClick={handleLinkClick}
                   isActive={
                     item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href)
                   }
                   tooltip={item.label}
                 >
-                  <item.icon />
+                  <HugeiconsIcon icon={item.icon} size={24} className="h-6 w-6" />
                   <span>{item.label}</span>
                 </SidebarMenuButton>
               </Link>
@@ -75,10 +84,11 @@ function SidebarNav() {
             <SidebarMenuItem>
                 <Link href="/profile" legacyBehavior passHref>
                     <SidebarMenuButton
+                    onClick={handleLinkClick}
                     isActive={pathname.startsWith('/profile')}
                     tooltip="General Profile"
                     >
-                    <User />
+                    <HugeiconsIcon icon={UserSettings01Icon} size={24} className="h-6 w-6"/>
                     <span>General Profile</span>
                     </SidebarMenuButton>
                 </Link>
@@ -86,10 +96,11 @@ function SidebarNav() {
             <SidebarMenuItem>
                 <Link href="/subscription" legacyBehavior passHref>
                     <SidebarMenuButton
+                    onClick={handleLinkClick}
                     isActive={pathname.startsWith('/subscription')}
                     tooltip="Subscription"
                     >
-                    <CreditCard />
+                    <HugeiconsIcon icon={CreditCardValidationIcon} size={24} className="h-6 w-6"/>
                     <span>Subscription</span>
                     </SidebarMenuButton>
                 </Link>
@@ -100,7 +111,7 @@ function SidebarNav() {
                   tooltip="Logout"
                   className="w-full"
                 >
-                  <LogOut />
+                  <HugeiconsIcon icon={Logout01Icon} size={24} className="h-6 w-6"/>
                   <span>Logout</span>
                 </SidebarMenuButton>
               </form>
