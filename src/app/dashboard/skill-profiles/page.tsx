@@ -35,6 +35,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { cn } from "@/lib/utils";
 
 const tones = ["Professional", "Friendly", "Assertive", "Persuasive", "Creative", "Concise", "Formal"];
 const lengths = ["Very Short", "Short", "Detailed", "Very Detailed"];
@@ -223,7 +224,7 @@ export default function SkillProfilesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, toast, selectedProfile?.id]);
+  }, [user, toast]);
 
   useEffect(() => {
     if (user) {
@@ -231,7 +232,7 @@ export default function SkillProfilesPage() {
     } else {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, fetchProfiles]);
 
   const resetFormState = () => {
     setEditingProfile(null);
