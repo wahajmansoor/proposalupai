@@ -78,7 +78,7 @@ export async function generateProposal(
 
 **CRITICAL INSTRUCTIONS - YOU MUST FOLLOW THESE RULES TO AVOID CREATING A BAD, AI-GENERATED PROPOSAL:**
 
-- **TONE:** You MUST adopt a **${input.tone}** tone. Sound human, not like a robot filling a template. Avoid overly formal or "fluffy" language.
+- **TONE:** You MUST adopt a **${input.tone}** tone. Sound human, not like a robot filling a template. Avoid overly formal or "fluffy" language and jargon. Use "website" not "site".
 - **GREETING:** Always start with the exact greeting provided: "${input.greeting}". This should be followed by a single line break (\\n).
 - **AVOID GENERIC OPENERS:** NEVER start with "I am happy to apply...", "I am writing to express my interest...", or other generic, "watery" phrases.
 - **CONCISENESS IS KEY:** Keep the entire proposal short and easy to read. Use multiple short paragraphs (2-3 sentences each) instead of long blocks of text. Respect the word limit.
@@ -106,19 +106,19 @@ export async function generateProposal(
 - **STANDARD TEMPLATE:**
 `;
     if (input.openingStrategy && input.openingStrategy !== 'None') {
-      prompt += `    - **OPENING PARAGRAPH:** Start with a powerful first paragraph based on the following strategy: "${input.openingStrategy}". You MUST adapt it to the job by intelligently replacing placeholders like [SPECIFIC TASK] or [SPECIFIC SKILL] with information from the job. Make it catchy and engaging. Do not leave placeholders in the final output. This should be followed by a single line break (\\n).\\n`;
+      prompt += `    - **OPENING PARAGRAPH:** Start with a powerful first paragraph based on the following strategy: "${input.openingStrategy}". You MUST adapt it to the job by intelligently replacing placeholders like [SPECIFIC TASK] or [SPECIFIC SKILL] with information from the job summary or user profile. Make it catchy and engaging. Do not leave placeholders in the final output. This should be followed by a single line break (\\n).\\n`;
     } else {
       prompt += `    - **OPENING PARAGRAPH:** Create a powerful, client-focused opening paragraph that immediately addresses their core need. This should be followed by a single line break (\\n).\\n`
     }
     prompt += `    - **BODY:** The main body must be broken into multiple SHORT paragraphs (2-3 sentences each). Highlight how the user's skills and experience directly solve the client's problem. Weave one or two short, smart questions about the job into the body paragraphs to show engagement and encourage a reply.
 `;
     if (hasAnyLinks) {
-      prompt += `    - **PORTFOLIO:** Introduce the links naturally (e.g., "Here is some relevant work:"). Then, list ALL of the following links, with each link on a new line.\n`;
+      prompt += `    - **PORTFOLIO:** Introduce the links naturally with a full sentence (e.g., "Here is some of my past work that is relevant to your project:"). Then, list ALL of the following links, with each link on a new line.\n`;
       if (hasProfileLinks) {
-          prompt += `Profile Links:\n${formatLinks(input.profileLinks)}\n`;
+          prompt += `${formatLinks(input.profileLinks)}\n`;
       }
       if (hasManualLinks) {
-          prompt += `Additional Links:\n${formatLinks(input.manualLinks)}\n`;
+          prompt += `${formatLinks(input.manualLinks)}\n`;
       }
     }
     prompt += `    - **FINAL CTA & SIGN-OFF:** End the proposal by intelligently integrating the closing phrase "${input.closingCta}" into a complete, natural-sounding final sentence. After that sentence, add a single line break (\\n) and then, if provided, write the sign-off phrase: "${input.closingCta2}".\\n`;
