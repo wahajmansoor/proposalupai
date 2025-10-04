@@ -3,10 +3,6 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useState } from "react";
-import { cn } from "@/lib/utils";
-import { Button } from "@/components/ui/button";
-import { ProposalUpLogo } from "@/components/icons";
 import { useAuth } from "@/context/auth-context";
 import { signOut } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
@@ -26,6 +22,7 @@ import {
   CreditCard,
   LogOut,
 } from "lucide-react";
+import { Button } from "./ui/button";
 
 
 const navItems = [
@@ -37,7 +34,6 @@ const navItems = [
 
 function SidebarNav() {
   const pathname = usePathname();
-  const { user } = useAuth();
   
   const handleLogout = async () => {
     // Clear session cookie on the server
@@ -50,8 +46,8 @@ function SidebarNav() {
     <>
       <SidebarHeader>
         <Link href="/dashboard" className="flex items-center gap-2 font-semibold group-data-[collapsible=icon]:justify-center">
-          <ProposalUpLogo className="h-8 w-8 text-primary group-data-[collapsible=icon]:h-12 group-data-[collapsible=icon]:w-12" />
-          <span className="text-xl font-bold group-data-[collapsible=icon]:hidden">Proposal Up</span>
+          <img src="https://proposalup.com/wp-content/uploads/2024/07/logo-1-1-e1721118181313.png" alt="Proposal Up" className="h-8 w-8 text-primary group-data-[collapsible=icon]:h-12 group-data-[collapsible=icon]:w-12" />
+          <span className="text-2xl font-bold group-data-[collapsible=icon]:hidden">Proposal Up</span>
         </Link>
       </SidebarHeader>
       <SidebarContent>
@@ -61,7 +57,7 @@ function SidebarNav() {
               <Link href={item.href} legacyBehavior passHref>
                 <SidebarMenuButton
                   isActive={
-                    pathname === item.href || (item.href !== '/dashboard' && pathname.startsWith(item.href))
+                    item.href === '/dashboard' ? pathname === item.href : pathname.startsWith(item.href)
                   }
                   tooltip={item.label}
                 >
@@ -73,6 +69,44 @@ function SidebarNav() {
           ))}
         </SidebarMenu>
       </SidebarContent>
+       <SidebarFooter>
+        <SidebarMenu>
+            <SidebarMenuItem>
+                <Link href="/profile" legacyBehavior passHref>
+                    <SidebarMenuButton
+                    isActive={pathname.startsWith('/profile')}
+                    tooltip="General Profile"
+                    >
+                    <User />
+                    <span>General Profile</span>
+                    </SidebarMenuButton>
+                </Link>
+            </SidebarMenuItem>
+            <SidebarMenuItem>
+                <Link href="/subscription" legacyBehavior passHref>
+                    <SidebarMenuButton
+                    isActive={pathname.startsWith('/subscription')}
+                    tooltip="Subscription"
+                    >
+                    <CreditCard />
+                    <span>Subscription</span>
+                    </SidebarMenuButton>
+                </Link>
+            </SidebarMenuItem>
+             <SidebarMenuItem>
+              <form action={handleLogout} className="w-full">
+                <SidebarMenuButton
+                  variant="destructive"
+                  tooltip="Logout"
+                  className="w-full"
+                >
+                  <LogOut />
+                  <span>Logout</span>
+                </SidebarMenuButton>
+              </form>
+            </SidebarMenuItem>
+        </SidebarMenu>
+      </SidebarFooter>
     </>
   );
 }

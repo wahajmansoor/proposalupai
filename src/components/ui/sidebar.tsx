@@ -374,7 +374,7 @@ const SidebarFooter = React.forwardRef<
     <div
       ref={ref}
       data-sidebar="footer"
-      className={cn("flex flex-col gap-2 p-2", className)}
+      className={cn("flex flex-col gap-2 p-4 mt-auto", className)}
       {...props}
     />
   )
@@ -518,6 +518,7 @@ const sidebarMenuButtonVariants = cva(
     variants: {
       variant: {
         default: "hover:bg-muted hover:text-secondary-foreground",
+        destructive: "bg-destructive text-destructive-foreground hover:bg-destructive-hover",
         outline:
           "bg-background shadow-[0_0_0_1px_hsl(var(--sidebar-border))] hover:bg-muted hover:text-secondary-foreground hover:shadow-[0_0_0_1px_hsl(var(--sidebar-accent))]",
       },
