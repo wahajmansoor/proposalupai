@@ -400,18 +400,16 @@ function DashboardContent() {
       setCurrentStep(1);
       return;
     }
-    if (selectedProfile === 'none') {
-        toast({ title: 'No Profile Selected', description: 'Please select a Skill Profile to autofill from.', variant: 'destructive' });
-        return;
-    }
+    
     const profile = skillProfiles.find(p => p.id === selectedProfile);
-    if (!profile) return;
+    const profileInfo = profile ? profile.description : 'No profile information available.';
+
 
     setIsSuggestingSkills(true);
     const result = await autofillSkillsAction({
       projectTitle: projectDetails.projectTitle,
       summary: projectDetails.summary,
-      profileInformation: profile.description,
+      profileInformation: profileInfo,
     });
 
     if (result.error) {
@@ -720,7 +718,7 @@ function DashboardContent() {
                 <div>
                   <div className="flex justify-between items-center mb-1">
                     <Label htmlFor="skillsAndExpertise">Skills & Expertise Tags</Label>
-                    <Button variant="outline" size="sm" onClick={handleAutofillSkills} disabled={isSuggestingSkills || selectedProfile === 'none'}>
+                    <Button variant="outline" size="sm" onClick={handleAutofillSkills} disabled={isSuggestingSkills}>
                       {isSuggestingSkills ? 'Thinking...' : <><Sparkles className="mr-2 h-4 w-4" /> AI Suggest Skills</>}
                     </Button>
                   </div>
@@ -902,7 +900,7 @@ function DashboardContent() {
                       />
                       {suggestion?.wordLimitReasoning && (
                          <div className="mt-4 p-3 bg-green-50 border-l-4 border-green-400 text-green-800 rounded-r-lg text-sm">
-                            <p><span className="font-bold">AI Suggestion: </span>{suggestion.wordLimitReasoning}</p>
+                            <p><span className="font-bold">AI Suggestion: </span>For this project, a range of {suggestion.wordLimit[0]} - {suggestion.wordLimit[1]} words is ideal. {suggestion.wordLimitReasoning}</p>
                          </div>
                       )}
                   </div>
@@ -1172,6 +1170,8 @@ export default function DashboardPage() {
         </Suspense>
     )
 }
+
+    
 
     
 
