@@ -56,7 +56,8 @@ function ProfileForm({
   removeKeyword,
   handleLinkChange,
   addLink,
-  removeLink
+  removeLink,
+  isMobile
 }: {
   editingProfile: SkillProfile | null;
   handleFormSubmit: (e: React.FormEvent<HTMLFormElement>) => void;
@@ -75,11 +76,10 @@ function ProfileForm({
   handleLinkChange: (index: number, value: string) => void;
   addLink: () => void;
   removeLink: (index: number) => void;
+  isMobile: boolean;
 }) {
-  return (
-      <form onSubmit={handleFormSubmit}>
-        <ScrollArea className="h-[70vh] sm:h-auto sm:max-h-[70vh]">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4 px-4">
+    const formContent = (
+         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 py-4 px-4">
             <div className="space-y-2">
               <Label htmlFor="title">Profile Title</Label>
               <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., Senior Web Developer" required />
@@ -156,7 +156,17 @@ function ProfileForm({
               </Button>
             </div>
           </div>
-        </ScrollArea>
+    );
+  
+  return (
+      <form onSubmit={handleFormSubmit}>
+        {isMobile ? (
+          <div className="overflow-y-auto px-4">{formContent}</div>
+        ) : (
+          <ScrollArea className="h-[70vh] sm:h-auto sm:max-h-[70vh]">
+            {formContent}
+          </ScrollArea>
+        )}
         <div className="p-4 border-t">
           <div className="flex justify-end gap-2">
               <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>Cancel</Button>
@@ -351,7 +361,8 @@ export default function SkillProfilesPage() {
     tone, setTone,
     length, setLength,
     handleKeywordKeyDown, removeKeyword,
-    handleLinkChange, addLink, removeLink
+    handleLinkChange, addLink, removeLink,
+    isMobile
   };
 
   if (isLoading) {
@@ -493,7 +504,7 @@ export default function SkillProfilesPage() {
       
       {isMobile ? (
         <Drawer open={isFormOpen} onOpenChange={setIsFormOpen}>
-            <DrawerContent>
+            <DrawerContent className="max-h-[90vh]">
                 <DrawerHeader className="text-left">
                     <DrawerTitle>{editingProfile ? 'Edit' : 'Create'} Skill Profile</DrawerTitle>
                     <DrawerDescription>
@@ -519,5 +530,3 @@ export default function SkillProfilesPage() {
     </>
   );
 }
-
-    
