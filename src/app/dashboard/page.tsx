@@ -107,7 +107,6 @@ function DashboardContent() {
   const [strategySuggestionReasoning, setStrategySuggestionReasoning] = useState('');
 
 
-  const [profileName, setProfileName] = useState('Jane Doe');
   const [clientName, setClientName] = useState('');
   const [skillsAndExpertise, setSkillsAndExpertise] = useState('');
   const [relevantExperience, setRelevantExperience] = useState('');
@@ -171,9 +170,6 @@ function DashboardContent() {
 
   useEffect(() => {
     if (user) {
-      if (user.displayName) {
-        setProfileName(user.displayName);
-      }
       // Fetch skill profiles
       const fetchProfiles = async () => {
         const profiles = await getSkillProfiles(user.uid);
@@ -427,7 +423,7 @@ function DashboardContent() {
     const result = await answerQuestionsAction({
       jobDescription: projectDetails.summary,
       clientQuestions: questionsToAnswer.map(q => q.question),
-      profileInformation: `My name is ${profileName}. My selected skill profile is ${profileInfo}`,
+      profileInformation: `My name is ${user?.displayName}. My selected skill profile is ${profileInfo}`,
     });
     
     if (result.error) {
@@ -478,13 +474,13 @@ function DashboardContent() {
       Skill Profile: ${profile.title}
       Experience: ${profile.experience} years
       Summary: ${profile.description}
-      User Name: ${profileName}
-    ` : `Name: ${profileName}`;
+    ` : ``;
 
     const result = await generateProposalAction({
       projectTitle: projectDetails.projectTitle,
       summary: projectDetails.summary,
       profileSummary: profileSummary,
+      userName: user?.displayName || 'The User',
       relevantSkills: skillsAndExpertise,
       pastSuccesses: relevantExperience,
       profileLinks: profileLinks,
@@ -1077,5 +1073,3 @@ export default function DashboardPage() {
         </Suspense>
     )
 }
-
-    

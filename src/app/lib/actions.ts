@@ -144,6 +144,7 @@ const generateProposalSchema = z.object({
     projectTitle: z.string(),
     summary: z.string(),
     profileSummary: z.string(),
+    userName: z.string(),
     relevantSkills: z.string(),
     pastSuccesses: z.string(),
     profileLinks: z.array(linkSchema),
@@ -291,5 +292,3 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
     return { error: 'Could not retrieve billing history.' };
   }
 }
-
-    

@@ -20,6 +20,7 @@ const GenerateProposalInputSchema = z.object({
   projectTitle: z.string().describe('The title of the project.'),
   summary: z.string().describe('The summary of the project.'),
   profileSummary: z.string().describe('A summary of the user profile.'),
+  userName: z.string().describe('The display name of the user.'),
   relevantSkills: z
     .string()
     .describe('A comma separated list of relevant skills for the job'),
@@ -67,6 +68,7 @@ export async function generateProposal(
 
   let prompt = `You are an expert proposal writer. Based on the project details and the user's profile, create a compelling proposal.
 
+User's Name: ${input.userName}
 Project Title: ${input.projectTitle}
 Project Summary: ${input.summary}
 Profile Summary: ${input.profileSummary}
@@ -94,7 +96,7 @@ Relevant Experience / Past Successes: ${input.pastSuccesses}
         - 3. On the call, we’ll dive deeper into your project and plan the next steps
     9.  End the proposal by intelligently integrating the closing phrase "${input.closingCta}" into a complete, natural-sounding final sentence. If the provided phrase is short, add a few introductory words to make it a full sentence.
     10. **Sign-off:** After the closing sentence, add a single line break (\\n) and then write the sign-off phrase: "${input.closingCta2}".
-    11. **Signature:** After the sign-off phrase (or the closing sentence if no sign-off is provided), add one line break and then write the user's name, which you can find in the Profile Summary.
+    11. **Signature:** After the sign-off phrase (or the closing sentence if no sign-off is provided), add one line break and then write the user's name: "${input.userName}".
 `;
   }
 
@@ -119,7 +121,7 @@ Relevant Experience / Past Successes: ${input.pastSuccesses}
     if (input.closingCta2) {
       prompt += `    - **Sign-off:** After the closing sentence, add a single line break (\\n) and then write the sign-off phrase: "${input.closingCta2}".\\n`;
     }
-    prompt += `    - **Signature:** After the sign-off phrase (or the closing sentence if no sign-off is provided), add one line break and then write the user's name, which you can find in the Profile Summary.\\n`;
+    prompt += `    - **Signature:** After the sign-off phrase (or the closing sentence if no sign-off is provided), add one line break and then write the user's name: "${input.userName}".\\n`;
   }
 
   prompt += `
@@ -146,5 +148,3 @@ Ensure the final output is well-structured and professional. Output only the pro
 
   return { proposal };
 }
-
-    
