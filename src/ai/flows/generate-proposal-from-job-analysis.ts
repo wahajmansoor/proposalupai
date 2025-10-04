@@ -83,7 +83,7 @@ export async function generateProposal(
 - **AVOID GENERIC OPENERS:** NEVER start with "I am happy to apply...", "I am writing to express my interest...", or other generic, "watery" phrases.
 - **CONCISENESS IS KEY:** Keep the entire proposal short and easy to read. Use multiple short paragraphs (2-3 sentences each) instead of long blocks of text. Respect the word limit.
 - **CLIENT-FOCUSED:** Do not just talk about the user's experience. Focus on the client's problem and how the user will solve it.
-- **BOLD FORMATTING:** To make the proposal stand out, identify the single most impactful phrase or sentence in the **opening paragraph only** and wrap it in **double asterisks** to make it bold. For example: "I can help you **achieve your goal of increasing leads** with my expertise in..."
+- **NO BOLD FORMATTING:** Do not use bold formatting like **double asterisks**.
 - **NO EMOJIS:** Do not use any emojis like 📃, ✅, or ▶.
 `;
 
@@ -113,7 +113,7 @@ export async function generateProposal(
     prompt += `    - **BODY:** The main body must be broken into multiple SHORT paragraphs (2-3 sentences each). Highlight how the user's skills and experience directly solve the client's problem. Ask one or two short, smart questions about the job to show engagement and encourage a reply.
 `;
     if (hasAnyLinks) {
-      prompt += `    - **PORTFOLIO:** If providing links, introduce them naturally. Do not just dump a huge list. Pick only 1-2 of the most relevant examples. For instance: "Here is a recent project that is very similar to what you're looking for:". Then, list the link(s) on a new line.\n`;
+      prompt += `    - **PORTFOLIO:** Introduce the links naturally (e.g., "Here is some relevant work:"). Then, list ALL of the following links, with each link on a new line.\n`;
       if (hasProfileLinks) {
           prompt += `Profile Links:\n${formatLinks(input.profileLinks)}\n`;
       }
@@ -145,6 +145,3 @@ Ensure the final output is well-structured, persuasive, and sounds like a confid
 
   return { proposal };
 }
-
-
-    
