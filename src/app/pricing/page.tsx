@@ -248,7 +248,7 @@ export default function PricingPage() {
 
         <div className="flex justify-center w-full max-w-md">
              <Card className="flex flex-col shadow-lg w-full border border-border">
-                <CardHeader className="pb-4">
+                <CardHeader className="pb-0 md:pb-0">
                     <CardTitle className="flex items-center gap-2 text-xl font-semibold">
                       <span>{currentPlan.name}</span>
                       {billingInterval === 'yearly' && (

@@ -5,24 +5,24 @@ import { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ProposalUpLogo, GoogleIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, XCircle, CheckCircle2 } from 'lucide-react';
+import { Loader2, XCircle, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { getGoogleAuthUrl } from '@/app/lib/actions';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
 import { signUpWithEmail } from '@/app/lib/auth-actions';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
+import { BgPattern } from '@/components/bg-pattern';
 
 
 const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => {
   return (
-    <div className={cn("flex items-center text-sm", met ? "text-green-600" : "text-muted-foreground")}>
-      {met ? <CheckCircle2 className="mr-2 h-4 w-4" /> : <XCircle className="mr-2 h-4 w-4 text-red-500" />}
+    <div className={cn("flex items-center text-xs", met ? "text-green-600" : "text-muted-foreground")}>
+      {met ? <CheckCircle2 className="mr-2 h-3 w-3" /> : <XCircle className="mr-2 h-3 w-3 text-red-500" />}
       {text}
     </div>
   );
@@ -180,78 +180,107 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <Card className="mx-auto max-w-sm">
-        <CardHeader className="text-center">
-          <ProposalUpLogo className="h-12 w-12 mx-auto" />
-          <CardTitle className="text-2xl">Sign Up</CardTitle>
-          <CardDescription>Enter your information to create an account</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <form onSubmit={handleSubmit}>
-            <div className="grid gap-4">
-              <div className="grid gap-2">
-                <Label htmlFor="full-name">Full Name</Label>
-                <Input 
-                  id="full-name" 
-                  placeholder="Jane Doe" 
-                  required 
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  disabled={isLoading || isGoogleLoading}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
-                <Input 
-                  id="email" 
-                  type="email" 
-                  placeholder="m@example.com" 
-                  required 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  disabled={isLoading || isGoogleLoading}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="password">Password</Label>
-                <Input 
-                  id="password" 
-                  type="password" 
-                  placeholder="••••••••"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  disabled={isLoading || isGoogleLoading}
-                />
-                 {password && (
-                  <div className="mt-2 space-y-1">
-                      <PasswordRequirement met={passwordValidation.length} text="At least 8 characters long" />
-                      <PasswordRequirement met={passwordValidation.uppercase} text="Contains an uppercase letter" />
-                      <PasswordRequirement met={passwordValidation.lowercase} text="Contains a lowercase letter" />
-                      <PasswordRequirement met={passwordValidation.number} text="Contains a number" />
-                      <PasswordRequirement met={passwordValidation.special} text="Contains a special character" />
+    <div className="min-h-screen w-full">
+      <div className="grid grid-cols-1 lg:grid-cols-2 min-h-screen">
+        <div className="flex flex-col justify-center p-4 sm:p-12 xl:p-20">
+          <div className="w-full max-w-md mx-auto">
+            <Link href="/" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground mb-8">
+              <ArrowLeft className="h-4 w-4" />
+              Back to home
+            </Link>
+            <div className="mb-8">
+              <h1 className="text-3xl font-bold tracking-tight">Create an Account</h1>
+              <p className="text-muted-foreground mt-1">Enter your information to get started.</p>
+            </div>
+            
+            <Button variant="outline" className="w-full mb-6" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
+              {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
+              Sign up with Google
+            </Button>
+
+            <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-background px-2 text-muted-foreground">Or</span>
+                </div>
+            </div>
+
+            <form onSubmit={handleSubmit}>
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label htmlFor="full-name">Full Name</Label>
+                  <Input 
+                    id="full-name" 
+                    placeholder="Jane Doe" 
+                    required 
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    disabled={isLoading || isGoogleLoading}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="email">Email</Label>
+                  <Input 
+                    id="email" 
+                    type="email" 
+                    placeholder="info@example.com" 
+                    required 
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    disabled={isLoading || isGoogleLoading}
+                  />
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="password">Password</Label>
+                  <Input 
+                    id="password" 
+                    type="password" 
+                    placeholder="••••••••"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    disabled={isLoading || isGoogleLoading}
+                  />
+                </div>
+
+                {password && (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-1 mt-2">
+                      <PasswordRequirement met={passwordValidation.length} text="8+ characters" />
+                      <PasswordRequirement met={passwordValidation.uppercase} text="1 uppercase" />
+                      <PasswordRequirement met={passwordValidation.lowercase} text="1 lowercase" />
+                      <PasswordRequirement met={passwordValidation.number} text="1 number" />
+                      <PasswordRequirement met={passwordValidation.special} text="1 special" />
                   </div>
                 )}
+                <Button type="submit" className="w-full mt-2" disabled={isLoading || isGoogleLoading || (password.length > 0 && !allRequirementsMet)}>
+                  {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                  Create an account
+                </Button>
               </div>
-              <Button type="submit" className="w-full" disabled={isLoading || isGoogleLoading || (password.length > 0 && !allRequirementsMet)}>
-                {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                Create an account
-              </Button>
-               <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
-                {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
-                Sign up with Google
-              </Button>
+            </form>
+            <div className="mt-6 text-center text-sm">
+              Already have an account?{' '}
+              <Link href="/login" className="font-medium text-primary hover:underline">
+                Login
+              </Link>
             </div>
-          </form>
-          <div className="mt-4 text-center text-sm">
-            Already have an account?{' '}
-            <Link href="/login" className="underline">
-              Login
-            </Link>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+        <div className="hidden lg:flex flex-col items-center justify-center bg-auth-panel text-white relative">
+          <BgPattern />
+          <div className="flex flex-col items-center text-center z-10">
+            <Link href="/" className="mb-8">
+              <ProposalUpLogo className="h-20 w-20 text-white" />
+            </Link>
+            <h2 className="text-3xl font-bold mb-2">Proposal Up</h2>
+            <p className="text-lg text-white/80 max-w-sm">
+              Generate tailored proposals with the power of AI
+            </p>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

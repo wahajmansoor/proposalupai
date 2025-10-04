@@ -24,12 +24,8 @@
     --input: 214.3 31.8% 91.4%;
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
-    --main-background: 210 36% 96%;
-
-    /* Custom vars for admin */
-    --admin-background: 220 13% 97%;
-    --sidebar: var(--background);
-    --sidebar-foreground: var(--foreground);
+    --main-background: 220 13% 97%;
+    --auth-panel-background: 222 47% 11%;
   }
 
   .dark {
@@ -53,6 +49,7 @@
     --input: 217.2 32.6% 17.5%;
     --ring: 114 70% 40%;
     --main-background: 220 13% 10%;
+    --auth-panel-background: 222 47% 11%;
     
     /* Custom vars for admin */
     --admin-background: 224 71% 4%;

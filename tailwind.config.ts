@@ -33,6 +33,7 @@ export default {
         'sidebar-foreground': 'hsl(var(--sidebar-foreground))',
         'admin-background': 'hsl(var(--admin-background))',
         'main-background': 'hsl(var(--main-background))',
+        'auth-panel': 'hsl(var(--auth-panel-background))',
         primary: {
           DEFAULT: 'hsl(var(--primary))',
           foreground: 'hsl(var(--primary-foreground))',
