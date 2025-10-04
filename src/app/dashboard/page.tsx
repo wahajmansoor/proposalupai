@@ -7,6 +7,7 @@ import {
   analyzeAndSuggestAction,
   autofillSkillsAction,
   answerQuestionsAction,
+  improveProposalAction,
 } from '@/app/lib/actions';
 import { addSavedProposal } from '@/lib/firebase/proposals';
 import { Button } from '@/components/ui/button';
@@ -15,7 +16,8 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuote, CheckCircle, Phone, Globe, Users, Calendar, BarChart, ShoppingCart, Code, Search, Lightbulb, Mail, BarChart2, ExternalLink, LayoutDashboard, FolderKanban, Save, AlertCircle, RefreshCcw, X, Link as LinkIcon } from 'lucide-react';
+import { Sparkles, Bot, Clipboard, Plus, Trash2, Wand2, FileText, User, Settings, Rocket, ArrowLeft, ArrowRight, MessageSquareQuote, CheckCircle, Phone, Globe, Users, Calendar, BarChart, ShoppingCart, Code, Search, Lightbulb, Mail, BarChart2, ExternalLink, LayoutDashboard, FolderKanban, Save, AlertCircle, RefreshCcw, X, Link as LinkIcon, Star } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter, DialogTrigger } from "@/components/ui/dialog";
 
 import { HugeiconsIcon } from '@hugeicons/react';
 import { File01Icon } from "@hugeicons/core-free-icons";
@@ -44,6 +46,7 @@ type Suggestion = {
   strategyId: string;
   strategyReasoning: string;
   wordLimit: number[];
+  wordLimitReasoning: string;
 }
 
 const openingStrategies = [
@@ -96,6 +99,19 @@ const signOffCtas = [
 
 const tones = ["Professional", "Friendly", "Assertive", "Persuasive", "Creative", "Concise", "Formal"];
 
+const improvementOptions = [
+    "Use active voice",
+    "Simplify language",
+    "Break up paragraphs",
+    "Avoid redundancy",
+    "Use bullet points",
+    "Use headings and subheadings",
+    "Use specific examples",
+    "Proofread for errors",
+    "Maintain professional tone",
+];
+
+
 function DashboardContent() {
   const { user, userProfile, loading } = useAuth();
   const { toast } = useToast();
@@ -140,6 +156,12 @@ function DashboardContent() {
 
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
   const [planInterval, setPlanInterval] = useState<'monthly' | 'yearly' | null>(null);
+
+  const [isImproveDialogOpen, setIsImproveDialogOpen] = useState(false);
+  const [improvementInstruction, setImprovementInstruction] = useState('');
+  const [customImprovementInstruction, setCustomImprovementInstruction] = useState('');
+  const [improvedProposal, setImprovedProposal] = useState('');
+  const [isImproving, setIsImproving] = useState(false);
 
   const isTrial = userProfile?.subscriptionStatus === 'trialing';
   const proposalCount = userProfile?.proposalCount ?? 0;
@@ -255,6 +277,7 @@ function DashboardContent() {
     setWordLimit([50, 120]);
     setClientQuestions([{ id: 1, question: '', answer: '' }]);
     setGeneratedProposal('');
+    setImprovedProposal('');
     setSuggestion(null);
     setAnswersGenerated(false);
     toast({ title: 'Form Cleared', description: 'You can now start a new proposal.' });
@@ -511,6 +534,30 @@ function DashboardContent() {
         setGeneratedProposal(result.data.proposal);
     }
     setIsGenerating(false);
+  };
+  
+  const handleImproveProposal = async () => {
+    const instruction = improvementInstruction === 'Custom Instructions' ? customImprovementInstruction : improvementInstruction;
+    if (!instruction) {
+      toast({ title: 'No Instruction', description: 'Please select or enter an instruction to improve the proposal.', variant: 'destructive' });
+      return;
+    }
+    setIsImproving(true);
+    setImprovedProposal('');
+
+    const result = await improveProposalAction({
+      proposal: generatedProposal,
+      instruction: instruction,
+    });
+
+    if (result.error) {
+      toast({ title: 'Error Improving Proposal', description: result.error, variant: 'destructive' });
+    } else if (result.data) {
+      setImprovedProposal(result.data.improvedProposal);
+      toast({ title: 'Proposal Improved!', description: 'The improved version is ready below.' });
+      setIsImproveDialogOpen(false);
+    }
+    setIsImproving(false);
   };
 
   const handleSaveProposal = async () => {
@@ -854,6 +901,11 @@ function DashboardContent() {
                         max={500}
                         step={10}
                       />
+                      {suggestion?.wordLimitReasoning && (
+                         <div className="mt-4 p-3 bg-green-50 border-l-4 border-green-400 text-green-800 rounded-r-lg text-sm">
+                            <p><span className="font-bold">AI Suggestion: </span>{suggestion.wordLimitReasoning}</p>
+                         </div>
+                      )}
                   </div>
                 </CardContent>
               </Card>
@@ -923,6 +975,48 @@ function DashboardContent() {
                 )}
               </div>
               <div className="flex items-center gap-1">
+                  <Dialog open={isImproveDialogOpen} onOpenChange={setIsImproveDialogOpen}>
+                    <DialogTrigger asChild>
+                      <Button variant="outline" size="sm" disabled={!generatedProposal}>
+                          <Star className="mr-2 h-4 w-4" /> Improve
+                      </Button>
+                    </DialogTrigger>
+                    <DialogContent>
+                      <DialogHeader>
+                        <DialogTitle>Further improve the Proposal</DialogTitle>
+                        <DialogDescription>
+                          Note: You can improve the proposal right away with these suggestions.
+                        </DialogDescription>
+                      </DialogHeader>
+                      <div className="space-y-4">
+                         <Select onValueChange={setImprovementInstruction} value={improvementInstruction}>
+                          <SelectTrigger>
+                            <SelectValue placeholder="Select Option" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {improvementOptions.map(opt => (
+                              <SelectItem key={opt} value={opt}>{opt}</SelectItem>
+                            ))}
+                             <SelectItem value="Custom Instructions">Custom Instructions</SelectItem>
+                          </SelectContent>
+                        </Select>
+                        {improvementInstruction === 'Custom Instructions' && (
+                          <Textarea 
+                            placeholder="e.g., Make it more formal and add a bullet point list about my experience."
+                            value={customImprovementInstruction}
+                            onChange={(e) => setCustomImprovementInstruction(e.target.value)}
+                          />
+                        )}
+                      </div>
+                      <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsImproveDialogOpen(false)}>Cancel</Button>
+                        <Button onClick={handleImproveProposal} disabled={isImproving}>
+                          {isImproving && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
+                          Improve Proposal
+                        </Button>
+                      </DialogFooter>
+                    </DialogContent>
+                  </Dialog>
                   <Button variant="outline" size="sm" onClick={handleSaveProposal} disabled={!generatedProposal || isSaving}>
                       {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
                       Save
@@ -954,6 +1048,24 @@ function DashboardContent() {
               )}
             </CardContent>
           </Card>
+           
+           {improvedProposal && (
+            <Card>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <CardTitle>
+                  Improved Version
+                </CardTitle>
+                <Button variant="outline" size="sm" onClick={() => copyToClipboard(improvedProposal)}>
+                  <Clipboard className="mr-2 h-4 w-4" /> Copy
+                </Button>
+              </CardHeader>
+              <CardContent>
+                 <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap border-t pt-4">
+                    {improvedProposal}
+                 </div>
+              </CardContent>
+            </Card>
+           )}
 
           {generatedProposal && (
             <Button variant="outline" className="w-full" onClick={handleResetForm}>

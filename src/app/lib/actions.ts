@@ -6,6 +6,7 @@ import { analyzeJobForProposal } from '@/ai/flows/analyze-job-for-proposal';
 import { autofillProposalSections } from '@/ai/flows/autofill-proposal-sections';
 import { answerClientQuestions } from '@/ai/flows/answer-client-questions';
 import { generateProposal } from '@/ai/flows/generate-proposal-from-job-analysis';
+import { improveProposal } from '@/ai/flows/improve-proposal';
 import { suggestProposalTemplate } from '@/ai/flows/suggest-proposal-template';
 import { suggestOpeningStrategy } from '@/ai/flows/suggest-opening-strategy';
 import { suggestWordLimit } from '@/ai/flows/suggest-word-limit';
@@ -89,6 +90,7 @@ export async function analyzeAndSuggestAction(input: z.infer<typeof analyzeAndSu
             strategyId: strategySuggestion.strategyId,
             strategyReasoning: strategySuggestion.reasoning,
             wordLimit: wordLimitSuggestion.wordLimit,
+            wordLimitReasoning: wordLimitSuggestion.reasoning,
           } 
         };
     } catch (error) {
@@ -192,6 +194,26 @@ export async function generateProposalAction(input: z.infer<typeof generatePropo
       console.error(error);
       return { error: 'Failed to generate proposal.' };
     }
+}
+
+const improveProposalSchema = z.object({
+  proposal: z.string(),
+  instruction: z.string(),
+});
+
+export async function improveProposalAction(input: z.infer<typeof improveProposalSchema>) {
+  const validatedFields = improveProposalSchema.safeParse(input);
+  if (!validatedFields.success) {
+    return { error: 'Invalid input for improving proposal.' };
+  }
+
+  try {
+    const result = await improveProposal(validatedFields.data);
+    return { data: result };
+  } catch (error) {
+    console.error(error);
+    return { error: 'Failed to improve proposal.' };
+  }
 }
 
 

@@ -25,6 +25,9 @@ const SuggestWordLimitOutputSchema = z.object({
     .array(z.number())
     .length(2)
     .describe("The suggested word limit range, e.g. [100, 150]."),
+  reasoning: z
+    .string()
+    .describe('A brief, one-sentence explanation for the word limit suggestion.'),
 });
 
 export type SuggestWordLimitOutput = z.infer<
@@ -35,11 +38,11 @@ export async function suggestWordLimit(
   input: SuggestWordLimitInput
 ): Promise<SuggestWordLimitOutput> {
   const prompt = `You are an AI assistant that helps freelancers write concise and impactful proposals.
-  Based on the length and complexity of the job summary, suggest a word limit range for the proposal.
+  Based on the length and complexity of the job summary, suggest a word limit range for the proposal and a brief reason.
 
-  - If the summary is very short and direct, suggest a range like [80, 120].
-  - If the summary is of average length, suggest a range like [120, 180].
-  - If the summary is long and detailed, suggest a slightly larger range like [180, 250], but emphasize brevity.
+  - If the summary is very short and direct (under 50 words), suggest a range like [80, 120] and reason that a short job post expects a brief response.
+  - If the summary is of average length (50-200 words), suggest a range like [120, 180] and reason that it's enough to show value without overwhelming the client.
+  - If the summary is long and detailed (over 200 words), suggest a slightly larger range like [180, 250], but reason that it's important to be concise and respect the client's time despite the detailed post.
 
   Job Title: ${input.projectTitle}
   Job Summary: ${input.summary}
@@ -57,7 +60,7 @@ export async function suggestWordLimit(
           type: 'function',
           function: {
             name: 'suggest_word_limit',
-            description: 'Suggests a word limit for a proposal.',
+            description: 'Suggests a word limit and reasoning for a proposal.',
             parameters: zodToJsonSchema(SuggestWordLimitOutputSchema),
           },
         },
@@ -82,6 +85,7 @@ export async function suggestWordLimit(
 
   // Fallback in case of error or invalid output
   return {
-    wordLimit: [100, 150]
+    wordLimit: [100, 150],
+    reasoning: 'A concise proposal is generally more effective.'
   };
 }
