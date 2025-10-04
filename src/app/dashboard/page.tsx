@@ -99,18 +99,6 @@ const signOffCtas = [
 
 const tones = ["Professional", "Friendly", "Assertive", "Persuasive", "Creative", "Concise", "Formal"];
 
-const improvementOptions = [
-    "Use active voice",
-    "Simplify language",
-    "Break up paragraphs",
-    "Avoid redundancy",
-    "Use bullet points",
-    "Use headings and subheadings",
-    "Use specific examples",
-    "Proofread for errors",
-    "Maintain professional tone",
-];
-
 
 function DashboardContent() {
   const { user, userProfile, loading } = useAuth();
@@ -157,8 +145,6 @@ function DashboardContent() {
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
   const [planInterval, setPlanInterval] = useState<'monthly' | 'yearly' | null>(null);
 
-  const [isImproveDialogOpen, setIsImproveDialogOpen] = useState(false);
-  const [improvementInstruction, setImprovementInstruction] = useState('');
   const [customImprovementInstruction, setCustomImprovementInstruction] = useState('');
   const [improvedProposal, setImprovedProposal] = useState('');
   const [isImproving, setIsImproving] = useState(false);
@@ -537,9 +523,9 @@ function DashboardContent() {
   };
   
   const handleImproveProposal = async () => {
-    const instruction = improvementInstruction === 'Custom Instructions' ? customImprovementInstruction : improvementInstruction;
+    const instruction = customImprovementInstruction;
     if (!instruction) {
-      toast({ title: 'No Instruction', description: 'Please select or enter an instruction to improve the proposal.', variant: 'destructive' });
+      toast({ title: 'No Instruction', description: 'Please enter an instruction to improve the proposal.', variant: 'destructive' });
       return;
     }
     setIsImproving(true);
@@ -557,7 +543,7 @@ function DashboardContent() {
       toast({ title: 'Proposal Improved!', description: 'The improved version is ready below.' });
     }
     setIsImproving(false);
-    setIsImproveDialogOpen(false);
+    setCustomImprovementInstruction('');
   };
 
   const handleSaveProposal = async () => {
@@ -975,48 +961,6 @@ function DashboardContent() {
                 )}
               </div>
               <div className="flex items-center gap-1">
-                  <Dialog open={isImproveDialogOpen} onOpenChange={setIsImproveDialogOpen}>
-                    <DialogTrigger asChild>
-                      <Button variant="outline" size="sm" disabled={!generatedProposal} className="bg-yellow-400 hover:bg-yellow-500 text-yellow-900 border-yellow-500">
-                          <Wand2 className="mr-2 h-4 w-4" /> Improve
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>Improve Proposal</DialogTitle>
-                        <DialogDescription>
-                          Select an option to refine the proposal, or provide your own custom instruction.
-                        </DialogDescription>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                         <Select onValueChange={setImprovementInstruction} value={improvementInstruction}>
-                          <SelectTrigger>
-                            <SelectValue placeholder="Select an improvement option" />
-                          </SelectTrigger>
-                          <SelectContent>
-                            {improvementOptions.map(opt => (
-                              <SelectItem key={opt} value={opt}>{opt}</SelectItem>
-                            ))}
-                             <SelectItem value="Custom Instructions">Custom Instructions</SelectItem>
-                          </SelectContent>
-                        </Select>
-                        {improvementInstruction === 'Custom Instructions' && (
-                          <Textarea 
-                            placeholder="e.g., Make it more formal and add a bullet point list about my experience."
-                            value={customImprovementInstruction}
-                            onChange={(e) => setCustomImprovementInstruction(e.target.value)}
-                          />
-                        )}
-                      </div>
-                      <DialogFooter>
-                        <Button variant="outline" onClick={() => setIsImproveDialogOpen(false)}>Cancel</Button>
-                        <Button onClick={handleImproveProposal} disabled={isImproving}>
-                          {isImproving && <Loader2 className="mr-2 h-4 w-4 animate-spin"/>}
-                          Improve Proposal
-                        </Button>
-                      </DialogFooter>
-                    </DialogContent>
-                  </Dialog>
                   <Button variant="outline" size="sm" onClick={handleSaveProposal} disabled={!generatedProposal || isSaving}>
                       {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
                       Save
@@ -1047,6 +991,25 @@ function DashboardContent() {
                   </div>
               )}
             </CardContent>
+            {generatedProposal && (
+              <CardFooter>
+                <div className="flex w-full items-center gap-2">
+                  <Input 
+                    placeholder="Type your improvement request here..."
+                    value={customImprovementInstruction}
+                    onChange={(e) => setCustomImprovementInstruction(e.target.value)}
+                    disabled={isImproving}
+                  />
+                  <Button 
+                    onClick={handleImproveProposal}
+                    disabled={isImproving || customImprovementInstruction.trim().split(/\s+/).length < 4}
+                  >
+                    {isImproving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                    Update
+                  </Button>
+                </div>
+              </CardFooter>
+            )}
           </Card>
            
            {improvedProposal && (
@@ -1192,3 +1155,5 @@ export default function DashboardPage() {
         </Suspense>
     )
 }
+
+    
