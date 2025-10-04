@@ -266,12 +266,14 @@ function DashboardContent() {
         return;
       }
       setCurrentStep(prev => prev + 1);
+      window.scrollTo(0, 0);
     }
   };
 
   const prevStep = () => {
     if (currentStep > 1) {
-      setCurrentStep(prev => prev + 1);
+      setCurrentStep(prev => prev - 1);
+      window.scrollTo(0, 0);
     }
   };
 
