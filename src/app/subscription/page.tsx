@@ -88,7 +88,7 @@ export default function SubscriptionPage() {
   const isTrial = subscriptionStatus === 'trialing';
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto">
+    <div className="space-y-8">
       <div>
         <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Subscription</h1>
         <p className="text-muted-foreground">View and manage your subscription and billing details.</p>
