@@ -110,7 +110,7 @@ export async function generateProposal(
     } else {
       prompt += `    - **OPENING PARAGRAPH:** Create a powerful, client-focused opening paragraph that immediately addresses their core need. This should be followed by a single line break (\\n).\\n`
     }
-    prompt += `    - **BODY:** The main body must be broken into multiple SHORT paragraphs (2-3 sentences each). Highlight how the user's skills and experience directly solve the client's problem. Ask one or two short, smart questions about the job to show engagement and encourage a reply.
+    prompt += `    - **BODY:** The main body must be broken into multiple SHORT paragraphs (2-3 sentences each). Highlight how the user's skills and experience directly solve the client's problem. Weave one or two short, smart questions about the job into the body paragraphs to show engagement and encourage a reply.
 `;
     if (hasAnyLinks) {
       prompt += `    - **PORTFOLIO:** Introduce the links naturally (e.g., "Here is some relevant work:"). Then, list ALL of the following links, with each link on a new line.\n`;
@@ -121,7 +121,7 @@ export async function generateProposal(
           prompt += `Additional Links:\n${formatLinks(input.manualLinks)}\n`;
       }
     }
-    prompt += `    - **FINAL CTA & SIGN-OFF:** End the proposal by intelligently integrating the closing phrase "${input.closingCta}" into a complete, natural-sounding final sentence. After that sentence, add a single line break (\\n) and then write the sign-off phrase: "${input.closingCta2}".\\n`;
+    prompt += `    - **FINAL CTA & SIGN-OFF:** End the proposal by intelligently integrating the closing phrase "${input.closingCta}" into a complete, natural-sounding final sentence. After that sentence, add a single line break (\\n) and then, if provided, write the sign-off phrase: "${input.closingCta2}".\\n`;
     prompt += `    - **SIGNATURE:** After the sign-off phrase, add one line break and then write the user's name: "${input.userName}".\\n`;
   }
 
