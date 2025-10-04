@@ -229,7 +229,7 @@ export default function SkillProfilesPage() {
     } else {
       setIsLoading(false);
     }
-  }, [user]);
+  }, [user, fetchProfiles]);
 
   const resetFormState = () => {
     setEditingProfile(null);
@@ -530,3 +530,5 @@ export default function SkillProfilesPage() {
     </>
   );
 }
+
+    
