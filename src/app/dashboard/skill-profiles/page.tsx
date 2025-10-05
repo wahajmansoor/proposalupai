@@ -79,96 +79,86 @@ function ProfileForm({
   removeLink: (index: number) => void;
   isMobile: boolean;
 }) {
-    const formContent = (
-         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="title">Profile Title</Label>
-              <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., Senior Web Developer" required />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="experience">Experience (Years)</Label>
-              <Input id="experience" type="number" value={experience} onChange={(e) => setExperience(e.target.value === '' ? '' : Number(e.target.value))} placeholder="e.g., 5" required />
-            </div>
-            <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="description">Profile Description</Label>
-              <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe your skills and experience for this profile..." className="min-h-[120px]" required />
-            </div>
-            <div className="md:col-span-2 space-y-2">
-              <Label htmlFor="keywords">Keywords</Label>
-              <div className="flex flex-wrap items-center gap-2 p-2 border rounded-md">
-                  {keywords.map((keyword, index) => (
-                      <Badge key={index} variant="secondary" className="gap-1">
-                          {keyword}
-                          <button type="button" onClick={() => removeKeyword(keyword)} className="rounded-full hover:bg-black/10"><X className="h-3 w-3"/></button>
-                      </Badge>
-                  ))}
-                  <Input 
-                      id="keywords" 
-                      value={keywordInput}
-                      onChange={(e) => setKeywordInput(e.target.value)}
-                      onKeyDown={handleKeywordKeyDown}
-                      placeholder="Type keyword..." 
-                      className="flex-1 border-none shadow-none focus-visible:ring-0 h-auto p-0 m-0"
-                  />
-                  <Button type="button" size="sm" variant="outline" onClick={() => {
-                        if (keywordInput.trim() && !keywords.includes(keywordInput.trim())) {
-                            setKeywords([...keywords, keywordInput.trim()]);
-                        }
-                        setKeywordInput('');
-                    }}>Add</Button>
-              </div>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="tone">Proposal Tone</Label>
-              <Select value={tone} onValueChange={setTone} required>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                      {tones.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                  </SelectContent>
-              </Select>
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="length">Proposal Length</Label>
-              <Select value={length} onValueChange={setLength} required>
-                  <SelectTrigger><SelectValue /></SelectTrigger>
-                  <SelectContent>
-                      {lengths.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-                  </SelectContent>
-              </Select>
-            </div>
-            <div className="md:col-span-2 space-y-4">
-              <Label>Portfolio Websites</Label>
-              {links.map((link, index) => (
-                <div key={index} className="flex items-center gap-2">
-                    <Input 
-                      value={link.url}
-                      onChange={(e) => handleLinkChange(index, e.target.value)}
-                      placeholder="https://example.com"
-                      type="url"
-                      className="flex-1"
-                    />
-                    <Button type="button" variant="ghost" size="icon" onClick={() => removeLink(index)} className="shrink-0">
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                </div>
-              ))}
-              <Button type="button" variant="outline" size="sm" onClick={addLink} className="w-full">
-                  <Plus className="mr-2 h-4 w-4" /> Add Link
-              </Button>
-            </div>
-          </div>
-    );
-  
   return (
-    <form onSubmit={handleFormSubmit}>
-        <div className={cn(isMobile ? 'overflow-y-auto p-4' : 'p-0')}>
-            {isMobile ? (
-                formContent
-            ) : (
-                <ScrollArea className="h-[60vh] p-6 pr-4">
-                    {formContent}
-                </ScrollArea>
-            )}
+    <form onSubmit={handleFormSubmit} className="flex flex-col h-full">
+        <div className="flex-1 overflow-y-auto p-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div className="space-y-2">
+                <Label htmlFor="title">Profile Title</Label>
+                <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., Senior Web Developer" required />
+                </div>
+                <div className="space-y-2">
+                <Label htmlFor="experience">Experience (Years)</Label>
+                <Input id="experience" type="number" value={experience} onChange={(e) => setExperience(e.target.value === '' ? '' : Number(e.target.value))} placeholder="e.g., 5" required />
+                </div>
+                <div className="md:col-span-2 space-y-2">
+                <Label htmlFor="description">Profile Description</Label>
+                <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe your skills and experience for this profile..." className="min-h-[120px]" required />
+                </div>
+                <div className="md:col-span-2 space-y-2">
+                <Label htmlFor="keywords">Keywords</Label>
+                <div className="flex flex-wrap items-center gap-2 p-2 border rounded-md">
+                    {keywords.map((keyword, index) => (
+                        <Badge key={index} variant="secondary" className="gap-1">
+                            {keyword}
+                            <button type="button" onClick={() => removeKeyword(keyword)} className="rounded-full hover:bg-black/10"><X className="h-3 w-3"/></button>
+                        </Badge>
+                    ))}
+                    <Input 
+                        id="keywords" 
+                        value={keywordInput}
+                        onChange={(e) => setKeywordInput(e.target.value)}
+                        onKeyDown={handleKeywordKeyDown}
+                        placeholder="Type keyword..." 
+                        className="flex-1 border-none shadow-none focus-visible:ring-0 h-auto p-0 m-0"
+                    />
+                    <Button type="button" size="sm" variant="outline" onClick={() => {
+                            if (keywordInput.trim() && !keywords.includes(keywordInput.trim())) {
+                                setKeywords([...keywords, keywordInput.trim()]);
+                            }
+                            setKeywordInput('');
+                        }}>Add</Button>
+                </div>
+                </div>
+                <div className="space-y-2">
+                <Label htmlFor="tone">Proposal Tone</Label>
+                <Select value={tone} onValueChange={setTone} required>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                        {tones.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+                </div>
+                <div className="space-y-2">
+                <Label htmlFor="length">Proposal Length</Label>
+                <Select value={length} onValueChange={setLength} required>
+                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectContent>
+                        {lengths.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                    </SelectContent>
+                </Select>
+                </div>
+                <div className="md:col-span-2 space-y-4">
+                <Label>Portfolio Websites</Label>
+                {links.map((link, index) => (
+                    <div key={index} className="flex items-center gap-2">
+                        <Input 
+                        value={link.url}
+                        onChange={(e) => handleLinkChange(index, e.target.value)}
+                        placeholder="https://example.com"
+                        type="url"
+                        className="flex-1"
+                        />
+                        <Button type="button" variant="ghost" size="icon" onClick={() => removeLink(index)} className="shrink-0">
+                        <Trash2 className="h-4 w-4" />
+                        </Button>
+                    </div>
+                ))}
+                <Button type="button" variant="outline" size="sm" onClick={addLink} className="w-full">
+                    <Plus className="mr-2 h-4 w-4" /> Add Link
+                </Button>
+                </div>
+            </div>
         </div>
         <div className="p-6 border-t bg-background">
             <div className="flex justify-end gap-2">
@@ -507,7 +497,7 @@ export default function SkillProfilesPage() {
       
       {isMobile ? (
         <Drawer open={isFormOpen} onOpenChange={setIsFormOpen}>
-            <DrawerContent className="max-h-[90dvh]">
+            <DrawerContent className="max-h-[90dvh] flex flex-col">
                 <DrawerHeader className="text-left">
                     <DrawerTitle>{editingProfile ? 'Edit' : 'Create'} Skill Profile</DrawerTitle>
                     <DrawerDescription>
@@ -519,7 +509,7 @@ export default function SkillProfilesPage() {
         </Drawer>
       ) : (
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-            <DialogContent className="sm:max-w-2xl p-0">
+            <DialogContent className="sm:max-w-2xl p-0 h-[80vh] flex flex-col">
                 <DialogHeader className="p-6 pb-0">
                     <DialogTitle>{editingProfile ? 'Edit' : 'Create'} Skill Profile</DialogTitle>
                     <DialogDescription>
