@@ -581,7 +581,7 @@ function DashboardContent() {
       if (isSavingOriginal) {
         setIsSaving(false);
       } else {
-        setIsSavingImproved(false);
+        setIsSavingImproved(true);
       }
     }
   };
@@ -969,7 +969,7 @@ function DashboardContent() {
                     <Link href="/pricing">Upgrade to Pro to Continue</Link>
                 </Button>
               ) : (
-                <Button size="lg" onClick={handleGenerateProposal} disabled={isGenerating}>
+                <Button size="lg" onClick={handleGenerateProposal} disabled={isGenerating || improvementHistory.length > 0}>
                   {isGenerating ? "Generating..." : <><Wand2 className="mr-2"/>Generate Proposal</>}
                 </Button>
               )}
@@ -1018,9 +1018,9 @@ function DashboardContent() {
               )}
             </CardContent>
             {generatedProposal && improvementHistory.length < 2 && (
-              <CardFooter>
+              <CardFooter className="flex-col items-start gap-2">
+                 <p className="text-sm text-muted-foreground">You can improve this proposal {2 - improvementHistory.length} more time(s).</p>
                  <div className="w-full space-y-2">
-                    <p className="text-sm text-muted-foreground">You can improve this proposal {2 - improvementHistory.length} more time(s).</p>
                     <div className="flex w-full items-center gap-2">
                         <Input 
                             placeholder="Type your improvement request here..."
