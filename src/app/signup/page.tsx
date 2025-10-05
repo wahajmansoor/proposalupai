@@ -17,6 +17,7 @@ import { signUpWithEmail } from '@/app/lib/auth-actions';
 import { signInWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { BgPattern } from '@/components/bg-pattern';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 
 const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => {
@@ -180,7 +181,10 @@ export default function SignupPage() {
   }
 
   return (
-    <div className="min-h-screen w-full">
+    <div className="min-h-screen w-full relative">
+       <div className="absolute top-4 right-4 z-10">
+        <ThemeToggle />
+      </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 min-h-screen">
         <div className="flex flex-col justify-center p-4 sm:p-12 xl:p-20">
           <div className="w-full max-w-md mx-auto">
