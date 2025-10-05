@@ -127,7 +127,7 @@ export default function LoginPage() {
 
   return (
     <div className="min-h-screen w-full relative">
-      <div className="absolute top-4 right-4 z-10">
+      <div className="absolute top-4 left-4 z-10">
         <ThemeToggle />
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 min-h-screen">
