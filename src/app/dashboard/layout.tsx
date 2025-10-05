@@ -39,7 +39,7 @@ export default function DashboardLayout({
         path === '/dashboard' ? pathname === path : pathname.startsWith(path)
     );
 
-    // If user is NOT subscribed and is trying to access a protected path, redirect them.
+    // If user is NOT subscribed (which includes past_due, unpaid, etc.) and is trying to access a protected path, redirect them.
     if (!isSubscribed && isAccessingProtectedPath) {
         router.replace('/pricing');
         return; // Important: stop further execution

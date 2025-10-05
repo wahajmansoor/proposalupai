@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Loader2, Briefcase, ArrowLeft, Tag, X } from 'lucide-react';
+import { Check, Loader2, Briefcase, ArrowLeft, Tag, X, AlertTriangle, CreditCard } from 'lucide-react';
 import { handlePlanChange, validateCouponAction, createCustomerPortalSession } from '@/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -72,6 +72,7 @@ export default function PricingPage() {
   
   const isSubscribedAndActive = subscriptionStatus === 'active';
   const isTrialing = subscriptionStatus === 'trialing';
+  const hasFailedPayment = subscriptionStatus === 'past_due' || subscriptionStatus === 'unpaid';
 
   const isCanceledButActive = subscriptionStatus === 'canceled' && renewalDate && new Date(renewalDate) > new Date();
   
@@ -161,6 +162,7 @@ export default function PricingPage() {
   }, [appliedCoupon, currentPlan.price]);
 
   const getButtonText = () => {
+    if (hasFailedPayment) return 'Update Payment to Reactivate';
     if (isTrialing) {
         return billingInterval === 'monthly' ? 'Activate Monthly Plan' : 'Activate Yearly Plan';
     }
@@ -175,6 +177,7 @@ export default function PricingPage() {
     if (currentInterval === 'year') return 'Pro Yearly';
     if (currentInterval === 'month') return 'Pro Monthly';
     if (isTrialing) return 'Trial';
+    if (hasFailedPayment) return 'Plan on Hold';
     return 'Free Plan';
   };
   
@@ -211,7 +214,28 @@ export default function PricingPage() {
             </p>
         </div>
 
-        {showPlanManagement && (
+        {hasFailedPayment && (
+            <Card className="w-full max-w-md mb-8 border-destructive bg-destructive/5 text-destructive-foreground">
+                <CardHeader>
+                    <div className="flex items-center gap-3">
+                        <AlertTriangle className="h-6 w-6 text-destructive" />
+                        <div>
+                            <CardTitle className="text-destructive">Payment Issue</CardTitle>
+                            <CardDescription className="text-destructive/80">Your subscription is on hold due to a failed payment.</CardDescription>
+                        </div>
+                    </div>
+                </CardHeader>
+                <CardContent>
+                    <p className="text-sm mb-4">Please update your payment method to reactivate your Pro plan and restore access to all features.</p>
+                    <Button onClick={handleManageClick} disabled={isSubmitting} className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                        {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CreditCard className="mr-2 h-4 w-4"/>}
+                        Update Payment Method
+                    </Button>
+                </CardContent>
+            </Card>
+        )}
+
+        {showPlanManagement && !hasFailedPayment && (
             <div className="w-full max-w-md mb-8 border rounded-lg p-4 flex items-center justify-between bg-card">
               <div>
                 <p className="text-sm font-semibold">Your Current Plan:</p>
@@ -280,7 +304,7 @@ export default function PricingPage() {
                         <input type="hidden" name="interval" value={billingInterval} />
                         {appliedCoupon && <input type="hidden" name="coupon" value={appliedCoupon.id} />}
                         
-                        {canShowCoupon && (
+                        {canShowCoupon && !hasFailedPayment && (
                           <div className="my-4 space-y-2">
                             {!showCouponInput && !appliedCoupon ? (
                               <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => setShowCouponInput(true)}>
@@ -332,7 +356,7 @@ export default function PricingPage() {
                                 type="submit"
                                 size="lg" 
                                 className="w-full text-sm font-medium"
-                                disabled={isButtonDisabled}
+                                disabled={isButtonDisabled || hasFailedPayment}
                             >
                                 {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
                                 {getButtonText()}
