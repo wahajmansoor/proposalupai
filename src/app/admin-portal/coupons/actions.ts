@@ -22,7 +22,9 @@ const couponFormSchema = z.object({
   amount_off: z.string().optional(),
   duration: z.enum(['once', 'repeating', 'forever']),
   duration_in_months: z.string().optional(),
-  applies_to: z.enum(['any', 'monthly', 'yearly']).default('any')
+  applies_to: z.enum(['any', 'monthly', 'yearly']).default('any'),
+  max_redemptions: z.string().optional(),
+  redeem_by: z.string().optional(),
 }).superRefine((data, ctx) => {
     if (data.type === 'percentage') {
         const percent = Number(data.percent_off);
@@ -104,6 +106,8 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
   const percent_off = validatedFields.data.percent_off ? Number(validatedFields.data.percent_off) : undefined;
   const amount_off = validatedFields.data.amount_off ? Number(validatedFields.data.amount_off) : undefined;
   const duration_in_months = validatedFields.data.duration_in_months ? Number(validatedFields.data.duration_in_months) : undefined;
+  const max_redemptions = validatedFields.data.max_redemptions ? Number(validatedFields.data.max_redemptions) : undefined;
+  const redeem_by = validatedFields.data.redeem_by ? Math.floor(new Date(validatedFields.data.redeem_by).getTime() / 1000) : undefined;
 
 
   let createdCouponId: string | null = null;
@@ -125,6 +129,14 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
 
     if (duration === "repeating" && duration_in_months) {
       couponParams.duration_in_months = duration_in_months;
+    }
+
+    if (max_redemptions) {
+        couponParams.max_redemptions = max_redemptions;
+    }
+
+    if (redeem_by) {
+        couponParams.redeem_by = redeem_by;
     }
     
     const coupon = await stripe.coupons.create(couponParams);

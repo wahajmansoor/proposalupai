@@ -13,10 +13,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, Edit } from 'lucide-react';
+import { Loader2, Trash2, Edit, CalendarIcon } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 export default function CouponsPage() {
   const [coupons, setCoupons] = useState<CouponWithPromotionCode[]>([]);
@@ -30,6 +33,7 @@ export default function CouponsPage() {
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [editingCoupon, setEditingCoupon] = useState<CouponWithPromotionCode | null>(null);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
+  const [expiryDate, setExpiryDate] = useState<Date | undefined>(undefined);
 
   const loadCoupons = async () => {
       setIsLoading(true);
@@ -51,6 +55,9 @@ export default function CouponsPage() {
     event.preventDefault();
     const form = event.currentTarget as HTMLFormElement;
     const formData = new FormData(form);
+    if (expiryDate) {
+        formData.append('redeem_by', expiryDate.toISOString());
+    }
     
     setIsSubmitting(true);
     const result = await createCoupon(formData);
@@ -60,6 +67,7 @@ export default function CouponsPage() {
       form.reset();
       setCouponType('percentage');
       setDuration('forever');
+      setExpiryDate(undefined);
       await loadCoupons();
     } else {
       toast({ title: 'Error Creating Coupon', description: result.error, variant: 'destructive' });
@@ -214,6 +222,39 @@ export default function CouponsPage() {
                           </SelectContent>
                       </Select>
                   </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="max_redemptions">Maximum Redemptions (Optional)</Label>
+                    <Input id="max_redemptions" name="max_redemptions" type="number" placeholder="e.g., 100" disabled={isSubmitting} />
+                  </div>
+                  
+                  <div className="space-y-2">
+                    <Label htmlFor="redeem_by">Expiration Date (Optional)</Label>
+                    <Popover>
+                        <PopoverTrigger asChild>
+                            <Button
+                                variant={"outline"}
+                                className={cn(
+                                    "w-full justify-start text-left font-normal",
+                                    !expiryDate && "text-muted-foreground"
+                                )}
+                                disabled={isSubmitting}
+                            >
+                                <CalendarIcon className="mr-2 h-4 w-4" />
+                                {expiryDate ? format(expiryDate, "PPP") : <span>Pick a date</span>}
+                            </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-auto p-0">
+                            <Calendar
+                                mode="single"
+                                selected={expiryDate}
+                                onSelect={setExpiryDate}
+                                initialFocus
+                            />
+                        </PopoverContent>
+                    </Popover>
+                  </div>
+
 
                   <Button type="submit" className="w-full" disabled={isSubmitting}>
                     {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
