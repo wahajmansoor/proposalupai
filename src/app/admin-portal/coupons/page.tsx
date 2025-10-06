@@ -116,11 +116,12 @@ export default function CouponsPage() {
   };
 
   const getStatus = (coupon: Stripe.Coupon) => {
+    // Explicitly check for expiration date first
+    if (coupon.redeem_by && coupon.redeem_by * 1000 < Date.now()) {
+      return { text: 'Expired', variant: 'destructive' as const };
+    }
+    // Then check Stripe's 'valid' property
     if (!coupon.valid) {
-      // Check if it's expired
-      if (coupon.redeem_by && coupon.redeem_by * 1000 < Date.now()) {
-        return { text: 'Expired', variant: 'destructive' as const };
-      }
       return { text: 'Invalid', variant: 'destructive' as const };
     }
     return { text: 'Valid', variant: 'default' as const };
@@ -348,5 +349,3 @@ export default function CouponsPage() {
     </>
   );
 }
-
-    
