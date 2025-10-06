@@ -9,6 +9,9 @@ import { getUsers } from "../users/actions";
 
 export interface CouponWithPromotionCode extends Stripe.Coupon {
     promotion_code: string;
+    customer_name: string | null;
+    expires_at: number | null;
+    max_redemptions: number | null;
 }
 
 // Schema for form validation
@@ -63,23 +66,45 @@ const couponFormSchema = z.object({
 
 export async function getCoupons(): Promise<CouponWithPromotionCode[]> {
   try {
-    const [coupons, promoCodes] = await Promise.all([
+    const [coupons, promoCodes, users] = await Promise.all([
         stripe.coupons.list({ limit: 100, expand: ['data.applies_to'] }),
-        stripe.promotionCodes.list({ limit: 100, active: true })
+        stripe.promotionCodes.list({ limit: 100, active: true }),
+        getUsers()
     ]);
 
-    const promoCodeMap = new Map<string, string>();
+    const userMap = new Map<string, string>();
+    users.forEach(user => {
+      if (user.stripeCustomerId && user.name) {
+        userMap.set(user.stripeCustomerId, user.name);
+      }
+    });
+
+    const promoCodeMap = new Map<string, {
+      code: string;
+      customer: string | null;
+      expires_at: number | null;
+      max_redemptions: number | null;
+    }>();
+
     promoCodes.data.forEach(promo => {
-        // A coupon can have multiple promo codes, we'll just show the first one we find.
         if (promo.coupon.id && !promoCodeMap.has(promo.coupon.id)) {
-            promoCodeMap.set(promo.coupon.id, promo.code);
+            promoCodeMap.set(promo.coupon.id, {
+              code: promo.code,
+              customer: promo.customer as string | null,
+              expires_at: promo.expires_at,
+              max_redemptions: promo.max_redemptions
+            });
         }
     });
 
     const couponsWithCodes = coupons.data.map(coupon => {
+      const promoDetails = promoCodeMap.get(coupon.id);
       return {
         ...coupon,
-        promotion_code: promoCodeMap.get(coupon.id) || coupon.name || 'N/A',
+        promotion_code: promoDetails?.code || coupon.name || 'N/A',
+        customer_name: promoDetails?.customer ? userMap.get(promoDetails.customer) || 'Unknown Customer' : null,
+        expires_at: promoDetails?.expires_at || null,
+        max_redemptions: promoDetails?.max_redemptions || null,
       };
     });
 
@@ -227,3 +252,5 @@ export async function deleteCoupon(couponId: string): Promise<{ success: boolean
     return { success: false, error: error.raw?.message || error.message };
   }
 }
+
+    

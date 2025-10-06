@@ -14,7 +14,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, Edit, CalendarIcon, ChevronsUpDown, Check } from 'lucide-react';
+import { Loader2, Trash2, Edit, CalendarIcon, ChevronsUpDown, Check, User, Clock } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -139,9 +139,9 @@ export default function CouponsPage() {
     return 'N/A';
   };
 
-  const getStatus = (coupon: Stripe.Coupon) => {
+  const getStatus = (coupon: CouponWithPromotionCode) => {
     // Explicitly check for expiration date first
-    if (coupon.redeem_by && coupon.redeem_by * 1000 < Date.now()) {
+    if (coupon.expires_at && coupon.expires_at * 1000 < Date.now()) {
       return { text: 'Expired', variant: 'destructive' as const };
     }
     // Then check Stripe's 'valid' property
@@ -378,6 +378,18 @@ export default function CouponsPage() {
                         <TableRow key={coupon.id}>
                           <TableCell>
                             <div className="font-medium">{coupon.promotion_code}</div>
+                             <div className="flex flex-wrap gap-1 mt-1">
+                                {coupon.customer_name && (
+                                    <Badge variant="secondary" className="text-xs font-normal">
+                                        <User className="mr-1 h-3 w-3" /> {coupon.customer_name}
+                                    </Badge>
+                                )}
+                                {coupon.expires_at && (
+                                    <Badge variant="secondary" className="text-xs font-normal">
+                                        <Clock className="mr-1 h-3 w-3" /> Expires {format(new Date(coupon.expires_at * 1000), 'MMM d, yyyy')}
+                                    </Badge>
+                                )}
+                            </div>
                           </TableCell>
                           <TableCell>{renderDiscount(coupon)}</TableCell>
                           <TableCell>{renderDuration(coupon)}</TableCell>
@@ -466,3 +478,5 @@ export default function CouponsPage() {
     </>
   );
 }
+
+    
