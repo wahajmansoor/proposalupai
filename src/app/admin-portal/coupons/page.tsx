@@ -16,6 +16,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Trash2, Edit } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
+import { cn } from '@/lib/utils';
 
 export default function CouponsPage() {
   const [coupons, setCoupons] = useState<CouponWithPromotionCode[]>([]);
@@ -113,12 +114,23 @@ export default function CouponsPage() {
     }
     return 'N/A';
   };
+
+  const getStatus = (coupon: Stripe.Coupon) => {
+    if (!coupon.valid) {
+      // Check if it's expired
+      if (coupon.redeem_by && coupon.redeem_by * 1000 < Date.now()) {
+        return { text: 'Expired', variant: 'destructive' as const };
+      }
+      return { text: 'Invalid', variant: 'destructive' as const };
+    }
+    return { text: 'Valid', variant: 'default' as const };
+  };
   
   const renderAppliesTo = (coupon: CouponWithPromotionCode) => {
     const plan = coupon.metadata?.applies_to_plan || 'any';
     switch(plan) {
-        case 'monthly': return <Badge variant="outline">Monthly Only</Badge>;
-        case 'yearly': return <Badge variant="outline">Yearly Only</Badge>;
+        case 'monthly': return <Badge className={cn('bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200')}>Monthly Only</Badge>;
+        case 'yearly': return <Badge className={cn('bg-green-100 text-green-800 border-green-200 hover:bg-green-200')}>Yearly Only</Badge>;
         default: return <Badge variant="secondary">Any Plan</Badge>;
     }
   }
@@ -241,7 +253,9 @@ export default function CouponsPage() {
                       </TableRow>
                     </TableHeader>
                     <TableBody>
-                      {coupons.map((coupon) => (
+                      {coupons.map((coupon) => {
+                        const status = getStatus(coupon);
+                        return (
                         <TableRow key={coupon.id}>
                           <TableCell>
                             <div className="font-medium">{coupon.promotion_code}</div>
@@ -250,8 +264,8 @@ export default function CouponsPage() {
                           <TableCell>{renderDuration(coupon)}</TableCell>
                           <TableCell>{renderAppliesTo(coupon)}</TableCell>
                           <TableCell>
-                            <Badge variant={coupon.valid ? 'default' : 'destructive'}>
-                              {coupon.valid ? 'Valid' : 'Invalid'}
+                            <Badge variant={status.variant}>
+                                {status.text}
                             </Badge>
                           </TableCell>
                           <TableCell className="text-right">
@@ -281,7 +295,7 @@ export default function CouponsPage() {
                             </AlertDialog>
                           </TableCell>
                         </TableRow>
-                      ))}
+                      )})}
                     </TableBody>
                   </Table>
                 )}
