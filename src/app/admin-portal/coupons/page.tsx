@@ -281,8 +281,8 @@ export default function CouponsPage() {
                                     key={user.id}
                                     value={user.stripeCustomerId!}
                                     onSelect={(currentValue) => {
-                                        setSelectedCustomer(currentValue === selectedCustomer ? 'all' : currentValue);
-                                        setComboboxOpen(false);
+                                      setSelectedCustomer(user.stripeCustomerId === selectedCustomer ? 'all' : user.stripeCustomerId!);
+                                      setComboboxOpen(false);
                                     }}
                                     >
                                     <Check className={cn("mr-2 h-4 w-4", selectedCustomer === user.stripeCustomerId ? "opacity-100" : "opacity-0")} />
