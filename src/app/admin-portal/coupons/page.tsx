@@ -248,6 +248,7 @@ export default function CouponsPage() {
                         <TableHead>Discount</TableHead>
                         <TableHead>Duration</TableHead>
                         <TableHead>Applies To</TableHead>
+                        <TableHead>Redemptions</TableHead>
                         <TableHead>Status</TableHead>
                         <TableHead className="text-right">Actions</TableHead>
                       </TableRow>
@@ -263,6 +264,7 @@ export default function CouponsPage() {
                           <TableCell>{renderDiscount(coupon)}</TableCell>
                           <TableCell>{renderDuration(coupon)}</TableCell>
                           <TableCell>{renderAppliesTo(coupon)}</TableCell>
+                          <TableCell className="text-center">{coupon.times_redeemed}</TableCell>
                           <TableCell>
                             <Badge variant={status.variant}>
                                 {status.text}
@@ -346,3 +348,5 @@ export default function CouponsPage() {
     </>
   );
 }
+
+    
