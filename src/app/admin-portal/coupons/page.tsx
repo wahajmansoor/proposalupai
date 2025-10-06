@@ -14,10 +14,11 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Trash2, Edit, CalendarIcon } from 'lucide-react';
+import { Loader2, Trash2, Edit, CalendarIcon, ChevronsUpDown, Check } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from '@/components/ui/command';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
@@ -36,6 +37,10 @@ export default function CouponsPage() {
   const [editingCoupon, setEditingCoupon] = useState<CouponWithPromotionCode | null>(null);
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [expiryDate, setExpiryDate] = useState<Date | undefined>(undefined);
+
+  // For customer combobox
+  const [comboboxOpen, setComboboxOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState('all');
 
   const loadData = async () => {
       setIsLoading(true);
@@ -65,6 +70,9 @@ export default function CouponsPage() {
     if (expiryDate) {
         formData.append('redeem_by', expiryDate.toISOString());
     }
+    if (selectedCustomer) {
+        formData.set('customer', selectedCustomer);
+    }
     
     setIsSubmitting(true);
     const result = await createCoupon(formData);
@@ -75,6 +83,7 @@ export default function CouponsPage() {
       setCouponType('percentage');
       setDuration('forever');
       setExpiryDate(undefined);
+      setSelectedCustomer('all');
       await loadData();
     } else {
       toast({ title: 'Error Creating Coupon', description: result.error, variant: 'destructive' });
@@ -150,6 +159,8 @@ export default function CouponsPage() {
         default: return <Badge variant="secondary">Any Plan</Badge>;
     }
   }
+
+  const selectedCustomerName = users.find(u => u.stripeCustomerId === selectedCustomer)?.name || "All Customers";
 
   return (
     <>
@@ -232,17 +243,60 @@ export default function CouponsPage() {
 
                   <div className="space-y-2">
                       <Label htmlFor="customer">Limit to Specific Customer (Optional)</Label>
-                      <Select name="customer" defaultValue="all" disabled={isSubmitting}>
-                          <SelectTrigger><SelectValue/></SelectTrigger>
-                          <SelectContent>
-                              <SelectItem value="all">All Customers</SelectItem>
-                              {users.map(user => (
-                                <SelectItem key={user.id} value={user.stripeCustomerId!}>
-                                    {user.name} ({user.email})
-                                </SelectItem>
-                              ))}
-                          </SelectContent>
-                      </Select>
+                      <Popover open={comboboxOpen} onOpenChange={setComboboxOpen}>
+                        <PopoverTrigger asChild>
+                          <Button
+                            variant="outline"
+                            role="combobox"
+                            aria-expanded={comboboxOpen}
+                            className="w-full justify-between font-normal"
+                            disabled={isSubmitting}
+                          >
+                            <span className="truncate">
+                                {selectedCustomer === 'all'
+                                    ? "Select customer..."
+                                    : users.find(u => u.stripeCustomerId === selectedCustomer)?.name || "Select customer..."}
+                            </span>
+                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
+                          </Button>
+                        </PopoverTrigger>
+                        <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
+                          <Command>
+                            <CommandInput placeholder="Search customer..." />
+                            <CommandList>
+                                <CommandEmpty>No customer found.</CommandEmpty>
+                                <CommandGroup>
+                                <CommandItem
+                                    value="all"
+                                    onSelect={() => {
+                                        setSelectedCustomer('all');
+                                        setComboboxOpen(false);
+                                    }}
+                                >
+                                    <Check className={cn("mr-2 h-4 w-4", selectedCustomer === 'all' ? "opacity-100" : "opacity-0")} />
+                                    All Customers
+                                </CommandItem>
+                                {users.map((user) => (
+                                    <CommandItem
+                                    key={user.id}
+                                    value={user.stripeCustomerId!}
+                                    onSelect={(currentValue) => {
+                                        setSelectedCustomer(currentValue === selectedCustomer ? 'all' : currentValue);
+                                        setComboboxOpen(false);
+                                    }}
+                                    >
+                                    <Check className={cn("mr-2 h-4 w-4", selectedCustomer === user.stripeCustomerId ? "opacity-100" : "opacity-0")} />
+                                    <div className="flex flex-col">
+                                        <span>{user.name}</span>
+                                        <span className="text-xs text-muted-foreground">{user.email}</span>
+                                    </div>
+                                    </CommandItem>
+                                ))}
+                                </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
                   </div>
                   
                   <div className="space-y-2">
