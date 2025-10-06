@@ -10,7 +10,7 @@ import { handlePlanChange, validateCouponAction, createCustomerPortalSession } f
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { ProposalUpLogo } from '@/components/icons';
+import { ProposalUpLogo, ProposalUpLogoLight } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Switch } from '@/components/ui/switch';
@@ -198,7 +198,8 @@ export default function PricingPage() {
   if (authLoading) {
     return (
         <div className="flex items-center justify-center min-h-screen">
-          <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />
+          <ProposalUpLogo className="dark:hidden h-24 w-24 animate-pulse text-primary" />
+          <ProposalUpLogoLight className="hidden dark:block h-24 w-24 animate-pulse text-primary" />
         </div>
       );
   }
@@ -216,7 +217,7 @@ export default function PricingPage() {
 
         {hasFailedPayment && (
             <Card className="w-full max-w-md mb-8 border-destructive bg-destructive/5 text-destructive-foreground">
-                <CardHeader>
+                <CardHeader className="pb-0 md:pb-0">
                     <div className="flex items-center gap-3">
                         <AlertTriangle className="h-6 w-6 text-destructive" />
                         <div>
@@ -226,7 +227,7 @@ export default function PricingPage() {
                     </div>
                 </CardHeader>
                 <CardContent>
-                    <p className="text-sm mb-4">Please update your payment method to reactivate your Pro plan and restore access to all features.</p>
+                    <p className="text-sm text-muted-foreground mb-4">Please update your payment method to reactivate your Pro plan and restore access to all features.</p>
                     <Button onClick={handleManageClick} disabled={isSubmitting} className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90">
                         {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <CreditCard className="mr-2 h-4 w-4"/>}
                         Update Payment Method

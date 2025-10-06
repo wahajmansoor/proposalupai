@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ProposalUpLogo, GoogleIcon } from '@/components/icons';
+import { ProposalUpLogo, ProposalUpLogoLight, GoogleIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { getGoogleAuthUrl } from '@/app/lib/actions';
@@ -120,7 +120,8 @@ export default function LoginPage() {
   if (loading || user) {
      return (
       <div className="flex items-center justify-center min-h-screen">
-        <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />
+        <ProposalUpLogo className="dark:hidden h-24 w-24 animate-pulse text-primary" />
+        <ProposalUpLogoLight className="hidden dark:block h-24 w-24 animate-pulse text-primary" />
       </div>
     );
   }
@@ -206,8 +207,8 @@ export default function LoginPage() {
         <div className="hidden lg:flex flex-col items-center justify-center bg-auth-panel text-white relative">
           <BgPattern />
           <div className="flex flex-col items-center text-center z-10">
-            <Link href="/" className="mb-8">
-              <ProposalUpLogo className="h-20 w-20 text-white" />
+            <Link href="/" className="mb-4">
+              <ProposalUpLogoLight className="h-32 w-32 text-white" />
             </Link>
             <h2 className="text-3xl font-bold mb-2">Proposal Up</h2>
             <p className="text-lg text-white/80 max-w-md">

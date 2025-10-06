@@ -4,7 +4,7 @@
 import { useAuth } from "@/context/auth-context";
 import { useRouter } from "next/navigation";
 import { useEffect } from "react";
-import { ProposalUpLogo } from "@/components/icons";
+import { ProposalUpLogo, ProposalUpLogoLight } from '@/components/icons';
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
 import { SidebarInset } from "@/components/ui/sidebar";
@@ -30,7 +30,8 @@ export default function ProfileLayout({
   if (loading || !user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
-        <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />
+        <ProposalUpLogo className="dark:hidden h-24 w-24 animate-pulse text-primary" />
+        <ProposalUpLogoLight className="hidden dark:block h-24 w-24 animate-pulse text-primary" />
       </div>
     );
   }

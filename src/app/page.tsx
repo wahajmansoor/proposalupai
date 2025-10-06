@@ -4,7 +4,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/auth-context';
-import { ProposalUpLogo } from '@/components/icons';
+import { ProposalUpLogo, ProposalUpLogoLight } from '@/components/icons';
 
 export default function Home() {
   const { user, loading } = useAuth();
@@ -26,7 +26,8 @@ export default function Home() {
   // Show a loading indicator while the auth state is being determined
   return (
     <div className="flex items-center justify-center min-h-screen">
-      <ProposalUpLogo className="h-20 w-20 animate-pulse text-primary" />
+      <ProposalUpLogo className="dark:hidden h-24 w-24 animate-pulse text-primary" />
+      <ProposalUpLogoLight className="hidden dark:block h-24 w-24 animate-pulse text-primary" />
     </div>
   );
 }

@@ -11,24 +11,24 @@ import { SidebarTrigger } from './ui/sidebar';
 export function Header() {
   const { user, userProfile, loading } = useAuth();
 
-  if (!user && !loading) {
-    return (
-       <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur-sm">
-          <div className="container flex h-16 items-center justify-between">
-            <div className="flex gap-1 items-center">
-              <ProposalUpLogo className="h-8 w-8 text-primary" />
-              <h1 className="text-xl font-bold tracking-tight">Proposal Up</h1>
-            </div>
-            <div className="flex items-center gap-2">
-                <ThemeToggle />
-                <Button asChild>
-                    <Link href="/login">Login</Link>
-                </Button>
-            </div>
-          </div>
-       </header>
-    )
-  }
+  // if (!user && !loading) {
+  //   return (
+  //      <header className="sticky top-0 z-30 w-full border-b bg-background/95 backdrop-blur-sm">
+  //         <div className="container flex h-16 items-center justify-between">
+  //           <div className="flex gap-1 items-center">
+  //             <ProposalUpLogo className="h-8 w-8 text-primary" />
+  //             <h1 className="text-xl font-bold tracking-tight">Proposal Up</h1>
+  //           </div>
+  //           <div className="flex items-center gap-2">
+  //               <ThemeToggle />
+  //               <Button asChild>
+  //                   <Link href="/login">Login</Link>
+  //               </Button>
+  //           </div>
+  //         </div>
+  //      </header>
+  //   )
+  // }
 
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur-sm sm:px-6">

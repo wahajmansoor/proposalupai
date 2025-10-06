@@ -26,7 +26,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { Button } from "./ui/button";
-import { ProposalUpLogo } from "./icons";
+import { ProposalUpLogo, ProposalUpLogoLight } from "./icons";
 
 
 const navItems = [
@@ -54,8 +54,9 @@ function SidebarNav() {
   return (
     <>
       <SidebarHeader>
-        <Link href="/dashboard" className="flex items-center gap-2 font-semibold group-data-[collapsible=icon]:justify-center">
-          <ProposalUpLogo className="h-8 w-8 text-primary group-data-[collapsible=icon]:h-12 group-data-[collapsible=icon]:w-12" />
+        <Link href="/dashboard" className="flex items-center gap-0 font-semibold group-data-[collapsible=icon]:justify-center">
+          <ProposalUpLogo className="dark:hidden h-10 w-10 text-primary group-data-[collapsible=icon]:h-12 group-data-[collapsible=icon]:w-12" />
+          <ProposalUpLogoLight className="hidden dark:block h-10 w-10 text-primary group-data-[collapsible=icon]:h-12 group-data-[collapsible=icon]:w-12" />
           <span className="text-2xl font-bold group-data-[collapsible=icon]:hidden">Proposal Up</span>
         </Link>
       </SidebarHeader>

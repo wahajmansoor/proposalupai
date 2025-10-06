@@ -28,10 +28,11 @@ function SubscriptionBadge({ status }: { status: string | null }) {
     return (
         <Badge
             variant={cn({
-                "default": lowerStatus === 'active' || lowerStatus === 'trialing',
+                "default": lowerStatus === 'active',
+                "warning": lowerStatus === 'trialing',
                 "destructive": lowerStatus === 'canceled',
                 "secondary": lowerStatus === 'past_due' || lowerStatus === 'unpaid',
-            }) as "default" | "destructive" | "secondary"}
+            }) as "default" | "destructive" | "secondary" | "warning"}
         >
             {statusText}
         </Badge>
