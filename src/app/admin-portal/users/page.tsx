@@ -32,10 +32,11 @@ function SubscriptionBadge({ status }: { status: string | null }) {
         <Badge
             variant={cn({
                 "default": lowerStatus === 'active',
-                "warning": lowerStatus === 'trialing' || lowerStatus === 'past_due' || lowerStatus === 'unpaid',
+                "trial": lowerStatus === 'trialing',
+                "warning": lowerStatus === 'past_due' || lowerStatus === 'unpaid',
                 "destructive": lowerStatus === 'canceled',
                 "secondary": !['active', 'trialing', 'past_due', 'unpaid', 'canceled'].includes(lowerStatus)
-            }) as "default" | "destructive" | "secondary" | "warning"}
+            }) as "default" | "destructive" | "secondary" | "warning" | "trial"}
         >
             {statusText}
         </Badge>
@@ -112,7 +113,7 @@ export default async function AdminUsersPage() {
                         <SubscriptionBadge status={user.subscriptionStatus} />
                     </TableCell>
                     <TableCell>
-                      {user.createdAt ? format(new Date(user.createdAt), "MMM d, yyyy") : "N/A"}
+                      {user.createdAt ? format(new Date(user.createdAt), "MMM d, yyyy") : "NA"}
                     </TableCell>
                     <TableCell className="text-center">{user.proposalCount}</TableCell>
                     <TableCell className="text-right">
