@@ -5,6 +5,7 @@ import { stripe } from "@/lib/stripe/config";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import type Stripe from "stripe";
+import { getUsers } from "../users/actions";
 
 export interface CouponWithPromotionCode extends Stripe.Coupon {
     promotion_code: string;
@@ -25,6 +26,7 @@ const couponFormSchema = z.object({
   applies_to: z.enum(['any', 'monthly', 'yearly']).default('any'),
   max_redemptions: z.string().optional(),
   redeem_by: z.string().optional(),
+  customer: z.string().optional(),
 }).superRefine((data, ctx) => {
     if (data.type === 'percentage') {
         const percent = Number(data.percent_off);
@@ -62,7 +64,7 @@ const couponFormSchema = z.object({
 export async function getCoupons(): Promise<CouponWithPromotionCode[]> {
   try {
     const [coupons, promoCodes] = await Promise.all([
-        stripe.coupons.list({ limit: 100 }),
+        stripe.coupons.list({ limit: 100, expand: ['data.applies_to'] }),
         stripe.promotionCodes.list({ limit: 100, active: true })
     ]);
 
@@ -102,7 +104,7 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
     return { success: false, error: firstError || "Invalid form data." };
   }
   
-  const { code, type, duration, applies_to } = validatedFields.data;
+  const { code, type, duration, applies_to, customer } = validatedFields.data;
   const percent_off = validatedFields.data.percent_off ? Number(validatedFields.data.percent_off) : undefined;
   const amount_off = validatedFields.data.amount_off ? Number(validatedFields.data.amount_off) : undefined;
   const duration_in_months = validatedFields.data.duration_in_months ? Number(validatedFields.data.duration_in_months) : undefined;
@@ -130,22 +132,28 @@ export async function createCoupon(formData: FormData): Promise<{ success: boole
     if (duration === "repeating" && duration_in_months) {
       couponParams.duration_in_months = duration_in_months;
     }
-
-    if (max_redemptions) {
-        couponParams.max_redemptions = max_redemptions;
-    }
-
-    if (redeem_by) {
-        couponParams.redeem_by = redeem_by;
-    }
     
     const coupon = await stripe.coupons.create(couponParams);
     createdCouponId = coupon.id;
 
-    await stripe.promotionCodes.create({
-      coupon: coupon.id,
-      code: code,
-    });
+    const promoCodeParams: Stripe.PromotionCodeCreateParams = {
+        coupon: coupon.id,
+        code: code,
+    };
+    
+    if (max_redemptions) {
+        promoCodeParams.max_redemptions = max_redemptions;
+    }
+
+    if (redeem_by) {
+        promoCodeParams.expires_at = redeem_by;
+    }
+
+    if (customer && customer !== 'all') {
+        promoCodeParams.customer = customer;
+    }
+
+    await stripe.promotionCodes.create(promoCodeParams);
     
     revalidatePath('/admin-portal/coupons');
     return { success: true };

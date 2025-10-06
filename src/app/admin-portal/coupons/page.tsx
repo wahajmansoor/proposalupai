@@ -4,6 +4,7 @@
 import { useState, useEffect } from 'react';
 import type Stripe from 'stripe';
 import { getCoupons, createCoupon, deleteCoupon, updateCoupon, CouponWithPromotionCode } from './actions';
+import { AppUser, getUsers } from '../users/actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -23,6 +24,7 @@ import { format } from 'date-fns';
 
 export default function CouponsPage() {
   const [coupons, setCoupons] = useState<CouponWithPromotionCode[]>([]);
+  const [users, setUsers] = useState<AppUser[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [couponType, setCouponType] = useState('percentage');
@@ -35,11 +37,16 @@ export default function CouponsPage() {
   const [isSavingEdit, setIsSavingEdit] = useState(false);
   const [expiryDate, setExpiryDate] = useState<Date | undefined>(undefined);
 
-  const loadCoupons = async () => {
+  const loadData = async () => {
       setIsLoading(true);
+      setFetchError(null);
       try {
-        const fetchedCoupons = await getCoupons();
+        const [fetchedCoupons, fetchedUsers] = await Promise.all([
+            getCoupons(),
+            getUsers()
+        ]);
         setCoupons(fetchedCoupons);
+        setUsers(fetchedUsers.filter(u => u.stripeCustomerId)); // Only include users with a stripe ID
       } catch (error: any) {
         setFetchError(error.message);
       } finally {
@@ -48,7 +55,7 @@ export default function CouponsPage() {
     }
 
   useEffect(() => {
-    loadCoupons();
+    loadData();
   }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
@@ -68,7 +75,7 @@ export default function CouponsPage() {
       setCouponType('percentage');
       setDuration('forever');
       setExpiryDate(undefined);
-      await loadCoupons();
+      await loadData();
     } else {
       toast({ title: 'Error Creating Coupon', description: result.error, variant: 'destructive' });
     }
@@ -79,7 +86,7 @@ export default function CouponsPage() {
     const result = await deleteCoupon(couponId);
     if(result.success) {
         toast({ title: 'Coupon Deleted', description: 'The coupon has been deleted.' });
-        await loadCoupons();
+        await loadData();
     } else {
         toast({ title: 'Error Deleting Coupon', description: result.error, variant: 'destructive' });
     }
@@ -97,7 +104,7 @@ export default function CouponsPage() {
         toast({ title: 'Coupon Updated', description: 'The coupon has been successfully updated.' });
         setIsEditDialogOpen(false);
         setEditingCoupon(null);
-        await loadCoupons();
+        await loadData();
     } else {
         toast({ title: 'Error', description: result.error, variant: 'destructive' });
     }
@@ -219,6 +226,21 @@ export default function CouponsPage() {
                               <SelectItem value="any">Any Plan</SelectItem>
                               <SelectItem value="monthly">Monthly Plan Only</SelectItem>
                               <SelectItem value="yearly">Yearly Plan Only</SelectItem>
+                          </SelectContent>
+                      </Select>
+                  </div>
+
+                  <div className="space-y-2">
+                      <Label htmlFor="customer">Limit to Specific Customer (Optional)</Label>
+                      <Select name="customer" defaultValue="all" disabled={isSubmitting}>
+                          <SelectTrigger><SelectValue/></SelectTrigger>
+                          <SelectContent>
+                              <SelectItem value="all">All Customers</SelectItem>
+                              {users.map(user => (
+                                <SelectItem key={user.id} value={user.stripeCustomerId!}>
+                                    {user.name} ({user.email})
+                                </SelectItem>
+                              ))}
                           </SelectContent>
                       </Select>
                   </div>
