@@ -19,7 +19,7 @@ function getInitials(name: string | null | undefined) {
 
 function SubscriptionBadge({ status }: { status: string | null }) {
     if (!status || status === 'N/A' || status === 'No Record') {
-        return <Badge variant="outline">{status || 'Unknown'}</Badge>;
+        return <Badge variant="secondary">{status || 'Unknown'}</Badge>;
     }
     const lowerStatus = status.toLowerCase();
     
