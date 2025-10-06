@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 function getInitials(name: string | null | undefined) {
   if (!name) return "U";
@@ -17,6 +18,32 @@ function getInitials(name: string | null | undefined) {
     return `${names[0][0]}${names[names.length - 1][0]}`;
   }
   return name.substring(0, 2).toUpperCase();
+}
+
+function SubscriptionBadge({ status }: { status: string | null }) {
+    if (!status || status === 'N/A' || status === 'No Record') {
+        return <Badge variant="secondary">{status || 'Unknown'}</Badge>;
+    }
+    const lowerStatus = status.toLowerCase();
+    
+    let statusText = status.charAt(0).toUpperCase() + status.slice(1);
+    if (lowerStatus === 'past_due' || lowerStatus === 'unpaid') {
+      statusText = 'Payment Due';
+    }
+
+    return (
+        <Badge
+            variant={cn({
+                "default": lowerStatus === 'active',
+                "trial": lowerStatus === 'trialing',
+                "warning": lowerStatus === 'past_due' || lowerStatus === 'unpaid',
+                "destructive": lowerStatus === 'canceled',
+                "secondary": !['active', 'trialing', 'past_due', 'unpaid', 'canceled'].includes(lowerStatus)
+            }) as "default" | "destructive" | "secondary" | "warning" | "trial"}
+        >
+            {statusText}
+        </Badge>
+    );
 }
 
 export default async function AdminDashboardPage() {
@@ -112,6 +139,7 @@ export default async function AdminDashboardPage() {
                           <TableHead>User</TableHead>
                           <TableHead>Email</TableHead>
                           <TableHead>Plan</TableHead>
+                          <TableHead>Status</TableHead>
                           <TableHead className="text-right">Time</TableHead>
                       </TableRow>
                   </TableHeader>
@@ -128,11 +156,16 @@ export default async function AdminDashboardPage() {
                               </TableCell>
                               <TableCell>{user.email}</TableCell>
                               <TableCell>
-                                  {user.subscriptionStatus === 'active' ? (
-                                      <Badge>Pro {user.subscriptionInterval}</Badge>
+                                  {user.subscriptionInterval ? (
+                                      <Badge variant="outline">
+                                          Pro {user.subscriptionInterval === 'month' ? 'Monthly' : 'Yearly'}
+                                      </Badge>
                                   ) : (
-                                      <Badge variant="outline">{user.subscriptionStatus || 'N/A'}</Badge>
+                                      <Badge variant="outline">N/A</Badge>
                                   )}
+                              </TableCell>
+                              <TableCell>
+                                <SubscriptionBadge status={user.subscriptionStatus} />
                               </TableCell>
                               <TableCell className="text-right">
                                   {user.createdAt ? formatDistanceToNow(new Date(user.createdAt), { addSuffix: true }) : 'N/A'}
