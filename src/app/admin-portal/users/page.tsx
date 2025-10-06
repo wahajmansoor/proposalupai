@@ -107,7 +107,9 @@ export default async function AdminUsersPage() {
                             <Badge variant="outline">
                                 Pro {user.subscriptionInterval === 'month' ? 'Monthly' : 'Yearly'}
                             </Badge>
-                        ) : "N/A"}
+                        ) : (
+                            <Badge variant="outline">N/A</Badge>
+                        )}
                     </TableCell>
                     <TableCell>
                         <SubscriptionBadge status={user.subscriptionStatus} />
