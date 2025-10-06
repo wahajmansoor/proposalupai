@@ -23,15 +23,18 @@ function SubscriptionBadge({ status }: { status: string | null }) {
     }
     const lowerStatus = status.toLowerCase();
     
-    const statusText = status.charAt(0).toUpperCase() + status.slice(1);
-    
+    let statusText = status.charAt(0).toUpperCase() + status.slice(1);
+    if (lowerStatus === 'past_due' || lowerStatus === 'unpaid') {
+      statusText = 'Payment Due';
+    }
+
     return (
         <Badge
             variant={cn({
                 "default": lowerStatus === 'active',
-                "warning": lowerStatus === 'trialing',
+                "warning": lowerStatus === 'trialing' || lowerStatus === 'past_due' || lowerStatus === 'unpaid',
                 "destructive": lowerStatus === 'canceled',
-                "secondary": lowerStatus === 'past_due' || lowerStatus === 'unpaid',
+                "secondary": !['active', 'trialing', 'past_due', 'unpaid', 'canceled'].includes(lowerStatus)
             }) as "default" | "destructive" | "secondary" | "warning"}
         >
             {statusText}
