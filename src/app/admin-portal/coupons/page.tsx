@@ -278,9 +278,9 @@ export default function CouponsPage() {
                                 </CommandItem>
                                 {users.map((user) => (
                                     <CommandItem
-                                    key={user.id}
+                                    key={user.stripeCustomerId}
                                     value={user.stripeCustomerId!}
-                                    onSelect={(currentValue) => {
+                                    onSelect={() => {
                                       setSelectedCustomer(user.stripeCustomerId === selectedCustomer ? 'all' : user.stripeCustomerId!);
                                       setComboboxOpen(false);
                                     }}
@@ -478,5 +478,3 @@ export default function CouponsPage() {
     </>
   );
 }
-
-    
