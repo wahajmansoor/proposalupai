@@ -1,3 +1,4 @@
+
 import type { Metadata } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
@@ -20,15 +21,15 @@ export const metadata: Metadata = {
   icons: [
     {
       rel: 'icon',
-      url: '/icon-light.svg',
+      url: '/favicon-light.ico',
       media: '(prefers-color-scheme: light)',
-      type: 'image/svg+xml',
+      type: 'image/x-icon',
     },
     {
       rel: 'icon',
-      url: '/icon-dark.svg',
+      url: '/favicon-dark.ico',
       media: '(prefers-color-scheme: dark)',
-      type: 'image/svg+xml',
+      type: 'image/x-icon',
     },
   ],
 };
