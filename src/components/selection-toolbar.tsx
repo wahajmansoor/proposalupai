@@ -111,13 +111,13 @@ export function SelectionToolbar({ position, selectedText, fullProposal, onImpro
     }
   };
   
-  const presetInstructions = ["Make it more concise", "Make it more detailed", "Make it more professional", "Make it more informal"];
+  const presetInstructions = ["Make concise", "Make detailed", "More professional", "More informal"];
 
   return (
     <div
       ref={toolbarRef}
       data-selection-toolbar="true"
-      className="absolute z-10 w-96 rounded-lg border bg-popover text-popover-foreground shadow-lg p-4"
+      className="absolute z-10 w-auto min-w-[400px] rounded-lg border bg-popover text-popover-foreground shadow-lg p-4"
       style={{ top: position.top, left: position.left, maxWidth: 'calc(100vw - 32px)' }}
       onMouseDown={(e) => e.stopPropagation()} // Prevent closing when clicking inside
     >
@@ -168,3 +168,5 @@ export function SelectionToolbar({ position, selectedText, fullProposal, onImpro
     </div>
   );
 }
+
+    

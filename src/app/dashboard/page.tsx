@@ -637,7 +637,7 @@ function DashboardContent() {
       const containerRect = proposalContentEl.getBoundingClientRect();
       setSelectionToolbar({
         top: rect.bottom - containerRect.top + proposalContentEl.scrollTop + 8,
-        left: rect.left - containerRect.left + proposalContentEl.scrollLeft + (rect.width / 2) - 160, // center the toolbar
+        left: rect.left - containerRect.left + proposalContentEl.scrollLeft + (rect.width / 2) - 200, // center the toolbar
         width: rect.width,
         text: selection.toString(),
       });
@@ -1208,7 +1208,7 @@ function DashboardContent() {
                 {clientQuestions.filter(q => q.answer).map(q => (
                   <div key={q.id} className="prose prose-sm max-w-none">
                     <p className="font-semibold text-gray-800">{q.question}</p>
-                    <p className="text-gray-600 whitespace-pre-wrap">{q.answer}</p>
+                    <div className="text-gray-600 whitespace-pre-wrap">{q.answer}</div>
                   </div>
                 ))}
               </CardContent>
@@ -1314,3 +1314,5 @@ export default function DashboardPage() {
         </Suspense>
     )
 }
+
+    

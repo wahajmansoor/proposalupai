@@ -26,9 +26,11 @@ export async function improveProposal(
 ): Promise<ImproveProposalOutput> {
   const prompt = `${input.instruction}
 
-Your output should ONLY be the rewritten text. Do not add any commentary, explanation, or markdown formatting like \`\`\`.
-If you are rewriting a selection from a larger text, only output the new version of that selection.
-If the instruction is to remove or delete the text, you MUST output an empty string.
+**CRITICAL INSTRUCTIONS:**
+1.  Your output should ONLY be the rewritten text. Do not add any commentary, explanation, or markdown formatting like \`\`\`.
+2.  Preserve all original line breaks and paragraph spacing unless the instruction is specifically about formatting.
+3.  If the instruction is to remove or delete the text, you MUST output an empty string.
+4.  Try to adhere to the word count of the original selection unless instructed otherwise.
 `;
 
   const completion = await openai.chat.completions.create({
@@ -47,3 +49,5 @@ If the instruction is to remove or delete the text, you MUST output an empty str
 
   return { improvedProposal: cleanedProposal };
 }
+
+    
