@@ -266,7 +266,7 @@ export default function CouponsPage() {
                                     <CommandGroup>
                                         <CommandItem
                                             key="all-customers"
-                                            value="All Customers"
+                                            value="all-customers"
                                             onSelect={() => {
                                                 setSelectedCustomer('all');
                                                 setComboboxOpen(false);
