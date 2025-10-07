@@ -11,13 +11,14 @@ import { useToast } from '@/hooks/use-toast';
 interface SelectionToolbarProps {
   position: { top: number; left: number; width: number };
   selectedText: string;
+  fullProposal: string;
   onImprovement: (improvedText: string) => void;
   onClose: () => void;
   usageCount: number;
   usageLimit: number;
 }
 
-export function SelectionToolbar({ position, selectedText, onImprovement, onClose, usageCount, usageLimit }: SelectionToolbarProps) {
+export function SelectionToolbar({ position, selectedText, fullProposal, onImprovement, onClose, usageCount, usageLimit }: SelectionToolbarProps) {
   const [instruction, setInstruction] = useState('');
   const [isImproving, setIsImproving] = useState(false);
   const [processingPreset, setProcessingPreset] = useState<string | null>(null);
@@ -29,12 +30,28 @@ export function SelectionToolbar({ position, selectedText, onImprovement, onClos
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (toolbarRef.current && !toolbarRef.current.contains(event.target as Node)) {
-        onClose();
+        // Only close if the click is outside the proposal content area as well
+        if (!(event.target as HTMLElement).closest('.prose')) {
+            onClose();
+        }
       }
     };
+    
+    const handleMouseUp = (event: MouseEvent) => {
+         if (toolbarRef.current && toolbarRef.current.contains(event.target as Node)) {
+            return;
+         }
+         const selection = window.getSelection();
+         if (!selection || selection.toString().trim() === '') {
+             onClose();
+         }
+    }
+
     document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('mouseup', handleMouseUp);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('mouseup', handleMouseUp);
     };
   }, [onClose]);
 
@@ -56,9 +73,28 @@ export function SelectionToolbar({ position, selectedText, onImprovement, onClos
     }
     
     try {
+      // Provide the full proposal as context for better edits
+      const contextualPrompt = `Given the following full proposal as context, rewrite the highlighted part based on my instruction.
+      If the instruction is to remove or delete the text, then you MUST output an empty string.
+
+      **Full Proposal Context:**
+      ${fullProposal}
+      
+      ---
+
+      **Highlighted Part to Edit:**
+      ${selectedText}
+      
+      ---
+      
+      **My Instruction:** "${prompt}"
+
+      Your output should ONLY be the rewritten version of the highlighted part.
+      `;
+
       const result = await improveProposalAction({
-        proposal: selectedText,
-        instruction: prompt,
+        proposal: selectedText, // The AI will still see this as the primary text to change
+        instruction: contextualPrompt, // But the instruction gives it full context
       });
 
       if (result.error) {
@@ -81,8 +117,9 @@ export function SelectionToolbar({ position, selectedText, onImprovement, onClos
     <div
       ref={toolbarRef}
       data-selection-toolbar="true"
-      className="absolute z-10 w-80 rounded-lg border bg-popover text-popover-foreground shadow-lg p-4"
-      style={{ top: position.top, left: position.left }}
+      className="absolute z-10 w-96 rounded-lg border bg-popover text-popover-foreground shadow-lg p-4"
+      style={{ top: position.top, left: position.left, maxWidth: 'calc(100vw - 32px)' }}
+      onMouseDown={(e) => e.stopPropagation()} // Prevent closing when clicking inside
     >
         {isLimitReached ? (
             <p className="text-sm text-destructive-foreground text-center bg-destructive/80 p-2 rounded-md">Improvement limit reached.</p>
@@ -93,7 +130,7 @@ export function SelectionToolbar({ position, selectedText, onImprovement, onClos
                     <p className="text-sm font-medium text-popover-foreground">Ask Genie to make selected part... ({usageCount}/{usageLimit})</p>
                 </div>
                 <div className="flex flex-nowrap gap-2 mb-3">
-                    {presetInstructions.map(preset => (
+                    {presetInstructions.map((preset, index) => (
                         <Button 
                             key={preset}
                             size="sm"

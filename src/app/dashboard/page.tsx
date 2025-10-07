@@ -536,9 +536,9 @@ function DashboardContent() {
     } else if (result.data) {
         setGeneratedProposal(result.data.proposal);
         setImprovementHistory([]); // Reset history for new proposal
+        setCurrentImprovementIndex(0);
         setIsOriginalProposalSaved(false);
         setIsImprovedProposalSaved(false);
-        setInlineImprovementCount(0);
     }
     setIsGenerating(false);
   };
@@ -1096,6 +1096,7 @@ function DashboardContent() {
                   <SelectionToolbar
                     position={selectionToolbar}
                     selectedText={selectionToolbar.text}
+                    fullProposal={improvementHistory[currentImprovementIndex] ?? generatedProposal}
                     onImprovement={handleInlineImprovement}
                     onClose={() => setSelectionToolbar(null)}
                     usageCount={inlineImprovementCount}
