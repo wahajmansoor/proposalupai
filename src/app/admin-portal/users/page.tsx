@@ -1,5 +1,4 @@
 
-
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -57,6 +56,16 @@ function SubscriptionBadge({ status }: { status: string | null }) {
 }
 
 type SortKey = 'name' | 'email' | 'createdAt' | 'proposalCount';
+type StatusFilter = 'all' | 'trialing' | 'active' | 'payment_due' | 'canceled' | 'na';
+
+const filterOptions: { label: string, value: StatusFilter }[] = [
+    { label: 'All Users', value: 'all' },
+    { label: 'Trialing', value: 'trialing' },
+    { label: 'Active', value: 'active' },
+    { label: 'Payment Due', value: 'payment_due' },
+    { label: 'Canceled', value: 'canceled' },
+    { label: 'N/A', value: 'na' },
+];
 
 export default function AdminUsersPage() {
   const [users, setUsers] = useState<AppUser[]>([]);
@@ -64,6 +73,7 @@ export default function AdminUsersPage() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [sortConfig, setSortConfig] = useState<{ key: SortKey, direction: 'ascending' | 'descending' } | null>({ key: 'createdAt', direction: 'descending' });
+  const [statusFilter, setStatusFilter] = useState<StatusFilter>('all');
   
   const [currentPage, setCurrentPage] = useState(1);
   const usersPerPage = 10;
@@ -91,6 +101,20 @@ export default function AdminUsersPage() {
         (user.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
     );
 
+    if (statusFilter !== 'all') {
+      filtered = filtered.filter(user => {
+        const status = user.subscriptionStatus?.toLowerCase() || 'na';
+        switch (statusFilter) {
+          case 'trialing': return status === 'trialing';
+          case 'active': return status === 'active';
+          case 'payment_due': return status === 'past_due' || status === 'unpaid';
+          case 'canceled': return status === 'canceled';
+          case 'na': return status === 'n/a' || status === 'no record' || status === 'na';
+          default: return true;
+        }
+      });
+    }
+
     if (sortConfig !== null) {
       filtered.sort((a, b) => {
         const aValue = a[sortConfig.key];
@@ -109,7 +133,7 @@ export default function AdminUsersPage() {
       });
     }
     return filtered;
-  }, [users, searchTerm, sortConfig]);
+  }, [users, searchTerm, sortConfig, statusFilter]);
 
   const requestSort = (key: SortKey) => {
     let direction: 'ascending' | 'descending' = 'ascending';
@@ -164,6 +188,22 @@ export default function AdminUsersPage() {
           </div>
         </CardHeader>
         <CardContent>
+            <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-2">
+                {filterOptions.map(option => (
+                    <Button 
+                        key={option.value}
+                        variant={statusFilter === option.value ? 'default' : 'outline'}
+                        size="sm"
+                        onClick={() => {
+                            setStatusFilter(option.value);
+                            setCurrentPage(1);
+                        }}
+                        className="shrink-0"
+                    >
+                        {option.label}
+                    </Button>
+                ))}
+            </div>
           {isLoading ? (
              <div className="flex justify-center items-center h-64">
                 <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
@@ -260,7 +300,7 @@ export default function AdminUsersPage() {
             </TooltipProvider>
              {currentUsers.length === 0 && (
                 <p className="text-center text-muted-foreground py-12">
-                    No users match your search.
+                    No users match your search or filter criteria.
                 </p>
              )}
             </>
@@ -270,7 +310,7 @@ export default function AdminUsersPage() {
             <CardFooter>
                 <div className="flex justify-between items-center w-full">
                     <span className="text-sm text-muted-foreground">
-                        Page {currentPage} of {totalPages}
+                        Showing {indexOfFirstUser + 1} - {Math.min(indexOfLastUser, sortedAndFilteredUsers.length)} of {sortedAndFilteredUsers.length} users
                     </span>
                     <div className="flex gap-2">
                         <Button
@@ -296,4 +336,5 @@ export default function AdminUsersPage() {
       </Card>
     </div>
   );
-}
+
+    
