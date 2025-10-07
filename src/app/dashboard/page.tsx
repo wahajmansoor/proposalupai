@@ -140,6 +140,8 @@ function DashboardContent() {
 
   const [isSaving, setIsSaving] = useState(false);
   const [isSavingImproved, setIsSavingImproved] = useState(false);
+  const [isOriginalProposalSaved, setIsOriginalProposalSaved] = useState(false);
+  const [isImprovedProposalSaved, setIsImprovedProposalSaved] = useState(false);
 
   const summaryTextareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -270,6 +272,8 @@ function DashboardContent() {
     setCurrentImprovementIndex(0);
     setSuggestion(null);
     setAnswersGenerated(false);
+    setIsOriginalProposalSaved(false);
+    setIsImprovedProposalSaved(false);
     toast({ title: 'Form Cleared', description: 'You can now start a new proposal.' });
   };
 
@@ -521,6 +525,8 @@ function DashboardContent() {
     } else if (result.data) {
         setGeneratedProposal(result.data.proposal);
         setImprovementHistory([]); // Reset history for new proposal
+        setIsOriginalProposalSaved(false);
+        setIsImprovedProposalSaved(false);
     }
     setIsGenerating(false);
   };
@@ -552,6 +558,7 @@ function DashboardContent() {
       const newHistory = [...improvementHistory, result.data.improvedProposal];
       setImprovementHistory(newHistory);
       setCurrentImprovementIndex(newHistory.length - 1);
+      setIsImprovedProposalSaved(false);
       toast({ title: 'Proposal Improved!', description: 'The improved version is ready below.' });
     }
     setIsImproving(false);
@@ -575,13 +582,18 @@ function DashboardContent() {
     try {
       await addSavedProposal(user.uid, projectDetails.projectTitle.trim(), proposalContent);
       toast({ title: 'Proposal Saved!', description: 'You can view it on the Saved Proposals page.' });
+      if (isSavingOriginal) {
+        setIsOriginalProposalSaved(true);
+      } else {
+        setIsImprovedProposalSaved(true);
+      }
     } catch (error: any) {
       toast({ title: 'Error Saving Proposal', description: error.message || 'Failed to save proposal.', variant: 'destructive' });
     } finally {
       if (isSavingOriginal) {
         setIsSaving(false);
       } else {
-        setIsSavingImproved(true);
+        setIsSavingImproved(false);
       }
     }
   };
@@ -987,9 +999,9 @@ function DashboardContent() {
                 )}
               </div>
               <div className="flex items-center gap-1">
-                  <Button variant="outline" size="sm" onClick={() => handleSaveProposal(generatedProposal)} disabled={!generatedProposal || isSaving}>
+                  <Button variant="outline" size="sm" onClick={() => handleSaveProposal(generatedProposal)} disabled={!generatedProposal || isSaving || isOriginalProposalSaved}>
                       {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
-                      Save
+                      {isOriginalProposalSaved ? 'Saved' : 'Save'}
                   </Button>
                   <Button variant="outline" size="sm" onClick={() => copyToClipboard(generatedProposal)} disabled={!generatedProposal}>
                       <Clipboard className="mr-2 h-4 w-4" /> Copy
@@ -1060,9 +1072,9 @@ function DashboardContent() {
                      )}
                    </div>
                   <div className="flex items-center gap-1">
-                    <Button variant="outline" size="sm" onClick={() => handleSaveProposal(displayedImprovedProposal)} disabled={!displayedImprovedProposal || isSavingImproved}>
+                    <Button variant="outline" size="sm" onClick={() => handleSaveProposal(displayedImprovedProposal)} disabled={!displayedImprovedProposal || isSavingImproved || isImprovedProposalSaved}>
                         {isSavingImproved ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
-                        Save
+                        {isImprovedProposalSaved ? 'Saved' : 'Save'}
                     </Button>
                     <Button variant="outline" size="sm" onClick={() => copyToClipboard(displayedImprovedProposal)}>
                       <Clipboard className="mr-2 h-4 w-4" /> Copy
