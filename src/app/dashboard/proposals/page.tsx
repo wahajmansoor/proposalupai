@@ -259,7 +259,7 @@ export default function SavedProposalsPage() {
                             </div>
                         </CardHeader>
                         <CardContent>
-                            <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap border-t pt-4">
+                            <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap border-t pt-4">
                               {proposal.content}
                             </div>
                         </CardContent>
