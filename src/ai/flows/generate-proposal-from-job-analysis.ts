@@ -96,8 +96,8 @@ export async function generateProposal(
     3.  Follow this with a paragraph break (a single \n).
     4.  Write a SHORT, natural-sounding paragraph (2-3 sentences) based on this idea, intelligently replacing placeholders like [SKILLSET] with information from the job summary and user profile: "Your project sounds exciting, and I understand how tough it can be to find the right [SKILLSET] specialist, someone reliable, motivated, and ready to get the job done right from the start."
     5.  Write another SHORT, punchy paragraph based on this idea: "Unlike others who juggle too many clients and go quiet for days, I focus on a smaller, select group of clients. This allows me to work closely with you, ensuring we achieve the results you want without unnecessary stress."
-    6.  **FINAL CTA & SIGN-OFF:** End the proposal by intelligently integrating the closing phrase "${input.closingCta}" into a complete, natural-sounding final sentence. After that sentence, add a single line break (\n) and then, if provided, write the sign-off phrase: "${input.closingCta2}".
-    7.  **SIGNATURE:** After the sign-off phrase, add one line break and then write the user's name: "${input.userName}".
+    6.  **FINAL CTA & SIGN-OFF:** Create a natural-sounding final sentence based on the idea of "${input.closingCta}". Then, on a new line, write the sign-off phrase "${input.closingCta2}" if it's provided.
+    7.  **SIGNATURE:** After the sign-off phrase, add ONE line break and then write the user's name: "${input.userName}".
 `;
   }
 
@@ -110,7 +110,8 @@ export async function generateProposal(
     } else {
       prompt += `    - **OPENING PARAGRAPH:** Create a powerful, client-focused opening paragraph that immediately addresses their core need. This should be followed by a single line break (\n).\n`
     }
-    prompt += `    - **BODY & PROJECT APPROACH:** The main body must be broken into multiple SHORT paragraphs (2-3 sentences each). It must show a clear understanding of the project. Based on the job summary, briefly outline a simple, logical plan for how you will tackle the project to show the client you have a process. Weave one or two short, smart questions about the job into the body paragraphs to show engagement and encourage a reply.
+    prompt += `    - **BODY & PROJECT APPROACH:** The main body must be broken into multiple SHORT paragraphs (2-3 sentences each). It must show a clear understanding of the project. Based on the job summary, briefly outline a simple, logical plan for how you will tackle the project to show the client you have a process.
+    - **QUESTIONS:** If you include questions, introduce them naturally with a phrase like, "I have a couple of quick questions to ensure we're on the same page:".
 `;
     if (hasAnyLinks) {
       prompt += `    - **PORTFOLIO:** Introduce the links naturally with a full sentence (e.g., "Here is some of my past work that is relevant to your project:"). Then, list ALL of the following links, with each link on a new line.\n`;
@@ -121,8 +122,8 @@ export async function generateProposal(
           prompt += `${formatLinks(input.manualLinks)}\n`;
       }
     }
-    prompt += `    - **FINAL CTA & SIGN-OFF:** End the proposal by intelligently integrating the closing phrase "${input.closingCta}" into a complete, natural-sounding final sentence. After that sentence, add a single line break (\n) and then, if provided, write the sign-off phrase: "${input.closingCta2}".\n`;
-    prompt += `    - **SIGNATURE:** After the sign-off phrase, add one line break and then write the user's name: "${input.userName}".\n`;
+    prompt += `    - **FINAL CTA & SIGN-OFF:** Create a natural-sounding final sentence based on the idea of "${input.closingCta}". Then, on a new line, write the sign-off phrase "${input.closingCta2}" if it's provided.\n`;
+    prompt += `    - **SIGNATURE:** After the sign-off phrase, add ONE line break and then write the user's name: "${input.userName}".\n`;
   }
 
   if (input.wordLimit) {
