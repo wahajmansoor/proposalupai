@@ -269,10 +269,9 @@ export default function CouponsPage() {
                                     <CommandEmpty>No customer found.</CommandEmpty>
                                     <CommandGroup>
                                         <CommandItem
-                                            value="All Customers"
-                                            onSelect={(currentValue) => {
+                                            value="all-customers"
+                                            onSelect={() => {
                                                 setSelectedCustomer('all');
-                                                setSelectedValue(currentValue);
                                                 setComboboxOpen(false);
                                             }}
                                         >
@@ -288,7 +287,6 @@ export default function CouponsPage() {
                                                 if (selectedUser) {
                                                     setSelectedCustomer(selectedUser.stripeCustomerId!);
                                                 }
-                                                setSelectedValue(currentValue);
                                                 setComboboxOpen(false);
                                               }}
                                             >
@@ -485,3 +483,5 @@ export default function CouponsPage() {
     </>
   );
 }
+
+    
