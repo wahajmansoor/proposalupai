@@ -95,6 +95,28 @@ export default function AdminUsersPage() {
     fetchUsers();
   }, [fetchUsers]);
   
+  const statusCounts = useMemo(() => {
+    const counts: Record<StatusFilter, number> = {
+      all: users.length,
+      trialing: 0,
+      active: 0,
+      payment_due: 0,
+      canceled: 0,
+      na: 0,
+    };
+
+    for (const user of users) {
+      const status = user.subscriptionStatus?.toLowerCase() || 'na';
+      if (status === 'trialing') counts.trialing++;
+      else if (status === 'active') counts.active++;
+      else if (status === 'past_due' || status === 'unpaid') counts.payment_due++;
+      else if (status === 'canceled') counts.canceled++;
+      else if (status === 'n/a' || status === 'no record' || status === 'na') counts.na++;
+    }
+    return counts;
+  }, [users]);
+
+
   const sortedAndFilteredUsers = useMemo(() => {
     let filtered = users.filter(user => 
         (user.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
@@ -201,6 +223,7 @@ export default function AdminUsersPage() {
                         className="shrink-0"
                     >
                         {option.label}
+                        <Badge variant="secondary" className="ml-2">{statusCounts[option.value]}</Badge>
                     </Button>
                 ))}
             </div>
@@ -337,3 +360,5 @@ export default function AdminUsersPage() {
     </div>
   );
 }
+
+    
