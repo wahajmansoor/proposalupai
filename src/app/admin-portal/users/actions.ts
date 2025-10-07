@@ -6,6 +6,18 @@ import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { stripe } from "@/lib/stripe/config";
 
+// Mock country data for demonstration
+const mockCountries = [
+    { code: 'US', name: 'United States' },
+    { code: 'CA', name: 'Canada' },
+    { code: 'GB', name: 'United Kingdom' },
+    { code: 'AU', name: 'Australia' },
+    { code: 'DE', name: 'Germany' },
+    { code: 'IN', name: 'India' },
+    { code: 'BR', name: 'Brazil' },
+    { code: 'PK', name: 'Pakistan' },
+];
+
 export interface AppUser {
   id: string;
   name: string | null;
@@ -15,6 +27,7 @@ export interface AppUser {
   subscriptionInterval: 'month' | 'year' | null;
   createdAt: string | null; // Changed to string for serialization
   stripeCustomerId: string | null;
+  country?: { code: string; name: string };
 }
 
 export async function getUsers(): Promise<AppUser[]> {
@@ -25,10 +38,13 @@ export async function getUsers(): Promise<AppUser[]> {
     const listUsersResult = await adminAuth.listUsers(1000); // max 1000 per request
     const authUsers = listUsersResult.users;
 
-    const userPromises = authUsers.map(async (user) => {
+    const userPromises = authUsers.map(async (user, index) => {
       const userDocRef = adminDb.collection('users').doc(user.uid);
       const userDoc = await userDocRef.get();
       
+      // Simulate country data
+      const country = mockCountries[index % mockCountries.length];
+
       if (userDoc.exists) {
         const userData = userDoc.data();
         // Convert timestamp to ISO string for safe serialization
@@ -42,6 +58,7 @@ export async function getUsers(): Promise<AppUser[]> {
           subscriptionInterval: userData?.subscriptionInterval || null,
           createdAt: createdAt,
           stripeCustomerId: userData?.stripeCustomerId || null,
+          country: country,
         };
       } else {
         // Fallback for users who might exist in Auth but not Firestore
@@ -54,6 +71,7 @@ export async function getUsers(): Promise<AppUser[]> {
           subscriptionInterval: null,
           createdAt: null,
           stripeCustomerId: null,
+          country: country,
         };
       }
     });

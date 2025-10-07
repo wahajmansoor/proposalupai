@@ -10,6 +10,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { CountryStats } from "./country-stats";
 
 function getInitials(name: string | null | undefined) {
   if (!name) return "U";
@@ -64,6 +65,20 @@ export default async function AdminDashboardPage() {
     .filter(u => u.createdAt)
     .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
     .slice(0, 5);
+    
+  const countryData = users.reduce((acc, user) => {
+    if (user.country) {
+        if (!acc[user.country.code]) {
+            acc[user.country.code] = { name: user.country.name, count: 0 };
+        }
+        acc[user.country.code].count++;
+    }
+    return acc;
+  }, {} as Record<string, { name: string, count: number }>);
+
+  const sortedCountries = Object.entries(countryData)
+    .map(([code, data]) => ({ code, ...data }))
+    .sort((a, b) => b.count - a.count);
 
   if (fetchError) {
     return (
@@ -119,68 +134,71 @@ export default async function AdminDashboardPage() {
         </Card>
       </div>
 
-      <Card>
-        <CardHeader className="flex flex-row items-center justify-between">
-            <div>
-                <CardTitle>Recent Signups</CardTitle>
-                <CardDescription className="text-sm text-muted-foreground pt-1">The latest users to join your application.</CardDescription>
-            </div>
-            <Button asChild variant="outline" size="sm">
-                <Link href="/admin-portal/users">
-                    View All Users <ArrowRight className="ml-2 h-4 w-4" />
-                </Link>
-            </Button>
-        </CardHeader>
-        <CardContent>
-          {recentUsers.length > 0 ? (
-              <Table>
-                  <TableHeader>
-                      <TableRow>
-                          <TableHead>User</TableHead>
-                          <TableHead>Email</TableHead>
-                          <TableHead>Plan</TableHead>
-                          <TableHead>Status</TableHead>
-                          <TableHead className="text-right">Time</TableHead>
-                      </TableRow>
-                  </TableHeader>
-                  <TableBody>
-                      {recentUsers.map(user => (
-                          <TableRow key={user.id}>
-                              <TableCell>
-                                  <div className="flex items-center gap-3">
-                                      <Avatar className="h-9 w-9">
-                                          <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-                                      </Avatar>
-                                      <div className="font-medium">{user.name || "N/A"}</div>
-                                  </div>
-                              </TableCell>
-                              <TableCell>{user.email}</TableCell>
-                              <TableCell>
-                                  {user.subscriptionInterval ? (
-                                      <Badge variant="outline">
-                                          Pro {user.subscriptionInterval === 'month' ? 'Monthly' : 'Yearly'}
-                                      </Badge>
-                                  ) : (
-                                      <Badge variant="outline">N/A</Badge>
-                                  )}
-                              </TableCell>
-                              <TableCell>
-                                <SubscriptionBadge status={user.subscriptionStatus} />
-                              </TableCell>
-                              <TableCell className="text-right">
-                                  {user.createdAt ? formatDistanceToNow(new Date(user.createdAt), { addSuffix: true }) : 'N/A'}
-                              </TableCell>
-                          </TableRow>
-                      ))}
-                  </TableBody>
-              </Table>
-            ) : (
-                <div className="text-center p-8 text-muted-foreground">
-                    No recent user signups.
+      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
+        <Card className="lg:col-span-3">
+            <CardHeader className="flex flex-row items-center justify-between">
+                <div>
+                    <CardTitle>Recent Signups</CardTitle>
+                    <CardDescription className="text-sm text-muted-foreground pt-1">The latest users to join your application.</CardDescription>
                 </div>
-            )}
-        </CardContent>
-      </Card>
+                <Button asChild variant="outline" size="sm">
+                    <Link href="/admin-portal/users">
+                        View All Users <ArrowRight className="ml-2 h-4 w-4" />
+                    </Link>
+                </Button>
+            </CardHeader>
+            <CardContent>
+            {recentUsers.length > 0 ? (
+                <Table>
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>User</TableHead>
+                            <TableHead>Email</TableHead>
+                            <TableHead>Plan</TableHead>
+                            <TableHead>Status</TableHead>
+                            <TableHead className="text-right">Time</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {recentUsers.map(user => (
+                            <TableRow key={user.id}>
+                                <TableCell>
+                                    <div className="flex items-center gap-3">
+                                        <Avatar className="h-9 w-9">
+                                            <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                                        </Avatar>
+                                        <div className="font-medium">{user.name || "N/A"}</div>
+                                    </div>
+                                </TableCell>
+                                <TableCell>{user.email}</TableCell>
+                                <TableCell>
+                                    {user.subscriptionInterval ? (
+                                        <Badge variant="outline">
+                                            Pro {user.subscriptionInterval === 'month' ? 'Monthly' : 'Yearly'}
+                                        </Badge>
+                                    ) : (
+                                        <Badge variant="outline">N/A</Badge>
+                                    )}
+                                </TableCell>
+                                <TableCell>
+                                    <SubscriptionBadge status={user.subscriptionStatus} />
+                                </TableCell>
+                                <TableCell className="text-right">
+                                    {user.createdAt ? formatDistanceToNow(new Date(user.createdAt), { addSuffix: true }) : 'N/A'}
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+                ) : (
+                    <div className="text-center p-8 text-muted-foreground">
+                        No recent user signups.
+                    </div>
+                )}
+            </CardContent>
+        </Card>
+        <CountryStats countries={sortedCountries} />
+      </div>
     </div>
   );
 }
