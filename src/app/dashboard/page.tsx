@@ -39,6 +39,7 @@ import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { WelcomeDialog } from '@/components/welcome-dialog';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { SelectionToolbar } from '@/components/selection-toolbar';
 
 type Suggestion = {
   template: 'standard' | 'video';
@@ -144,6 +145,7 @@ function DashboardContent() {
   const [isImprovedProposalSaved, setIsImprovedProposalSaved] = useState(false);
 
   const summaryTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const proposalContentRef = useRef<HTMLDivElement>(null);
 
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
   const [planInterval, setPlanInterval] = useState<'monthly' | 'yearly' | null>(null);
@@ -152,6 +154,8 @@ function DashboardContent() {
   const [isImproving, setIsImproving] = useState(false);
   const [improvementHistory, setImprovementHistory] = useState<string[]>([]);
   const [currentImprovementIndex, setCurrentImprovementIndex] = useState(0);
+
+  const [selectionToolbar, setSelectionToolbar] = useState<{ top: number; left: number; width: number; text: string } | null>(null);
 
 
   const isTrial = userProfile?.subscriptionStatus === 'trialing';
@@ -485,6 +489,7 @@ function DashboardContent() {
     }
     setIsGenerating(true);
     setGeneratedProposal('');
+    setImprovementHistory([]);
     setIsOriginalProposalSaved(false);
     setIsImprovedProposalSaved(false);
 
@@ -605,6 +610,46 @@ function DashboardContent() {
     toast({ title: 'Copied!', description: 'Content copied to clipboard.' });
   };
   
+  const handleTextSelection = () => {
+    const selection = window.getSelection();
+    if (!selection || selection.rangeCount === 0 || selection.toString().trim() === '') {
+      setSelectionToolbar(null);
+      return;
+    }
+
+    const range = selection.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    const proposalContentEl = proposalContentRef.current;
+
+    if (proposalContentEl && proposalContentEl.contains(range.commonAncestorContainer)) {
+      const containerRect = proposalContentEl.getBoundingClientRect();
+      setSelectionToolbar({
+        top: rect.bottom - containerRect.top + proposalContentEl.scrollTop + 8,
+        left: rect.left - containerRect.left + proposalContentEl.scrollLeft + (rect.width / 2) - 160, // center the toolbar
+        width: rect.width,
+        text: selection.toString(),
+      });
+    } else {
+      setSelectionToolbar(null);
+    }
+  };
+
+  const handleInlineImprovement = (improvedText: string) => {
+    if (!selectionToolbar) return;
+
+    const fullProposal = improvementHistory.length > 0 ? improvementHistory[currentImprovementIndex] : generatedProposal;
+    const newProposal = fullProposal.replace(selectionToolbar.text, improvedText);
+
+    if (improvementHistory.length > 0) {
+      const newHistory = [...improvementHistory];
+      newHistory[currentImprovementIndex] = newProposal;
+      setImprovementHistory(newHistory);
+    } else {
+      setGeneratedProposal(newProposal);
+    }
+  };
+
+
   const stepTitles = ["Project Details", "Your Profile", "Client Questions", "Preferences & Strategy"];
   const hasAnsweredQuestions = clientQuestions.some(q => q.answer);
   const hasQuestions = clientQuestions.some(q => q.question);
@@ -1011,25 +1056,35 @@ function DashboardContent() {
               </div>
             </CardHeader>
             <CardContent className={cn("min-h-[400px]", { 'min-h-[200px]': !generatedProposal && !isGenerating })}>
-              {isGenerating ? (
-                  <div className="space-y-2 pt-4">
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-5/6" />
-                      <Skeleton className="h-4 w-full mt-4" />
-                      <Skeleton className="h-4 w-full" />
-                      <Skeleton className="h-4 w-2/3" />
-                  </div>
-              ) : generatedProposal ? (
-                  <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
-                      {generatedProposal}
-                  </div>
-              ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
-                    <HugeiconsIcon icon={File01Icon} size={32} className="h-12 w-12 mb-4"/>
-                    <p className="font-medium">Your proposal will appear here.</p>
-                    <p className="text-sm">Fill out the details on the left and click "Generate Proposal".</p>
-                  </div>
-              )}
+              <div onMouseUp={handleTextSelection} className="relative">
+                {isGenerating ? (
+                    <div className="space-y-2 pt-4">
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-5/6" />
+                        <Skeleton className="h-4 w-full mt-4" />
+                        <Skeleton className="h-4 w-full" />
+                        <Skeleton className="h-4 w-2/3" />
+                    </div>
+                ) : generatedProposal ? (
+                    <div ref={proposalContentRef} className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
+                        {generatedProposal}
+                    </div>
+                ) : (
+                    <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+                      <HugeiconsIcon icon={File01Icon} size={32} className="h-12 w-12 mb-4"/>
+                      <p className="font-medium">Your proposal will appear here.</p>
+                      <p className="text-sm">Fill out the details on the left and click "Generate Proposal".</p>
+                    </div>
+                )}
+                 {selectionToolbar && (
+                  <SelectionToolbar
+                    position={selectionToolbar}
+                    selectedText={selectionToolbar.text}
+                    onImprovement={handleInlineImprovement}
+                    onClose={() => setSelectionToolbar(null)}
+                  />
+                )}
+              </div>
             </CardContent>
             {generatedProposal && improvementHistory.length < 2 && (
               <CardFooter className="flex-col items-start gap-2">
