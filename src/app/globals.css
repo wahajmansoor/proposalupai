@@ -72,3 +72,9 @@
     -moz-osx-font-smoothing: grayscale;
   }
 }
+
+/* Fix: Allow clicks on CommandItem even if Radix temporarily applies [data-disabled] */
+[data-disabled].command-item-force-enabled {
+  pointer-events: auto !important;
+  opacity: 1 !important;
+}

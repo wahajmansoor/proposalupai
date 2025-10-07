@@ -267,6 +267,7 @@ export default function CouponsPage() {
                                 <CommandItem
                                   key="all-customers"
                                   value="All Customers"
+                                  className="command-item-force-enabled"
                                   onSelect={() => {
                                     setSelectedCustomer('all');
                                     setComboboxOpen(false);
@@ -280,6 +281,7 @@ export default function CouponsPage() {
                                   <CommandItem
                                     key={user.stripeCustomerId}
                                     value={user.name || user.email || ''}
+                                    className="command-item-force-enabled"
                                     onSelect={() => {
                                       setSelectedCustomer(user.stripeCustomerId!);
                                       setComboboxOpen(false);
