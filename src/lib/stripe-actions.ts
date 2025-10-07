@@ -159,6 +159,9 @@ export async function handlePlanChange(formData: FormData): Promise<{
 
     } catch (error: any) {
         console.error("Error in handlePlanChange:", error);
+        if (error.raw?.message?.includes('not specified for use with this customer')) {
+            return { error: 'This coupon code is not valid for your account.' };
+        }
         if (error.code === 'coupon_invalid' || error.code === 'promotion_code_invalid' || error.code === 'promotion_code_expired') {
             return { error: 'The provided coupon code is invalid or has expired.' };
         }
@@ -277,5 +280,3 @@ export async function validateCouponAction(formData: FormData): Promise<{
     return { success: false, error: 'Could not validate coupon code.' };
   }
 }
-
-    
