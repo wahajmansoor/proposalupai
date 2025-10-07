@@ -18,6 +18,7 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: 'Proposal Up',
   description: 'Generate tailored proposals with the power of AI',
+  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no',
   icons: [
     {
       rel: 'icon',
