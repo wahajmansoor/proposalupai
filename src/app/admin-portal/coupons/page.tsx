@@ -254,7 +254,7 @@ export default function CouponsPage() {
                           >
                             <span className="truncate">
                                 {selectedCustomer === 'all'
-                                    ? "Select customer..."
+                                    ? "All Customers"
                                     : users.find(u => u.stripeCustomerId === selectedCustomer)?.name || "Select customer..."}
                             </span>
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
@@ -267,8 +267,8 @@ export default function CouponsPage() {
                                 <CommandEmpty>No customer found.</CommandEmpty>
                                 <CommandGroup>
                                 <CommandItem
-                                    value="all"
-                                    onSelect={() => {
+                                    value="All Customers"
+                                    onSelect={(currentValue) => {
                                         setSelectedCustomer('all');
                                         setComboboxOpen(false);
                                     }}
@@ -278,12 +278,15 @@ export default function CouponsPage() {
                                 </CommandItem>
                                 {users.map((user) => (
                                     <CommandItem
-                                    key={user.stripeCustomerId}
-                                    value={user.name || user.email || ''}
-                                    onSelect={() => {
-                                      setSelectedCustomer(user.stripeCustomerId!);
-                                      setComboboxOpen(false);
-                                    }}
+                                      key={user.stripeCustomerId}
+                                      value={user.name || user.email || ''}
+                                      onSelect={(currentValue) => {
+                                        const selectedUser = users.find(u => (u.name || u.email || '').toLowerCase() === currentValue.toLowerCase());
+                                        if (selectedUser) {
+                                          setSelectedCustomer(selectedUser.stripeCustomerId!);
+                                        }
+                                        setComboboxOpen(false);
+                                      }}
                                     >
                                     <Check className={cn("mr-2 h-4 w-4", selectedCustomer === user.stripeCustomerId ? "opacity-100" : "opacity-0")} />
                                     <div className="flex flex-col">
@@ -478,3 +481,5 @@ export default function CouponsPage() {
     </>
   );
 }
+
+    
