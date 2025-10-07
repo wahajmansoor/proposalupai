@@ -122,7 +122,7 @@ export async function generateProposal(
           prompt += `${formatLinks(input.manualLinks)}\n`;
       }
     }
-    prompt += `    - **FINAL CTA & SIGN-OFF:** Create a natural-sounding final sentence based on the idea of "${input.closingCta}". This MUST be a complete sentence.
+    prompt += `    - **FINAL CTA & SIGN-OFF (CRITICAL):** The final paragraph MUST be a complete, natural-sounding sentence that incorporates the idea of "${input.closingCta}". DO NOT just write the phrase on its own. For example, if the idea is "Let's schedule a call", you could write "I am available for a quick chat later this week to discuss this further." or "Let's schedule a brief call to go over the details.".
     - **SIGNATURE:** After the final sentence, add TWO line breaks (\n\n). If the user provided a sign-off phrase ("${input.closingCta2}"), write it on its own line. Then, on the very next line, write the user's name: "${input.userName}".
 `;
   }
