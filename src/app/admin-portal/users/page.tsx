@@ -1,4 +1,7 @@
 
+"use client";
+
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getUsers, AppUser } from "./actions";
@@ -7,6 +10,9 @@ import { UserActions } from "./user-actions";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { ArrowUpDown, Search, Loader2 } from "lucide-react";
 
 function getInitials(name: string | null | undefined) {
   if (!name) return "U";
@@ -43,32 +49,119 @@ function SubscriptionBadge({ status }: { status: string | null }) {
     );
 }
 
+type SortKey = 'name' | 'email' | 'createdAt' | 'proposalCount';
 
-export default async function AdminUsersPage() {
-  let users: AppUser[] = [];
-  let fetchError: string | null = null;
+export default function AdminUsersPage() {
+  const [users, setUsers] = useState<AppUser[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [searchTerm, setSearchTerm] = useState('');
+  const [sortConfig, setSortConfig] = useState<{ key: SortKey, direction: 'ascending' | 'descending' } | null>({ key: 'createdAt', direction: 'descending' });
+  
+  const [currentPage, setCurrentPage] = useState(1);
+  const usersPerPage = 10;
 
-  try {
-    users = await getUsers();
-  } catch (error: any) {
-    fetchError = error.message;
-    console.error("Error rendered on page:", error);
+  const fetchUsers = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      const fetchedUsers = await getUsers();
+      setUsers(fetchedUsers);
+    } catch (error: any) {
+      setFetchError(error.message);
+      console.error("Error rendered on page:", error);
+    } finally {
+        setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchUsers();
+  }, [fetchUsers]);
+  
+  const sortedAndFilteredUsers = useMemo(() => {
+    let filtered = users.filter(user => 
+        (user.name?.toLowerCase() || '').includes(searchTerm.toLowerCase()) ||
+        (user.email?.toLowerCase() || '').includes(searchTerm.toLowerCase())
+    );
+
+    if (sortConfig !== null) {
+      filtered.sort((a, b) => {
+        const aValue = a[sortConfig.key];
+        const bValue = b[sortConfig.key];
+
+        if (aValue === null || aValue === undefined) return sortConfig.direction === 'ascending' ? -1 : 1;
+        if (bValue === null || bValue === undefined) return sortConfig.direction === 'ascending' ? 1 : -1;
+        
+        if (aValue < bValue) {
+          return sortConfig.direction === 'ascending' ? -1 : 1;
+        }
+        if (aValue > bValue) {
+          return sortConfig.direction === 'ascending' ? 1 : -1;
+        }
+        return 0;
+      });
+    }
+    return filtered;
+  }, [users, searchTerm, sortConfig]);
+
+  const requestSort = (key: SortKey) => {
+    let direction: 'ascending' | 'descending' = 'ascending';
+    if (sortConfig && sortConfig.key === key && sortConfig.direction === 'ascending') {
+      direction = 'descending';
+    }
+    setSortConfig({ key, direction });
+  };
+  
+  const getSortIndicator = (key: SortKey) => {
+    if (!sortConfig || sortConfig.key !== key) {
+        return <ArrowUpDown className="ml-2 h-4 w-4 text-muted-foreground/50" />;
+    }
+    return sortConfig.direction === 'ascending' ? 
+        <ArrowUpDown className="ml-2 h-4 w-4" /> : 
+        <ArrowUpDown className="ml-2 h-4 w-4" />;
   }
+
+  const indexOfLastUser = currentPage * usersPerPage;
+  const indexOfFirstUser = indexOfLastUser - usersPerPage;
+  const currentUsers = sortedAndFilteredUsers.slice(indexOfFirstUser, indexOfLastUser);
+  const totalPages = Math.ceil(sortedAndFilteredUsers.length / usersPerPage);
+
 
   return (
     <div className="space-y-6">
       <div className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight">User Management</h1>
-        <p className="text-muted-foreground">View and manage all users in your application.</p>
+        <p className="text-muted-foreground">View, search, and manage all users in your application.</p>
       </div>
-
+      
       <Card className="w-full">
         <CardHeader>
-          <CardTitle>All Users</CardTitle>
-          <CardDescription>A live list of all registered users in your application.</CardDescription>
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+              <div>
+                <CardTitle>All Users</CardTitle>
+                <CardDescription>A live list of all registered users in your application.</CardDescription>
+              </div>
+              <div className="relative w-full sm:max-w-xs">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input
+                  type="text"
+                  placeholder="Search by name or email..."
+                  value={searchTerm}
+                  onChange={(e) => {
+                    setSearchTerm(e.target.value);
+                    setCurrentPage(1);
+                  }}
+                  className="pl-10"
+                />
+              </div>
+          </div>
         </CardHeader>
         <CardContent>
-          {fetchError ? (
+          {isLoading ? (
+             <div className="flex justify-center items-center h-64">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+             </div>
+          ) : fetchError ? (
             <div className="text-center text-destructive py-12">
               <p className="font-bold">Error Fetching Users</p>
               <p className="text-sm">{fetchError}</p>
@@ -78,20 +171,37 @@ export default async function AdminUsersPage() {
               No users found in the database.
             </p>
           ) : (
+            <>
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>User</TableHead>
-                  <TableHead>Email</TableHead>
+                  <TableHead>
+                      <button onClick={() => requestSort('name')} className="flex items-center">
+                          User {getSortIndicator('name')}
+                      </button>
+                  </TableHead>
+                  <TableHead>
+                      <button onClick={() => requestSort('email')} className="flex items-center">
+                          Email {getSortIndicator('email')}
+                      </button>
+                  </TableHead>
                   <TableHead>Plan</TableHead>
                   <TableHead>Status</TableHead>
-                  <TableHead>Sign-up Date</TableHead>
-                  <TableHead className="text-center">Proposals</TableHead>
+                  <TableHead>
+                      <button onClick={() => requestSort('createdAt')} className="flex items-center">
+                          Sign-up Date {getSortIndicator('createdAt')}
+                      </button>
+                  </TableHead>
+                  <TableHead className="text-center">
+                      <button onClick={() => requestSort('proposalCount')} className="flex items-center">
+                          Proposals {getSortIndicator('proposalCount')}
+                      </button>
+                  </TableHead>
                   <TableHead className="text-right">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {users.map((user) => (
+                {currentUsers.map((user) => (
                   <TableRow key={user.id}>
                     <TableCell>
                       <div className="flex items-center gap-3">
@@ -125,8 +235,41 @@ export default async function AdminUsersPage() {
                 ))}
               </TableBody>
             </Table>
+             {currentUsers.length === 0 && (
+                <p className="text-center text-muted-foreground py-12">
+                    No users match your search.
+                </p>
+             )}
+            </>
           )}
         </CardContent>
+        {totalPages > 1 && (
+            <CardFooter>
+                <div className="flex justify-between items-center w-full">
+                    <span className="text-sm text-muted-foreground">
+                        Page {currentPage} of {totalPages}
+                    </span>
+                    <div className="flex gap-2">
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                            disabled={currentPage === 1}
+                        >
+                            Previous
+                        </Button>
+                        <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                            disabled={currentPage === totalPages}
+                        >
+                            Next
+                        </Button>
+                    </div>
+                </div>
+            </CardFooter>
+        )}
       </Card>
     </div>
   );
