@@ -1,10 +1,12 @@
 
+'use server';
 import { NextRequest, NextResponse } from 'next/server';
 import { OAuth2Client } from 'google-auth-library';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { headers } from 'next/headers';
 import type { UserRecord } from 'firebase-admin/auth';
 import { stripe } from '@/lib/stripe/config';
+import { getCountryFromIp } from '@/app/lib/location';
 
 export async function GET(req: NextRequest) {
   const headersList = headers();
@@ -92,6 +94,11 @@ export async function GET(req: NextRequest) {
                 firebaseUID: userRecord.uid,
             },
         });
+        
+        // Get country from IP
+        const ip = headersList.get('x-forwarded-for') || req.ip;
+        const country = await getCountryFromIp(ip);
+
 
         const userData: { [key: string]: any } = {
             uid: userRecord.uid,
@@ -101,6 +108,7 @@ export async function GET(req: NextRequest) {
             stripeCustomerId: customer.id,
             proposalCount: 0, // Initialize proposal count
             subscriptionStatus: null, // New users have no plan by default
+            country: country, // Add country data
         };
         if (picture) {
             userData.photoURL = picture;
