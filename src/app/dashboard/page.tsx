@@ -538,6 +538,7 @@ function DashboardContent() {
         setImprovementHistory([]); // Reset history for new proposal
         setIsOriginalProposalSaved(false);
         setIsImprovedProposalSaved(false);
+        setInlineImprovementCount(0);
     }
     setIsGenerating(false);
   };
@@ -614,10 +615,17 @@ function DashboardContent() {
     toast({ title: 'Copied!', description: 'Content copied to clipboard.' });
   };
   
-  const handleTextSelection = () => {
+  const handleTextSelection = (event: React.MouseEvent<HTMLDivElement>) => {
+    // We don't want to trigger selection if a click is inside an existing toolbar
+    if ((event.target as HTMLElement).closest('[data-selection-toolbar="true"]')) {
+      return;
+    }
+
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0 || selection.toString().trim() === '') {
-      setSelectionToolbar(null);
+      if (selectionToolbar) {
+        setSelectionToolbar(null);
+      }
       return;
     }
 
@@ -634,7 +642,9 @@ function DashboardContent() {
         text: selection.toString(),
       });
     } else {
-      setSelectionToolbar(null);
+       if (selectionToolbar) {
+        setSelectionToolbar(null);
+      }
     }
   };
 
@@ -1062,7 +1072,7 @@ function DashboardContent() {
               </div>
             </CardHeader>
             <CardContent className={cn("min-h-[400px]", { 'min-h-[200px]': !generatedProposal && !isGenerating })}>
-              <div onMouseUp={handleTextSelection} className="relative">
+              <div ref={proposalContentRef} onMouseUp={handleTextSelection} className="relative">
                 {isGenerating ? (
                     <div className="space-y-2 pt-4">
                         <Skeleton className="h-4 w-full" />
@@ -1072,7 +1082,7 @@ function DashboardContent() {
                         <Skeleton className="h-4 w-2/3" />
                     </div>
                 ) : generatedProposal ? (
-                    <div ref={proposalContentRef} className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
+                    <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
                         {generatedProposal}
                     </div>
                 ) : (

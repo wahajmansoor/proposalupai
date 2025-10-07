@@ -80,6 +80,7 @@ export function SelectionToolbar({ position, selectedText, onImprovement, onClos
   return (
     <div
       ref={toolbarRef}
+      data-selection-toolbar="true"
       className="absolute z-10 w-80 rounded-lg border bg-popover text-popover-foreground shadow-lg p-4"
       style={{ top: position.top, left: position.left }}
     >
@@ -89,9 +90,9 @@ export function SelectionToolbar({ position, selectedText, onImprovement, onClos
             <>
                 <div className="flex items-center gap-2 mb-2">
                     <span className="text-lg">🧐</span>
-                    <p className="text-sm font-medium text-popover-foreground">Ask Genie to make selected part more... ({usageCount}/{usageLimit})</p>
+                    <p className="text-sm font-medium text-popover-foreground">Ask Genie to make selected part... ({usageCount}/{usageLimit})</p>
                 </div>
-                <div className="flex flex-wrap gap-2 mb-3">
+                <div className="flex flex-nowrap gap-2 mb-3">
                     {presetInstructions.map(preset => (
                         <Button 
                             key={preset}
