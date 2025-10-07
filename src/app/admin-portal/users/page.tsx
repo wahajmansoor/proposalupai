@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -13,6 +14,12 @@ import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ArrowUpDown, Search, Loader2 } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 function getInitials(name: string | null | undefined) {
   if (!name) return "U";
@@ -172,6 +179,7 @@ export default function AdminUsersPage() {
             </p>
           ) : (
             <>
+            <TooltipProvider>
             <Table>
               <TableHeader>
                 <TableRow>
@@ -208,6 +216,20 @@ export default function AdminUsersPage() {
                         <Avatar className="h-9 w-9">
                           <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                         </Avatar>
+                        {user.country?.code && (
+                            <Tooltip>
+                                <TooltipTrigger>
+                                     <img
+                                        src={`https://flag.vercel.app/s/${user.country.code}.svg`}
+                                        alt={`${user.country.name} flag`}
+                                        className="h-4 w-6 rounded-sm object-cover"
+                                    />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>{user.country.name}</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        )}
                         <div className="font-medium">{user.name || "N/A"}</div>
                       </div>
                     </TableCell>
@@ -235,6 +257,7 @@ export default function AdminUsersPage() {
                 ))}
               </TableBody>
             </Table>
+            </TooltipProvider>
              {currentUsers.length === 0 && (
                 <p className="text-center text-muted-foreground py-12">
                     No users match your search.
