@@ -41,7 +41,6 @@ export default function CouponsPage() {
   // For customer combobox
   const [comboboxOpen, setComboboxOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState('all');
-  const [selectedValue, setSelectedValue] = useState(""); // For combobox internal value tracking
 
   const loadData = async () => {
       setIsLoading(true);
@@ -85,7 +84,6 @@ export default function CouponsPage() {
       setDuration('forever');
       setExpiryDate(undefined);
       setSelectedCustomer('all');
-      setSelectedValue('');
       await loadData();
     } else {
       toast({ title: 'Error Creating Coupon', description: result.error, variant: 'destructive' });
@@ -161,8 +159,6 @@ export default function CouponsPage() {
         default: return <Badge variant="secondary">Any Plan</Badge>;
     }
   }
-
-  const selectedCustomerName = users.find(u => u.stripeCustomerId === selectedCustomer)?.name || "All Customers";
 
   return (
     <>
@@ -269,7 +265,8 @@ export default function CouponsPage() {
                                     <CommandEmpty>No customer found.</CommandEmpty>
                                     <CommandGroup>
                                         <CommandItem
-                                            value="all-customers"
+                                            key="all-customers"
+                                            value="All Customers"
                                             onSelect={() => {
                                                 setSelectedCustomer('all');
                                                 setComboboxOpen(false);
@@ -282,11 +279,8 @@ export default function CouponsPage() {
                                             <CommandItem
                                               key={user.stripeCustomerId}
                                               value={user.name || user.email || ''}
-                                              onSelect={(currentValue) => {
-                                                const selectedUser = users.find(u => (u.name || u.email || '') === currentValue);
-                                                if (selectedUser) {
-                                                    setSelectedCustomer(selectedUser.stripeCustomerId!);
-                                                }
+                                              onSelect={() => {
+                                                setSelectedCustomer(user.stripeCustomerId!);
                                                 setComboboxOpen(false);
                                               }}
                                             >
@@ -483,5 +477,3 @@ export default function CouponsPage() {
     </>
   );
 }
-
-    
