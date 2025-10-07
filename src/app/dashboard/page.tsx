@@ -154,6 +154,8 @@ function DashboardContent() {
   const [isImproving, setIsImproving] = useState(false);
   const [improvementHistory, setImprovementHistory] = useState<string[]>([]);
   const [currentImprovementIndex, setCurrentImprovementIndex] = useState(0);
+  const [inlineImprovementCount, setInlineImprovementCount] = useState(0);
+  const INLINE_IMPROVEMENT_LIMIT = 5;
 
   const [selectionToolbar, setSelectionToolbar] = useState<{ top: number; left: number; width: number; text: string } | null>(null);
 
@@ -278,6 +280,7 @@ function DashboardContent() {
     setAnswersGenerated(false);
     setIsOriginalProposalSaved(false);
     setIsImprovedProposalSaved(false);
+    setInlineImprovementCount(0);
     toast({ title: 'Form Cleared', description: 'You can now start a new proposal.' });
   };
 
@@ -492,6 +495,7 @@ function DashboardContent() {
     setImprovementHistory([]);
     setIsOriginalProposalSaved(false);
     setIsImprovedProposalSaved(false);
+    setInlineImprovementCount(0); // Reset inline improvement count
 
     const selectedGreeting = greetings.find(g => g.value === greeting)?.label || greeting;
     const selectedClosing = closingCtas.find(c => c.value === closingCta)?.label || closingCta;
@@ -636,6 +640,8 @@ function DashboardContent() {
 
   const handleInlineImprovement = (improvedText: string) => {
     if (!selectionToolbar) return;
+
+    setInlineImprovementCount(prev => prev + 1);
 
     const fullProposal = improvementHistory.length > 0 ? improvementHistory[currentImprovementIndex] : generatedProposal;
     const newProposal = fullProposal.replace(selectionToolbar.text, improvedText);
@@ -1082,6 +1088,8 @@ function DashboardContent() {
                     selectedText={selectionToolbar.text}
                     onImprovement={handleInlineImprovement}
                     onClose={() => setSelectionToolbar(null)}
+                    usageCount={inlineImprovementCount}
+                    usageLimit={INLINE_IMPROVEMENT_LIMIT}
                   />
                 )}
               </div>
