@@ -485,6 +485,8 @@ function DashboardContent() {
     }
     setIsGenerating(true);
     setGeneratedProposal('');
+    setIsOriginalProposalSaved(false);
+    setIsImprovedProposalSaved(false);
 
     const selectedGreeting = greetings.find(g => g.value === greeting)?.label || greeting;
     const selectedClosing = closingCtas.find(c => c.value === closingCta)?.label || closingCta;
