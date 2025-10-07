@@ -178,6 +178,7 @@ export default function LoginPage() {
                     type="password" 
                     required 
                     value={password}
+                    placeholder="••••••••"
                     onChange={(e) => setPassword(e.target.value)}
                     disabled={isLoading || isGoogleLoading}
                   />

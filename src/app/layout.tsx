@@ -17,6 +17,20 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: 'Proposal Up',
   description: 'Generate tailored proposals with the power of AI',
+  icons: [
+    {
+      rel: 'icon',
+      url: '/icon-light.svg',
+      media: '(prefers-color-scheme: light)',
+      type: 'image/svg+xml',
+    },
+    {
+      rel: 'icon',
+      url: '/icon-dark.svg',
+      media: '(prefers-color-scheme: dark)',
+      type: 'image/svg+xml',
+    },
+  ],
 };
 
 export default function RootLayout({
