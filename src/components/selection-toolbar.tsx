@@ -38,9 +38,11 @@ export function SelectionToolbar({ position, selectedText, fullProposal, onImpro
     };
     
     const handleMouseUp = (event: MouseEvent) => {
+         // Don't close the toolbar if the click is inside it.
          if (toolbarRef.current && toolbarRef.current.contains(event.target as Node)) {
             return;
          }
+         // If the user clicks elsewhere and there's no selection, close the toolbar.
          const selection = window.getSelection();
          if (!selection || selection.toString().trim() === '') {
              onClose();
@@ -75,7 +77,7 @@ export function SelectionToolbar({ position, selectedText, fullProposal, onImpro
     try {
       // Provide the full proposal as context for better edits
       const contextualPrompt = `Given the following full proposal as context, rewrite the highlighted part based on my instruction.
-      If the instruction is to remove or delete the text, then you MUST output an empty string.
+      If the instruction is to remove or delete the text, then you MUST output an empty string. Your output should ONLY be the rewritten version of the highlighted part. Adhere to the word count of the original selection, and preserve all original line breaks and paragraph spacing unless instructed otherwise.
 
       **Full Proposal Context:**
       ${fullProposal}
@@ -88,8 +90,6 @@ export function SelectionToolbar({ position, selectedText, fullProposal, onImpro
       ---
       
       **My Instruction:** "${prompt}"
-
-      Your output should ONLY be the rewritten version of the highlighted part. Adhere to the word count of the original selection, and preserve original line breaks unless instructed otherwise.
       `;
 
       const result = await improveProposalAction({
@@ -117,9 +117,15 @@ export function SelectionToolbar({ position, selectedText, fullProposal, onImpro
     <div
       ref={toolbarRef}
       data-selection-toolbar="true"
-      className="absolute z-10 w-auto min-w-[400px] rounded-lg border bg-popover text-popover-foreground shadow-lg p-4"
+      className="absolute z-10 w-[400px] rounded-lg border bg-popover text-popover-foreground shadow-lg p-4"
       style={{ top: position.top, left: position.left, maxWidth: 'calc(100vw - 32px)' }}
-      onMouseDown={(e) => e.preventDefault()} // Prevent deselection when clicking inside
+      onMouseDown={(e) => {
+        // Prevent the text from being deselected when clicking on the toolbar,
+        // but allow clicks on the input and buttons to work.
+        if (!(e.target instanceof HTMLInputElement || e.target instanceof HTMLButtonElement)) {
+          e.preventDefault();
+        }
+      }}
     >
         {isLimitReached ? (
             <p className="text-sm text-destructive-foreground text-center bg-destructive/80 p-2 rounded-md">Improvement limit reached.</p>
