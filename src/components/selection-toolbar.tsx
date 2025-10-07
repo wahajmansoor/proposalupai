@@ -89,7 +89,7 @@ export function SelectionToolbar({ position, selectedText, fullProposal, onImpro
       
       **My Instruction:** "${prompt}"
 
-      Your output should ONLY be the rewritten version of the highlighted part.
+      Your output should ONLY be the rewritten version of the highlighted part. Adhere to the word count of the original selection, and preserve original line breaks unless instructed otherwise.
       `;
 
       const result = await improveProposalAction({
@@ -119,7 +119,7 @@ export function SelectionToolbar({ position, selectedText, fullProposal, onImpro
       data-selection-toolbar="true"
       className="absolute z-10 w-auto min-w-[400px] rounded-lg border bg-popover text-popover-foreground shadow-lg p-4"
       style={{ top: position.top, left: position.left, maxWidth: 'calc(100vw - 32px)' }}
-      onMouseDown={(e) => e.stopPropagation()} // Prevent closing when clicking inside
+      onMouseDown={(e) => e.preventDefault()} // Prevent deselection when clicking inside
     >
         {isLimitReached ? (
             <p className="text-sm text-destructive-foreground text-center bg-destructive/80 p-2 rounded-md">Improvement limit reached.</p>
@@ -168,5 +168,3 @@ export function SelectionToolbar({ position, selectedText, fullProposal, onImpro
     </div>
   );
 }
-
-    
