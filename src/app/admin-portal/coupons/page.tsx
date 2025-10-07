@@ -251,49 +251,52 @@ export default function CouponsPage() {
                             disabled={isSubmitting}
                           >
                             <span className="truncate">
-                                {selectedCustomer === 'all'
-                                    ? "All Customers"
-                                    : users.find(u => u.stripeCustomerId === selectedCustomer)?.name || "Select customer..."}
+                              {selectedCustomer === 'all'
+                                ? "All Customers"
+                                : users.find(u => u.stripeCustomerId === selectedCustomer)?.name || "Select customer..."}
                             </span>
                             <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
                           </Button>
                         </PopoverTrigger>
                         <PopoverContent className="w-[--radix-popover-trigger-width] p-0">
-                            <Command>
-                                <CommandInput placeholder="Search customer..." />
-                                <CommandList>
-                                    <CommandEmpty>No customer found.</CommandEmpty>
-                                    <CommandGroup>
-                                        <CommandItem
-                                            key="all-customers"
-                                            value="all-customers"
-                                            onSelect={() => {
-                                                setSelectedCustomer('all');
-                                                setComboboxOpen(false);
-                                            }}
-                                        >
-                                            <Check className={cn("mr-2 h-4 w-4", selectedCustomer === 'all' ? "opacity-100" : "opacity-0")} />
-                                            All Customers
-                                        </CommandItem>
-                                        {users.map((user) => (
-                                            <CommandItem
-                                              key={user.stripeCustomerId}
-                                              value={user.name || user.email || ''}
-                                              onSelect={() => {
-                                                setSelectedCustomer(user.stripeCustomerId!);
-                                                setComboboxOpen(false);
-                                              }}
-                                            >
-                                            <Check className={cn("mr-2 h-4 w-4", selectedCustomer === user.stripeCustomerId ? "opacity-100" : "opacity-0")} />
-                                            <div className="flex flex-col">
-                                                <span>{user.name}</span>
-                                                <span className="text-xs text-muted-foreground">{user.email}</span>
-                                            </div>
-                                            </CommandItem>
-                                        ))}
-                                    </CommandGroup>
-                                </CommandList>
-                            </Command>
+                          <Command>
+                            <CommandInput placeholder="Search customer..." />
+                            <CommandList>
+                              <CommandEmpty>No customer found.</CommandEmpty>
+                              <CommandGroup>
+                                <CommandItem
+                                  key="all-customers"
+                                  value="All Customers"
+                                  onSelect={() => {
+                                    setSelectedCustomer('all');
+                                    setComboboxOpen(false);
+                                  }}
+                                >
+                                  <Check className={cn("mr-2 h-4 w-4", selectedCustomer === 'all' ? "opacity-100" : "opacity-0")} />
+                                  All Customers
+                                </CommandItem>
+
+                                {users.map((user) => (
+                                  <CommandItem
+                                    key={user.stripeCustomerId}
+                                    value={user.name || user.email || ''}
+                                    onSelect={() => {
+                                      setSelectedCustomer(user.stripeCustomerId!);
+                                      setComboboxOpen(false);
+                                    }}
+                                  >
+                                    <Check
+                                      className={cn("mr-2 h-4 w-4", selectedCustomer === user.stripeCustomerId ? "opacity-100" : "opacity-0")}
+                                    />
+                                    <div className="flex flex-col">
+                                      <span>{user.name}</span>
+                                      <span className="text-xs text-muted-foreground">{user.email}</span>
+                                    </div>
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
                         </PopoverContent>
                       </Popover>
                   </div>
