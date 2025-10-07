@@ -336,5 +336,4 @@ export default function AdminUsersPage() {
       </Card>
     </div>
   );
-
-    
+}
