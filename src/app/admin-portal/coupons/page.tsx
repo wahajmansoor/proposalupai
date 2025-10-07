@@ -280,8 +280,8 @@ export default function CouponsPage() {
                                     <CommandItem
                                     key={user.stripeCustomerId}
                                     value={user.stripeCustomerId!}
-                                    onSelect={(currentValue) => {
-                                      setSelectedCustomer(currentValue === selectedCustomer ? "all" : currentValue);
+                                    onSelect={() => {
+                                      setSelectedCustomer(user.stripeCustomerId!);
                                       setComboboxOpen(false);
                                     }}
                                     >
