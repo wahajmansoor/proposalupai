@@ -62,20 +62,17 @@ export function SelectionToolbar({ position, selectedText, fullProposal, onImpro
       // We must pass the clean text to the AI.
       const cleanFullProposal = fullProposal.replace(/<span[^>]*>|<\/span>/g, "");
 
-      const contextualPrompt = `Given the following full proposal as context, rewrite the highlighted part based on my instruction.
-      If the instruction is to remove or delete the text, then you MUST output an empty string. Your output should ONLY be the rewritten version of the highlighted part. Adhere to the word count of the original selection, and preserve all original line breaks and paragraph spacing unless instructed otherwise.
-
-      **Full Proposal Context:**
+      const contextualPrompt = `Full Proposal for context:
       ${cleanFullProposal}
       
       ---
-
-      **Highlighted Part to Edit:**
+      
+      Highlighted Part to Edit:
       ${selectedText}
       
       ---
       
-      **My Instruction:** "${prompt}"
+      My Instruction: "${prompt}"
       `;
 
       const result = await improveProposalAction({
@@ -106,12 +103,9 @@ export function SelectionToolbar({ position, selectedText, fullProposal, onImpro
       className="absolute z-10 w-[400px] rounded-lg border bg-popover text-popover-foreground shadow-lg p-4"
       style={{ top: position.top, left: position.left, maxWidth: 'calc(100vw - 32px)' }}
        onMouseDown={(e) => {
-        // Prevent default behavior to stop text from being deselected
-        // but allow clicks on inputs and buttons.
-        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLButtonElement || (e.target as HTMLElement).closest('button')) {
-          return;
+        if (!(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLButtonElement) && !(e.target as HTMLElement).closest('button')) {
+            e.preventDefault();
         }
-        e.preventDefault();
       }}
     >
         {isLimitReached ? (
@@ -161,5 +155,3 @@ export function SelectionToolbar({ position, selectedText, fullProposal, onImpro
     </div>
   );
 }
-
-    
