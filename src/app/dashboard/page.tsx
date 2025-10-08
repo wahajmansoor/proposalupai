@@ -98,6 +98,7 @@ const signOffCtas = [
 ];
 
 const tones = ["Professional", "Friendly", "Assertive", "Persuasive", "Creative", "Concise", "Formal"];
+const improvementPresets = ["Concise", "Detailed", "Informal", "Professional", "Fix Formatting"];
 
 function DashboardContent() {
   const { user, userProfile, loading } = useAuth();
@@ -152,6 +153,8 @@ function DashboardContent() {
   const [isImproving, setIsImproving] = useState(false);
   const [improvementHistory, setImprovementHistory] = useState<string[]>([]);
   const [currentImprovementIndex, setCurrentImprovementIndex] = useState(0);
+
+  const [selectedText, setSelectedText] = useState('');
 
   const isTrial = userProfile?.subscriptionStatus === 'trialing';
   const proposalCount = userProfile?.proposalCount ?? 0;
@@ -533,9 +536,8 @@ function DashboardContent() {
     }
     setIsGenerating(false);
   };
-  
-  const handleImproveProposal = async () => {
-    const instruction = customImprovementInstruction;
+
+  const handleImproveProposal = async (instruction: string) => {
     if (!instruction) {
       toast({ title: 'No Instruction', description: 'Please enter an instruction to improve the proposal.', variant: 'destructive' });
       return;
@@ -546,19 +548,22 @@ function DashboardContent() {
     }
 
     setIsImproving(true);
-    
-    // Use the latest improved proposal as the base, or the original if no improvements exist yet.
-    const baseProposal = improvementHistory.length > 0 ? improvementHistory[improvementHistory.length - 1] : generatedProposal;
+
+    const baseProposal = improvementHistory[currentImprovementIndex] ?? generatedProposal;
+    const textToImprove = selectedText || baseProposal;
 
     const result = await improveProposalAction({
       proposal: baseProposal,
-      instruction: instruction,
+      instruction: `Instruction: "${instruction}". Apply this only to the following part of the text: "${textToImprove}"`,
     });
 
     if (result.error) {
       toast({ title: 'Error Improving Proposal', description: result.error, variant: 'destructive' });
     } else if (result.data) {
-      const newHistory = [...improvementHistory, result.data.improvedProposal];
+      const improvedText = result.data.improvedProposal;
+      const newFullProposal = baseProposal.replace(textToImprove, improvedText);
+
+      const newHistory = [...improvementHistory.slice(0, currentImprovementIndex + 1), newFullProposal];
       setImprovementHistory(newHistory);
       setCurrentImprovementIndex(newHistory.length - 1);
       setIsImprovedProposalSaved(false);
@@ -566,8 +571,9 @@ function DashboardContent() {
     }
     setIsImproving(false);
     setCustomImprovementInstruction('');
+    setSelectedText('');
   };
-
+  
   const handleSaveProposal = async (proposalContent: string) => {
     if (!user || !projectDetails.projectTitle.trim() || !proposalContent) {
       toast({ title: 'Missing Information', description: 'Please provide a project title and generate a proposal first.', variant: 'destructive' });
@@ -1013,7 +1019,11 @@ function DashboardContent() {
               </div>
             </CardHeader>
             <CardContent className={cn("min-h-[400px]", { 'min-h-[200px]': !generatedProposal && !isGenerating })}>
-              <div ref={proposalContentRef} className="relative">
+              <div 
+                ref={proposalContentRef} 
+                className="relative"
+                onMouseUp={() => setSelectedText(window.getSelection()?.toString() ?? '')}
+              >
                 {isGenerating ? (
                     <div className="space-y-2 pt-4">
                         <Skeleton className="h-4 w-full" />
@@ -1035,19 +1045,32 @@ function DashboardContent() {
                 )}
               </div>
             </CardContent>
-            {displayedOriginalProposal && improvementHistory.length >= 0 && (
+            {displayedOriginalProposal && improvementHistory.length === 0 && (
               <CardFooter className="flex-col items-start gap-2">
                  <p className="text-sm text-muted-foreground">You can improve this proposal {2 - improvementHistory.length} more time(s).</p>
                  <div className="w-full space-y-2">
+                    <div className="flex flex-wrap gap-2">
+                       {improvementPresets.map(preset => (
+                         <Button
+                           key={preset}
+                           variant="outline"
+                           size="sm"
+                           onClick={() => handleImproveProposal(preset)}
+                           disabled={isImproving || improvementHistory.length >= 2 || trialLimitReached}
+                         >
+                           {preset}
+                         </Button>
+                       ))}
+                    </div>
                     <div className="flex w-full items-center gap-2">
                         <Input 
-                            placeholder="Type your improvement request here..."
+                            placeholder="Or type a custom improvement request..."
                             value={customImprovementInstruction}
                             onChange={(e) => setCustomImprovementInstruction(e.target.value)}
                             disabled={isImproving || improvementHistory.length >= 2 || trialLimitReached}
                         />
                         <Button 
-                            onClick={handleImproveProposal}
+                            onClick={() => handleImproveProposal(customImprovementInstruction)}
                             disabled={isImproving || !customImprovementInstruction.trim() || improvementHistory.length >= 2 || trialLimitReached}
                         >
                             {isImproving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
@@ -1095,21 +1118,36 @@ function DashboardContent() {
                 {improvementHistory.length < 2 ? (
                    <div className="border-t pt-4 space-y-2">
                      <p className="text-sm text-muted-foreground">You can improve this proposal {2 - improvementHistory.length} more time(s).</p>
-                     <div className="flex w-full items-center gap-2">
-                      <Input 
-                        placeholder="Improve further..."
-                        value={customImprovementInstruction}
-                        onChange={(e) => setCustomImprovementInstruction(e.target.value)}
-                        disabled={isImproving || trialLimitReached}
-                      />
-                      <Button 
-                        onClick={handleImproveProposal}
-                        disabled={isImproving || !customImprovementInstruction.trim() || trialLimitReached}
-                      >
-                        {isImproving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                        Update
-                      </Button>
-                    </div>
+                     <div className="w-full space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                          {improvementPresets.map(preset => (
+                            <Button
+                              key={preset}
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleImproveProposal(preset)}
+                              disabled={isImproving || improvementHistory.length >= 2 || trialLimitReached}
+                            >
+                              {preset}
+                            </Button>
+                          ))}
+                        </div>
+                        <div className="flex w-full items-center gap-2">
+                          <Input 
+                            placeholder="Or type a custom improvement request..."
+                            value={customImprovementInstruction}
+                            onChange={(e) => setCustomImprovementInstruction(e.target.value)}
+                            disabled={isImproving || improvementHistory.length >= 2 || trialLimitReached}
+                          />
+                          <Button 
+                            onClick={() => handleImproveProposal(customImprovementInstruction)}
+                            disabled={isImproving || !customImprovementInstruction.trim() || improvementHistory.length >= 2 || trialLimitReached}
+                          >
+                            {isImproving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                            Update
+                          </Button>
+                        </div>
+                      </div>
                   </div>
                 ) : (
                   <div className="border-t pt-4 text-center text-sm text-muted-foreground">
