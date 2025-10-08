@@ -39,7 +39,6 @@ import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { WelcomeDialog } from '@/components/welcome-dialog';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { SelectionToolbar } from '@/components/selection-toolbar';
 
 type Suggestion = {
   template: 'standard' | 'video';
@@ -100,8 +99,6 @@ const signOffCtas = [
 
 const tones = ["Professional", "Friendly", "Assertive", "Persuasive", "Creative", "Concise", "Formal"];
 
-const HIGHLIGHT_ID = 'ai-selection-highlight';
-
 function DashboardContent() {
   const { user, userProfile, loading } = useAuth();
   const { toast } = useToast();
@@ -155,11 +152,6 @@ function DashboardContent() {
   const [isImproving, setIsImproving] = useState(false);
   const [improvementHistory, setImprovementHistory] = useState<string[]>([]);
   const [currentImprovementIndex, setCurrentImprovementIndex] = useState(0);
-  const [inlineImprovementCount, setInlineImprovementCount] = useState(0);
-  const INLINE_IMPROVEMENT_LIMIT = 5;
-
-  const [selectionToolbar, setSelectionToolbar] = useState<{ top: number; left: number; width: number; text: string } | null>(null);
-
 
   const isTrial = userProfile?.subscriptionStatus === 'trialing';
   const proposalCount = userProfile?.proposalCount ?? 0;
@@ -281,7 +273,6 @@ function DashboardContent() {
     setAnswersGenerated(false);
     setIsOriginalProposalSaved(false);
     setIsImprovedProposalSaved(false);
-    setInlineImprovementCount(0);
     toast({ title: 'Form Cleared', description: 'You can now start a new proposal.' });
   };
 
@@ -549,8 +540,8 @@ function DashboardContent() {
       toast({ title: 'No Instruction', description: 'Please enter an instruction to improve the proposal.', variant: 'destructive' });
       return;
     }
-     if (improvementHistory.length >= 2) {
-      toast({ title: 'Limit Reached', description: 'You can only improve a proposal up to two times.', variant: 'destructive' });
+    if (trialLimitReached) {
+      toast({ title: 'Trial Limit Reached', description: 'Please upgrade your plan to improve proposals.', variant: 'destructive' });
       return;
     }
 
@@ -615,53 +606,6 @@ function DashboardContent() {
     toast({ title: 'Copied!', description: 'Content copied to clipboard.' });
   };
   
-  const handleTextSelection = (event: React.MouseEvent<HTMLDivElement>) => {
-    // Don't show toolbar if clicking on the toolbar itself
-    if ((event.target as HTMLElement).closest('[data-selection-toolbar="true"]')) {
-      return;
-    }
-
-    const selection = window.getSelection();
-    if (!selection || selection.rangeCount === 0 || selection.toString().trim() === '') {
-      setSelectionToolbar(null);
-      return;
-    }
-
-    const range = selection.getRangeAt(0);
-    const proposalContentEl = proposalContentRef.current;
-
-    if (proposalContentEl && proposalContentEl.contains(range.commonAncestorContainer)) {
-      const selectedText = selection.toString();
-      const rect = range.getBoundingClientRect();
-      const containerRect = proposalContentEl.getBoundingClientRect();
-      
-      setSelectionToolbar({
-        top: rect.bottom - containerRect.top + proposalContentEl.scrollTop + 8,
-        left: rect.left - containerRect.left + proposalContentEl.scrollLeft + (rect.width / 2) - 200,
-        width: rect.width,
-        text: selectedText,
-      });
-    } else {
-       setSelectionToolbar(null);
-    }
-  };
-
-    const handleInlineImprovement = (originalText: string, improvedText: string) => {
-        setInlineImprovementCount(prev => prev + 1);
-
-        const currentProposal = improvementHistory.length > 0 ? improvementHistory[currentImprovementIndex] : generatedProposal;
-        const newFullProposal = currentProposal.replace(originalText, improvedText);
-
-        if (improvementHistory.length > 0) {
-            const newHistory = [...improvementHistory];
-            newHistory[currentImprovementIndex] = newFullProposal;
-            setImprovementHistory(newHistory);
-        } else {
-            setGeneratedProposal(newFullProposal);
-        }
-    };
-
-
   const stepTitles = ["Project Details", "Your Profile", "Client Questions", "Preferences & Strategy"];
   const hasAnsweredQuestions = clientQuestions.some(q => q.answer);
   const hasQuestions = clientQuestions.some(q => q.question);
@@ -1069,7 +1013,7 @@ function DashboardContent() {
               </div>
             </CardHeader>
             <CardContent className={cn("min-h-[400px]", { 'min-h-[200px]': !generatedProposal && !isGenerating })}>
-              <div ref={proposalContentRef} onMouseUp={handleTextSelection} className="relative">
+              <div ref={proposalContentRef} className="relative">
                 {isGenerating ? (
                     <div className="space-y-2 pt-4">
                         <Skeleton className="h-4 w-full" />
@@ -1079,8 +1023,9 @@ function DashboardContent() {
                         <Skeleton className="h-4 w-2/3" />
                     </div>
                 ) : displayedOriginalProposal ? (
-                     <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap"
-                        dangerouslySetInnerHTML={{ __html: displayedOriginalProposal.replace(/\n/g, '<br />') }} />
+                     <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap">
+                       {displayedOriginalProposal}
+                     </div>
                 ) : (
                     <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
                       <HugeiconsIcon icon={File01Icon} size={32} className="h-12 w-12 mb-4"/>
@@ -1088,22 +1033,9 @@ function DashboardContent() {
                       <p className="text-sm">Fill out the details on the left and click "Generate Proposal".</p>
                     </div>
                 )}
-                 {selectionToolbar && (
-                  <SelectionToolbar
-                    position={selectionToolbar}
-                    selectedText={selectionToolbar.text}
-                    fullProposal={
-                      (improvementHistory.length > 0 ? improvementHistory[currentImprovementIndex] : generatedProposal)
-                    }
-                    onImprovement={handleInlineImprovement}
-                    onClose={() => setSelectionToolbar(null)}
-                    usageCount={inlineImprovementCount}
-                    usageLimit={INLINE_IMPROVEMENT_LIMIT}
-                  />
-                )}
               </div>
             </CardContent>
-            {displayedOriginalProposal && improvementHistory.length < 2 && (
+            {displayedOriginalProposal && improvementHistory.length >= 0 && (
               <CardFooter className="flex-col items-start gap-2">
                  <p className="text-sm text-muted-foreground">You can improve this proposal {2 - improvementHistory.length} more time(s).</p>
                  <div className="w-full space-y-2">
@@ -1112,11 +1044,11 @@ function DashboardContent() {
                             placeholder="Type your improvement request here..."
                             value={customImprovementInstruction}
                             onChange={(e) => setCustomImprovementInstruction(e.target.value)}
-                            disabled={isImproving}
+                            disabled={isImproving || improvementHistory.length >= 2 || trialLimitReached}
                         />
                         <Button 
                             onClick={handleImproveProposal}
-                            disabled={isImproving || customImprovementInstruction.trim().split(/\s+/).length < 4}
+                            disabled={isImproving || !customImprovementInstruction.trim() || improvementHistory.length >= 2 || trialLimitReached}
                         >
                             {isImproving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
                             Update
@@ -1155,8 +1087,9 @@ function DashboardContent() {
                     </Button>
                   </div>
                 </div>
-                <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap border-t pt-4"
-                  dangerouslySetInnerHTML={{ __html: displayedImprovedProposal.replace(/\n/g, '<br />') }} />
+                <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap border-t pt-4">
+                  {displayedImprovedProposal}
+                </div>
 
 
                 {improvementHistory.length < 2 ? (
@@ -1167,11 +1100,11 @@ function DashboardContent() {
                         placeholder="Improve further..."
                         value={customImprovementInstruction}
                         onChange={(e) => setCustomImprovementInstruction(e.target.value)}
-                        disabled={isImproving}
+                        disabled={isImproving || trialLimitReached}
                       />
                       <Button 
                         onClick={handleImproveProposal}
-                        disabled={isImproving || customImprovementInstruction.trim().split(/\s+/).length < 4}
+                        disabled={isImproving || !customImprovementInstruction.trim() || trialLimitReached}
                       >
                         {isImproving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
                         Update
@@ -1312,3 +1245,5 @@ export default function DashboardPage() {
         </Suspense>
     )
 }
+
+    
