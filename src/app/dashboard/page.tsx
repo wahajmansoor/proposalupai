@@ -612,7 +612,8 @@ function DashboardContent() {
   };
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
+    const cleanText = text.replace(/<span[^>]*>|<\/span>/g, "");
+    navigator.clipboard.writeText(cleanText);
     toast({ title: 'Copied!', description: 'Content copied to clipboard.' });
   };
   
@@ -635,7 +636,6 @@ function DashboardContent() {
       return;
     }
     
-    // Always remove previous highlight before creating a new one
     removeHighlight();
 
     const selection = window.getSelection();
@@ -675,21 +675,15 @@ function DashboardContent() {
     }
   };
 
-    const handleInlineImprovement = (improvedText: string) => {
-        if (!selectionToolbar) return;
+    const handleInlineImprovement = (newFullProposal: string) => {
         setInlineImprovementCount(prev => prev + 1);
-
-        const fullProposal = improvementHistory.length > 0 ? improvementHistory[currentImprovementIndex] : generatedProposal;
-        
-        const highlightedSpan = `<span id="${HIGHLIGHT_ID}" class="text-selection-highlight">${selectionToolbar.text}</span>`;
-        const newProposal = fullProposal.replace(highlightedSpan, improvedText);
 
         if (improvementHistory.length > 0) {
             const newHistory = [...improvementHistory];
-            newHistory[currentImprovementIndex] = newProposal;
+            newHistory[currentImprovementIndex] = newFullProposal;
             setImprovementHistory(newHistory);
         } else {
-            setGeneratedProposal(newProposal);
+            setGeneratedProposal(newFullProposal);
         }
     };
 
@@ -1124,8 +1118,20 @@ function DashboardContent() {
                   <SelectionToolbar
                     position={selectionToolbar}
                     selectedText={selectionToolbar.text}
-                    fullProposal={improvementHistory[currentImprovementIndex] ?? displayedOriginalProposal}
-                    onImprovement={handleInlineImprovement}
+                    fullProposal={
+                      (improvementHistory.length > 0 ? improvementHistory[currentImprovementIndex] : generatedProposal)
+                      .replace(/<span[^>]*>|<\/span>/g, "")
+                    }
+                    onImprovement={(newFullProposal) => {
+                      if (improvementHistory.length > 0) {
+                          const newHistory = [...improvementHistory];
+                          newHistory[currentImprovementIndex] = newFullProposal;
+                          setImprovementHistory(newHistory);
+                      } else {
+                          setGeneratedProposal(newFullProposal);
+                      }
+                      setInlineImprovementCount(prev => prev + 1);
+                    }}
                     onClose={() => {
                         setSelectionToolbar(null);
                         removeHighlight();
@@ -1345,5 +1351,3 @@ export default function DashboardPage() {
         </Suspense>
     )
 }
-
-    

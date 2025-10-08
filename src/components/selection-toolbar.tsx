@@ -58,32 +58,18 @@ export function SelectionToolbar({ position, selectedText, fullProposal, onImpro
     }
     
     try {
-      // The full proposal context now includes the <span> tag for highlighting.
-      // We must pass the clean text to the AI.
-      const cleanFullProposal = fullProposal.replace(/<span[^>]*>|<\/span>/g, "");
-
-      const contextualPrompt = `Full Proposal for context:
-      ${cleanFullProposal}
-      
-      ---
-      
-      Highlighted Part to Edit:
-      ${selectedText}
-      
-      ---
-      
-      My Instruction: "${prompt}"
-      `;
-
       const result = await improveProposalAction({
-        proposal: selectedText,
-        instruction: contextualPrompt,
+        proposal: fullProposal, // Send the full proposal for context
+        instruction: `Instruction: "${prompt}". Apply this only to the following part of the text: "${selectedText}"`,
       });
 
       if (result.error) {
         toast({ title: 'Error', description: result.error, variant: 'destructive'});
       } else if (result.data) {
-        onImprovement(result.data.improvedProposal);
+        // The AI now returns the modified text for the selection.
+        // We find the original selection and replace it with the new text.
+        const newFullProposal = fullProposal.replace(selectedText, result.data.improvedProposal);
+        onImprovement(newFullProposal);
       }
     } catch (e: any) {
        toast({ title: 'Error', description: e.message || 'An unexpected error occurred.', variant: 'destructive'});
@@ -102,11 +88,7 @@ export function SelectionToolbar({ position, selectedText, fullProposal, onImpro
       data-selection-toolbar="true"
       className="absolute z-10 w-[400px] rounded-lg border bg-popover text-popover-foreground shadow-lg p-4"
       style={{ top: position.top, left: position.left, maxWidth: 'calc(100vw - 32px)' }}
-       onMouseDown={(e) => {
-        if (!(e.target instanceof HTMLInputElement) && !(e.target instanceof HTMLButtonElement) && !(e.target as HTMLElement).closest('button')) {
-            e.preventDefault();
-        }
-      }}
+       onMouseDown={(e) => e.preventDefault()}
     >
         {isLimitReached ? (
             <p className="text-sm text-destructive-foreground text-center bg-destructive/80 p-2 rounded-md">Improvement limit reached.</p>

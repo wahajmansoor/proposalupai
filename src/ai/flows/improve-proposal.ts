@@ -24,18 +24,27 @@ export type ImproveProposalOutput = z.infer<typeof ImproveProposalOutputSchema>;
 export async function improveProposal(
   input: ImproveProposalInput
 ): Promise<ImproveProposalOutput> {
-  const prompt = `You are an expert copy editor and formatter. A user has provided text and an instruction to improve it.
+  const prompt = `You are an expert copy editor and formatter. A user has provided a block of text and a specific instruction to improve it.
 
+**Full Text for Context:**
+---
+${input.proposal}
+---
+
+**User's Instruction:**
+---
 ${input.instruction}
+---
 
 **CRITICAL INSTRUCTIONS:**
-1.  **YOUR PRIMARY GOAL IS TO PRESERVE FORMATTING.** You MUST maintain the original text's structure.
-    -   **Line Breaks:** Preserve all single line breaks (\n) and paragraph breaks (\n\n).
+1.  **EXECUTE THE INSTRUCTION:** Apply the user's instruction ONLY to the specified part of the text.
+2.  **PRESERVE ALL FORMATTING:** Your primary goal is to maintain the original text's structure.
+    -   **Line Breaks:** You MUST preserve all single line breaks (\n) and paragraph breaks (\n\n).
     -   **Lists:** If the original text has a numbered or bulleted list, each item MUST remain on its own line.
     -   **Questions:** If there are multiple questions, ensure each one stays on its own separate line.
-2.  **OUTPUT ONLY THE REWRITTEN TEXT.** Do not add any commentary, explanation, or markdown formatting like \`\`\`.
-3.  **HANDLE DELETION:** If the instruction is to remove or delete the text, you MUST output an empty string.
-4.  **MATCH THE WORD COUNT:** Adhere closely to the word count of the original text selection unless the instruction is specifically about length (e.g., "make it shorter").
+3.  **OUTPUT ONLY THE REWRITTEN TEXT.** Do not add any commentary, explanation, or markdown formatting like \`\`\`. Your output should be only the modified text itself, ready to be dropped back into the original document.
+4.  **HANDLE DELETION:** If the instruction is to remove or delete the text, you MUST output an empty string.
+5.  **MATCH THE WORD COUNT:** Adhere closely to the word count of the original text selection unless the instruction is specifically about length (e.g., "make it shorter").
 `;
 
   const completion = await openai.chat.completions.create({
