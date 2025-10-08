@@ -561,6 +561,7 @@ function DashboardContent() {
       toast({ title: 'Error Improving Proposal', description: result.error, variant: 'destructive' });
     } else if (result.data) {
       const improvedText = result.data.improvedProposal;
+      
       const newFullProposal = baseProposal.replace(textToImprove, improvedText);
 
       const newHistory = [...improvementHistory.slice(0, currentImprovementIndex + 1), newFullProposal];
@@ -1019,8 +1020,8 @@ function DashboardContent() {
               </div>
             </CardHeader>
             <CardContent className={cn("min-h-[400px]", { 'min-h-[200px]': !generatedProposal && !isGenerating })}>
-              <div 
-                ref={proposalContentRef} 
+              <div
+                ref={proposalContentRef}
                 className="relative"
                 onMouseUp={() => setSelectedText(window.getSelection()?.toString() ?? '')}
               >
@@ -1283,5 +1284,3 @@ export default function DashboardPage() {
         </Suspense>
     )
 }
-
-    
