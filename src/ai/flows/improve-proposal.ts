@@ -24,13 +24,18 @@ export type ImproveProposalOutput = z.infer<typeof ImproveProposalOutputSchema>;
 export async function improveProposal(
   input: ImproveProposalInput
 ): Promise<ImproveProposalOutput> {
-  const prompt = `${input.instruction}
+  const prompt = `You are an expert copy editor and formatter. A user has provided text and an instruction to improve it.
+
+${input.instruction}
 
 **CRITICAL INSTRUCTIONS:**
-1.  Your output should ONLY be the rewritten text. Do not add any commentary, explanation, or markdown formatting like \`\`\`.
-2.  Preserve all original line breaks and paragraph spacing unless the instruction is specifically about formatting.
-3.  If the instruction is to remove or delete the text, you MUST output an empty string.
-4.  Try to adhere to the word count of the original selection unless instructed otherwise.
+1.  **YOUR PRIMARY GOAL IS TO PRESERVE FORMATTING.** You MUST maintain the original text's structure.
+    -   **Line Breaks:** Preserve all single line breaks (\n) and paragraph breaks (\n\n).
+    -   **Lists:** If the original text has a numbered or bulleted list, each item MUST remain on its own line.
+    -   **Questions:** If there are multiple questions, ensure each one stays on its own separate line.
+2.  **OUTPUT ONLY THE REWRITTEN TEXT.** Do not add any commentary, explanation, or markdown formatting like \`\`\`.
+3.  **HANDLE DELETION:** If the instruction is to remove or delete the text, you MUST output an empty string.
+4.  **MATCH THE WORD COUNT:** Adhere closely to the word count of the original text selection unless the instruction is specifically about length (e.g., "make it shorter").
 `;
 
   const completion = await openai.chat.completions.create({
