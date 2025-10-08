@@ -50,7 +50,9 @@ ${input.instruction}
   }
 
   // Trim whitespace and remove potential markdown fences
-  const cleanedProposal = improvedProposal.trim().replace(/^```[\s\S]*?```$/, '').trim();
+  const cleanedProposal = improved.trim().replace(/^```[\s\S]*?```$/, '').trim();
 
   return { improvedProposal: cleanedProposal };
 }
+
+    

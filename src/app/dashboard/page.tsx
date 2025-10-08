@@ -496,7 +496,7 @@ function DashboardContent() {
     setImprovementHistory([]);
     setIsOriginalProposalSaved(false);
     setIsImprovedProposalSaved(false);
-    setInlineImprovementCount(0); // Reset inline improvement count
+    setInlineImprovementCount(0); // Reset inline improvement count for a new proposal
 
     const selectedGreeting = greetings.find(g => g.value === greeting)?.label || greeting;
     const selectedClosing = closingCtas.find(c => c.value === closingCta)?.label || closingCta;
@@ -1111,7 +1111,7 @@ function DashboardContent() {
                         <Skeleton className="h-4 w-2/3" />
                     </div>
                 ) : displayedOriginalProposal ? (
-                    <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap"
+                     <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap"
                         dangerouslySetInnerHTML={{ __html: displayedOriginalProposal.replace(/\n/g, '<br />') }} />
                 ) : (
                     <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
@@ -1188,7 +1188,7 @@ function DashboardContent() {
                     </Button>
                   </div>
                 </div>
-                <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap border-t pt-4"
+                <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap border-t pt-4"
                   dangerouslySetInnerHTML={{ __html: displayedImprovedProposal.replace(/\n/g, '<br />') }} />
 
 
@@ -1346,3 +1346,4 @@ export default function DashboardPage() {
     )
 }
 
+    

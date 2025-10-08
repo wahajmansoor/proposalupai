@@ -58,12 +58,15 @@ export function SelectionToolbar({ position, selectedText, fullProposal, onImpro
     }
     
     try {
-      // Provide the full proposal as context for better edits
+      // The full proposal context now includes the <span> tag for highlighting.
+      // We must pass the clean text to the AI.
+      const cleanFullProposal = fullProposal.replace(/<span[^>]*>|<\/span>/g, "");
+
       const contextualPrompt = `Given the following full proposal as context, rewrite the highlighted part based on my instruction.
       If the instruction is to remove or delete the text, then you MUST output an empty string. Your output should ONLY be the rewritten version of the highlighted part. Adhere to the word count of the original selection, and preserve all original line breaks and paragraph spacing unless instructed otherwise.
 
       **Full Proposal Context:**
-      ${fullProposal}
+      ${cleanFullProposal}
       
       ---
 
@@ -76,8 +79,8 @@ export function SelectionToolbar({ position, selectedText, fullProposal, onImpro
       `;
 
       const result = await improveProposalAction({
-        proposal: selectedText, // The AI will still see this as the primary text to change
-        instruction: contextualPrompt, // But the instruction gives it full context
+        proposal: selectedText,
+        instruction: contextualPrompt,
       });
 
       if (result.error) {
@@ -158,3 +161,5 @@ export function SelectionToolbar({ position, selectedText, fullProposal, onImpro
     </div>
   );
 }
+
+    
