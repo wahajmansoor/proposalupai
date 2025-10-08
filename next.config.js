@@ -1,12 +1,7 @@
 /** @type {import('next').NextConfig} */
-// Refresh cache
 const nextConfig = {
-  /* config options here */
-  experimental: {
-    serverActions: {
-      maxDuration: 120, // Increase timeout to 2 minutes for AI operations
-    },
-    serverComponentsExternalPackages: ['openai'],
+  serverActions: {
+    maxDuration: 120, // Increase timeout to 2 minutes for AI operations
   },
   typescript: {
     ignoreBuildErrors: true,
@@ -29,7 +24,8 @@ const nextConfig = {
         pathname: '/**',
       },
       {
-        protocol: 'https',
+        protocol: 'https'
+        ,
         hostname: 'picsum.photos',
         port: '',
         pathname: '/**',
@@ -39,7 +35,7 @@ const nextConfig = {
         hostname: 'proposalup.wahajmansoor.com',
         port: '',
         pathname: '/**',
-      },
+      }
     ],
   },
 };
