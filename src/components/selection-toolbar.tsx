@@ -120,12 +120,9 @@ export function SelectionToolbar({ position, selectedText, fullProposal, onImpro
       className="absolute z-10 w-[400px] rounded-lg border bg-popover text-popover-foreground shadow-lg p-4"
       style={{ top: position.top, left: position.left, maxWidth: 'calc(100vw - 32px)' }}
       onMouseDown={(e) => {
-        // Prevent the text from being deselected when clicking on the toolbar,
-        // but allow clicks on interactive elements to work.
-        const target = e.target as HTMLElement;
-        if (!target.closest('button') && !target.closest('input')) {
-          e.preventDefault();
-        }
+        // This is the key fix: prevent mousedown from propagating and causing a deselect.
+        // The browser will still handle focus for inputs and clicks for buttons correctly.
+        e.preventDefault();
       }}
     >
         {isLimitReached ? (
