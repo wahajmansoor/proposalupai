@@ -496,7 +496,6 @@ function DashboardContent() {
     setImprovementHistory([]);
     setIsOriginalProposalSaved(false);
     setIsImprovedProposalSaved(false);
-    setInlineImprovementCount(0); // Reset inline improvement count for a new proposal
 
     const selectedGreeting = greetings.find(g => g.value === greeting)?.label || greeting;
     const selectedClosing = closingCtas.find(c => c.value === closingCta)?.label || closingCta;
@@ -612,36 +611,20 @@ function DashboardContent() {
   };
 
   const copyToClipboard = (text: string) => {
-    const cleanText = text.replace(/<span[^>]*>|<\/span>/g, "");
-    navigator.clipboard.writeText(cleanText);
+    navigator.clipboard.writeText(text);
     toast({ title: 'Copied!', description: 'Content copied to clipboard.' });
   };
   
-    const removeHighlight = () => {
-        const proposalWithHighlight = improvementHistory.length > 0 ? improvementHistory[currentImprovementIndex] : generatedProposal;
-        const plainText = proposalWithHighlight.replace(`<span id="${HIGHLIGHT_ID}" class="text-selection-highlight">`, "").replace("</span>", "");
-        
-        if (improvementHistory.length > 0) {
-            const newHistory = [...improvementHistory];
-            newHistory[currentImprovementIndex] = plainText;
-            setImprovementHistory(newHistory);
-        } else {
-            setGeneratedProposal(plainText);
-        }
-    }
-
-
   const handleTextSelection = (event: React.MouseEvent<HTMLDivElement>) => {
+    // Don't show toolbar if clicking on the toolbar itself
     if ((event.target as HTMLElement).closest('[data-selection-toolbar="true"]')) {
       return;
     }
-    
-    removeHighlight();
 
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0 || selection.toString().trim() === '') {
-        setSelectionToolbar(null);
-        return;
+      setSelectionToolbar(null);
+      return;
     }
 
     const range = selection.getRangeAt(0);
@@ -649,18 +632,6 @@ function DashboardContent() {
 
     if (proposalContentEl && proposalContentEl.contains(range.commonAncestorContainer)) {
       const selectedText = selection.toString();
-      const proposalText = improvementHistory.length > 0 ? improvementHistory[currentImprovementIndex] : generatedProposal;
-
-      const newProposalText = proposalText.replace(selectedText, `<span id="${HIGHLIGHT_ID}" class="text-selection-highlight">${selectedText}</span>`);
-
-      if (improvementHistory.length > 0) {
-        const newHistory = [...improvementHistory];
-        newHistory[currentImprovementIndex] = newProposalText;
-        setImprovementHistory(newHistory);
-      } else {
-        setGeneratedProposal(newProposalText);
-      }
-
       const rect = range.getBoundingClientRect();
       const containerRect = proposalContentEl.getBoundingClientRect();
       
@@ -675,8 +646,11 @@ function DashboardContent() {
     }
   };
 
-    const handleInlineImprovement = (newFullProposal: string) => {
+    const handleInlineImprovement = (originalText: string, improvedText: string) => {
         setInlineImprovementCount(prev => prev + 1);
+
+        const currentProposal = improvementHistory.length > 0 ? improvementHistory[currentImprovementIndex] : generatedProposal;
+        const newFullProposal = currentProposal.replace(originalText, improvedText);
 
         if (improvementHistory.length > 0) {
             const newHistory = [...improvementHistory];
@@ -1120,22 +1094,9 @@ function DashboardContent() {
                     selectedText={selectionToolbar.text}
                     fullProposal={
                       (improvementHistory.length > 0 ? improvementHistory[currentImprovementIndex] : generatedProposal)
-                      .replace(/<span[^>]*>|<\/span>/g, "")
                     }
-                    onImprovement={(newFullProposal) => {
-                      if (improvementHistory.length > 0) {
-                          const newHistory = [...improvementHistory];
-                          newHistory[currentImprovementIndex] = newFullProposal;
-                          setImprovementHistory(newHistory);
-                      } else {
-                          setGeneratedProposal(newFullProposal);
-                      }
-                      setInlineImprovementCount(prev => prev + 1);
-                    }}
-                    onClose={() => {
-                        setSelectionToolbar(null);
-                        removeHighlight();
-                    }}
+                    onImprovement={handleInlineImprovement}
+                    onClose={() => setSelectionToolbar(null)}
                     usageCount={inlineImprovementCount}
                     usageLimit={INLINE_IMPROVEMENT_LIMIT}
                   />
