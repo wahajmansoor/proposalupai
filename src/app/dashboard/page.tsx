@@ -546,24 +546,24 @@ function DashboardContent() {
       toast({ title: 'Trial Limit Reached', description: 'Please upgrade your plan to improve proposals.', variant: 'destructive' });
       return;
     }
-
+  
     setIsImproving(true);
-
+  
     const baseProposal = improvementHistory[currentImprovementIndex] ?? generatedProposal;
     const textToImprove = selectedText || baseProposal;
-
+  
     const result = await improveProposalAction({
       proposal: baseProposal,
-      instruction: `Instruction: "${instruction}". Apply this only to the following part of the text: "${textToImprove}"`,
+      instruction: instruction,
+      selectedText: selectedText,
     });
-
+  
     if (result.error) {
       toast({ title: 'Error Improving Proposal', description: result.error, variant: 'destructive' });
     } else if (result.data) {
       const improvedText = result.data.improvedProposal;
-      
       const newFullProposal = baseProposal.replace(textToImprove, improvedText);
-
+  
       const newHistory = [...improvementHistory.slice(0, currentImprovementIndex + 1), newFullProposal];
       setImprovementHistory(newHistory);
       setCurrentImprovementIndex(newHistory.length - 1);
@@ -574,6 +574,7 @@ function DashboardContent() {
     setCustomImprovementInstruction('');
     setSelectedText('');
   };
+  
   
   const handleSaveProposal = async (proposalContent: string) => {
     if (!user || !projectDetails.projectTitle.trim() || !proposalContent) {
@@ -1078,6 +1079,11 @@ function DashboardContent() {
                             Update
                         </Button>
                     </div>
+                     {selectedText && (
+                        <p className="text-xs text-muted-foreground">
+                            Note: Improvement will be applied to your highlighted text. Clear selection to apply to the whole proposal.
+                        </p>
+                    )}
                 </div>
               </CardFooter>
             )}
@@ -1148,6 +1154,11 @@ function DashboardContent() {
                             Update
                           </Button>
                         </div>
+                         {selectedText && (
+                            <p className="text-xs text-muted-foreground">
+                                Note: Improvement will be applied to your highlighted text. Clear selection to apply to the whole proposal.
+                            </p>
+                        )}
                       </div>
                   </div>
                 ) : (

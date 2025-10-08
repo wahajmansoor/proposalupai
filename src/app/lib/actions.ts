@@ -199,6 +199,7 @@ export async function generateProposalAction(input: z.infer<typeof generatePropo
 const improveProposalSchema = z.object({
   proposal: z.string(),
   instruction: z.string(),
+  selectedText: z.string().optional(),
 });
 
 export async function improveProposalAction(input: z.infer<typeof improveProposalSchema>) {
