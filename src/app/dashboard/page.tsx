@@ -156,6 +156,7 @@ function DashboardContent() {
   const [isSavingImprovement, setIsSavingImprovement] = useState<boolean[]>([]);
   
   const [selectedText, setSelectedText] = useState('');
+  const [currentImprovementIndex, setCurrentImprovementIndex] = useState(0);
 
 
   const isTrial = userProfile?.subscriptionStatus === 'trialing';
@@ -270,6 +271,7 @@ function DashboardContent() {
     setSavedImprovements([]);
     setIsSavingImprovement([]);
     setSelectedText('');
+    setCurrentImprovementIndex(0);
 
     toast({ title: 'Form Cleared', description: 'You can now start a new proposal.' });
   };
@@ -527,6 +529,7 @@ function DashboardContent() {
         setImprovements([]);
         setSavedImprovements([]);
         setIsSavingImprovement([]);
+        setCurrentImprovementIndex(0);
     }
     setIsGenerating(false);
   };
@@ -547,9 +550,9 @@ function DashboardContent() {
   
     setIsImproving(true);
     
+    // The text to be improved is either the original proposal, or the latest improved version
     const baseProposal = improvements.length > 0 ? improvements[improvements.length - 1] : generatedProposal;
-    const textToImprove = selectedText || baseProposal;
-  
+    
     const result = await improveProposalAction({
       proposal: baseProposal,
       instruction: instruction,
@@ -562,12 +565,13 @@ function DashboardContent() {
       const improvedText = result.data.improvedProposal;
       
       const newFullProposal = selectedText 
-        ? baseProposal.replace(textToImprove, improvedText)
+        ? baseProposal.replace(selectedText, improvedText)
         : improvedText;
 
       setImprovements(prev => [...prev, newFullProposal]);
       setSavedImprovements(prev => [...prev, false]);
       setIsSavingImprovement(prev => [...prev, false]);
+      setCurrentImprovementIndex(improvements.length); // Navigate to the new improvement
 
       toast({ title: 'Proposal Improved!', description: 'The improved version is ready below.' });
     }
@@ -626,6 +630,8 @@ function DashboardContent() {
   const improvementsRemaining = MAX_IMPROVEMENTS - improvements.length;
   
   const latestProposal = improvements.length > 0 ? improvements[improvements.length - 1] : generatedProposal;
+  const currentImprovement = improvements[currentImprovementIndex];
+  const currentImprovementWordCount = currentImprovement?.trim().split(/\s+/).filter(Boolean).length || 0;
 
   return (
     <>
@@ -1049,7 +1055,7 @@ function DashboardContent() {
                 )}
               </div>
             </CardContent>
-            {generatedProposal && improvements.length < MAX_IMPROVEMENTS && (
+            {generatedProposal && improvements.length === 0 && (
               <CardFooter className="flex-col items-start gap-4 border-t pt-4">
                   <p className="text-sm text-muted-foreground">You can improve this proposal {improvementsRemaining} more time(s). Highlight text to refine a specific part.</p>
                   <div className="w-full space-y-2">
@@ -1091,31 +1097,35 @@ function DashboardContent() {
             )}
           </Card>
            
-           {improvements.map((proposal, index) => {
-             const currentWordCount = proposal.trim().split(/\s+/).filter(Boolean).length;
-             return (
-                <Card key={index}>
+           {improvements.length > 0 && (
+                <Card>
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div className="flex items-center gap-3">
-                            <CardTitle>Improved Version {index + 1}</CardTitle>
-                            <Badge variant="secondary">{currentWordCount} words</Badge>
+                            <CardTitle>Improved Version</CardTitle>
+                            <Badge variant="secondary">{currentImprovementIndex + 1} of {improvements.length}</Badge>
                         </div>
                         <div className="flex items-center gap-1">
-                            <Button variant="outline" size="sm" onClick={() => handleSaveProposal(proposal, false, index)} disabled={!proposal || isSavingImprovement[index] || savedImprovements[index]}>
-                                {isSavingImprovement[index] ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
-                                {savedImprovements[index] ? 'Saved' : 'Save'}
+                             <Button variant="ghost" size="icon" onClick={() => setCurrentImprovementIndex(p => p - 1)} disabled={currentImprovementIndex === 0}>
+                                <ArrowLeft className="h-4 w-4" />
                             </Button>
-                            <Button variant="outline" size="sm" onClick={() => copyToClipboard(proposal)}>
+                            <Button variant="ghost" size="icon" onClick={() => setCurrentImprovementIndex(p => p + 1)} disabled={currentImprovementIndex === improvements.length - 1}>
+                                <ArrowRight className="h-4 w-4" />
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => handleSaveProposal(currentImprovement, false, currentImprovementIndex)} disabled={!currentImprovement || isSavingImprovement[currentImprovementIndex] || savedImprovements[currentImprovementIndex]}>
+                                {isSavingImprovement[currentImprovementIndex] ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
+                                {savedImprovements[currentImprovementIndex] ? 'Saved' : 'Save'}
+                            </Button>
+                            <Button variant="outline" size="sm" onClick={() => copyToClipboard(currentImprovement)}>
                                 <Clipboard className="mr-2 h-4 w-4" /> Copy
                             </Button>
                         </div>
                     </CardHeader>
                     <CardContent className="min-h-[200px]" onMouseUp={() => setSelectedText(window.getSelection()?.toString() ?? '')}>
                         <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap">
-                           {proposal}
+                           {currentImprovement}
                         </div>
                     </CardContent>
-                    {index === improvements.length - 1 && improvements.length < MAX_IMPROVEMENTS && (
+                    {improvements.length < MAX_IMPROVEMENTS && (
                         <CardFooter className="flex-col items-start gap-4 border-t pt-4">
                             <p className="text-sm text-muted-foreground">You can improve this proposal {improvementsRemaining} more time(s). Highlight text to refine a specific part.</p>
                             <div className="w-full space-y-2">
@@ -1155,13 +1165,13 @@ function DashboardContent() {
                             </div>
                         </CardFooter>
                     )}
-                     {index === improvements.length - 1 && improvements.length >= MAX_IMPROVEMENTS && (
+                     {improvements.length >= MAX_IMPROVEMENTS && (
                       <CardFooter className="border-t pt-4 text-center text-sm text-muted-foreground">
                         You've reached the limit of {MAX_IMPROVEMENTS} improvements for this proposal.
                       </CardFooter>
                     )}
                 </Card>
-             )})}
+             )}
 
           {generatedProposal && (
             <Button variant="outline" className="w-full" onClick={handleResetForm}>
