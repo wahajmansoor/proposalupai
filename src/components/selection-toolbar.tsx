@@ -121,8 +121,9 @@ export function SelectionToolbar({ position, selectedText, fullProposal, onImpro
       style={{ top: position.top, left: position.left, maxWidth: 'calc(100vw - 32px)' }}
       onMouseDown={(e) => {
         // Prevent the text from being deselected when clicking on the toolbar,
-        // but allow clicks on the input and buttons to work.
-        if (!(e.target instanceof HTMLInputElement || e.target instanceof HTMLButtonElement)) {
+        // but allow clicks on interactive elements to work.
+        const target = e.target as HTMLElement;
+        if (!target.closest('button') && !target.closest('input')) {
           e.preventDefault();
         }
       }}

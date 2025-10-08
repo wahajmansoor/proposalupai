@@ -49,5 +49,3 @@ export async function improveProposal(
 
   return { improvedProposal: cleanedProposal };
 }
-
-    
