@@ -145,7 +145,6 @@ function DashboardContent() {
   const [isImprovedProposalSaved, setIsImprovedProposalSaved] = useState(false);
 
   const summaryTextareaRef = useRef<HTMLTextAreaElement>(null);
-  const proposalContentRef = useRef<HTMLDivElement>(null);
 
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
   const [planInterval, setPlanInterval] = useState<'monthly' | 'yearly' | null>(null);
@@ -153,11 +152,9 @@ function DashboardContent() {
   const [customImprovementInstruction, setCustomImprovementInstruction] = useState('');
   const [isImproving, setIsImproving] = useState(false);
   
-  // State for chained improvements
   const [improvedProposal, setImprovedProposal] = useState('');
   const [improvementCount, setImprovementCount] = useState(0);
 
-  // State for selected text
   const [selectedText, setSelectedText] = useState('');
 
 
@@ -172,18 +169,14 @@ function DashboardContent() {
         setPlanInterval(interval);
       }
       setShowWelcomeDialog(true);
-      // Remove the query param from the URL
       router.replace('/dashboard', { scroll: false });
     }
   }, [searchParams, router]);
 
   useEffect(() => {
-    if (generatedProposal) {
-      setWordCount(generatedProposal.trim().split(/\s+/).filter(Boolean).length);
-    } else {
-      setWordCount(0);
-    }
-  }, [generatedProposal]);
+    const proposalToCount = improvedProposal || generatedProposal;
+    setWordCount(proposalToCount.trim().split(/\s+/).filter(Boolean).length);
+  }, [generatedProposal, improvedProposal]);
   
   const [suggestion, setSuggestion] = useState<Suggestion | null>(null);
 
@@ -195,7 +188,6 @@ function DashboardContent() {
 
   useEffect(() => {
     if (user) {
-      // Fetch skill profiles
       const fetchProfiles = async () => {
         const profiles = await getSkillProfiles(user.uid);
         setSkillProfiles(profiles);
@@ -204,7 +196,6 @@ function DashboardContent() {
     }
   }, [user]);
 
-  // When a skill profile is selected, update relevant fields
   useEffect(() => {
     if (selectedProfile !== 'none') {
       const profile = skillProfiles.find(p => p.id === selectedProfile);
@@ -212,7 +203,6 @@ function DashboardContent() {
         setSkillsAndExpertise(profile.keywords.join(', '));
         setTone(profile.tone);
         setProfileLinks(profile.links);
-        // A simple mapping from "Detailed" to a word count range
         const lengthMap = {
             "Very Short": [50, 80],
             "Short": [80, 120],
@@ -223,7 +213,6 @@ function DashboardContent() {
         setWordLimit(lengthMap[profile.length] || [50, 150]);
       }
     } else {
-      // Reset if no profile is selected
       setSkillsAndExpertise('');
       setProfileLinks([]);
       setTone(tones[0]);
@@ -242,7 +231,6 @@ function DashboardContent() {
     if (proposalTemplate === 'video') {
       setOpeningStrategy('video');
     } else {
-      // If the user switches back from video, don't leave 'video' selected.
       if (openingStrategy === 'video') {
         setOpeningStrategy('none');
       }
@@ -251,7 +239,6 @@ function DashboardContent() {
 
 
   if (loading || !user) {
-    // The layout will handle showing a loader, so we can return null or a minimal loader here.
     return null;
   }
 
@@ -330,7 +317,6 @@ function DashboardContent() {
       const url = manualLinkInput.trim();
       if (!manualLinks.some(link => link.url === url)) {
         try {
-          // Basic URL validation
           new URL(url);
           setManualLinks([...manualLinks, { url: url }]);
         } catch (_) {
@@ -379,7 +365,7 @@ function DashboardContent() {
 
     try {
       const strategiesMap = openingStrategies.reduce((acc, str) => {
-        if (str.id !== 'video') { // Don't include video in what the AI can choose from
+        if (str.id !== 'video') { 
           acc[str.id] = str.description;
         }
         return acc;
@@ -538,21 +524,21 @@ function DashboardContent() {
         toast({ title: 'Error', description: result.error, variant: 'destructive' });
     } else if (result.data) {
         setGeneratedProposal(result.data.proposal);
-        setImprovedProposal(''); // Clear any previous improved version
+        setImprovedProposal(''); 
         setImprovementCount(0);
         setIsOriginalProposalSaved(false);
         setIsImprovedProposalSaved(false);
     }
     setIsGenerating(false);
   };
-
+  
   const handleImproveProposal = async (instruction: string) => {
     if (!instruction) {
-      toast({ title: 'No Instruction', description: 'Please enter an instruction to improve the proposal.', variant: 'destructive' });
+      toast({ title: 'No Instruction', description: 'Please provide an instruction.', variant: 'destructive' });
       return;
     }
     if (trialLimitReached) {
-      toast({ title: 'Trial Limit Reached', description: 'Please upgrade your plan to improve proposals.', variant: 'destructive' });
+      toast({ title: 'Trial Limit Reached', description: 'Please upgrade to improve proposals.', variant: 'destructive' });
       return;
     }
     if (improvementCount >= MAX_IMPROVEMENTS) {
@@ -561,9 +547,7 @@ function DashboardContent() {
     }
   
     setIsImproving(true);
-  
-    // If we're improving for the first time, the base is the original proposal.
-    // Otherwise, it's the already improved version.
+    
     const baseProposal = improvedProposal || generatedProposal;
     const textToImprove = selectedText || baseProposal;
   
@@ -584,7 +568,7 @@ function DashboardContent() {
 
       setImprovedProposal(newFullProposal);
       setImprovementCount(prev => prev + 1);
-      setIsImprovedProposalSaved(false);
+      setIsImprovedProposalSaved(false); // Reset save status for the new version
       toast({ title: 'Proposal Improved!', description: 'The improved version is ready below.' });
     }
     setIsImproving(false);
@@ -1020,7 +1004,7 @@ function DashboardContent() {
             <CardHeader className="flex flex-row items-center justify-between">
               <div className="flex items-center gap-2">
                 <CardTitle>Generated Proposal</CardTitle>
-                {wordCount > 0 && (
+                {wordCount > 0 && !improvedProposal && (
                   <Badge variant="secondary">{wordCount} words</Badge>
                 )}
               </div>
@@ -1034,10 +1018,8 @@ function DashboardContent() {
                   </Button>
               </div>
             </CardHeader>
-            <CardContent
-                className={cn("min-h-[400px]", { 'min-h-[200px]': !generatedProposal && !isGenerating })}
-            >
-              <div ref={proposalContentRef} onMouseUp={() => setSelectedText(window.getSelection()?.toString() ?? '')} className="relative">
+            <CardContent className="min-h-[200px]">
+              <div onMouseUp={() => setSelectedText(window.getSelection()?.toString() ?? '')}>
                 {isGenerating ? (
                     <div className="space-y-2 pt-4">
                         <Skeleton className="h-4 w-full" />
@@ -1051,7 +1033,7 @@ function DashboardContent() {
                        {generatedProposal}
                      </div>
                 ) : (
-                    <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
+                    <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground p-8">
                       <HugeiconsIcon icon={File01Icon} size={32} className="h-12 w-12 mb-4"/>
                       <p className="font-medium">Your proposal will appear here.</p>
                       <p className="text-sm">Fill out the details on the left and click "Generate Proposal".</p>
@@ -1059,78 +1041,117 @@ function DashboardContent() {
                 )}
               </div>
             </CardContent>
+            {generatedProposal && !improvedProposal && (
+              <CardFooter className="flex-col items-start gap-4 border-t pt-4">
+                  <p className="text-sm text-muted-foreground">You can improve this proposal {improvementsRemaining} more time(s). Highlight text to refine a specific part.</p>
+                  <div className="w-full space-y-2">
+                  <div className="flex flex-wrap gap-2">
+                      {improvementPresets.map(preset => (
+                      <Button
+                          key={preset}
+                          variant="outline"
+                          size="sm"
+                          onClick={() => handleImproveProposal(preset)}
+                          disabled={isImproving || improvementsRemaining <= 0 || trialLimitReached}
+                      >
+                          {preset}
+                      </Button>
+                      ))}
+                  </div>
+                  <div className="flex w-full items-center gap-2">
+                      <Input 
+                      placeholder="Or type a custom improvement request..."
+                      value={customImprovementInstruction}
+                      onChange={(e) => setCustomImprovementInstruction(e.target.value)}
+                      disabled={isImproving || improvementsRemaining <= 0 || trialLimitReached}
+                      />
+                      <Button 
+                      onClick={() => handleImproveProposal(customImprovementInstruction)}
+                      disabled={isImproving || !customImprovementInstruction.trim() || improvementsRemaining <= 0 || trialLimitReached}
+                      >
+                      {isImproving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                      Update
+                      </Button>
+                  </div>
+                      {selectedText && (
+                      <p className="text-xs text-muted-foreground bg-yellow-100 dark:bg-yellow-900/50 p-2 rounded-md border border-yellow-300 dark:border-yellow-700">
+                          Note: Improvement will be applied to your highlighted text. Clear selection to apply to the whole proposal.
+                      </p>
+                  )}
+                  </div>
+              </CardFooter>
+            )}
           </Card>
            
-           {generatedProposal && (
+           {improvedProposal && (
             <Card>
-                <CardHeader>
-                    <div className="flex flex-row items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <CardTitle>Improved Version</CardTitle>
-                        </div>
-                        {improvedProposal && (
-                            <div className="flex items-center gap-1">
-                                <Button variant="outline" size="sm" onClick={() => handleSaveProposal(improvedProposal, false)} disabled={!improvedProposal || isSavingImproved || isImprovedProposalSaved}>
-                                    {isSavingImproved ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
-                                    {isImprovedProposalSaved ? 'Saved' : 'Save'}
-                                </Button>
-                                <Button variant="outline" size="sm" onClick={() => copyToClipboard(improvedProposal)}>
-                                <Clipboard className="mr-2 h-4 w-4" /> Copy
-                                </Button>
-                            </div>
+                <CardHeader className="flex flex-row items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <CardTitle>Improved Version</CardTitle>
+                         {wordCount > 0 && (
+                          <Badge variant="secondary">{wordCount} words</Badge>
                         )}
                     </div>
+                    <div className="flex items-center gap-1">
+                        <Button variant="outline" size="sm" onClick={() => handleSaveProposal(improvedProposal, false)} disabled={!improvedProposal || isSavingImproved || isImprovedProposalSaved}>
+                            {isSavingImproved ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
+                            {isImprovedProposalSaved ? 'Saved' : 'Save'}
+                        </Button>
+                        <Button variant="outline" size="sm" onClick={() => copyToClipboard(improvedProposal)}>
+                        <Clipboard className="mr-2 h-4 w-4" /> Copy
+                        </Button>
+                    </div>
                 </CardHeader>
-              <CardContent className="min-h-[200px] space-y-4">
-                 <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap" onMouseUp={() => setSelectedText(window.getSelection()?.toString() ?? '')}>
+              <CardContent className="min-h-[200px]" onMouseUp={() => setSelectedText(window.getSelection()?.toString() ?? '')}>
+                 <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap">
                     {improvedProposal}
                  </div>
-                 
-                 <div className="border-t pt-4 space-y-2">
-                    <p className="text-sm text-muted-foreground">You can improve this proposal {improvementsRemaining} more time(s). Highlight text to refine a specific part.</p>
-                    <div className="w-full space-y-2">
-                    <div className="flex flex-wrap gap-2">
-                        {improvementPresets.map(preset => (
-                        <Button
-                            key={preset}
-                            variant="outline"
-                            size="sm"
-                            onClick={() => handleImproveProposal(preset)}
-                            disabled={isImproving || improvementsRemaining <= 0 || trialLimitReached}
-                        >
-                            {preset}
-                        </Button>
-                        ))}
-                    </div>
-                    <div className="flex w-full items-center gap-2">
-                        <Input 
-                        placeholder="Or type a custom improvement request..."
-                        value={customImprovementInstruction}
-                        onChange={(e) => setCustomImprovementInstruction(e.target.value)}
-                        disabled={isImproving || improvementsRemaining <= 0 || trialLimitReached}
-                        />
-                        <Button 
-                        onClick={() => handleImproveProposal(customImprovementInstruction)}
-                        disabled={isImproving || !customImprovementInstruction.trim() || improvementsRemaining <= 0 || trialLimitReached}
-                        >
-                        {isImproving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
-                        Update
-                        </Button>
-                    </div>
-                        {selectedText && (
-                        <p className="text-xs text-muted-foreground bg-yellow-100 dark:bg-yellow-900/50 p-2 rounded-md border border-yellow-300 dark:border-yellow-700">
-                            Note: Improvement will be applied to your highlighted text. Clear selection to apply to the whole proposal.
-                        </p>
-                    )}
-                    </div>
-                </div>
-
-                 {improvementsRemaining <= 0 && (
-                  <div className="border-t pt-4 text-center text-sm text-muted-foreground">
-                    You've reached the limit of {MAX_IMPROVEMENTS} improvements for this proposal.
-                  </div>
-                )}
               </CardContent>
+                {improvementsRemaining > 0 && (
+                  <CardFooter className="flex-col items-start gap-4 border-t pt-4">
+                    <p className="text-sm text-muted-foreground">You can improve this proposal {improvementsRemaining} more time(s). Highlight text to refine a specific part.</p>
+                     <div className="w-full space-y-2">
+                        <div className="flex flex-wrap gap-2">
+                            {improvementPresets.map(preset => (
+                            <Button
+                                key={preset}
+                                variant="outline"
+                                size="sm"
+                                onClick={() => handleImproveProposal(preset)}
+                                disabled={isImproving || improvementsRemaining <= 0 || trialLimitReached}
+                            >
+                                {preset}
+                            </Button>
+                            ))}
+                        </div>
+                        <div className="flex w-full items-center gap-2">
+                            <Input 
+                            placeholder="Or type a custom improvement request..."
+                            value={customImprovementInstruction}
+                            onChange={(e) => setCustomImprovementInstruction(e.target.value)}
+                            disabled={isImproving || improvementsRemaining <= 0 || trialLimitReached}
+                            />
+                            <Button 
+                            onClick={() => handleImproveProposal(customImprovementInstruction)}
+                            disabled={isImproving || !customImprovementInstruction.trim() || improvementsRemaining <= 0 || trialLimitReached}
+                            >
+                            {isImproving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
+                            Update
+                            </Button>
+                        </div>
+                         {selectedText && (
+                            <p className="text-xs text-muted-foreground bg-yellow-100 dark:bg-yellow-900/50 p-2 rounded-md border border-yellow-300 dark:border-yellow-700">
+                                Note: Improvement will be applied to your highlighted text. Clear selection to apply to the whole proposal.
+                            </p>
+                        )}
+                      </div>
+                  </CardFooter>
+                )}
+                 {improvementsRemaining <= 0 && (
+                  <CardFooter className="border-t pt-4 text-center text-sm text-muted-foreground">
+                    You've reached the limit of {MAX_IMPROVEMENTS} improvements for this proposal.
+                  </CardFooter>
+                )}
             </Card>
            )}
 
@@ -1259,3 +1280,5 @@ export default function DashboardPage() {
         </Suspense>
     )
 }
+
+    
