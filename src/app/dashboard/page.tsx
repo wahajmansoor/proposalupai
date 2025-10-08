@@ -100,6 +100,7 @@ const signOffCtas = [
 
 const tones = ["Professional", "Friendly", "Assertive", "Persuasive", "Creative", "Concise", "Formal"];
 
+const HIGHLIGHT_ID = 'ai-selection-highlight';
 
 function DashboardContent() {
   const { user, userProfile, loading } = useAuth();
@@ -615,55 +616,82 @@ function DashboardContent() {
     toast({ title: 'Copied!', description: 'Content copied to clipboard.' });
   };
   
+    const removeHighlight = () => {
+        const proposalWithHighlight = improvementHistory.length > 0 ? improvementHistory[currentImprovementIndex] : generatedProposal;
+        const plainText = proposalWithHighlight.replace(`<span id="${HIGHLIGHT_ID}" class="text-selection-highlight">`, "").replace("</span>", "");
+        
+        if (improvementHistory.length > 0) {
+            const newHistory = [...improvementHistory];
+            newHistory[currentImprovementIndex] = plainText;
+            setImprovementHistory(newHistory);
+        } else {
+            setGeneratedProposal(plainText);
+        }
+    }
+
+
   const handleTextSelection = (event: React.MouseEvent<HTMLDivElement>) => {
-    // We don't want to trigger selection if a click is inside an existing toolbar
     if ((event.target as HTMLElement).closest('[data-selection-toolbar="true"]')) {
       return;
     }
+    
+    // Always remove previous highlight before creating a new one
+    removeHighlight();
 
     const selection = window.getSelection();
     if (!selection || selection.rangeCount === 0 || selection.toString().trim() === '') {
-      if (selectionToolbar) {
         setSelectionToolbar(null);
-      }
-      return;
+        return;
     }
 
     const range = selection.getRangeAt(0);
-    const rect = range.getBoundingClientRect();
     const proposalContentEl = proposalContentRef.current;
 
     if (proposalContentEl && proposalContentEl.contains(range.commonAncestorContainer)) {
+      const selectedText = selection.toString();
+      const proposalText = improvementHistory.length > 0 ? improvementHistory[currentImprovementIndex] : generatedProposal;
+
+      const newProposalText = proposalText.replace(selectedText, `<span id="${HIGHLIGHT_ID}" class="text-selection-highlight">${selectedText}</span>`);
+
+      if (improvementHistory.length > 0) {
+        const newHistory = [...improvementHistory];
+        newHistory[currentImprovementIndex] = newProposalText;
+        setImprovementHistory(newHistory);
+      } else {
+        setGeneratedProposal(newProposalText);
+      }
+
+      const rect = range.getBoundingClientRect();
       const containerRect = proposalContentEl.getBoundingClientRect();
+      
       setSelectionToolbar({
         top: rect.bottom - containerRect.top + proposalContentEl.scrollTop + 8,
-        left: rect.left - containerRect.left + proposalContentEl.scrollLeft + (rect.width / 2) - 200, // center the toolbar
+        left: rect.left - containerRect.left + proposalContentEl.scrollLeft + (rect.width / 2) - 200,
         width: rect.width,
-        text: selection.toString(),
+        text: selectedText,
       });
     } else {
-       if (selectionToolbar) {
-        setSelectionToolbar(null);
-      }
+       setSelectionToolbar(null);
     }
   };
 
-  const handleInlineImprovement = (improvedText: string) => {
-    if (!selectionToolbar) return;
+    const handleInlineImprovement = (improvedText: string) => {
+        if (!selectionToolbar) return;
+        setInlineImprovementCount(prev => prev + 1);
 
-    setInlineImprovementCount(prev => prev + 1);
+        const fullProposal = improvementHistory.length > 0 ? improvementHistory[currentImprovementIndex] : generatedProposal;
+        
+        const highlightedSpan = `<span id="${HIGHLIGHT_ID}" class="text-selection-highlight">${selectionToolbar.text}</span>`;
+        const newProposal = fullProposal.replace(highlightedSpan, improvedText);
 
-    const fullProposal = improvementHistory.length > 0 ? improvementHistory[currentImprovementIndex] : generatedProposal;
-    const newProposal = fullProposal.replace(selectionToolbar.text, improvedText);
-
-    if (improvementHistory.length > 0) {
-      const newHistory = [...improvementHistory];
-      newHistory[currentImprovementIndex] = newProposal;
-      setImprovementHistory(newHistory);
-    } else {
-      setGeneratedProposal(newProposal);
-    }
-  };
+        if (improvementHistory.length > 0) {
+            const newHistory = [...improvementHistory];
+            newHistory[currentImprovementIndex] = newProposal;
+            setImprovementHistory(newHistory);
+        } else {
+            setGeneratedProposal(newProposal);
+        }
+    };
 
 
   const stepTitles = ["Project Details", "Your Profile", "Client Questions", "Preferences & Strategy"];
@@ -671,6 +699,7 @@ function DashboardContent() {
   const hasQuestions = clientQuestions.some(q => q.question);
 
   const displayedImprovedProposal = improvementHistory[currentImprovementIndex];
+  const displayedOriginalProposal = generatedProposal;
 
   return (
     <>
@@ -1062,11 +1091,11 @@ function DashboardContent() {
                 )}
               </div>
               <div className="flex items-center gap-1">
-                  <Button variant="outline" size="sm" onClick={() => handleSaveProposal(generatedProposal)} disabled={!generatedProposal || isSaving || isOriginalProposalSaved}>
+                  <Button variant="outline" size="sm" onClick={() => handleSaveProposal(displayedOriginalProposal)} disabled={!displayedOriginalProposal || isSaving || isOriginalProposalSaved}>
                       {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
                       {isOriginalProposalSaved ? 'Saved' : 'Save'}
                   </Button>
-                  <Button variant="outline" size="sm" onClick={() => copyToClipboard(generatedProposal)} disabled={!generatedProposal}>
+                  <Button variant="outline" size="sm" onClick={() => copyToClipboard(displayedOriginalProposal)} disabled={!displayedOriginalProposal}>
                       <Clipboard className="mr-2 h-4 w-4" /> Copy
                   </Button>
               </div>
@@ -1081,10 +1110,9 @@ function DashboardContent() {
                         <Skeleton className="h-4 w-full" />
                         <Skeleton className="h-4 w-2/3" />
                     </div>
-                ) : generatedProposal ? (
-                    <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap">
-                        {generatedProposal}
-                    </div>
+                ) : displayedOriginalProposal ? (
+                    <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap"
+                        dangerouslySetInnerHTML={{ __html: displayedOriginalProposal.replace(/\n/g, '<br />') }} />
                 ) : (
                     <div className="flex flex-col items-center justify-center h-full text-center text-muted-foreground">
                       <HugeiconsIcon icon={File01Icon} size={32} className="h-12 w-12 mb-4"/>
@@ -1096,16 +1124,19 @@ function DashboardContent() {
                   <SelectionToolbar
                     position={selectionToolbar}
                     selectedText={selectionToolbar.text}
-                    fullProposal={improvementHistory[currentImprovementIndex] ?? generatedProposal}
+                    fullProposal={improvementHistory[currentImprovementIndex] ?? displayedOriginalProposal}
                     onImprovement={handleInlineImprovement}
-                    onClose={() => setSelectionToolbar(null)}
+                    onClose={() => {
+                        setSelectionToolbar(null);
+                        removeHighlight();
+                    }}
                     usageCount={inlineImprovementCount}
                     usageLimit={INLINE_IMPROVEMENT_LIMIT}
                   />
                 )}
               </div>
             </CardContent>
-            {generatedProposal && improvementHistory.length < 2 && (
+            {displayedOriginalProposal && improvementHistory.length < 2 && (
               <CardFooter className="flex-col items-start gap-2">
                  <p className="text-sm text-muted-foreground">You can improve this proposal {2 - improvementHistory.length} more time(s).</p>
                  <div className="w-full space-y-2">
@@ -1157,9 +1188,9 @@ function DashboardContent() {
                     </Button>
                   </div>
                 </div>
-                <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap border-t pt-4">
-                  {displayedImprovedProposal}
-                </div>
+                <div className="prose prose-sm max-w-none text-gray-700 whitespace-pre-wrap border-t pt-4"
+                  dangerouslySetInnerHTML={{ __html: displayedImprovedProposal.replace(/\n/g, '<br />') }} />
+
 
                 {improvementHistory.length < 2 ? (
                    <div className="border-t pt-4 space-y-2">
@@ -1315,4 +1346,3 @@ export default function DashboardPage() {
     )
 }
 
-    

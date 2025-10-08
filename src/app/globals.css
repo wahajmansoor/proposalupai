@@ -71,18 +71,20 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
-  ::selection {
-    background-color: #fef08a; /* A light yellow */
-    color: #1c1917; /* A dark text color for contrast */
-  }
-  .dark ::selection {
-    background-color: #ca8a04; /* A darker yellow for dark mode */
-    color: #fafaf9; /* A light text color for contrast */
-  }
 }
 
 /* Fix: Allow clicks on CommandItem even if Radix temporarily applies [data-disabled] */
 [data-disabled].command-item-force-enabled {
   pointer-events: auto !important;
   opacity: 1 !important;
+}
+
+.text-selection-highlight {
+  background-color: #fef08a; /* A light yellow */
+  color: #1c1917; /* A dark text color for contrast */
+}
+
+.dark .text-selection-highlight {
+    background-color: #ca8a04; /* A darker yellow for dark mode */
+    color: #fafaf9; /* A light text color for contrast */
 }

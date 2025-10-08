@@ -30,30 +30,13 @@ export function SelectionToolbar({ position, selectedText, fullProposal, onImpro
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (toolbarRef.current && !toolbarRef.current.contains(event.target as Node)) {
-        // Only close if the click is outside the proposal content area as well
-        if (!(event.target as HTMLElement).closest('.prose')) {
-            onClose();
-        }
+        onClose();
       }
     };
-    
-    const handleMouseUp = (event: MouseEvent) => {
-         // Don't close the toolbar if the click is inside it.
-         if (toolbarRef.current && toolbarRef.current.contains(event.target as Node)) {
-            return;
-         }
-         // If the user clicks elsewhere and there's no selection, close the toolbar.
-         const selection = window.getSelection();
-         if (!selection || selection.toString().trim() === '') {
-             onClose();
-         }
-    }
 
     document.addEventListener('mousedown', handleClickOutside);
-    document.addEventListener('mouseup', handleMouseUp);
     return () => {
       document.removeEventListener('mousedown', handleClickOutside);
-      document.removeEventListener('mouseup', handleMouseUp);
     };
   }, [onClose]);
 
@@ -119,9 +102,12 @@ export function SelectionToolbar({ position, selectedText, fullProposal, onImpro
       data-selection-toolbar="true"
       className="absolute z-10 w-[400px] rounded-lg border bg-popover text-popover-foreground shadow-lg p-4"
       style={{ top: position.top, left: position.left, maxWidth: 'calc(100vw - 32px)' }}
-      onMouseDown={(e) => {
-        // This is the key fix: prevent mousedown from propagating and causing a deselect.
-        // The browser will still handle focus for inputs and clicks for buttons correctly.
+       onMouseDown={(e) => {
+        // Prevent default behavior to stop text from being deselected
+        // but allow clicks on inputs and buttons.
+        if (e.target instanceof HTMLInputElement || e.target instanceof HTMLButtonElement || (e.target as HTMLElement).closest('button')) {
+          return;
+        }
         e.preventDefault();
       }}
     >
