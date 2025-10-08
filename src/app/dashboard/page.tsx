@@ -101,32 +101,6 @@ const tones = ["Professional", "Friendly", "Assertive", "Persuasive", "Creative"
 const improvementPresets = ["Concise", "Detailed", "Informal", "Professional", "Fix Formatting"];
 const MAX_IMPROVEMENTS = 2;
 
-function HighlightedContent({ original, modified }: { original: string, modified: string }) {
-    if (original === modified) {
-        return <>{modified}</>;
-    }
-    const originalWords = original.split(/(\s+)/);
-    const modifiedWords = modified.split(/(\s+)/);
-
-    // This is a simplified diff for highlighting, not a perfect one.
-    // It works best for additions/small changes.
-    return (
-        <>
-            {modifiedWords.map((word, index) => {
-                if (originalWords.includes(word)) {
-                    return <span key={index}>{word}</span>;
-                } else {
-                    return (
-                        <span key={index} className="bg-green-100 dark:bg-green-900/50 text-green-800 dark:text-green-200 rounded px-1">
-                            {word}
-                        </span>
-                    );
-                }
-            })}
-        </>
-    );
-}
-
 
 function DashboardContent() {
   const { user, userProfile, loading } = useAuth();
@@ -1075,7 +1049,7 @@ function DashboardContent() {
                 )}
               </div>
             </CardContent>
-            {generatedProposal && improvements.length === 0 && (
+            {generatedProposal && improvements.length < MAX_IMPROVEMENTS && (
               <CardFooter className="flex-col items-start gap-4 border-t pt-4">
                   <p className="text-sm text-muted-foreground">You can improve this proposal {improvementsRemaining} more time(s). Highlight text to refine a specific part.</p>
                   <div className="w-full space-y-2">
@@ -1086,7 +1060,7 @@ function DashboardContent() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleImproveProposal(preset)}
-                          disabled={isImproving || improvementsRemaining <= 0 || trialLimitReached}
+                          disabled={isImproving || trialLimitReached}
                       >
                           {preset}
                       </Button>
@@ -1097,11 +1071,11 @@ function DashboardContent() {
                       placeholder="Or type a custom improvement request..."
                       value={customImprovementInstruction}
                       onChange={(e) => setCustomImprovementInstruction(e.target.value)}
-                      disabled={isImproving || improvementsRemaining <= 0 || trialLimitReached}
+                      disabled={isImproving || trialLimitReached}
                       />
                       <Button 
                       onClick={() => handleImproveProposal(customImprovementInstruction)}
-                      disabled={isImproving || !customImprovementInstruction.trim() || improvementsRemaining <= 0 || trialLimitReached}
+                      disabled={isImproving || !customImprovementInstruction.trim() || trialLimitReached}
                       >
                       {isImproving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
                       Update
@@ -1118,7 +1092,6 @@ function DashboardContent() {
           </Card>
            
            {improvements.map((proposal, index) => {
-             const originalText = index === 0 ? generatedProposal : improvements[index-1];
              const currentWordCount = proposal.trim().split(/\s+/).filter(Boolean).length;
              return (
                 <Card key={index}>
@@ -1139,7 +1112,7 @@ function DashboardContent() {
                     </CardHeader>
                     <CardContent className="min-h-[200px]" onMouseUp={() => setSelectedText(window.getSelection()?.toString() ?? '')}>
                         <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap">
-                            <HighlightedContent original={originalText} modified={proposal} />
+                           {proposal}
                         </div>
                     </CardContent>
                     {index === improvements.length - 1 && improvements.length < MAX_IMPROVEMENTS && (
