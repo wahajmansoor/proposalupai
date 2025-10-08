@@ -562,8 +562,12 @@ function DashboardContent() {
       toast({ title: 'Error Improving Proposal', description: result.error, variant: 'destructive' });
     } else if (result.data) {
       const improvedText = result.data.improvedProposal;
-      const newFullProposal = baseProposal.replace(textToImprove, improvedText);
-  
+      
+      // If a specific text was selected, replace only that part. Otherwise, replace the whole proposal.
+      const newFullProposal = selectedText 
+        ? baseProposal.replace(textToImprove, improvedText)
+        : improvedText;
+
       const newHistory = [...improvementHistory.slice(0, currentImprovementIndex + 1), newFullProposal];
       setImprovementHistory(newHistory);
       setCurrentImprovementIndex(newHistory.length - 1);
@@ -1021,9 +1025,8 @@ function DashboardContent() {
             </CardHeader>
             <CardContent
                 className={cn("min-h-[400px]", { 'min-h-[200px]': !generatedProposal && !isGenerating })}
-                onMouseUp={() => setSelectedText(window.getSelection()?.toString() ?? '')}
             >
-              <div ref={proposalContentRef} className="relative">
+              <div ref={proposalContentRef} onMouseUp={() => setSelectedText(window.getSelection()?.toString() ?? '')} className="relative">
                 {isGenerating ? (
                     <div className="space-y-2 pt-4">
                         <Skeleton className="h-4 w-full" />
@@ -1044,50 +1047,8 @@ function DashboardContent() {
                     </div>
                 )}
               </div>
-            </CardContent>
-          </Card>
-           
-           {improvementHistory.length > 0 && (
-            <Card>
-                <CardHeader>
-                    <div className="flex flex-row items-center justify-between">
-                        <div className="flex items-center gap-3">
-                            <CardTitle>Improved Version</CardTitle>
-                            {improvementHistory.length > 1 && (
-                            <div className="flex items-center gap-1 text-sm font-medium">
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setCurrentImprovementIndex(prev => Math.max(0, prev - 1))} disabled={currentImprovementIndex === 0}>
-                                <ArrowLeft className="h-4 w-4"/>
-                                </Button>
-                                <span>{currentImprovementIndex + 1} of {improvementHistory.length}</span>
-                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setCurrentImprovementIndex(prev => Math.min(improvementHistory.length - 1, prev + 1))} disabled={currentImprovementIndex === improvementHistory.length - 1}>
-                                <ArrowRight className="h-4 w-4"/>
-                                </Button>
-                            </div>
-                            )}
-                        </div>
-                        {improvementHistory.length > 1 && (
-                            <div className="flex items-center gap-1">
-                                <Button variant="outline" size="sm" onClick={() => handleSaveProposal(displayedProposal)} disabled={!displayedProposal || isSavingImproved || isImprovedProposalSaved}>
-                                    {isSavingImproved ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
-                                    {isImprovedProposalSaved ? 'Saved' : 'Save'}
-                                </Button>
-                                <Button variant="outline" size="sm" onClick={() => copyToClipboard(displayedProposal)}>
-                                <Clipboard className="mr-2 h-4 w-4" /> Copy
-                                </Button>
-                            </div>
-                        )}
-                    </div>
-                </CardHeader>
-              <CardContent className="min-h-[200px] space-y-4">
-                 {improvementHistory.length > 1 && (
-                    <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap border-t pt-4">
-                    {displayedProposal}
-                    </div>
-                 )}
-
-
-                {improvementHistory.length <= 2 && generatedProposal && (
-                   <div className="border-t pt-4 space-y-2">
+               {generatedProposal && (
+                   <div className="border-t pt-4 mt-4 space-y-2">
                      <p className="text-sm text-muted-foreground">You can improve this proposal {3 - improvementHistory.length} more time(s). Highlight text to refine a specific part.</p>
                      <div className="w-full space-y-2">
                         <div className="flex flex-wrap gap-2">
@@ -1126,6 +1087,44 @@ function DashboardContent() {
                       </div>
                   </div>
                 )}
+            </CardContent>
+          </Card>
+           
+           {improvementHistory.length > 1 && (
+            <Card>
+                <CardHeader>
+                    <div className="flex flex-row items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <CardTitle>Improved Version</CardTitle>
+                            {improvementHistory.length > 1 && (
+                            <div className="flex items-center gap-1 text-sm font-medium">
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setCurrentImprovementIndex(prev => Math.max(0, prev - 1))} disabled={currentImprovementIndex === 0}>
+                                <ArrowLeft className="h-4 w-4"/>
+                                </Button>
+                                <span>{currentImprovementIndex + 1} of {improvementHistory.length}</span>
+                                <Button variant="ghost" size="icon" className="h-7 w-7" onClick={() => setCurrentImprovementIndex(prev => Math.min(improvementHistory.length - 1, prev + 1))} disabled={currentImprovementIndex === improvementHistory.length - 1}>
+                                <ArrowRight className="h-4 w-4"/>
+                                </Button>
+                            </div>
+                            )}
+                        </div>
+                        {improvementHistory.length > 1 && (
+                            <div className="flex items-center gap-1">
+                                <Button variant="outline" size="sm" onClick={() => handleSaveProposal(displayedProposal)} disabled={!displayedProposal || isSavingImproved || isImprovedProposalSaved}>
+                                    {isSavingImproved ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
+                                    {isImprovedProposalSaved ? 'Saved' : 'Save'}
+                                </Button>
+                                <Button variant="outline" size="sm" onClick={() => copyToClipboard(displayedProposal)}>
+                                <Clipboard className="mr-2 h-4 w-4" /> Copy
+                                </Button>
+                            </div>
+                        )}
+                    </div>
+                </CardHeader>
+              <CardContent className="min-h-[200px] space-y-4">
+                 <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap">
+                    {displayedProposal}
+                 </div>
                  {improvementHistory.length > 2 && (
                   <div className="border-t pt-4 text-center text-sm text-muted-foreground">
                     You've reached the limit of 2 improvements for this proposal.
@@ -1260,5 +1259,3 @@ export default function DashboardPage() {
         </Suspense>
     )
 }
-
-    
