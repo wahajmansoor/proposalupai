@@ -158,7 +158,7 @@ function DashboardContent() {
 
   const isProPlan = userProfile?.subscriptionStatus === 'active';
   const proposalCredits = userProfile?.proposalCredits ?? 0;
-  const improvementLimit = isProPlan ? Infinity : proposalCredits;
+  const improvementLimit = proposalCredits;
 
 
   const isTrial = userProfile?.subscriptionStatus === 'trialing';
@@ -628,7 +628,7 @@ function DashboardContent() {
   const hasAnsweredQuestions = clientQuestions.some(q => q.answer);
   const hasQuestions = clientQuestions.some(q => q.question);
 
-  const improvementsRemaining = isProPlan ? 'Unlimited' : Math.max(0, improvementLimit - improvements.length);
+  const improvementsRemaining = Math.max(0, improvementLimit - improvements.length);
   
   const latestProposal = improvements.length > 0 ? improvements[improvements.length - 1] : generatedProposal;
   const currentImprovement = improvements[currentImprovementIndex];
@@ -1304,5 +1304,6 @@ export default function DashboardPage() {
         </Suspense>
     )
 }
+
 
     

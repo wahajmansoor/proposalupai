@@ -209,10 +209,10 @@ export async function improveProposalAction(input: z.infer<typeof improveProposa
     }
   
     const { user, userDoc } = currentUser;
-    const { subscriptionStatus, proposalCredits = 0 } = userDoc;
+    const { proposalCredits = 0 } = userDoc;
   
-    if (subscriptionStatus !== 'active' && proposalCredits <= 0) {
-      return { error: 'You have no proposal improvement credits left. Please upgrade or refer a friend.' };
+    if (proposalCredits <= 0) {
+      return { error: 'You have no proposal improvement credits left. Please refer a friend to earn more.' };
     }
 
     const validatedFields = improveProposalSchema.safeParse(input);
@@ -222,9 +222,7 @@ export async function improveProposalAction(input: z.infer<typeof improveProposa
   
     try {
       const result = await improveProposal(validatedFields.data);
-      if (subscriptionStatus !== 'active') {
-        await decrementProposalCredits(user.uid);
-      }
+      await decrementProposalCredits(user.uid);
       return { data: result };
     } catch (error) {
       console.error(error);
@@ -338,3 +336,5 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
     return { error: 'Could not retrieve billing history.' };
   }
 }
+
+    
