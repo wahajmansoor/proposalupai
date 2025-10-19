@@ -4,7 +4,6 @@
 import { useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { Button } from './ui/button';
-import { CoinIcon } from './icons';
 import { ReferralDialog } from './referral-dialog';
 
 export function CreditsButton() {
@@ -22,10 +21,10 @@ export function CreditsButton() {
     <ReferralDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} referralCode={referralCode}>
       <Button
         variant="outline"
-        className="h-auto px-4 py-3 bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 font-semibold gap-2"
+        className="h-auto px-3 py-2 bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 font-semibold gap-2 rounded-full"
         onClick={() => setIsDialogOpen(true)}
       >
-        <CoinIcon className="h-5 w-5" />
+        <img src="/coin-anim.gif" alt="Credits" className="h-6 w-6" />
         <span>Credits</span>
         <span className="flex items-center justify-center h-5 w-5 rounded-full bg-white text-xs">
           {credits}
