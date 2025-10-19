@@ -3,11 +3,10 @@
 
 import { useAuth } from "@/context/auth-context";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { ProposalUpLogos } from '@/components/icons';
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
-import { cn } from "@/lib/utils";
 import { SidebarInset } from "@/components/ui/sidebar";
 
 export default function DashboardLayout({
@@ -18,7 +17,6 @@ export default function DashboardLayout({
   const { user, userProfile, loading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
-  const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
     if (loading) {
@@ -45,12 +43,9 @@ export default function DashboardLayout({
         return; // Important: stop further execution
     }
     
-    // If we've passed all checks, the user is authorized to see the content.
-    setIsAuthorized(true);
-    
   }, [user, userProfile, loading, router, pathname]);
   
-  if (!isAuthorized) {
+  if (loading || !user) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <ProposalUpLogos className="h-24 w-24 animate-pulse text-primary" />
