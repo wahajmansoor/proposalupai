@@ -73,18 +73,18 @@ export function ReferralDialog({
               </Button>
             </div>
           </div>
-          <div className="flex items-center justify-center gap-4">
+          <div className="flex items-center justify-center gap-8">
             <Link href={socialShareLinks.facebook} target="_blank" passHref>
-              <ShareIcons.Facebook className="h-10 w-10 cursor-pointer" />
+              <ShareIcons.Facebook className="h-6 w-6 cursor-pointer" />
             </Link>
              <Link href={socialShareLinks.twitter} target="_blank" passHref>
-              <ShareIcons.Twitter className="h-10 w-10 cursor-pointer" />
+              <ShareIcons.Twitter className="h-6 w-6 cursor-pointer" />
             </Link>
              <Link href={socialShareLinks.linkedin} target="_blank" passHref>
-              <ShareIcons.LinkedIn className="h-10 w-10 cursor-pointer" />
+              <ShareIcons.LinkedIn className="h-6 w-6 cursor-pointer" />
             </Link>
              <Link href={socialShareLinks.whatsapp} target="_blank" passHref>
-              <ShareIcons.WhatsApp className="h-10 w-10 cursor-pointer" />
+              <ShareIcons.WhatsApp className="h-6 w-6 cursor-pointer" />
             </Link>
           </div>
         </div>
