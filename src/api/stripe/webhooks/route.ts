@@ -12,7 +12,7 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 /**
  * Finds a user in Firestore by their Stripe customer ID.
  * @param stripeCustomerId - The Stripe customer ID.
- * @returns The user's document reference or null if not found.
+ * @returns The user's document snapshot or null if not found.
  */
 async function findUserByStripeCustomerId(stripeCustomerId: string) {
     if (!stripeCustomerId) {
@@ -74,6 +74,7 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
     const price = subscription.items.data[0]?.price;
     const interval = price?.recurring?.interval;
     const previousStatus = userData?.subscriptionStatus;
+    const previousInterval = userData?.subscriptionInterval;
 
     const subscriptionData: { [key: string]: any } = {
         subscriptionId: subscription.id,
@@ -85,17 +86,21 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
         subscriptionData.subscriptionInterval = interval;
     }
     
-    const isNewSubscription = (status === 'active' || status === 'trialing') && (!previousStatus || !['active', 'trialing'].includes(previousStatus));
+    const isNewActivation = status === 'active' && previousStatus !== 'active';
+    const isUpgradeToYearly = status === 'active' && previousStatus === 'active' && previousInterval === 'month' && interval === 'year';
 
-    if (isNewSubscription) {
+    if (isNewActivation || isUpgradeToYearly) {
         if (interval === 'year') {
             subscriptionData.proposalCredits = FieldValue.increment(30);
         } else if (interval === 'month') {
-            subscriptionData.proposalCredits = FieldValue.increment(7);
+            // Only award monthly credits on a new activation, not on other updates
+            if(isNewActivation) {
+              subscriptionData.proposalCredits = FieldValue.increment(7);
+            }
         }
 
-        // Check if the user was referred and award credits to the referrer
-        if (userData?.referredBy) {
+        // Award referral credits only on the very first activation, not on upgrades or reactivations.
+        if (isNewActivation && userData?.referredBy) {
             await awardReferralCredits(userData.referredBy);
             // We can remove the referredBy field after awarding credits to prevent double-awarding
             subscriptionData.referredBy = FieldValue.delete();
