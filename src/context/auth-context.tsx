@@ -20,6 +20,8 @@ interface UserProfile {
   proposalCount?: number;
   referralCode?: string;
   proposalCredits?: number;
+  referredBy?: string;
+  lastPrice?: number;
 }
 
 interface AuthContextType {

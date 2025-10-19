@@ -9,27 +9,6 @@ import { stripe } from '@/lib/stripe/config';
 import { getCountryFromIp } from '@/app/lib/location';
 import { FieldValue } from 'firebase-admin/firestore';
 
-async function awardReferralCredits(referralCode: string) {
-  if (!referralCode) return;
-
-  try {
-    const usersRef = adminDb.collection('users');
-    const snapshot = await usersRef.where('referralCode', '==', referralCode).limit(1).get();
-
-    if (!snapshot.empty) {
-      const referringUserDoc = snapshot.docs[0];
-      await referringUserDoc.ref.update({
-        proposalCredits: FieldValue.increment(5)
-      });
-      console.log(`Awarded 5 credits to user ${referringUserDoc.id} for referral.`);
-    } else {
-      console.warn(`Referral code "${referralCode}" not found.`);
-    }
-  } catch (error) {
-    console.error('Error awarding referral credits:', error);
-  }
-}
-
 export async function GET(req: NextRequest) {
   const headersList = headers();
   const protocol = headersList.get('x-forwarded-proto') || 'http';
@@ -134,11 +113,6 @@ export async function GET(req: NextRequest) {
         const ip = headersList.get('x-forwarded-for') || req.ip;
         const country = await getCountryFromIp(ip);
 
-        // Award credits if referred
-        if (referralCode) {
-            await awardReferralCredits(referralCode);
-        }
-
         const userData: { [key: string]: any } = {
             uid: userRecord.uid,
             email: userRecord.email,
@@ -151,6 +125,11 @@ export async function GET(req: NextRequest) {
             referralCode: userRecord.uid.substring(0, 8), // Generate and store referral code
             proposalCredits: 3, // Initial credits for new users
         };
+        
+        if (referralCode) {
+          userData.referredBy = referralCode;
+        }
+        
         if (picture) {
             userData.photoURL = picture;
         }

@@ -24,7 +24,28 @@ async function findUserByStripeCustomerId(stripeCustomerId: string) {
         console.warn(`Webhook Warning: No user found with Stripe customer ID ${stripeCustomerId}`);
         return null;
     }
-    return userQuery.docs[0].ref;
+    return userQuery.docs[0];
+}
+
+async function awardReferralCredits(referralCode: string) {
+    if (!referralCode) return;
+  
+    try {
+      const usersRef = adminDb.collection('users');
+      const snapshot = await usersRef.where('referralCode', '==', referralCode).limit(1).get();
+  
+      if (!snapshot.empty) {
+        const referringUserDoc = snapshot.docs[0];
+        await referringUserDoc.ref.update({
+          proposalCredits: FieldValue.increment(5)
+        });
+        console.log(`Awarded 5 credits to user ${referringUserDoc.id} for successful referral.`);
+      } else {
+          console.warn(`Attempted to award credits for non-existent referral code: "${referralCode}"`);
+      }
+    } catch (error) {
+      console.error('Error awarding referral credits:', error);
+    }
 }
 
 /**
@@ -33,12 +54,15 @@ async function findUserByStripeCustomerId(stripeCustomerId: string) {
  */
 async function handleSubscriptionChange(subscription: Stripe.Subscription) {
     const stripeCustomerId = subscription.customer as string;
-    const userDocRef = await findUserByStripeCustomerId(stripeCustomerId);
+    const userDocSnapshot = await findUserByStripeCustomerId(stripeCustomerId);
 
-    if (!userDocRef) {
+    if (!userDocSnapshot) {
         console.warn(`No user found for Stripe customer ID: ${stripeCustomerId}. Skipping update.`);
         return;
     }
+    
+    const userDocRef = userDocSnapshot.ref;
+    const userData = userDocSnapshot.data();
     
     let status = subscription.status;
     // If cancel_at_period_end is true, the subscription is considered 'canceled' in our system
@@ -49,6 +73,7 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
 
     const price = subscription.items.data[0]?.price;
     const interval = price?.recurring?.interval;
+    const previousStatus = userData?.subscriptionStatus;
 
     const subscriptionData: { [key: string]: any } = {
         subscriptionId: subscription.id,
@@ -60,17 +85,20 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
         subscriptionData.subscriptionInterval = interval;
     }
     
-    const userDoc = await userDocRef.get();
-    const previousStatus = userDoc.data()?.subscriptionStatus;
-    const newStatus = status;
+    const isNewSubscription = (status === 'active' || status === 'trialing') && (!previousStatus || !['active', 'trialing'].includes(previousStatus));
 
-    const shouldAwardCredits = (newStatus === 'active' || newStatus === 'trialing') && (!previousStatus || !['active', 'trialing'].includes(previousStatus));
-
-    if (shouldAwardCredits) {
+    if (isNewSubscription) {
         if (interval === 'year') {
             subscriptionData.proposalCredits = FieldValue.increment(30);
         } else if (interval === 'month') {
             subscriptionData.proposalCredits = FieldValue.increment(7);
+        }
+
+        // Check if the user was referred and award credits to the referrer
+        if (userData?.referredBy) {
+            await awardReferralCredits(userData.referredBy);
+            // We can remove the referredBy field after awarding credits to prevent double-awarding
+            subscriptionData.referredBy = FieldValue.delete();
         }
     }
     
@@ -143,14 +171,14 @@ export async function POST(req: Request) {
             case 'customer.subscription.deleted':
                 const deletedSubscription = event.data.object as Stripe.Subscription;
                 const stripeCustomerId = deletedSubscription.customer as string;
-                const userDocRef = await findUserByStripeCustomerId(stripeCustomerId);
+                const userDoc = await findUserByStripeCustomerId(stripeCustomerId);
 
-                if (userDocRef) {
-                    await userDocRef.update({
+                if (userDoc) {
+                    await userDoc.ref.update({
                         subscriptionStatus: 'canceled',
                         subscriptionInterval: null, // Clear interval on cancellation
                     });
-                     console.log(`Successfully marked subscription as canceled for user ${userDocRef.id}.`);
+                     console.log(`Successfully marked subscription as canceled for user ${userDoc.id}.`);
                 }
                 break;
 

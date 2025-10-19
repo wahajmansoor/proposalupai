@@ -60,14 +60,9 @@ export async function signUpWithEmail(input: z.infer<typeof signUpSchema>): Prom
     const ip = headers().get('x-forwarded-for');
     const country = await getCountryFromIp(ip);
 
-    // 4. Award credits if referred
-    if (referralCode) {
-        await awardReferralCredits(referralCode);
-    }
-
-    // 5. Create user document in Firestore
+    // 4. Create user document in Firestore
     const userRef = adminDb.collection('users').doc(userRecord.uid);
-    await userRef.set({
+    const userData: { [key: string]: any } = {
       uid: userRecord.uid,
       email: userRecord.email,
       displayName: userRecord.displayName,
@@ -78,7 +73,13 @@ export async function signUpWithEmail(input: z.infer<typeof signUpSchema>): Prom
       country: country,
       referralCode: userRecord.uid.substring(0, 8), // Generate and store referral code
       proposalCredits: 3, // Initial credits for new users
-    });
+    };
+
+    if (referralCode) {
+      userData.referredBy = referralCode;
+    }
+
+    await userRef.set(userData);
 
     return {};
 
