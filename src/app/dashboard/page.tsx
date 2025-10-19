@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect, useRef, Suspense } from 'react';
@@ -692,9 +693,14 @@ function DashboardContent() {
                     rows={1}
                   />
                 </div>
-                 <Button onClick={handleAnalyzeJob} disabled={isAnalyzing || trialLimitReached}>
-                  {isAnalyzing ? "Analyzing..." : <><Sparkles className="mr-2"/>Analyze & Get Suggestions</>}
-                </Button>
+                <div>
+                  <Button onClick={handleAnalyzeJob} disabled={isAnalyzing || trialLimitReached}>
+                    {isAnalyzing ? "Analyzing..." : <><Sparkles className="mr-2"/>Analyze & Get Suggestions</>}
+                  </Button>
+                  <p className="text-xs text-muted-foreground mt-2">
+                    Let our AI analyze the job and provide tailored suggestions for template, strategy, and word count.
+                  </p>
+                </div>
                 
                 {isAnalyzing && (
                   <div className="space-y-2 pt-4">
@@ -1297,3 +1303,5 @@ export default function DashboardPage() {
         </Suspense>
     )
 }
+
+    
