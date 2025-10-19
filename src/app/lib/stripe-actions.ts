@@ -8,251 +8,165 @@ import { getCurrentUser } from '@/lib/firebase/server-auth';
 import { z } from 'zod';
 import type Stripe from 'stripe';
 import { revalidatePath } from 'next/cache';
+import { adminDb } from '@/lib/firebase/admin';
 
-const checkoutSessionSchema = z.object({
-  interval: z.enum(['monthly', 'yearly']),
-});
+export async function handlePlanChange(formData: FormData): Promise<{
+    success?: boolean;
+    error?: string;
+    redirectUrl?: string;
+}> {
+    // Manually get and validate form data
+    let interval = formData.get('interval') as 'monthly' | 'yearly' | null;
+    const coupon = formData.get('coupon') as string | null;
 
-export async function createCheckoutSession(formData: FormData) {
-  const validatedFields = checkoutSessionSchema.safeParse({
-    interval: formData.get('interval'),
-  });
+    const currentUser = await getCurrentUser();
+    if (!currentUser || !currentUser.userDoc) {
+        return { redirectUrl: '/login' };
+    }
 
-  if (!validatedFields.success) {
-    throw new Error('Invalid billing interval selected.');
-  }
+    const { user, userDoc } = currentUser;
+    const { stripeCustomerId, subscriptionStatus, subscriptionId, subscriptionInterval } = userDoc;
 
-  const { interval } = validatedFields.data;
-
-  const currentUser = await getCurrentUser();
-  if (!currentUser || !currentUser.userDoc) {
-    return redirect('/login');
-  }
-
-  const { user, userDoc } = currentUser;
-  const { stripeCustomerId, subscriptionStatus, subscriptionId } = userDoc;
-
-  if (!stripeCustomerId) {
-    throw new Error('Could not find Stripe customer ID. Please contact support.');
-  }
-
-  const headersList = headers();
-  const protocol = headersList.get('x-forwarded-proto') || 'http';
-  const host = headersList.get('host');
-  const origin = `${protocol}://${host}`;
-  const successUrl = `${origin}/dashboard?subscribed=true&interval=${interval}`;
-  const cancelUrl = `${origin}/pricing`;
-
-  const monthlyPriceId = process.env.STRIPE_MONTHLY_PRICE_ID;
-  const yearlyPriceId = process.env.STRIPE_YEARLY_PRICE_ID;
-
-  if (!monthlyPriceId || monthlyPriceId.includes('your_stripe_price_id_here')) {
-    throw new Error('Monthly Stripe Price ID is not configured.');
-  }
-  if (!yearlyPriceId || yearlyPriceId.includes('your_stripe_price_id_here')) {
-    throw new Error('Yearly Stripe Price ID is not configured.');
-  }
-  
-  const priceId = interval === 'yearly' ? yearlyPriceId : monthlyPriceId;
-
-  const sessionParams: Stripe.Checkout.SessionCreateParams = {
-    payment_method_types: ['card'],
-    customer: stripeCustomerId,
-    client_reference_id: user.uid,
-    success_url: successUrl,
-    cancel_url: cancelUrl,
-  };
-  
-  // Case 1: User has an active subscription and is upgrading/changing plans
-  if (subscriptionStatus === 'active' && subscriptionId) {
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-    
-    // Create a setup intent session to update the subscription
-    const setupSession = await stripe.checkout.sessions.create({
-      payment_method_types: ['card'],
-      mode: 'setup',
-      customer: stripeCustomerId,
-      setup_intent_data: {
-        metadata: {
-          subscription_id: subscriptionId,
-          price_id: priceId,
-        },
-      },
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-    });
-    
-    if (!setupSession.url) {
-        throw new Error('Could not create setup session for plan change.');
+    if (!stripeCustomerId) {
+        return { error: 'Could not find Stripe customer ID. Please contact support.' };
     }
     
-    redirect(setupSession.url);
-    return; // End execution here
-  }
-  
-  // Case 2: New user or expired user starting a new subscription
-  sessionParams.mode = 'subscription';
-  sessionParams.line_items = [{ price: priceId, quantity: 1 }];
-  
-  // Only give trials to users who are not active or trialing
-  if (subscriptionStatus !== 'active' && subscriptionStatus !== 'trialing') {
-    sessionParams.subscription_data = {
-      trial_period_days: 2,
-    };
-  }
-  
-  let checkoutSession: Stripe.Checkout.Session;
-  try {
-    checkoutSession = await stripe.checkout.sessions.create(sessionParams);
-  } catch (error: any) {
-    console.error("Error creating Stripe checkout session:", error);
-    throw new Error('Failed to connect to Stripe. Please try again later.');
-  }
+    // If interval isn't specified (e.g., new user trial form), infer it or default it.
+    if (!interval) {
+        interval = 'monthly'; // Default for new users
+    }
 
-  if (!checkoutSession.url) {
-    throw new Error('Could not create checkout session');
-  }
+    // Validate the interval manually
+    if (interval !== 'monthly' && interval !== 'yearly') {
+        return { error: 'Invalid billing interval selected.' };
+    }
 
-  redirect(checkoutSession.url);
-}
 
-const activateTrialSchema = z.object({
-  interval: z.enum(['monthly', 'yearly']),
-});
+    const monthlyPriceId = process.env.STRIPE_MONTHLY_PRICE_ID!;
+    const yearlyPriceId = process.env.STRIPE_YEARLY_PRICE_ID!;
+    const priceId = interval === 'yearly' ? yearlyPriceId : monthlyPriceId;
 
-export async function activateTrialAction(formData: FormData): Promise<{ success?: boolean; error?: string }> {
-  const validatedFields = activateTrialSchema.safeParse({
-    interval: formData.get('interval'),
-  });
+    const headersList = headers();
+    const protocol = headersList.get('x-forwarded-proto') || 'http';
+    const host = headersList.get('host');
+    const origin = `${protocol}://${host}`;
+    const successUrl = `${origin}/dashboard?subscribed=true&interval=${interval}`;
+    const cancelUrl = `${origin}/pricing`;
 
-  if (!validatedFields.success) {
-    return { error: 'Invalid billing interval selected.' };
-  }
-  const { interval } = validatedFields.data;
+    try {
+        // Scenario 1: New user starting a trial
+        if (!subscriptionStatus) {
+            const sessionParams: Stripe.Checkout.SessionCreateParams = {
+                payment_method_types: ['card'],
+                customer: stripeCustomerId,
+                client_reference_id: user.uid,
+                success_url: successUrl,
+                cancel_url: cancelUrl,
+                mode: 'subscription',
+                line_items: [{ price: priceId, quantity: 1 }],
+                subscription_data: {
+                    trial_period_days: 2,
+                },
+                allow_promotion_codes: true,
+            };
+            if (coupon) {
+                sessionParams.discounts = [{ promotion_code: coupon }];
+            }
+            const checkoutSession = await stripe.checkout.sessions.create(sessionParams);
+            
+            // Store the price in Firestore before redirecting
+            const price = await stripe.prices.retrieve(priceId);
+            if (price.unit_amount) {
+                const userRef = adminDb.collection('users').doc(user.uid);
+                await userRef.update({ lastPrice: price.unit_amount / 100 });
+            }
 
-  const currentUser = await getCurrentUser();
-  if (!currentUser || !currentUser.userDoc) {
-    return { error: 'You must be logged in to activate a plan.' };
-  }
-  
-  const { userDoc } = currentUser;
-  const { subscriptionStatus, subscriptionId } = userDoc;
+            return { redirectUrl: checkoutSession.url! };
+        }
 
-  if (subscriptionStatus !== 'trialing' || !subscriptionId) {
-    return { error: 'You are not in a trial period or the subscription is missing.' };
-  }
+        // Scenario 2: User is in trial and activating their plan
+        if (subscriptionStatus === 'trialing' && subscriptionId) {
+            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+            const updateParams: Stripe.SubscriptionUpdateParams = {
+                items: [{ id: subscription.items.data[0].id, price: priceId }],
+                trial_end: 'now',
+                proration_behavior: 'none',
+            };
+            if (coupon) {
+                updateParams.promotion_code = coupon;
+            }
+            const updatedSubscription = await stripe.subscriptions.update(subscriptionId, updateParams);
+             // Store the price in Firestore
+            const price = updatedSubscription.items.data[0].price;
+            if (price.unit_amount) {
+                const userRef = adminDb.collection('users').doc(user.uid);
+                await userRef.update({ lastPrice: price.unit_amount / 100 });
+            }
+            revalidatePath('/pricing');
+            return { success: true };
+        }
+        
+        // Scenario 3: User is on active monthly and upgrading to yearly
+        if (subscriptionStatus === 'active' && subscriptionId && userDoc.subscriptionInterval === 'month' && interval === 'yearly') {
+             const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+             const updateParams: Stripe.SubscriptionUpdateParams = {
+                items: [{ id: subscription.items.data[0].id, price: priceId }],
+                proration_behavior: 'create_prorations',
+                trial_end: 'now',
+            };
+             if (coupon) {
+                updateParams.promotion_code = coupon;
+            }
+            const updatedSubscription = await stripe.subscriptions.update(subscriptionId, updateParams);
+             // Store the price in Firestore
+            const price = updatedSubscription.items.data[0].price;
+            if (price.unit_amount) {
+                const userRef = adminDb.collection('users').doc(user.uid);
+                await userRef.update({ lastPrice: price.unit_amount / 100 });
+            }
+            revalidatePath('/pricing');
+            return { success: true };
+        }
 
-  const monthlyPriceId = process.env.STRIPE_MONTHLY_PRICE_ID;
-  const yearlyPriceId = process.env.STRIPE_YEARLY_PRICE_ID;
-  const newPriceId = interval === 'yearly' ? yearlyPriceId : monthlyPriceId;
+        // Scenario 4: User had a canceled sub and is reactivating
+        if (subscriptionStatus === 'canceled' && stripeCustomerId) {
+            const sessionParams: Stripe.Checkout.SessionCreateParams = {
+                payment_method_types: ['card'],
+                customer: stripeCustomerId,
+                client_reference_id: user.uid,
+                success_url: successUrl,
+                cancel_url: cancelUrl,
+                mode: 'subscription',
+                line_items: [{ price: priceId, quantity: 1 }],
+                allow_promotion_codes: true,
+            };
+            if (coupon) {
+                sessionParams.discounts = [{ promotion_code: coupon }];
+            }
+            const checkoutSession = await stripe.checkout.sessions.create(sessionParams);
+            
+             // Store the price in Firestore
+            const price = await stripe.prices.retrieve(priceId);
+            if (price.unit_amount) {
+                const userRef = adminDb.collection('users').doc(user.uid);
+                await userRef.update({ lastPrice: price.unit_amount / 100 });
+            }
 
-  try {
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-    
-    await stripe.subscriptions.update(subscriptionId, {
-      items: [{
-        id: subscription.items.data[0].id,
-        price: newPriceId,
-      }],
-      trial_end: 'now',
-      proration_behavior: 'none',
-    });
-    
-    revalidatePath('/pricing');
-    
-    return { success: true };
+            return { redirectUrl: checkoutSession.url! };
+        }
+        
+        return { error: 'No valid action could be determined for your subscription state.' };
 
-  } catch (error: any) {
-    console.error('Error activating trial subscription:', error);
-    return { error: error.message || 'An unexpected error occurred while activating your plan.' };
-  }
-}
-
-export async function upgradeSubscriptionAction(): Promise<{ success?: boolean; error?: string }> {
-  const currentUser = await getCurrentUser();
-  if (!currentUser || !currentUser.userDoc) {
-    return { error: 'You must be logged in to upgrade your plan.' };
-  }
-
-  const { subscriptionStatus, subscriptionId, subscriptionInterval } = currentUser.userDoc;
-
-  if (subscriptionStatus !== 'active' || subscriptionInterval !== 'month' || !subscriptionId) {
-    return { error: 'You are not on an active monthly plan eligible for an upgrade.' };
-  }
-
-  const yearlyPriceId = process.env.STRIPE_YEARLY_PRICE_ID;
-  if (!yearlyPriceId) {
-    return { error: 'Yearly plan is not configured.' };
-  }
-
-  try {
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-    
-    await stripe.subscriptions.update(subscriptionId, {
-      items: [{
-        id: subscription.items.data[0].id,
-        price: yearlyPriceId,
-      }],
-      proration_behavior: 'create_prorations',
-      trial_end: 'now', // Ensure any residual trial is ended
-    });
-
-    revalidatePath('/pricing');
-    return { success: true };
-    
-  } catch (error: any) {
-    console.error('Error upgrading subscription:', error);
-    return { error: 'Failed to upgrade your plan. Please try again.' };
-  }
-}
-
-const changeTrialPlanSchema = z.object({
-  interval: z.enum(['monthly', 'yearly']),
-});
-
-export async function changeTrialPlanAction(formData: FormData): Promise<{ success?: boolean; error?: string }> {
-  const validatedFields = changeTrialPlanSchema.safeParse({
-    interval: formData.get('interval'),
-  });
-
-  if (!validatedFields.success) {
-    return { error: 'Invalid billing interval selected.' };
-  }
-  const { interval } = validatedFields.data;
-  
-  const currentUser = await getCurrentUser();
-  if (!currentUser || !currentUser.userDoc) {
-    return { error: 'You must be logged in to change your plan.' };
-  }
-
-  const { subscriptionStatus, subscriptionId } = currentUser.userDoc;
-
-  if (subscriptionStatus !== 'trialing' || !subscriptionId) {
-    return { error: 'You are not in a trial period or the subscription is missing.' };
-  }
-  
-  const monthlyPriceId = process.env.STRIPE_MONTHLY_PRICE_ID;
-  const yearlyPriceId = process.env.STRIPE_YEARLY_PRICE_ID;
-  const newPriceId = interval === 'yearly' ? yearlyPriceId : monthlyPriceId;
-  
-  try {
-    const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-    
-    await stripe.subscriptions.update(subscription.id, {
-      items: [{
-        id: subscription.items.data[0].id,
-        price: newPriceId,
-      }],
-      proration_behavior: 'none', // No proration change during trial
-    });
-
-    revalidatePath('/pricing');
-    return { success: true };
-    
-  } catch (error: any) {
-    console.error('Error changing trial plan:', error);
-    return { error: 'Failed to change your plan. Please try again.' };
-  }
+    } catch (error: any) {
+        console.error("Error in handlePlanChange:", error);
+        if (error.raw?.message?.includes('not specified for use with this customer')) {
+            return { error: 'This coupon code is not valid for your account.' };
+        }
+        if (error.code === 'coupon_invalid' || error.code === 'promotion_code_invalid' || error.code === 'promotion_code_expired') {
+            return { error: 'The provided coupon code is invalid or has expired.' };
+        }
+        return { error: error.message || 'An unexpected error occurred.' };
+    }
 }
 
 
@@ -297,5 +211,72 @@ export async function createCustomerPortalSession(): Promise<{ url?: string; err
       error:
         'An unexpected error occurred while creating the billing portal session.',
     };
+  }
+}
+
+const validateCouponSchema = z.object({
+  code: z.string(),
+  plan: z.enum(['monthly', 'yearly']),
+});
+
+export async function validateCouponAction(formData: FormData): Promise<{
+    success: boolean;
+    error?: string;
+    coupon?: {
+        id: string;
+        name: string | null;
+        percent_off: number | null;
+        amount_off: number | null;
+    };
+}> {
+  const validatedFields = validateCouponSchema.safeParse({
+    code: formData.get('code'),
+    plan: formData.get('plan'),
+  });
+
+  if (!validatedFields.success) {
+    return { success: false, error: 'Invalid coupon code or plan.' };
+  }
+
+  const { code, plan } = validatedFields.data;
+
+  try {
+    const promotionCodes = await stripe.promotionCodes.list({
+      code: code,
+      active: true,
+      limit: 1,
+      expand: ['data.coupon']
+    });
+
+    if (promotionCodes.data.length === 0) {
+      return { success: false, error: 'This coupon code is invalid or has expired.' };
+    }
+
+    const promoCode = promotionCodes.data[0];
+    const coupon = promoCode.coupon as Stripe.Coupon;
+
+    // Check if coupon is valid
+    if (!coupon.valid) {
+        return { success: false, error: 'This coupon is no longer valid.' };
+    }
+
+    // Check if the coupon applies to the selected plan
+    const appliesToPlan = coupon.metadata?.applies_to_plan;
+    if (appliesToPlan && appliesToPlan !== 'any' && appliesToPlan !== plan) {
+        return { success: false, error: `This coupon is only valid for the ${appliesToPlan} plan.` };
+    }
+
+    return {
+      success: true,
+      coupon: {
+        id: promoCode.id, // Return the promotion code ID
+        name: coupon.name,
+        percent_off: coupon.percent_off,
+        amount_off: coupon.amount_off,
+      },
+    };
+  } catch (error: any) {
+    console.error("Stripe API error validating coupon:", error);
+    return { success: false, error: 'Could not validate coupon code.' };
   }
 }
