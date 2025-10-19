@@ -4,7 +4,7 @@
 import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { ProposalUpLogo, ProposalUpLogoLight } from '@/components/icons';
+import { ProposalUpLogos } from '@/components/icons';
 import { signInWithCustomToken } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 
@@ -78,8 +78,7 @@ function AuthCallback() {
   return (
     <div className="flex items-center justify-center min-h-screen">
       <div className="flex flex-col items-center gap-4">
-        <ProposalUpLogo className="dark:hidden h-24 w-24 animate-pulse text-primary" />
-        <ProposalUpLogoLight className="hidden dark:block h-24 w-24 animate-pulse text-primary" />
+        <ProposalUpLogos className="h-24 w-24 animate-pulse text-primary" />
         <p className="text-muted-foreground">Finalizing authentication...</p>
       </div>
     </div>

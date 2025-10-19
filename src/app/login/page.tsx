@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ProposalUpLogo, ProposalUpLogoLight, GoogleIcon } from '@/components/icons';
+import { ProposalUpLogos, GoogleIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { getGoogleAuthUrl } from '@/app/lib/actions';
@@ -36,7 +36,7 @@ export default function LoginPage() {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     try {
-      const googleAuthUrl = await getGoogleAuthUrl();
+      const googleAuthUrl = await getGoogleAuthUrl(null);
       const popup = window.open(googleAuthUrl, 'google-signin', 'width=600,height=700');
       
       const handleMessage = (event: MessageEvent) => {
@@ -120,8 +120,7 @@ export default function LoginPage() {
   if (loading || user) {
      return (
       <div className="flex items-center justify-center min-h-screen">
-        <ProposalUpLogo className="dark:hidden h-24 w-24 animate-pulse text-primary" />
-        <ProposalUpLogoLight className="hidden dark:block h-24 w-24 animate-pulse text-primary" />
+        <ProposalUpLogos className="h-24 w-24 animate-pulse text-primary" />
       </div>
     );
   }
@@ -209,7 +208,7 @@ export default function LoginPage() {
           <BgPattern />
           <div className="flex flex-col items-center text-center z-10">
             <Link href="/" className="mb-4">
-              <ProposalUpLogoLight className="h-32 w-32 text-white" />
+              <ProposalUpLogos className="h-32 w-32 text-white" />
             </Link>
             <h2 className="text-3xl font-bold mb-2">Proposal Up</h2>
             <p className="text-lg text-white/80 max-w-md">

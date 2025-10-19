@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ProposalUpLogo, ProposalUpLogoLight } from '@/components/icons';
+import { ProposalUpLogos } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2 } from 'lucide-react';
 import { adminLogin } from '@/app/login/actions';
@@ -45,8 +45,7 @@ export default function AdminLoginPage() {
     <div className="flex items-center justify-center min-h-screen bg-muted/40">
       <Card className="mx-auto max-w-sm w-full">
         <CardHeader className="text-center">
-          <ProposalUpLogo className="dark:hidden h-16 w-16 mx-auto text-primary" />
-          <ProposalUpLogoLight className="hidden dark:block h-16 w-16 mx-auto text-primary" />
+          <ProposalUpLogos className="h-16 w-16 mx-auto text-primary" />
           <CardTitle className="text-2xl">Admin Portal</CardTitle>
           <CardDescription>Enter your administrator credentials to continue.</CardDescription>
         </CardHeader>

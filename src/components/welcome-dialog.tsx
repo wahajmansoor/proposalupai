@@ -11,7 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { CheckCircle } from "lucide-react";
-import { ProposalUpLogo, ProposalUpLogoLight } from '@/components/icons';
+import { ProposalUpLogos } from '@/components/icons';
 
 export function WelcomeDialog({
   open,
@@ -36,8 +36,7 @@ export function WelcomeDialog({
       <DialogContent className="sm:max-w-md">
         <DialogHeader className="items-center text-center">
           <div className="bg-primary/10 rounded-full p-3 mb-4">
-            <ProposalUpLogo className="dark:hidden h-16 w-16 text-primary" />
-            <ProposalUpLogoLight className="hidden dark:block h-16 w-16 text-primary" />
+            <ProposalUpLogos className="h-16 w-16 text-primary" />
           </div>
           <DialogTitle className="text-2xl font-bold">
             {isTrialing ? "Welcome to Proposal Up!" : "Welcome to Proposal Up!"}

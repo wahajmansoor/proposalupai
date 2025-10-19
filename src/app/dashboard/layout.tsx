@@ -4,7 +4,7 @@
 import { useAuth } from "@/context/auth-context";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
-import { ProposalUpLogo, ProposalUpLogoLight } from '@/components/icons';
+import { ProposalUpLogos } from '@/components/icons';
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
 import { cn } from "@/lib/utils";
@@ -53,8 +53,7 @@ export default function DashboardLayout({
   if (!isAuthorized) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
-        <ProposalUpLogo className="dark:hidden h-24 w-24 animate-pulse text-primary" />
-        <ProposalUpLogoLight className="hidden dark:block h-24 w-24 animate-pulse text-primary" />
+        <ProposalUpLogos className="h-24 w-24 animate-pulse text-primary" />
       </div>
     );
   }
