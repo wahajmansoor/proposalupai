@@ -87,7 +87,7 @@ function AuthCallback() {
 
 export default function AuthCallbackClientPage() {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense>
             <AuthCallback />
         </Suspense>
     )

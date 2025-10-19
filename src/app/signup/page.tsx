@@ -312,7 +312,7 @@ function SignupForm() {
 
 export default function SignupPage() {
     return (
-        <Suspense fallback={<div>Loading...</div>}>
+        <Suspense>
             <SignupForm />
         </Suspense>
     )
