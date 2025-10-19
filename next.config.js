@@ -1,7 +1,10 @@
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  serverActions: {
-    maxDuration: 120, // Increase timeout to 2 minutes for AI operations
+  experimental: {
+    serverActions: {
+      maxDuration: 120, // Increase timeout to 2 minutes for AI operations
+    },
   },
   typescript: {
     ignoreBuildErrors: true,

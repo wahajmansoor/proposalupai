@@ -1,15 +1,19 @@
+
 import OpenAI from 'openai';
 
-let openai: OpenAI;
+let openaiInstance: OpenAI;
 
-if (!process.env.OPENAI_API_KEY) {
-  console.error('Missing OpenAI API key. The app will run but AI features will fail. Please add it to your .env file.');
-  // @ts-ignore
-  openai = undefined;
-} else {
-    openai = new OpenAI({
-        apiKey: process.env.OPENAI_API_KEY,
+function getOpenAIInstance() {
+  if (!openaiInstance) {
+    if (!process.env.OPENAI_API_KEY) {
+      throw new Error('Missing OpenAI API key. Please add it to your .env file.');
+    }
+    openaiInstance = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
     });
+  }
+  return openaiInstance;
 }
 
-export { openai };
+// We are exporting the client instance directly
+export const openai = getOpenAIInstance();
