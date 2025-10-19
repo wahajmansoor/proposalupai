@@ -1,5 +1,5 @@
 
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Outfit } from 'next/font/google';
@@ -18,7 +18,6 @@ const outfit = Outfit({
 export const metadata: Metadata = {
   title: 'Proposal Up',
   description: 'Generate tailored proposals with the power of AI',
-  viewport: 'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no',
   icons: [
     {
       rel: 'icon',
@@ -33,6 +32,13 @@ export const metadata: Metadata = {
       type: 'image/x-icon',
     },
   ],
+};
+
+export const viewport: Viewport = {
+  width: 'device-width',
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({
