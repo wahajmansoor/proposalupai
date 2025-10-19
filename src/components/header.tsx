@@ -21,7 +21,7 @@ export function Header() {
         </div>
 
         <div className="flex items-center justify-end gap-2 sm:gap-4">
-           {user && userProfile?.subscriptionStatus !== 'active' && <CreditsButton />}
+           {user && <CreditsButton />}
           {user && userProfile?.subscriptionStatus === 'trialing' && (
             <Button asChild size="sm" className="hidden sm:flex">
               <Link href="/pricing">
