@@ -60,18 +60,17 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
         subscriptionData.subscriptionInterval = interval;
     }
     
-    // Award credits on new 'active' or 'trialing' subscription
-    if (status === 'active' || status === 'trialing') {
-        const userDoc = await userDocRef.get();
-        const previousStatus = userDoc.data()?.subscriptionStatus;
+    const userDoc = await userDocRef.get();
+    const previousStatus = userDoc.data()?.subscriptionStatus;
+    const newStatus = status;
 
-        // Check if this is a new subscription or a reactivation
-        if (!previousStatus || !['active', 'trialing'].includes(previousStatus)) {
-            if (interval === 'year') {
-                subscriptionData.proposalCredits = FieldValue.increment(30);
-            } else if (interval === 'month') {
-                subscriptionData.proposalCredits = FieldValue.increment(7);
-            }
+    const shouldAwardCredits = (newStatus === 'active' || newStatus === 'trialing') && (!previousStatus || !['active', 'trialing'].includes(previousStatus));
+
+    if (shouldAwardCredits) {
+        if (interval === 'year') {
+            subscriptionData.proposalCredits = FieldValue.increment(30);
+        } else if (interval === 'month') {
+            subscriptionData.proposalCredits = FieldValue.increment(7);
         }
     }
     

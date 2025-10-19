@@ -78,7 +78,8 @@ export async function generateProposal(
 
 **CRITICAL INSTRUCTIONS - YOU MUST FOLLOW THESE RULES TO AVOID CREATING A BAD, AI-GENERATED PROPOSAL:**
 
-- **TONE:** You MUST adopt a **${input.tone}** tone. Sound human, not like a robot filling a template. Avoid overly formal or "fluffy" language and jargon. Use "website" not "site".
+- **TONE:** You MUST adopt a **${input.tone}** tone. Sound human, not like a robot filling a template. Avoid overly formal or "fluffy" language and jargon.
+- **WORD CHOICE:** You MUST use the word "website" instead of "site".
 - **GREETING:** Always start with the exact greeting provided: "${input.greeting}". This should be followed by a single line break (\\n).
 - **NO PLACEHOLDERS:** You MUST NOT leave any placeholders like [SPECIFIC TASK] or [INSERT LINK] in the final output. If information is missing, you must adapt and write a natural sentence without it.
 - **AVOID GENERIC OPENERS:** NEVER start with "I am happy to apply...", "I am writing to express my interest...", or other generic, "watery" phrases.
