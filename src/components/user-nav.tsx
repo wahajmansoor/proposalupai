@@ -15,13 +15,14 @@ import { signOut } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import Link from 'next/link';
 import { Skeleton } from './ui/skeleton';
-import { ChevronDown, CreditCard, LogOut, User, Loader2 } from 'lucide-react';
+import { ChevronDown, CreditCard, LogOut, User, Loader2, Star } from 'lucide-react';
 import { createCustomerPortalSession } from '@/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Logout01Icon, CreditCardValidationIcon, UserSettings01Icon } from "@hugeicons/core-free-icons";
+import { Badge } from './ui/badge';
 
 
 export function UserNav() {
@@ -83,6 +84,7 @@ export function UserNav() {
   const displayName = user.displayName;
   const photoURL = user.photoURL;
   const email = user.email;
+  const isPremium = userProfile?.subscriptionStatus === 'active';
 
 
   return (
@@ -97,6 +99,12 @@ export function UserNav() {
           </Avatar>
            <div className="hidden sm:flex flex-col text-left">
               <span className="font-semibold text-sm leading-tight text-foreground">{displayName}</span>
+               {isPremium && (
+                <Badge variant="premium" className="px-1.5 py-0 h-auto justify-start w-fit">
+                    <Star className="mr-1 h-3 w-3"/>
+                    Premium
+                </Badge>
+              )}
           </div>
           <ChevronDown className="h-4 w-4 text-muted-foreground hidden sm:block" />
         </Button>
@@ -108,6 +116,12 @@ export function UserNav() {
             <p className="text-xs leading-none text-muted-foreground">
               {email}
             </p>
+            {isPremium && (
+              <Badge variant="premium" className="mt-2 w-fit">
+                <Star className="mr-1 h-3 w-3" />
+                Premium Plan
+              </Badge>
+            )}
           </div>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
