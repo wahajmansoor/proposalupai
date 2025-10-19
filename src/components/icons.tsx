@@ -85,7 +85,7 @@ export function ProposalUpLogo(props: SVGProps<SVGSVGElement>) {
           <stop stop-opacity="1" stop-color="rgb(9.986877%, 79.48761%, 16.079712%)" offset="0.65625"></stop>
           <stop stop-opacity="1" stop-color="rgb(9.603882%, 79.292297%, 16.079712%)" offset="0.664062"></stop>
           <stop stop-opacity="1" stop-color="rgb(9.371948%, 79.219055%, 16.079712%)" offset="0.671875"></stop>
-          <stop stop-opacity="1" stop-color="rgb(9.184265%, 79.219055%, 16.079712%)" offset="0.679687"></stop>
+          <stop stop-opacity="1" stop-color="rgb(9.184265%, 79.219055%, 16.079712%)" offset="0.679688"></stop>
           <stop stop-opacity="1" stop-color="rgb(8.879089%, 79.219055%, 16.079712%)" offset="0.6875"></stop>
           <stop stop-opacity="1" stop-color="rgb(8.677673%, 79.112244%, 16.079712%)" offset="0.695312"></stop>
           <stop stop-opacity="1" stop-color="rgb(8.433533%, 78.912354%, 16.139221%)" offset="0.703125"></stop>
@@ -125,8 +125,8 @@ export function ProposalUpLogo(props: SVGProps<SVGSVGElement>) {
       </defs>
       <path fill="#1e293b" d="M 288.578125 23.210938 C 273.859375 23.289062 261.769531 23.519531 261.769531 23.679688 C 261.769531 23.839844 262.769531 26.160156 264.089844 28.871094 C 267.191406 35.609375 268.039062 40.5 267.109375 47.011719 C 266.109375 54.21875 263.078125 60.570312 257.269531 67.859375 C 254.550781 71.191406 252.460938 74.058594 252.621094 74.140625 C 252.769531 74.289062 256.179688 72.28125 260.210938 69.558594 C 286.949219 51.890625 320.28125 30.191406 324.390625 27.710938 C 331.371094 23.519531 330.898438 22.441406 322.300781 22.75 C 318.5 22.898438 303.390625 23.058594 288.578125 23.210938 Z M 288.578125 23.210938 " fill-opacity="1" fill-rule="nonzero"></path>
       <g clip-path="url(#cfec753f25)">
-        <g clip-path="url(#659ce49db5)">
-          <path fill="url(#a447e7068d)" d="M 64.890625 59.25 L 64.890625 361.300781 L 261 361.300781 L 261 59.25 Z M 64.890625 59.25 " fill-rule="nonzero"></path>
+        <g>
+          <path fill="url(#048780019b)" d="M 68.183594 52.605469 L 68.183594 369.996094 L 274.253906 369.996094 L 274.253906 52.605469 Z M 68.183594 52.605469 " fill-rule="nonzero"></path>
         </g>
       </g>
     </svg>
@@ -140,7 +140,6 @@ export function ProposalUpLogoLight(props: SVGProps<SVGSVGElement>) {
     </svg>
   );
 }
-
 
 export function GoogleIcon(props: SVGProps<SVGSVGElement>) {
   return (
