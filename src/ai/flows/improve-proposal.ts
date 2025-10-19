@@ -29,9 +29,9 @@ export async function improveProposal(
 
   const textToImprove = input.selectedText || input.proposal;
 
-  let prompt = `You are an expert copy editor and formatter. A user has provided a block of text and a specific instruction to improve it.
+  const systemPrompt = "You are a professional proposal editor. Your goal is to follow user instructions precisely and maintain the original formatting of the text unless explicitly told otherwise.";
 
-**Full Proposal for Context:**
+  let userPrompt = `**Full Proposal for Context:**
 ---
 ${input.proposal}
 ---
@@ -46,30 +46,37 @@ ${textToImprove}
 ${input.instruction}
 ---
 
-**CRITICAL INSTRUCTIONS:**
-1.  **EXECUTE THE INSTRUCTION:** Apply the user's instruction ONLY to the "Text to Modify".
-2.  **PRESERVE ALL FORMATTING:** Your primary goal is to maintain the original text's structure.
-    -   **Line Breaks & Paragraphs:** You MUST preserve all single line breaks (\n) and paragraph breaks (\n\n). Do not merge paragraphs unless explicitly asked.
-    -   **Lists & Questions:** If the original text has a numbered list, bulleted list, or multiple questions, each item MUST remain on its own line.
-    -   **Placeholders:** If the original text contains a placeholder like "[ENTER URL]", you MUST preserve it exactly as is.
-3.  **OUTPUT ONLY THE REWRITTEN TEXT.** Your output should ONLY be the modified version of the "Text to Modify". Do not add any commentary, explanation, or markdown formatting like \`\`\`.
-4.  **HANDLE DELETION:** If the instruction is to remove or delete the text, you MUST output an empty string.
-5.  **MATCH WORD COUNT:** Adhere closely to the word count of the original text selection unless the instruction is specifically about length (e.g., "make it shorter").
-6.  **NO EM-DASHES:** Do not use em-dashes (—) in your response.
+**Editing Rules:**
+1.  Apply the user's instruction ONLY to the "Text to Modify".
+2.  Preserve all single line breaks (\\n) and paragraph breaks (\\n\\n). Do not merge paragraphs or alter lists unless specifically instructed.
+3.  If the original text contains a placeholder like "[ENTER URL]", you MUST preserve it exactly as is.
+4.  Output ONLY the rewritten text — no commentary, markdown, or explanations.
+5.  If the instruction is to delete or remove the text, you MUST output ONLY the token <<DELETED>>.
+6.  Do not significantly change the overall length (±10%) unless the instruction is explicitly about shortening or expanding.
+7.  Do not use em-dashes (—).
+8.  Maintain the tone and language style of the original proposal.
 `;
 
   if (input.closingCta && !input.selectedText) {
-      prompt += `7.  **UPDATE CLOSING CTA:** The user has provided a new closing call-to-action idea: "${input.closingCta}". You MUST rewrite the final paragraph of the proposal to naturally incorporate this new idea.`
+      userPrompt += `9.  **UPDATE CLOSING CTA:** The user has provided a new closing call-to-action idea: "${input.closingCta}". You MUST rewrite the final paragraph of the proposal to naturally incorporate this new idea.`
   }
 
   const completion = await openai.chat.completions.create({
     model: 'gpt-4o-mini',
-    messages: [{ role: 'user', content: prompt }],
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: userPrompt }
+    ],
+    temperature: 0.3,
   });
 
   const improvedProposal = completion.choices[0].message.content;
+  
+  if (improvedProposal?.includes('<<DELETED>>')) {
+    return { improvedProposal: '' };
+  }
+
   if (improvedProposal === null) {
-    // This can happen if the AI is instructed to delete the text.
     return { improvedProposal: '' };
   }
 
