@@ -1,5 +1,5 @@
 'server-only';
-import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
+import * as admin from 'firebase-admin';
 import { getAuth, Auth } from 'firebase-admin/auth';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 
@@ -20,12 +20,12 @@ if (!isFirebaseAdminConfigured) {
   );
 }
 
-let app: App;
+let app: admin.app.App;
 
-if (!getApps().length) {
+if (!admin.apps.length) {
   try {
-    app = initializeApp({
-      credential: cert(serviceAccount),
+    app = admin.initializeApp({
+      credential: admin.credential.cert(serviceAccount),
     });
   } catch (error: any) {
     console.error('Firebase Admin SDK initialization failed:', error);
@@ -34,7 +34,7 @@ if (!getApps().length) {
     );
   }
 } else {
-  app = getApps()[0];
+  app = admin.apps[0]!;
 }
 
 const adminAuth: Auth = getAuth(app);
