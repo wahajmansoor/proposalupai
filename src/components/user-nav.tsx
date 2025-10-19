@@ -97,7 +97,6 @@ export function UserNav() {
           </Avatar>
            <div className="hidden sm:flex flex-col text-left">
               <span className="font-semibold text-sm leading-tight text-foreground">{displayName}</span>
-              <span className="text-xs text-muted-foreground leading-tight">{email}</span>
           </div>
           <ChevronDown className="h-4 w-4 text-muted-foreground hidden sm:block" />
         </Button>
