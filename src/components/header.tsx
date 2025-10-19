@@ -1,3 +1,4 @@
+
 // src/components/header.tsx
 import { ProposalUpLogo } from '@/components/icons';
 import { UserNav } from '@/components/user-nav';
@@ -35,3 +36,5 @@ export function Header() {
       </header>
   );
 }
+
+    
