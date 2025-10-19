@@ -96,7 +96,7 @@ export async function generateProposal(
     3.  Follow this with a paragraph break (a single \n).
     4.  Write a SHORT, natural-sounding paragraph (2-3 sentences) based on this idea, intelligently replacing placeholders like [SKILLSET] with information from the job summary and user profile: "Your project sounds exciting, and I understand how tough it can be to find the right [SKILLSET] specialist, someone reliable, motivated, and ready to get the job done right from the start."
     5.  Write another SHORT, punchy paragraph based on this idea: "Unlike others who juggle too many clients and go quiet for days, I focus on a smaller, select group of clients. This allows me to work closely with you, ensuring we achieve the results you want without unnecessary stress."
-    6.  **FINAL CTA (CRITICAL):** The final paragraph MUST be a complete, natural-sounding sentence that achieves the user's goal for the call-to-action. The user's desired outcome is: "${input.closingCta}". You MUST NOT use this phrase verbatim. Instead, write an original sentence that accomplishes this goal in a human-sounding way.
+    6.  **FINAL CTA (CRITICAL):** The final paragraph MUST be a complete, natural-sounding sentence that rephrases the user's desired call-to-action. The user's selected CTA idea is: "${input.closingCta}". You MUST NOT use this phrase verbatim. Instead, write an original sentence that reflects this idea in a human-sounding way.
     7.  **SIGNATURE (CRITICAL):** After the final CTA paragraph, add TWO line breaks (\n\n). If the user provided a sign-off phrase ("${input.closingCta2}"), write it on its own line. Then, on the VERY NEXT LINE, write the user's name: "${input.userName}".
 `;
   }
@@ -122,7 +122,7 @@ export async function generateProposal(
           prompt += `${formatLinks(input.manualLinks)}\n`;
       }
     }
-    prompt += `    - **FINAL CTA (CRITICAL):** The final paragraph MUST be a complete, natural-sounding sentence that achieves the user's goal for the call-to-action. The user's desired outcome is: "${input.closingCta}". You MUST NOT use this phrase verbatim. Instead, write an original sentence that accomplishes this goal in a human-sounding way.
+    prompt += `    - **FINAL CTA (CRITICAL):** The final paragraph MUST be a complete, natural-sounding sentence that rephrases the user's desired call-to-action. The user's selected CTA idea is: "${input.closingCta}". You MUST NOT use this phrase verbatim. Instead, write an original sentence that reflects this idea in a human-sounding way.
     - **SIGNATURE (CRITICAL):** After the final CTA paragraph, add TWO line breaks (\n\n). If the user provided a sign-off phrase ("${input.closingCta2}"), write it on its own line. Then, on the VERY NEXT LINE, write the user's name: "${input.userName}".
 `;
   }
