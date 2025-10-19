@@ -4,6 +4,8 @@ import { adminDb } from '@/lib/firebase/admin';
 import { headers } from 'next/headers';
 import type Stripe from 'stripe';
 import { NextResponse } from 'next/server';
+import { revalidatePath } from 'next/cache';
+import { FieldValue } from 'firebase-admin/firestore';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -56,6 +58,21 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
 
     if (interval) {
         subscriptionData.subscriptionInterval = interval;
+    }
+    
+    // Award credits on new 'active' or 'trialing' subscription
+    if (status === 'active' || status === 'trialing') {
+        const userDoc = await userDocRef.get();
+        const previousStatus = userDoc.data()?.subscriptionStatus;
+
+        // Check if this is a new subscription or a reactivation
+        if (!previousStatus || !['active', 'trialing'].includes(previousStatus)) {
+            if (interval === 'year') {
+                subscriptionData.proposalCredits = FieldValue.increment(30);
+            } else if (interval === 'month') {
+                subscriptionData.proposalCredits = FieldValue.increment(7);
+            }
+        }
     }
     
     await userDocRef.update(subscriptionData);
