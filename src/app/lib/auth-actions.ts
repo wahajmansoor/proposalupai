@@ -6,16 +6,39 @@ import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { stripe } from '@/lib/stripe/config';
 import { headers } from 'next/headers';
 import { getCountryFromIp } from '@/app/lib/location';
+import { FieldValue } from 'firebase-admin/firestore';
 
 const signUpSchema = z.object({
   email: z.string().email(),
   password: z.string().min(8),
   fullName: z.string().min(1),
+  referralCode: z.string().optional(),
 });
+
+async function awardReferralCredits(referralCode: string) {
+    if (!referralCode) return;
+  
+    try {
+      const usersRef = adminDb.collection('users');
+      const snapshot = await usersRef.where('referralCode', '==', referralCode).limit(1).get();
+  
+      if (!snapshot.empty) {
+        const referringUserDoc = snapshot.docs[0];
+        await referringUserDoc.ref.update({
+          proposalCredits: FieldValue.increment(5)
+        });
+        console.log(`Awarded 5 credits to user ${referringUserDoc.id} for referral.`);
+      } else {
+          console.warn(`Referral code "${referralCode}" not found.`);
+      }
+    } catch (error) {
+      console.error('Error awarding referral credits:', error);
+    }
+  }
 
 export async function signUpWithEmail(input: z.infer<typeof signUpSchema>): Promise<{ error?: string }> {
   try {
-    const { email, password, fullName } = signUpSchema.parse(input);
+    const { email, password, fullName, referralCode } = signUpSchema.parse(input);
 
     // 1. Create user in Firebase Auth
     const userRecord = await adminAuth.createUser({
@@ -37,7 +60,12 @@ export async function signUpWithEmail(input: z.infer<typeof signUpSchema>): Prom
     const ip = headers().get('x-forwarded-for');
     const country = await getCountryFromIp(ip);
 
-    // 4. Create user document in Firestore
+    // 4. Award credits if referred
+    if (referralCode) {
+        await awardReferralCredits(referralCode);
+    }
+
+    // 5. Create user document in Firestore
     const userRef = adminDb.collection('users').doc(userRecord.uid);
     await userRef.set({
       uid: userRecord.uid,
@@ -45,9 +73,11 @@ export async function signUpWithEmail(input: z.infer<typeof signUpSchema>): Prom
       displayName: userRecord.displayName,
       createdAt: new Date(),
       stripeCustomerId: customer.id,
-      proposalCount: 0, // Initialize proposal count
-      subscriptionStatus: null, // New users have no plan by default
-      country: country, // Add country data
+      proposalCount: 0,
+      subscriptionStatus: null,
+      country: country,
+      referralCode: userRecord.uid.substring(0, 8), // Generate and store referral code
+      proposalCredits: 2, // Initial credits
     });
 
     return {};

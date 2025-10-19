@@ -99,8 +99,6 @@ const signOffCtas = [
 
 const tones = ["Professional", "Friendly", "Assertive", "Persuasive", "Creative", "Concise", "Formal"];
 const improvementPresets = ["Concise", "Detailed", "Informal", "Professional", "Fix Formatting"];
-const MAX_IMPROVEMENTS = 2;
-
 
 function DashboardContent() {
   const { user, userProfile, loading } = useAuth();
@@ -157,6 +155,10 @@ function DashboardContent() {
   
   const [selectedText, setSelectedText] = useState('');
   const [currentImprovementIndex, setCurrentImprovementIndex] = useState(0);
+
+  const isProPlan = userProfile?.subscriptionStatus === 'active';
+  const proposalCredits = userProfile?.proposalCredits ?? 0;
+  const improvementLimit = isProPlan ? Infinity : proposalCredits;
 
 
   const isTrial = userProfile?.subscriptionStatus === 'trialing';
@@ -539,18 +541,13 @@ function DashboardContent() {
       toast({ title: 'No Instruction', description: 'Please provide an instruction.', variant: 'destructive' });
       return;
     }
-    if (trialLimitReached) {
-      toast({ title: 'Trial Limit Reached', description: 'Please upgrade to improve proposals.', variant: 'destructive' });
-      return;
-    }
-    if (improvements.length >= MAX_IMPROVEMENTS) {
-      toast({ title: 'Improvement Limit Reached', description: `You can only improve a proposal ${MAX_IMPROVEMENTS} times.`, variant: 'destructive' });
+    if (improvements.length >= improvementLimit) {
+      toast({ title: 'Improvement Limit Reached', description: `You have no improvement credits left.`, variant: 'destructive' });
       return;
     }
   
     setIsImproving(true);
     
-    // The text to be improved is either the original proposal, or the latest improved version
     const baseProposal = improvements.length > 0 ? improvements[improvements.length - 1] : generatedProposal;
     
     const result = await improveProposalAction({
@@ -627,7 +624,7 @@ function DashboardContent() {
   const hasAnsweredQuestions = clientQuestions.some(q => q.answer);
   const hasQuestions = clientQuestions.some(q => q.question);
 
-  const improvementsRemaining = MAX_IMPROVEMENTS - improvements.length;
+  const improvementsRemaining = isProPlan ? 'Unlimited' : Math.max(0, improvementLimit - improvements.length);
   
   const latestProposal = improvements.length > 0 ? improvements[improvements.length - 1] : generatedProposal;
   const currentImprovement = improvements[currentImprovementIndex];
@@ -1062,7 +1059,7 @@ function DashboardContent() {
             </CardContent>
             {generatedProposal && improvements.length === 0 && (
               <CardFooter className="flex-col items-start gap-4 border-t pt-4">
-                  <p className="text-sm text-muted-foreground">You can improve this proposal {improvementsRemaining} more time(s). Highlight text to refine a specific part.</p>
+                 <p className="text-sm text-muted-foreground">You have {improvementsRemaining} improvements remaining. Highlight text to refine a specific part.</p>
                   <div className="w-full space-y-2">
                   <div className="flex flex-wrap gap-2">
                       {improvementPresets.map(preset => (
@@ -1071,7 +1068,7 @@ function DashboardContent() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleImproveProposal(preset)}
-                          disabled={isImproving || trialLimitReached}
+                          disabled={isImproving || improvements.length >= improvementLimit}
                       >
                           {preset}
                       </Button>
@@ -1082,11 +1079,11 @@ function DashboardContent() {
                       placeholder="Or type a custom improvement request..."
                       value={customImprovementInstruction}
                       onChange={(e) => setCustomImprovementInstruction(e.target.value)}
-                      disabled={isImproving || trialLimitReached}
+                      disabled={isImproving || improvements.length >= improvementLimit}
                       />
                       <Button 
                       onClick={() => handleImproveProposal(customImprovementInstruction)}
-                      disabled={isImproving || !customImprovementInstruction.trim() || trialLimitReached}
+                      disabled={isImproving || !customImprovementInstruction.trim() || improvements.length >= improvementLimit}
                       >
                       {isImproving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
                       Update
@@ -1130,9 +1127,9 @@ function DashboardContent() {
                            {currentImprovement}
                         </div>
                     </CardContent>
-                    {improvements.length < MAX_IMPROVEMENTS && (
+                    {improvements.length < improvementLimit && (
                         <CardFooter className="flex-col items-start gap-4 border-t pt-4">
-                            <p className="text-sm text-muted-foreground">You can improve this proposal {improvementsRemaining} more time(s). Highlight text to refine a specific part.</p>
+                            <p className="text-sm text-muted-foreground">You have {improvementsRemaining} improvements remaining. Highlight text to refine a specific part.</p>
                             <div className="w-full space-y-2">
                                 <div className="flex flex-wrap gap-2">
                                     {improvementPresets.map(preset => (
@@ -1141,7 +1138,7 @@ function DashboardContent() {
                                         variant="outline"
                                         size="sm"
                                         onClick={() => handleImproveProposal(preset)}
-                                        disabled={isImproving || improvementsRemaining <= 0 || trialLimitReached}
+                                        disabled={isImproving || improvements.length >= improvementLimit}
                                     >
                                         {preset}
                                     </Button>
@@ -1152,11 +1149,11 @@ function DashboardContent() {
                                     placeholder="Or type a custom improvement request..."
                                     value={customImprovementInstruction}
                                     onChange={(e) => setCustomImprovementInstruction(e.target.value)}
-                                    disabled={isImproving || improvementsRemaining <= 0 || trialLimitReached}
+                                    disabled={isImproving || improvements.length >= improvementLimit}
                                     />
                                     <Button 
                                     onClick={() => handleImproveProposal(customImprovementInstruction)}
-                                    disabled={isImproving || !customImprovementInstruction.trim() || improvementsRemaining <= 0 || trialLimitReached}
+                                    disabled={isImproving || !customImprovementInstruction.trim() || improvements.length >= improvementLimit}
                                     >
                                     {isImproving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
                                     Update
@@ -1170,9 +1167,9 @@ function DashboardContent() {
                             </div>
                         </CardFooter>
                     )}
-                     {improvements.length >= MAX_IMPROVEMENTS && (
+                     {improvements.length >= improvementLimit && (
                       <CardFooter className="border-t pt-4 text-center text-sm text-muted-foreground">
-                        You've reached the limit of {MAX_IMPROVEMENTS} improvements for this proposal.
+                        You've reached your improvement limit for this proposal.
                       </CardFooter>
                     )}
                 </Card>
@@ -1303,5 +1300,3 @@ export default function DashboardPage() {
         </Suspense>
     )
 }
-
-    

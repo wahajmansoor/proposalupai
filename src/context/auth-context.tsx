@@ -18,6 +18,8 @@ interface UserProfile {
   subscriptionCurrentPeriodEnd?: string; // Changed to string
   subscriptionInterval?: 'month' | 'year';
   proposalCount?: number;
+  referralCode?: string;
+  proposalCredits?: number;
 }
 
 interface AuthContextType {

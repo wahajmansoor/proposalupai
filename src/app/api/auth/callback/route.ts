@@ -7,6 +7,28 @@ import { headers } from 'next/headers';
 import type { UserRecord } from 'firebase-admin/auth';
 import { stripe } from '@/lib/stripe/config';
 import { getCountryFromIp } from '@/app/lib/location';
+import { FieldValue } from 'firebase-admin/firestore';
+
+async function awardReferralCredits(referralCode: string) {
+  if (!referralCode) return;
+
+  try {
+    const usersRef = adminDb.collection('users');
+    const snapshot = await usersRef.where('referralCode', '==', referralCode).limit(1).get();
+
+    if (!snapshot.empty) {
+      const referringUserDoc = snapshot.docs[0];
+      await referringUserDoc.ref.update({
+        proposalCredits: FieldValue.increment(5)
+      });
+      console.log(`Awarded 5 credits to user ${referringUserDoc.id} for referral.`);
+    } else {
+      console.warn(`Referral code "${referralCode}" not found.`);
+    }
+  } catch (error) {
+    console.error('Error awarding referral credits:', error);
+  }
+}
 
 export async function GET(req: NextRequest) {
   const headersList = headers();
@@ -24,6 +46,19 @@ export async function GET(req: NextRequest) {
   const { searchParams } = new URL(req.url);
   const code = searchParams.get('code');
   const error = searchParams.get('error');
+  const state = searchParams.get('state');
+
+  // Extract referral code from state
+  let referralCode: string | null = null;
+  if (state) {
+    try {
+      const decodedState = JSON.parse(decodeURIComponent(state));
+      referralCode = decodedState.referralCode;
+    } catch (e) {
+      console.warn("Could not parse state for referral code", e);
+    }
+  }
+
 
   if (error) {
     console.error('Error from Google:', error);
@@ -99,6 +134,10 @@ export async function GET(req: NextRequest) {
         const ip = headersList.get('x-forwarded-for') || req.ip;
         const country = await getCountryFromIp(ip);
 
+        // Award credits if referred
+        if (referralCode) {
+            await awardReferralCredits(referralCode);
+        }
 
         const userData: { [key: string]: any } = {
             uid: userRecord.uid,
@@ -106,9 +145,11 @@ export async function GET(req: NextRequest) {
             displayName: displayName,
             createdAt: new Date(),
             stripeCustomerId: customer.id,
-            proposalCount: 0, // Initialize proposal count
-            subscriptionStatus: null, // New users have no plan by default
-            country: country, // Add country data
+            proposalCount: 0,
+            subscriptionStatus: null,
+            country: country,
+            referralCode: userRecord.uid.substring(0, 8), // Generate and store referral code
+            proposalCredits: 2, // Initial credits for new users
         };
         if (picture) {
             userData.photoURL = picture;

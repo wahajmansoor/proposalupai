@@ -15,7 +15,7 @@ import { headers } from 'next/headers';
 import { getCurrentUser } from '@/lib/firebase/server-auth';
 import { revalidatePath } from 'next/cache';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
-import { incrementProposalCount } from '@/lib/firebase/usage';
+import { incrementProposalCount, decrementProposalCredits } from '@/lib/firebase/usage';
 import { stripe } from '@/lib/stripe/config';
 import type { PortfolioLink } from './types';
 
@@ -203,22 +203,37 @@ const improveProposalSchema = z.object({
 });
 
 export async function improveProposalAction(input: z.infer<typeof improveProposalSchema>) {
-  const validatedFields = improveProposalSchema.safeParse(input);
-  if (!validatedFields.success) {
-    return { error: 'Invalid input for improving proposal.' };
+    const currentUser = await getCurrentUser();
+    if (!currentUser || !currentUser.userDoc) {
+      return { error: 'You must be logged in to use this feature.' };
+    }
+  
+    const { user, userDoc } = currentUser;
+    const { subscriptionStatus, proposalCredits = 0 } = userDoc;
+  
+    if (subscriptionStatus !== 'active' && proposalCredits <= 0) {
+      return { error: 'You have no proposal improvement credits left. Please upgrade or refer a friend.' };
+    }
+
+    const validatedFields = improveProposalSchema.safeParse(input);
+    if (!validatedFields.success) {
+        return { error: 'Invalid input for improving proposal.' };
+    }
+  
+    try {
+      const result = await improveProposal(validatedFields.data);
+      if (subscriptionStatus !== 'active') {
+        await decrementProposalCredits(user.uid);
+      }
+      return { data: result };
+    } catch (error) {
+      console.error(error);
+      return { error: 'Failed to improve proposal.' };
+    }
   }
 
-  try {
-    const result = await improveProposal(validatedFields.data);
-    return { data: result };
-  } catch (error) {
-    console.error(error);
-    return { error: 'Failed to improve proposal.' };
-  }
-}
 
-
-export async function getGoogleAuthUrl() {
+export async function getGoogleAuthUrl(referralCode: string | null) {
     const headersList = headers();
     const protocol = headersList.get('x-forwarded-proto') || 'http';
     const host = headersList.get('host');
@@ -230,13 +245,18 @@ export async function getGoogleAuthUrl() {
         redirectUri
     );
 
+    const state = JSON.stringify({
+        referralCode: referralCode
+    });
+
     const authorizeUrl = oAuth2Client.generateAuthUrl({
         access_type: 'offline',
         scope: [
             'https://www.googleapis.com/auth/userinfo.email',
             'https://www.googleapis.com/auth/userinfo.profile',
         ],
-        prompt: 'consent'
+        prompt: 'consent',
+        state: state
     });
     
     return authorizeUrl;

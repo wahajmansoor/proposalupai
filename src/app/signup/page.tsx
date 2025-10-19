@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -31,6 +31,7 @@ const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => {
 
 export default function SignupPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { toast } = useToast();
   const { user, loading } = useAuth();
   const [fullName, setFullName] = useState('');
@@ -38,6 +39,7 @@ export default function SignupPage() {
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [referralCode, setReferralCode] = useState<string | null>(null);
   
   const [passwordValidation, setPasswordValidation] = useState({
     length: false,
@@ -48,6 +50,21 @@ export default function SignupPage() {
   });
 
   const allRequirementsMet = Object.values(passwordValidation).every(Boolean);
+
+  useEffect(() => {
+    // Capture referral code from URL and store it
+    const inviteCode = searchParams.get('invite');
+    if (inviteCode) {
+        localStorage.setItem('referralCode', inviteCode);
+        setReferralCode(inviteCode);
+    } else {
+        // Also check localStorage in case the user navigates away and back
+        const storedCode = localStorage.getItem('referralCode');
+        if (storedCode) {
+            setReferralCode(storedCode);
+        }
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     if (!loading && user) {
@@ -68,7 +85,8 @@ export default function SignupPage() {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     try {
-      const googleAuthUrl = await getGoogleAuthUrl();
+      const storedReferralCode = localStorage.getItem('referralCode');
+      const googleAuthUrl = await getGoogleAuthUrl(storedReferralCode);
       const popup = window.open(googleAuthUrl, 'google-signin', 'width=600,height=700');
       
       const handleMessage = (event: MessageEvent) => {
@@ -82,11 +100,11 @@ export default function SignupPage() {
         setIsGoogleLoading(false);
 
         if (type === 'auth-success') {
+          localStorage.removeItem('referralCode'); // Clear code after use
           toast({
             title: 'Successfully signed up!',
             description: "Welcome! We're redirecting you now.",
           });
-          // The callback client will handle redirection to pricing for new users
           router.refresh();
         } else if (type === 'auth-error') {
             toast({
@@ -132,8 +150,10 @@ export default function SignupPage() {
     setIsLoading(true);
 
     try {
+      const storedReferralCode = localStorage.getItem('referralCode') || undefined;
+      
       // Step 1: Create the user via the server action
-      const result = await signUpWithEmail({ fullName, email, password });
+      const result = await signUpWithEmail({ fullName, email, password, referralCode: storedReferralCode });
       
       if (result.error) {
         throw new Error(result.error);
@@ -154,6 +174,7 @@ export default function SignupPage() {
         throw new Error('Failed to create session after signup.');
       }
       
+      localStorage.removeItem('referralCode'); // Clear code after successful use
       toast({
         title: 'Success!',
         description: "Account created. Let's get you set up.",

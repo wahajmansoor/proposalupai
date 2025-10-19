@@ -32,3 +32,35 @@ export async function incrementProposalCount(userId: string): Promise<void> {
     }
   }
 }
+
+/**
+ * Decrements the proposal credits for a given user.
+ * @param userId - The ID of the user.
+ */
+export async function decrementProposalCredits(userId: string): Promise<void> {
+    if (!userId) {
+      throw new Error('User ID is required to decrement proposal credits.');
+    }
+  
+    const userRef = adminDb.collection('users').doc(userId);
+  
+    try {
+      await userRef.update({
+        proposalCredits: FieldValue.increment(-1),
+      });
+    } catch (error) {
+      console.error(`Failed to decrement proposal credits for user ${userId}:`, error);
+      const userDoc = await userRef.get();
+      if (userDoc.exists) {
+        // If credits field doesn't exist, something is wrong, but let's set it to 0.
+        const data = userDoc.data();
+        if (data && typeof data.proposalCredits === 'undefined') {
+            await userRef.update({ proposalCredits: 0 });
+        } else {
+            throw new Error(`Could not decrement credits for user ${userId}.`);
+        }
+      } else {
+        throw new Error(`User document not found for user ${userId}.`);
+      }
+    }
+}
