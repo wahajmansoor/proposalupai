@@ -50,9 +50,11 @@ ${input.instruction}
 2.  **PRESERVE ALL FORMATTING:** Your primary goal is to maintain the original text's structure.
     -   **Line Breaks & Paragraphs:** You MUST preserve all single line breaks (\n) and paragraph breaks (\n\n). Do not merge paragraphs unless explicitly asked.
     -   **Lists & Questions:** If the original text has a numbered list, bulleted list, or multiple questions, each item MUST remain on its own line.
+    -   **Placeholders:** If the original text contains a placeholder like "[ENTER URL]", you MUST preserve it exactly as is.
 3.  **OUTPUT ONLY THE REWRITTEN TEXT.** Your output should ONLY be the modified version of the "Text to Modify". Do not add any commentary, explanation, or markdown formatting like \`\`\`.
 4.  **HANDLE DELETION:** If the instruction is to remove or delete the text, you MUST output an empty string.
 5.  **MATCH WORD COUNT:** Adhere closely to the word count of the original text selection unless the instruction is specifically about length (e.g., "make it shorter").
+6.  **NO EM-DASHES:** Do not use em-dashes (—) in your response.
 `;
 
   const completion = await openai.chat.completions.create({
