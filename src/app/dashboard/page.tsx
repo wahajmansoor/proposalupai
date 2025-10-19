@@ -1,4 +1,5 @@
 
+
 "use client";
 
 import { useState, useEffect, useRef, Suspense } from 'react';
@@ -39,6 +40,7 @@ import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { WelcomeDialog } from '@/components/welcome-dialog';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { ReferralDialog } from '@/components/referral-dialog';
 
 type Suggestion = {
   template: 'standard' | 'video';
@@ -145,6 +147,8 @@ function DashboardContent() {
 
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
   const [planInterval, setPlanInterval] = useState<'monthly' | 'yearly' | null>(null);
+  const [isReferralDialogOpen, setIsReferralDialogOpen] = useState(false);
+
 
   const [customImprovementInstruction, setCustomImprovementInstruction] = useState('');
   const [isImproving, setIsImproving] = useState(false);
@@ -625,7 +629,6 @@ function DashboardContent() {
   const hasAnsweredQuestions = clientQuestions.some(q => q.answer);
   const hasQuestions = clientQuestions.some(q => q.question);
 
-  const improvementsRemaining = Math.max(0, proposalCredits - improvements.length);
   
   const latestProposal = improvements.length > 0 ? improvements[improvements.length - 1] : generatedProposal;
   const currentImprovement = improvements[currentImprovementIndex];
@@ -638,6 +641,11 @@ function DashboardContent() {
         onOpenChange={setShowWelcomeDialog}
         subscriptionStatus={userProfile?.subscriptionStatus}
         planInterval={planInterval}
+      />
+      <ReferralDialog
+        open={isReferralDialogOpen}
+        onOpenChange={setIsReferralDialogOpen}
+        referralCode={userProfile?.referralCode}
       />
       {trialLimitReached && (
         <Card className="mb-6 border-destructive bg-destructive/5 text-destructive-foreground">
@@ -1060,7 +1068,16 @@ function DashboardContent() {
             </CardContent>
             {generatedProposal && improvements.length === 0 && (
               <CardFooter className="flex-col items-start gap-4 border-t pt-4">
-                 <p className="text-sm text-muted-foreground">You have {proposalCredits} improvements remaining. Highlight text to refine a specific part.</p>
+                 {proposalCredits > 0 ? (
+                    <p className="text-sm text-muted-foreground">You have {proposalCredits} improvements remaining. Highlight text to refine a specific part.</p>
+                 ) : (
+                    <div className="text-sm text-muted-foreground">
+                        You have 0 improvement credits.
+                        <Button variant="link" className="p-1 h-auto" onClick={() => setIsReferralDialogOpen(true)}>
+                            Get more credits
+                        </Button>
+                    </div>
+                 )}
                   <div className="w-full space-y-2">
                   <div className="flex flex-wrap gap-2">
                       {improvementPresets.map(preset => (
@@ -1128,7 +1145,7 @@ function DashboardContent() {
                            {currentImprovement}
                         </div>
                     </CardContent>
-                    {proposalCredits > 0 && (
+                     {proposalCredits > 0 ? (
                         <CardFooter className="flex-col items-start gap-4 border-t pt-4">
                             <p className="text-sm text-muted-foreground">You have {proposalCredits} improvements remaining. Highlight text to refine a specific part.</p>
                             <div className="w-full space-y-2">
@@ -1167,10 +1184,12 @@ function DashboardContent() {
                                 )}
                             </div>
                         </CardFooter>
-                    )}
-                     {proposalCredits <= 0 && (
+                     ) : (
                       <CardFooter className="border-t pt-4 text-center text-sm text-muted-foreground">
-                        You've reached your improvement limit.
+                        You have 0 improvement credits.
+                        <Button variant="link" className="p-1 h-auto" onClick={() => setIsReferralDialogOpen(true)}>
+                            Get more credits
+                        </Button>
                       </CardFooter>
                     )}
                 </Card>
@@ -1302,6 +1321,8 @@ export default function DashboardPage() {
     )
 }
 
+
+    
 
     
 
