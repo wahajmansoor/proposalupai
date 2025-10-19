@@ -14,6 +14,7 @@ const ImproveProposalInputSchema = z.object({
   proposal: z.string().describe('The full original proposal text for context.'),
   instruction: z.string().describe('The specific instruction for how to improve the proposal (e.g., "Simplify language", "Use bullet points for the project plan").'),
   selectedText: z.string().optional().describe('The specific text selection to be improved. If not provided, the instruction applies to the whole proposal.'),
+  closingCta: z.string().optional().describe("An optional updated closing call-to-action to incorporate.")
 });
 export type ImproveProposalInput = z.infer<typeof ImproveProposalInputSchema>;
 
@@ -28,7 +29,7 @@ export async function improveProposal(
 
   const textToImprove = input.selectedText || input.proposal;
 
-  const prompt = `You are an expert copy editor and formatter. A user has provided a block of text and a specific instruction to improve it.
+  let prompt = `You are an expert copy editor and formatter. A user has provided a block of text and a specific instruction to improve it.
 
 **Full Proposal for Context:**
 ---
@@ -56,6 +57,10 @@ ${input.instruction}
 5.  **MATCH WORD COUNT:** Adhere closely to the word count of the original text selection unless the instruction is specifically about length (e.g., "make it shorter").
 6.  **NO EM-DASHES:** Do not use em-dashes (—) in your response.
 `;
+
+  if (input.closingCta && !input.selectedText) {
+      prompt += `7.  **UPDATE CLOSING CTA:** The user has provided a new closing call-to-action idea: "${input.closingCta}". You MUST rewrite the final paragraph of the proposal to naturally incorporate this new idea.`
+  }
 
   const completion = await openai.chat.completions.create({
     model: 'gpt-4o-mini',

@@ -554,11 +554,13 @@ function DashboardContent() {
     setIsImproving(true);
     
     const baseProposal = improvements.length > 0 ? improvements[improvements.length - 1] : generatedProposal;
+    const selectedClosing = closingCtas.find(c => c.value === closingCta)?.label || closingCta;
     
     const result = await improveProposalAction({
       proposal: baseProposal,
       instruction: instruction,
       selectedText: selectedText,
+      closingCta: selectedClosing,
     });
   
     if (result.error) {
@@ -1072,10 +1074,10 @@ function DashboardContent() {
                     <p className="text-sm text-muted-foreground">You have {proposalCredits} improvements remaining. Highlight text to refine a specific part.</p>
                  ) : (
                     <div className="text-sm text-muted-foreground">
-                        You have 0 improvement credits.
-                        <Button variant="link" className="p-1 h-auto" onClick={() => setIsReferralDialogOpen(true)}>
-                            Get more credits
-                        </Button>
+                       You have 0 improvement credits.
+                       <Button variant="link" className="p-1 h-auto" onClick={() => setIsReferralDialogOpen(true)}>
+                         Get more credits
+                       </Button>
                     </div>
                  )}
                   <div className="w-full space-y-2">
@@ -1186,7 +1188,7 @@ function DashboardContent() {
                         </CardFooter>
                      ) : (
                       <CardFooter className="border-t pt-4 text-center text-sm text-muted-foreground">
-                        You have 0 improvement credits.
+                        You have 0 improvement credits.{' '}
                         <Button variant="link" className="p-1 h-auto" onClick={() => setIsReferralDialogOpen(true)}>
                             Get more credits
                         </Button>
