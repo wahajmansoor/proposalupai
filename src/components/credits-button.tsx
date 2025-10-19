@@ -14,7 +14,7 @@ export function CreditsButton() {
   const credits = userProfile?.proposalCredits ?? 0;
   const referralCode = userProfile?.referralCode;
 
-  if (!userProfile || userProfile.subscriptionStatus === 'active') {
+  if (!userProfile) {
     return null;
   }
 
@@ -34,5 +34,3 @@ export function CreditsButton() {
     </ReferralDialog>
   );
 }
-
-    
