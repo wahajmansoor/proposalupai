@@ -33,7 +33,7 @@ import { Badge } from '@/components/ui/badge';
 import { useAuth } from '@/context/auth-context';
 import { getSkillProfiles } from '@/lib/firebase/profiles';
 import { Slider } from '@/components/ui/slider';
-import { ProposalUpLogo, LinkedInIcon } from '@/components/icons';
+import { ProposalUpLogos, LinkedInIcon } from '@/components/icons';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
@@ -422,7 +422,11 @@ function DashboardContent() {
     if (result.error) {
       toast({ title: 'Error filling skills', description: result.error, variant: 'destructive' });
     } else if (result.data) {
-      setSkillsAndExpertise(result.data.skillsAndExpertise.join(', '));
+      const existingSkills = skillsAndExpertise.split(',').map(s => s.trim()).filter(Boolean);
+      const newSkills = result.data.skillsAndExpertise;
+      const combined = new Set([...existingSkills, ...newSkills]);
+      setSkillsAndExpertise(Array.from(combined).join(', '));
+
       toast({ title: 'Skills Auto-filled!', description: 'Relevant skills have been added based on the project and your profile.' });
     }
     setIsSuggestingSkills(false);
