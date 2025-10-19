@@ -207,13 +207,12 @@ function DashboardContent() {
         setSkillsAndExpertise(profile.keywords.join(', '));
         setTone(profile.tone);
         setProfileLinks(profile.links);
-        const lengthMap = {
+        const lengthMap: { [key: string]: number[] } = {
             "Very Short": [50, 80],
-            "Short": [80, 120],
-            "Detailed": [120, 200],
-            "Very Detailed": [200, 300],
-        }
-        // @ts-ignore
+            "Short": [50, 120],
+            "Detailed": [50, 200],
+            "Very Detailed": [50, 300],
+        };
         setWordLimit(lengthMap[profile.length] || [50, 150]);
       }
     } else {
@@ -1329,3 +1328,4 @@ export default function DashboardPage() {
     
 
     
+

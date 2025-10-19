@@ -77,7 +77,7 @@ export async function signUpWithEmail(input: z.infer<typeof signUpSchema>): Prom
       subscriptionStatus: null,
       country: country,
       referralCode: userRecord.uid.substring(0, 8), // Generate and store referral code
-      proposalCredits: 2, // Initial credits
+      proposalCredits: 3, // Initial credits for new users
     });
 
     return {};
