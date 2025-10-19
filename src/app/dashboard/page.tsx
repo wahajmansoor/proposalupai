@@ -156,10 +156,7 @@ function DashboardContent() {
   const [selectedText, setSelectedText] = useState('');
   const [currentImprovementIndex, setCurrentImprovementIndex] = useState(0);
 
-  const isProPlan = userProfile?.subscriptionStatus === 'active';
   const proposalCredits = userProfile?.proposalCredits ?? 0;
-  const improvementLimit = proposalCredits;
-
 
   const isTrial = userProfile?.subscriptionStatus === 'trialing';
   const proposalCount = userProfile?.proposalCount ?? 0;
@@ -545,7 +542,7 @@ function DashboardContent() {
       toast({ title: 'No Instruction', description: 'Please provide an instruction.', variant: 'destructive' });
       return;
     }
-    if (improvements.length >= improvementLimit) {
+    if (proposalCredits <= 0) {
       toast({ title: 'Improvement Limit Reached', description: `You have no improvement credits left.`, variant: 'destructive' });
       return;
     }
@@ -628,7 +625,7 @@ function DashboardContent() {
   const hasAnsweredQuestions = clientQuestions.some(q => q.answer);
   const hasQuestions = clientQuestions.some(q => q.question);
 
-  const improvementsRemaining = Math.max(0, improvementLimit - improvements.length);
+  const improvementsRemaining = Math.max(0, proposalCredits - improvements.length);
   
   const latestProposal = improvements.length > 0 ? improvements[improvements.length - 1] : generatedProposal;
   const currentImprovement = improvements[currentImprovementIndex];
@@ -1063,7 +1060,7 @@ function DashboardContent() {
             </CardContent>
             {generatedProposal && improvements.length === 0 && (
               <CardFooter className="flex-col items-start gap-4 border-t pt-4">
-                 <p className="text-sm text-muted-foreground">You have {improvementsRemaining} improvements remaining. Highlight text to refine a specific part.</p>
+                 <p className="text-sm text-muted-foreground">You have {proposalCredits} improvements remaining. Highlight text to refine a specific part.</p>
                   <div className="w-full space-y-2">
                   <div className="flex flex-wrap gap-2">
                       {improvementPresets.map(preset => (
@@ -1072,7 +1069,7 @@ function DashboardContent() {
                           variant="outline"
                           size="sm"
                           onClick={() => handleImproveProposal(preset)}
-                          disabled={isImproving || improvements.length >= improvementLimit}
+                          disabled={isImproving || proposalCredits <= 0}
                       >
                           {preset}
                       </Button>
@@ -1083,11 +1080,11 @@ function DashboardContent() {
                       placeholder="Or type a custom improvement request..."
                       value={customImprovementInstruction}
                       onChange={(e) => setCustomImprovementInstruction(e.target.value)}
-                      disabled={isImproving || improvements.length >= improvementLimit}
+                      disabled={isImproving || proposalCredits <= 0}
                       />
                       <Button 
                       onClick={() => handleImproveProposal(customImprovementInstruction)}
-                      disabled={isImproving || !customImprovementInstruction.trim() || improvements.length >= improvementLimit}
+                      disabled={isImproving || !customImprovementInstruction.trim() || proposalCredits <= 0}
                       >
                       {isImproving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
                       Update
@@ -1131,9 +1128,9 @@ function DashboardContent() {
                            {currentImprovement}
                         </div>
                     </CardContent>
-                    {improvements.length < improvementLimit && (
+                    {proposalCredits > 0 && (
                         <CardFooter className="flex-col items-start gap-4 border-t pt-4">
-                            <p className="text-sm text-muted-foreground">You have {improvementsRemaining} improvements remaining. Highlight text to refine a specific part.</p>
+                            <p className="text-sm text-muted-foreground">You have {proposalCredits} improvements remaining. Highlight text to refine a specific part.</p>
                             <div className="w-full space-y-2">
                                 <div className="flex flex-wrap gap-2">
                                     {improvementPresets.map(preset => (
@@ -1142,7 +1139,7 @@ function DashboardContent() {
                                         variant="outline"
                                         size="sm"
                                         onClick={() => handleImproveProposal(preset)}
-                                        disabled={isImproving || improvements.length >= improvementLimit}
+                                        disabled={isImproving || proposalCredits <= 0}
                                     >
                                         {preset}
                                     </Button>
@@ -1153,11 +1150,11 @@ function DashboardContent() {
                                     placeholder="Or type a custom improvement request..."
                                     value={customImprovementInstruction}
                                     onChange={(e) => setCustomImprovementInstruction(e.target.value)}
-                                    disabled={isImproving || improvements.length >= improvementLimit}
+                                    disabled={isImproving || proposalCredits <= 0}
                                     />
                                     <Button 
                                     onClick={() => handleImproveProposal(customImprovementInstruction)}
-                                    disabled={isImproving || !customImprovementInstruction.trim() || improvements.length >= improvementLimit}
+                                    disabled={isImproving || !customImprovementInstruction.trim() || proposalCredits <= 0}
                                     >
                                     {isImproving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Wand2 className="mr-2 h-4 w-4" />}
                                     Update
@@ -1171,9 +1168,9 @@ function DashboardContent() {
                             </div>
                         </CardFooter>
                     )}
-                     {improvements.length >= improvementLimit && (
+                     {proposalCredits <= 0 && (
                       <CardFooter className="border-t pt-4 text-center text-sm text-muted-foreground">
-                        You've reached your improvement limit for this proposal.
+                        You've reached your improvement limit.
                       </CardFooter>
                     )}
                 </Card>
@@ -1305,5 +1302,7 @@ export default function DashboardPage() {
     )
 }
 
+
+    
 
     
