@@ -22,7 +22,7 @@ export function CreditsButton() {
     <ReferralDialog open={isDialogOpen} onOpenChange={setIsDialogOpen} referralCode={referralCode}>
       <Button
         variant="outline"
-        className="h-auto px-3 py-1.5 bg-yellow-400 hover:bg-yellow-500 border-yellow-500 text-yellow-900 font-semibold gap-2"
+        className="h-auto px-4 py-3 bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 font-semibold gap-2"
         onClick={() => setIsDialogOpen(true)}
       >
         <CoinIcon className="h-5 w-5" />
