@@ -53,71 +53,106 @@ async function awardReferralCredits(referralCode: string) {
  * @param subscription - The Stripe subscription object.
  */
 async function handleSubscriptionChange(subscription: Stripe.Subscription) {
+    if (!subscription || !subscription.customer) {
+      console.warn('Webhook Warning: Missing subscription or customer data.');
+      return;
+    }
+  
     const stripeCustomerId = subscription.customer as string;
     const userDocSnapshot = await findUserByStripeCustomerId(stripeCustomerId);
-
+  
     if (!userDocSnapshot) {
-        console.warn(`No user found for Stripe customer ID: ${stripeCustomerId}. Skipping update.`);
-        return;
+      console.warn(`No user found for Stripe customer ID: ${stripeCustomerId}. Skipping update.`);
+      return;
     }
-    
+  
     const userDocRef = userDocSnapshot.ref;
     const userData = userDocSnapshot.data();
-    
+  
+    // --- Handle ambiguous or pending statuses ---
+    // Stripe may report 'incomplete' before trial starts; treat it as 'trialing' for user experience.
     let newStatus = subscription.status;
-    // If cancel_at_period_end is true, the subscription is considered 'canceled' in our system
-    // even if it's technically 'active' in Stripe until the period ends.
-    if (subscription.cancel_at_period_end) {
-        newStatus = 'canceled';
+    if (newStatus === 'incomplete' && subscription.trial_end) {
+      newStatus = 'trialing';
     }
-
+  
+    // --- Treat cancel_at_period_end as canceled ---
+    if (subscription.cancel_at_period_end) {
+      newStatus = 'canceled';
+    }
+  
+    // --- Extract interval safely ---
     const price = subscription.items.data[0]?.price;
-    const newInterval = price?.recurring?.interval;
-
+    const newInterval = price?.recurring?.interval || userData?.subscriptionInterval || null;
+  
+    // --- Compare with previous values to determine what changed ---
     const previousStatus = userData?.subscriptionStatus;
     const previousInterval = userData?.subscriptionInterval;
-
-    const subscriptionData: { [key: string]: any } = {
-        subscriptionId: subscription.id,
-        subscriptionStatus: newStatus,
-        subscriptionCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
+  
+    const subscriptionData: Record<string, any> = {
+      subscriptionId: subscription.id,
+      subscriptionStatus: newStatus,
+      subscriptionCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
+      updatedAt: FieldValue.serverTimestamp(),
     };
-
+  
     if (newInterval) {
-        subscriptionData.subscriptionInterval = newInterval;
+      subscriptionData.subscriptionInterval = newInterval;
     }
-
-    // SCENARIO 1: User activates trial for the first time
+  
+    // --- First trial activation ---
     if (newStatus === 'trialing' && previousStatus !== 'trialing') {
-        subscriptionData.proposalCredits = FieldValue.increment(3);
+      subscriptionData.proposalCredits = FieldValue.increment(3);
+      console.log(`Trial started for user ${userDocRef.id}: awarded 3 credits.`);
     }
-
-    // SCENARIO 2: User activates a paid plan for the first time (e.g., trial ends or direct purchase)
+  
+    // --- First paid activation (from trial or direct purchase) ---
     const isNewActivation = newStatus === 'active' && previousStatus !== 'active';
     if (isNewActivation) {
-        if (newInterval === 'year') {
-            subscriptionData.proposalCredits = FieldValue.increment(100);
-        } else if (newInterval === 'month') {
-            subscriptionData.proposalCredits = FieldValue.increment(10);
-        }
-        
-        // Handle referral credits on first paid activation
-        if (userData?.referredBy) {
-            await awardReferralCredits(userData.referredBy);
-            // We can remove the referredBy field after awarding credits to prevent double-awarding
-            subscriptionData.referredBy = FieldValue.delete();
-        }
-    }
-
-    // SCENARIO 3: User upgrades from active monthly to active yearly
-    const isUpgrade = previousStatus === 'active' && previousInterval === 'month' && newStatus === 'active' && newInterval === 'year';
-    if (isUpgrade) {
+      if (newInterval === 'year') {
         subscriptionData.proposalCredits = FieldValue.increment(100);
+      } else if (newInterval === 'month') {
+        subscriptionData.proposalCredits = FieldValue.increment(10);
+      }
+  
+      // Handle referral bonus once per user
+      if (userData?.referredBy) {
+        await awardReferralCredits(userData.referredBy);
+        subscriptionData.referredBy = FieldValue.delete();
+      }
+  
+      console.log(`Activated paid subscription for user ${userDocRef.id}. Awarded credits for ${newInterval} plan.`);
     }
-    
-    await userDocRef.update(subscriptionData);
-    console.log(`Successfully synced subscription for user ${userDocRef.id}. New status: ${newStatus}, Interval: ${newInterval}`);
+  
+    // --- Upgrade from monthly → yearly ---
+    const isUpgrade =
+      previousStatus === 'active' &&
+      previousInterval === 'month' &&
+      newStatus === 'active' &&
+      newInterval === 'year';
+  
+    if (isUpgrade) {
+      subscriptionData.proposalCredits = FieldValue.increment(100);
+      console.log(`User ${userDocRef.id} upgraded from monthly to yearly. Awarded 100 credits.`);
+    }
+  
+    // --- Gracefully handle unchanged or repeated events ---
+    if (previousStatus === newStatus && previousInterval === newInterval) {
+      console.log(`No meaningful changes for user ${userDocRef.id}, skipping redundant update.`);
+      return;
+    }
+  
+    // --- Write to Firestore ---
+    try {
+      await userDocRef.update(subscriptionData);
+      console.log(
+        `Successfully synced subscription for user ${userDocRef.id}. Status: ${newStatus}, Interval: ${newInterval}`
+      );
+    } catch (error) {
+      console.error(`Firestore update failed for user ${userDocRef.id}:`, error);
+    }
 }
+  
 
 
 export async function POST(req: Request) {
