@@ -4,7 +4,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, User } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 
 interface UserProfile {
   uid: string;
@@ -45,6 +45,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const unsubscribeSnapshot = onSnapshot(userRef, (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
+
+            // Backfill referral code for old users
+            if (!data.referralCode) {
+              const newReferralCode = user.uid.substring(0, 8);
+              setDoc(userRef, { referralCode: newReferralCode }, { merge: true });
+              data.referralCode = newReferralCode; // Immediately update local data
+            }
+
             const profile: UserProfile = {
               ...data,
               // Convert Timestamp to ISO string to prevent serialization issues
