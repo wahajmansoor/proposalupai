@@ -45,7 +45,6 @@ export default function LoginPage() {
             title: 'Successfully signed in!',
             description: "Welcome back! We're redirecting you now.",
           });
-          // router.push(redirectPath || '/dashboard');
           router.refresh();
       } else if (type === 'auth-error') {
           toast({
@@ -53,8 +52,8 @@ export default function LoginPage() {
               description: details || 'An unexpected error occurred.',
               variant: 'destructive',
           });
-          setIsGoogleLoading(false);
       }
+      setIsGoogleLoading(false);
     };
 
     window.addEventListener('message', handleMessage);
@@ -68,7 +67,11 @@ export default function LoginPage() {
     setIsGoogleLoading(true);
     try {
       const googleAuthUrl = await getGoogleAuthUrl(null);
-      window.open(googleAuthUrl, 'google-signin', 'width=600,height=700');
+      const width = 600;
+      const height = 700;
+      const left = (window.screen.width - width) / 2;
+      const top = (window.screen.height - height) / 2;
+      window.open(googleAuthUrl, 'google-signin', `width=${width},height=${height},left=${left},top=${top}`);
     } catch (error: any) {
       toast({
         title: 'Google Sign-In Failed',
@@ -223,5 +226,3 @@ export default function LoginPage() {
     </div>
   );
 }
-
-    
