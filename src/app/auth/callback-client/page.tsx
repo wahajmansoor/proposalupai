@@ -27,11 +27,9 @@ function AuthCallback() {
             body: JSON.stringify({ idToken }),
           });
           
-          const creationTime = userCredential.user.metadata.creationTime ? new Date(userCredential.user.metadata.creationTime).getTime() : 0;
-          const lastSignInTime = userCredential.user.metadata.lastSignInTime ? new Date(userCredential.user.metadata.lastSignInTime).getTime() : 0;
-          const isNewUser = Math.abs(creationTime - lastSignInTime) < 2000;
-
-          const redirectPath = isNewUser ? '/pricing' : '/dashboard';
+          // Always redirect to dashboard after login.
+          // The dashboard layout will handle redirection to /pricing if the user is not subscribed.
+          const redirectPath = '/dashboard';
 
           if (window.opener) {
             window.opener.postMessage({ type: 'auth-success', redirectPath }, window.location.origin);
