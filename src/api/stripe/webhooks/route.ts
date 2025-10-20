@@ -64,47 +64,59 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
     const userDocRef = userDocSnapshot.ref;
     const userData = userDocSnapshot.data();
     
-    let status = subscription.status;
+    let newStatus = subscription.status;
     // If cancel_at_period_end is true, the subscription is considered 'canceled' in our system
     // even if it's technically 'active' in Stripe until the period ends.
     if (subscription.cancel_at_period_end) {
-        status = 'canceled';
+        newStatus = 'canceled';
     }
 
     const price = subscription.items.data[0]?.price;
-    const interval = price?.recurring?.interval;
+    const newInterval = price?.recurring?.interval;
+
     const previousStatus = userData?.subscriptionStatus;
+    const previousInterval = userData?.subscriptionInterval;
 
     const subscriptionData: { [key: string]: any } = {
         subscriptionId: subscription.id,
-        subscriptionStatus: status,
+        subscriptionStatus: newStatus,
         subscriptionCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
     };
 
-    if (interval) {
-        subscriptionData.subscriptionInterval = interval;
+    if (newInterval) {
+        subscriptionData.subscriptionInterval = newInterval;
     }
-    
-    // Only award credits if this is a NEW activation (previous status was not 'active')
-    const isNewActivation = status === 'active' && previousStatus !== 'active';
 
+    // SCENARIO 1: User activates trial for the first time
+    if (newStatus === 'trialing' && previousStatus !== 'trialing') {
+        subscriptionData.proposalCredits = FieldValue.increment(3);
+    }
+
+    // SCENARIO 2: User activates a paid plan for the first time (e.g., trial ends or direct purchase)
+    const isNewActivation = newStatus === 'active' && previousStatus !== 'active';
     if (isNewActivation) {
-        if (interval === 'year') {
-            subscriptionData.proposalCredits = FieldValue.increment(30);
-        } else if (interval === 'month') {
-            subscriptionData.proposalCredits = FieldValue.increment(7);
+        if (newInterval === 'year') {
+            subscriptionData.proposalCredits = FieldValue.increment(100);
+        } else if (newInterval === 'month') {
+            subscriptionData.proposalCredits = FieldValue.increment(10);
         }
-
-        // Award referral credits only on the very first activation, not on reactivations.
+        
+        // Handle referral credits on first paid activation
         if (userData?.referredBy) {
             await awardReferralCredits(userData.referredBy);
             // We can remove the referredBy field after awarding credits to prevent double-awarding
             subscriptionData.referredBy = FieldValue.delete();
         }
     }
+
+    // SCENARIO 3: User upgrades from active monthly to active yearly
+    const isUpgrade = previousStatus === 'active' && previousInterval === 'month' && newStatus === 'active' && newInterval === 'year';
+    if (isUpgrade) {
+        subscriptionData.proposalCredits = FieldValue.increment(100);
+    }
     
     await userDocRef.update(subscriptionData);
-    console.log(`Successfully synced subscription for user ${userDocRef.id}. New status: ${status}, Interval: ${interval}`);
+    console.log(`Successfully synced subscription for user ${userDocRef.id}. New status: ${newStatus}, Interval: ${newInterval}`);
 }
 
 
