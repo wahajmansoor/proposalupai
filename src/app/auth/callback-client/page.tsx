@@ -21,21 +21,17 @@ function AuthCallback() {
         .then(async (userCredential) => {
           const idToken = await userCredential.user.getIdToken();
           
-          const response = await fetch('/api/auth/session', {
+          await fetch('/api/auth/session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ idToken }),
           });
-
-          if (!response.ok) {
-              throw new Error('Failed to create session.');
-          }
-
-          const isNewUser = userCredential.user.metadata.creationTime === userCredential.user.metadata.lastSignInTime;
-          // A small buffer for clock differences
-          const isNewUserFuzzy = (new Date().getTime() - new Date(userCredential.user.metadata.creationTime!).getTime()) < 60 * 1000;
           
-          const redirectPath = isNewUserFuzzy ? '/pricing' : '/dashboard';
+          const creationTime = userCredential.user.metadata.creationTime ? new Date(userCredential.user.metadata.creationTime).getTime() : 0;
+          const lastSignInTime = userCredential.user.metadata.lastSignInTime ? new Date(userCredential.user.metadata.lastSignInTime).getTime() : 0;
+          const isNewUser = Math.abs(creationTime - lastSignInTime) < 2000;
+
+          const redirectPath = isNewUser ? '/pricing' : '/dashboard';
 
           if (window.opener) {
             window.opener.postMessage({ type: 'auth-success', redirectPath }, window.location.origin);
@@ -92,3 +88,5 @@ export default function AuthCallbackClientPage() {
         </Suspense>
     )
 }
+
+    

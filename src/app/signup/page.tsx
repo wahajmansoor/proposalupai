@@ -71,6 +71,39 @@ function SignupForm() {
       router.replace('/dashboard');
     }
   }, [user, loading, router]);
+  
+  useEffect(() => {
+    const handleMessage = (event: MessageEvent) => {
+      if (event.origin !== window.location.origin) {
+        return;
+      }
+      
+      const { type, error, details, redirectPath } = event.data;
+      if (type === 'auth-success') {
+          localStorage.removeItem('referralCode'); // Clear code after use
+          toast({
+            title: 'Successfully signed up!',
+            description: "Welcome! We're redirecting you now.",
+          });
+          // router.push(redirectPath || '/dashboard');
+          router.refresh();
+      } else if (type === 'auth-error') {
+          toast({
+              title: `Google Sign-Up Failed: ${error}`,
+              description: details || 'An unexpected error occurred.',
+              variant: 'destructive',
+          });
+          setIsGoogleLoading(false);
+      }
+    };
+
+    window.addEventListener('message', handleMessage);
+
+    return () => {
+      window.removeEventListener('message', handleMessage);
+    };
+  }, [router, toast]);
+
 
   useEffect(() => {
     setPasswordValidation({
@@ -87,36 +120,7 @@ function SignupForm() {
     try {
       const storedReferralCode = localStorage.getItem('referralCode');
       const googleAuthUrl = await getGoogleAuthUrl(storedReferralCode);
-      const popup = window.open(googleAuthUrl, 'google-signin', 'width=600,height=700');
-      
-      const handleMessage = (event: MessageEvent) => {
-        if (event.origin !== window.location.origin) {
-          return;
-        }
-
-        const { type, error, details } = event.data;
-        
-        window.removeEventListener('message', handleMessage);
-        setIsGoogleLoading(false);
-
-        if (type === 'auth-success') {
-          localStorage.removeItem('referralCode'); // Clear code after use
-          toast({
-            title: 'Successfully signed up!',
-            description: "Welcome! We're redirecting you now.",
-          });
-          router.refresh();
-        } else if (type === 'auth-error') {
-            toast({
-                title: `Google Sign-Up Failed: ${error}`,
-                description: details || 'An unexpected error occurred.',
-                variant: 'destructive',
-            });
-        }
-      };
-      
-      window.addEventListener('message', handleMessage);
-
+      window.open(googleAuthUrl, 'google-signin', 'width=600,height=700');
     } catch (error: any) {
       toast({
         title: 'Google Sign-Up Failed',
@@ -317,3 +321,5 @@ export default function SignupPage() {
         </Suspense>
     )
 }
+
+    
