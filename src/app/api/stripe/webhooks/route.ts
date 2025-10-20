@@ -1,11 +1,13 @@
 
+'use server';
+
 import { stripe } from '@/lib/stripe/config';
 import { adminDb } from '@/lib/firebase/admin';
 import { headers } from 'next/headers';
 import type Stripe from 'stripe';
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue }from 'firebase-admin/firestore';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -50,14 +52,10 @@ async function awardReferralCredits(referralCode: string) {
 
 /**
  * Handles subscription creation or update events from Stripe and updates the corresponding user document in Firestore.
+ * This function has been refactored for resilience.
  * @param subscription - The Stripe subscription object.
  */
 async function handleSubscriptionChange(subscription: Stripe.Subscription) {
-    if (!subscription || !subscription.customer) {
-        console.warn('Webhook Warning: Missing subscription or customer data.');
-        return;
-    }
-
     const stripeCustomerId = subscription.customer as string;
     const userDocSnapshot = await findUserByStripeCustomerId(stripeCustomerId);
 
@@ -65,31 +63,28 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
         console.warn(`No user found for Stripe customer ID: ${stripeCustomerId}. Skipping update.`);
         return;
     }
-
+    
     const userDocRef = userDocSnapshot.ref;
     const userData = userDocSnapshot.data();
-
-    // --- Handle ambiguous or pending statuses ---
-    // Stripe may report 'incomplete' before trial starts; treat it as 'trialing' for user experience.
-    let newStatus = subscription.status;
-    if (newStatus === 'incomplete' && subscription.trial_end) {
-        newStatus = 'trialing';
+    
+    if (!userData) {
+      console.warn(`Could not read user data for Stripe customer ID: ${stripeCustomerId}.`);
+      return;
     }
 
-    // --- Treat cancel_at_period_end as canceled ---
+    let newStatus = subscription.status;
     if (subscription.cancel_at_period_end) {
         newStatus = 'canceled';
     }
 
-    // --- Extract interval safely ---
     const price = subscription.items.data[0]?.price;
-    const newInterval = price?.recurring?.interval || userData?.subscriptionInterval || null;
+    const newInterval = price?.recurring?.interval;
 
-    // --- Compare with previous values to determine what changed ---
-    const previousStatus = userData?.subscriptionStatus;
-    const previousInterval = userData?.subscriptionInterval;
-
-    const subscriptionData: Record<string, any> = {
+    const previousStatus = userData.subscriptionStatus;
+    const previousInterval = userData.subscriptionInterval;
+    
+    // --- START: Resilient Update Logic ---
+    const updatePayload: { [key: string]: any } = {
         subscriptionId: subscription.id,
         subscriptionStatus: newStatus,
         subscriptionCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
@@ -97,62 +92,41 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
     };
 
     if (newInterval) {
-        subscriptionData.subscriptionInterval = newInterval;
+        updatePayload.subscriptionInterval = newInterval;
     }
 
-    // --- First trial activation ---
-    if (newStatus === 'trialing' && previousStatus !== 'trialing') {
-        subscriptionData.proposalCredits = FieldValue.increment(3);
-        console.log(`Trial started for user ${userDocRef.id}: awarded 3 credits.`);
-    }
+    // Determine credit updates and add them to the payload.
+    const isFirstTimeTrial = newStatus === 'trialing' && previousStatus !== 'trialing';
+    const isNewPaidActivation = newStatus === 'active' && previousStatus !== 'active';
+    const isUpgradingToYearly = previousStatus === 'active' && previousInterval === 'month' && newStatus === 'active' && newInterval === 'year';
 
-    // --- First paid activation (from trial or direct purchase) ---
-    const isNewActivation = newStatus === 'active' && previousStatus !== 'active';
-    if (isNewActivation) {
+    if (isFirstTimeTrial) {
+        updatePayload.proposalCredits = FieldValue.increment(3);
+    } else if (isNewPaidActivation) {
         if (newInterval === 'year') {
-        subscriptionData.proposalCredits = FieldValue.increment(100);
-        } else if (newInterval === 'month') {
-        subscriptionData.proposalCredits = FieldValue.increment(10);
+            updatePayload.proposalCredits = FieldValue.increment(100);
+        } else {
+            updatePayload.proposalCredits = FieldValue.increment(10);
         }
-
-        // Handle referral bonus once per user
-        if (userData?.referredBy) {
-        await awardReferralCredits(userData.referredBy);
-        subscriptionData.referredBy = FieldValue.delete();
+        // Handle referral only on the very first paid activation.
+        if (userData.referredBy) {
+            await awardReferralCredits(userData.referredBy);
+            updatePayload.referredBy = FieldValue.delete(); // Prevent re-awarding
         }
-
-        console.log(`Activated paid subscription for user ${userDocRef.id}. Awarded credits for ${newInterval} plan.`);
+    } else if (isUpgradingToYearly) {
+        updatePayload.proposalCredits = FieldValue.increment(100);
     }
-
-    // --- Upgrade from monthly → yearly ---
-    const isUpgrade =
-        previousStatus === 'active' &&
-        previousInterval === 'month' &&
-        newStatus === 'active' &&
-        newInterval === 'year';
-
-    if (isUpgrade) {
-        subscriptionData.proposalCredits = FieldValue.increment(100);
-        console.log(`User ${userDocRef.id} upgraded from monthly to yearly. Awarded 100 credits.`);
-    }
-
-    // --- Gracefully handle unchanged or repeated events ---
-    if (previousStatus === newStatus && previousInterval === newInterval) {
-        console.log(`No meaningful changes for user ${userDocRef.id}, skipping redundant update.`);
-        return;
-    }
-
-    // --- Write to Firestore ---
+    
+    // Perform the single, comprehensive update to Firestore.
     try {
-        await userDocRef.update(subscriptionData);
-        console.log(
-        `Successfully synced subscription for user ${userDocRef.id}. Status: ${newStatus}, Interval: ${newInterval}`
-        );
+        await userDocRef.update(updatePayload);
+        console.log(`Successfully synced subscription for user ${userDocRef.id}. New status: ${newStatus}, Interval: ${newInterval || 'N/A'}`);
     } catch (error) {
-        console.error(`Firestore update failed for user ${userDocRef.id}:`, error);
+        console.error(`CRITICAL: Firestore update failed for user ${userDocRef.id}. Error:`, error);
+        console.error('Update Payload:', updatePayload);
     }
+    // --- END: Resilient Update Logic ---
 }
-  
 
 
 export async function POST(req: Request) {
@@ -180,7 +154,7 @@ export async function POST(req: Request) {
         switch (event.type) {
             case 'checkout.session.completed':
                 const session = event.data.object as Stripe.Checkout.Session;
-                if (session.mode === 'subscription') {
+                if (session.mode === 'subscription' && session.subscription) {
                     const subscription = await stripe.subscriptions.retrieve(session.subscription as string, {
                         expand: ['items.data.price'],
                     });
@@ -209,8 +183,8 @@ export async function POST(req: Request) {
 
             case 'customer.subscription.created':
             case 'customer.subscription.updated':
-                const subscription = event.data.object as Stripe.Subscription;
-                const expandedSubscription = await stripe.subscriptions.retrieve(subscription.id, {
+                const subscriptionUpdated = event.data.object as Stripe.Subscription;
+                const expandedSubscription = await stripe.subscriptions.retrieve(subscriptionUpdated.id, {
                     expand: ['items.data.price'],
                 });
                 await handleSubscriptionChange(expandedSubscription);
