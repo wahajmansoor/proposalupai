@@ -119,7 +119,7 @@ function SignupForm() {
     try {
       const storedReferralCode = localStorage.getItem('referralCode');
       const googleAuthUrl = await getGoogleAuthUrl(storedReferralCode);
-      const width = 600;
+      const width = 800;
       const height = 700;
       const left = (window.screen.width - width) / 2;
       const top = (window.screen.height - height) / 2;
