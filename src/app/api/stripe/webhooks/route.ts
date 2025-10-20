@@ -12,7 +12,7 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 /**
  * Finds a user in Firestore by their Stripe customer ID.
  * @param stripeCustomerId - The Stripe customer ID.
- * @returns The user's document reference or null if not found.
+ * @returns The user's document snapshot or null if not found.
  */
 async function findUserByStripeCustomerId(stripeCustomerId: string) {
     if (!stripeCustomerId) {
@@ -24,7 +24,28 @@ async function findUserByStripeCustomerId(stripeCustomerId: string) {
         console.warn(`Webhook Warning: No user found with Stripe customer ID ${stripeCustomerId}`);
         return null;
     }
-    return userQuery.docs[0].ref;
+    return userQuery.docs[0];
+}
+
+async function awardReferralCredits(referralCode: string) {
+    if (!referralCode) return;
+  
+    try {
+      const usersRef = adminDb.collection('users');
+      const snapshot = await usersRef.where('referralCode', '==', referralCode).limit(1).get();
+  
+      if (!snapshot.empty) {
+        const referringUserDoc = snapshot.docs[0];
+        await referringUserDoc.ref.update({
+          proposalCredits: FieldValue.increment(5)
+        });
+        console.log(`Awarded 5 credits to user ${referringUserDoc.id} for successful referral.`);
+      } else {
+          console.warn(`Attempted to award credits for non-existent referral code: "${referralCode}"`);
+      }
+    } catch (error) {
+      console.error('Error awarding referral credits:', error);
+    }
 }
 
 /**
@@ -33,49 +54,69 @@ async function findUserByStripeCustomerId(stripeCustomerId: string) {
  */
 async function handleSubscriptionChange(subscription: Stripe.Subscription) {
     const stripeCustomerId = subscription.customer as string;
-    const userDocRef = await findUserByStripeCustomerId(stripeCustomerId);
+    const userDocSnapshot = await findUserByStripeCustomerId(stripeCustomerId);
 
-    if (!userDocRef) {
+    if (!userDocSnapshot) {
         console.warn(`No user found for Stripe customer ID: ${stripeCustomerId}. Skipping update.`);
         return;
     }
     
-    let status = subscription.status;
+    const userDocRef = userDocSnapshot.ref;
+    const userData = userDocSnapshot.data();
+    
+    let newStatus = subscription.status;
     // If cancel_at_period_end is true, the subscription is considered 'canceled' in our system
     // even if it's technically 'active' in Stripe until the period ends.
     if (subscription.cancel_at_period_end) {
-        status = 'canceled';
+        newStatus = 'canceled';
     }
 
     const price = subscription.items.data[0]?.price;
-    const interval = price?.recurring?.interval;
+    const newInterval = price?.recurring?.interval;
+
+    const previousStatus = userData?.subscriptionStatus;
+    const previousInterval = userData?.subscriptionInterval;
 
     const subscriptionData: { [key: string]: any } = {
         subscriptionId: subscription.id,
-        subscriptionStatus: status,
+        subscriptionStatus: newStatus,
         subscriptionCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
     };
 
-    if (interval) {
-        subscriptionData.subscriptionInterval = interval;
+    if (newInterval) {
+        subscriptionData.subscriptionInterval = newInterval;
     }
-    
-    // Award credits on new 'active' or 'trialing' subscription
-    if (status === 'active' || status === 'trialing') {
-        const userDoc = await userDocRef.get();
-        // Check if this is a new subscription by looking for a previous status
-        // If there's no previous status, or it was something other than active/trialing, award credits.
-        if (!userDoc.data()?.subscriptionStatus || !['active', 'trialing'].includes(userDoc.data()?.subscriptionStatus)) {
-            if (interval === 'year') {
-                subscriptionData.proposalCredits = FieldValue.increment(30);
-            } else if (interval === 'month') {
-                subscriptionData.proposalCredits = FieldValue.increment(7);
-            }
+
+    // SCENARIO 1: User activates trial for the first time
+    if (newStatus === 'trialing' && previousStatus !== 'trialing') {
+        subscriptionData.proposalCredits = FieldValue.increment(3);
+    }
+
+    // SCENARIO 2: User activates a paid plan for the first time (e.g., trial ends or direct purchase)
+    const isNewActivation = newStatus === 'active' && previousStatus !== 'active';
+    if (isNewActivation) {
+        if (newInterval === 'year') {
+            subscriptionData.proposalCredits = FieldValue.increment(100);
+        } else if (newInterval === 'month') {
+            subscriptionData.proposalCredits = FieldValue.increment(10);
         }
+        
+        // Handle referral credits on first paid activation
+        if (userData?.referredBy) {
+            await awardReferralCredits(userData.referredBy);
+            // We can remove the referredBy field after awarding credits to prevent double-awarding
+            subscriptionData.referredBy = FieldValue.delete();
+        }
+    }
+
+    // SCENARIO 3: User upgrades from active monthly to active yearly
+    const isUpgrade = previousStatus === 'active' && previousInterval === 'month' && newStatus === 'active' && newInterval === 'year';
+    if (isUpgrade) {
+        subscriptionData.proposalCredits = FieldValue.increment(100);
     }
     
     await userDocRef.update(subscriptionData);
-    console.log(`Successfully synced subscription for user ${userDocRef.id}. New status: ${status}, Interval: ${interval}`);
+    console.log(`Successfully synced subscription for user ${userDocRef.id}. New status: ${newStatus}, Interval: ${newInterval}`);
 }
 
 
@@ -143,14 +184,14 @@ export async function POST(req: Request) {
             case 'customer.subscription.deleted':
                 const deletedSubscription = event.data.object as Stripe.Subscription;
                 const stripeCustomerId = deletedSubscription.customer as string;
-                const userDocRef = await findUserByStripeCustomerId(stripeCustomerId);
+                const userDoc = await findUserByStripeCustomerId(stripeCustomerId);
 
-                if (userDocRef) {
-                    await userDocRef.update({
+                if (userDoc) {
+                    await userDoc.ref.update({
                         subscriptionStatus: 'canceled',
                         subscriptionInterval: null, // Clear interval on cancellation
                     });
-                     console.log(`Successfully marked subscription as canceled for user ${userDocRef.id}.`);
+                     console.log(`Successfully marked subscription as canceled for user ${userDoc.id}.`);
                 }
                 break;
 
