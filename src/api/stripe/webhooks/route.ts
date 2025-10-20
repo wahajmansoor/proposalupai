@@ -74,7 +74,6 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
     const price = subscription.items.data[0]?.price;
     const interval = price?.recurring?.interval;
     const previousStatus = userData?.subscriptionStatus;
-    const previousInterval = userData?.subscriptionInterval;
 
     const subscriptionData: { [key: string]: any } = {
         subscriptionId: subscription.id,
@@ -86,8 +85,8 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
         subscriptionData.subscriptionInterval = interval;
     }
     
+    // Only award credits if this is a NEW activation (previous status was not 'active')
     const isNewActivation = status === 'active' && previousStatus !== 'active';
-    const isUpgradeToYearly = status === 'active' && previousStatus === 'active' && previousInterval === 'month' && interval === 'year';
 
     if (isNewActivation) {
         if (interval === 'year') {
@@ -96,14 +95,12 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
             subscriptionData.proposalCredits = FieldValue.increment(7);
         }
 
-        // Award referral credits only on the very first activation, not on upgrades or reactivations.
+        // Award referral credits only on the very first activation, not on reactivations.
         if (userData?.referredBy) {
             await awardReferralCredits(userData.referredBy);
             // We can remove the referredBy field after awarding credits to prevent double-awarding
             subscriptionData.referredBy = FieldValue.delete();
         }
-    } else if (isUpgradeToYearly) {
-        subscriptionData.proposalCredits = FieldValue.increment(30);
     }
     
     await userDocRef.update(subscriptionData);
