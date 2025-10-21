@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useEffect, useState, useCallback } from 'react';
@@ -108,7 +107,7 @@ function CreditHistory() {
       </CardContent>
       <CardFooter className="flex-col items-start gap-4 border-t pt-4">
         <h4 className="font-semibold">Refer a Friend, Get Credits</h4>
-        <p className="text-sm text-muted-foreground -mt-3">When your friend becomes a paying subscriber, you'll both get 5 extra credits!</p>
+        <p className="text-sm text-muted-foreground -mt-3">Share your link with friends. When they sign up and become a paying subscriber, you'll both get 5 extra proposal improvement credits!</p>
         <div className="w-full space-y-2">
             <Label htmlFor="referral-link" className="sr-only">Your Unique Referral Link</Label>
             <div className="flex items-center gap-2">
