@@ -39,5 +39,11 @@ service cloud.firestore {
     match /users/{userId}/savedProposals/{proposalId} {
       allow read, write, delete: if request.auth != null && request.auth.uid == userId;
     }
+
+    // Users can only read their own credit history
+    match /users/{userId}/creditHistory/{historyId} {
+      allow read: if request.auth != null && request.auth.uid == userId;
+      allow write: if false; // Prevent client-side writes
+    }
   }
 }
