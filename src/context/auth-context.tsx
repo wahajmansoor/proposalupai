@@ -2,9 +2,11 @@
 "use client";
 
 import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { onAuthStateChanged, User } from 'firebase/auth';
+import { onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { ProposalUpLogos } from '@/components/icons';
+import { Button } from '@/components/ui/button';
 
 interface UserProfile {
   uid: string;
@@ -28,19 +30,22 @@ interface AuthContextType {
   user: User | null;
   userProfile: UserProfile | null;
   loading: boolean;
+  handleLogout: () => Promise<void>;
 }
 
-const AuthContext = createContext<AuthContextType>({ user: null, userProfile: null, loading: true });
+const AuthContext = createContext<AuthContextType>({ user: null, userProfile: null, loading: true, handleLogout: async () => {} });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       if (user) {
+        setIsLoggingOut(false); // Reset logout state if user logs in
         const userRef = doc(db, 'users', user.uid);
         const unsubscribeSnapshot = onSnapshot(userRef, (docSnap) => {
           if (docSnap.exists()) {
@@ -73,14 +78,37 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         setUserProfile(null);
         setLoading(false);
+        // If sign out was successful, isLoggingOut will naturally be resolved by the redirect
       }
     });
 
     return () => unsubscribe();
   }, []);
 
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    // Clear session cookie on the server
+    await fetch('/api/auth/session', { method: 'DELETE' });
+    // Sign out from Firebase client-side
+    await signOut(auth);
+    // The onAuthStateChanged listener will handle the rest
+  };
+
+  if (isLoggingOut) {
+    return (
+       <div className="flex flex-col items-center justify-center min-h-screen bg-background">
+        <ProposalUpLogos className="h-24 w-24 text-primary" />
+        <h1 className="mt-6 text-2xl font-semibold">Signing you out</h1>
+        <p className="text-muted-foreground mt-2">You have been successfully logged out.</p>
+        <Button variant="outline" className="mt-6" onClick={() => window.location.href = '/login'}>
+          Return to Login
+        </Button>
+      </div>
+    )
+  }
+
   return (
-    <AuthContext.Provider value={{ user, userProfile, loading }}>
+    <AuthContext.Provider value={{ user, userProfile, loading, handleLogout }}>
       {children}
     </AuthContext.Provider>
   );

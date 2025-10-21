@@ -27,8 +27,6 @@ function AuthCallback() {
             body: JSON.stringify({ idToken }),
           });
           
-          // Always redirect to dashboard after login.
-          // The dashboard layout will handle redirection to /pricing if the user is not subscribed.
           const redirectPath = '/dashboard';
 
           if (window.opener) {
@@ -70,11 +68,10 @@ function AuthCallback() {
   }, [router, searchParams, toast]);
 
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <div className="flex flex-col items-center gap-4">
-        <ProposalUpLogos className="h-24 w-24 animate-pulse text-primary" />
-        <p className="text-muted-foreground">Finalizing authentication...</p>
-      </div>
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background">
+      <ProposalUpLogos className="h-24 w-24 animate-pulse text-primary" />
+      <h1 className="mt-6 text-2xl font-semibold">Welcome Back!</h1>
+      <p className="text-muted-foreground mt-2">Signing you in and getting things ready...</p>
     </div>
   );
 }
@@ -86,5 +83,3 @@ export default function AuthCallbackClientPage() {
         </Suspense>
     )
 }
-
-    

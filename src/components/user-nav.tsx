@@ -11,8 +11,6 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { useAuth } from '@/context/auth-context';
-import { signOut } from 'firebase/auth';
-import { auth } from '@/lib/firebase/config';
 import Link from 'next/link';
 import { Skeleton } from './ui/skeleton';
 import { ChevronDown, CreditCard, LogOut, User, Loader2, Star } from 'lucide-react';
@@ -26,16 +24,9 @@ import { Badge } from './ui/badge';
 
 
 export function UserNav() {
-  const { user, userProfile, loading } = useAuth();
+  const { user, userProfile, loading, handleLogout } = useAuth();
   const [isManagingBilling, setIsManagingBilling] = useState(false);
   const { toast } = useToast();
-
-  const handleLogout = async () => {
-    // Clear session cookie on the server
-    await fetch('/api/auth/session', { method: 'DELETE' });
-    // Sign out from Firebase client-side
-    await signOut(auth);
-  };
 
   const handleManageBilling = async () => {
     setIsManagingBilling(true);

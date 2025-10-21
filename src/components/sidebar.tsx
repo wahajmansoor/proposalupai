@@ -1,13 +1,12 @@
+
 // src/components/sidebar.tsx
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/context/auth-context";
-import { signOut } from "firebase/auth";
 import { HugeiconsIcon } from '@hugeicons/react';
 import { FileEditIcon, BookmarkIcon, Profile02Icon, CreditCardIcon, Logout01Icon, CreditCardValidationIcon, UserSettings01Icon } from "@hugeicons/core-free-icons";
-import { auth } from "@/lib/firebase/config";
 import {
   Sidebar as SidebarPrimitive,
   SidebarContent,
@@ -18,14 +17,6 @@ import {
   SidebarFooter,
   useSidebar
 } from "@/components/ui/sidebar";
-import {
-  FilePlus,
-  Bookmark,
-  User,
-  CreditCard,
-  LogOut,
-} from "lucide-react";
-import { Button } from "./ui/button";
 import { ProposalUpLogos } from "./icons";
 
 
@@ -39,13 +30,7 @@ const navItems = [
 function SidebarNav() {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
-  
-  const handleLogout = async () => {
-    // Clear session cookie on the server
-    await fetch('/api/auth/session', { method: 'DELETE' });
-    // Sign out from Firebase client-side
-    await signOut(auth);
-  };
+  const { handleLogout } = useAuth();
   
   const handleLinkClick = () => {
     setOpenMobile(false);
@@ -106,15 +91,14 @@ function SidebarNav() {
                 </Link>
             </SidebarMenuItem>
              <SidebarMenuItem>
-              <form action={handleLogout} className="w-full">
-                <SidebarMenuButton
+              <SidebarMenuButton
+                  onClick={handleLogout}
                   tooltip="Logout"
                   className="w-full"
                 >
                   <HugeiconsIcon icon={Logout01Icon} size={24} className="h-6 w-6"/>
                   <span>Logout</span>
                 </SidebarMenuButton>
-              </form>
             </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
