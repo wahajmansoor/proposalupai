@@ -1,4 +1,3 @@
-
 'use server';
 
 import { stripe } from '@/lib/stripe/config';
@@ -11,239 +10,214 @@ import { FieldValue } from 'firebase-admin/firestore';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-/**
- * Finds a user in Firestore by their Stripe customer ID.
- * @param stripeCustomerId - The Stripe customer ID.
- * @returns The user's document snapshot or null if not found.
- */
+/** Find user by Stripe customer ID */
 async function findUserByStripeCustomerId(stripeCustomerId: string) {
-    if (!stripeCustomerId) {
-        console.warn(`Webhook Warning: Stripe customer ID is missing.`);
-        return null;
-    }
-    const userQuery = await adminDb.collection('users').where('stripeCustomerId', '==', stripeCustomerId).limit(1).get();
-    if (userQuery.empty) {
-        console.warn(`Webhook Warning: No user found with Stripe customer ID ${stripeCustomerId}`);
-        return null;
-    }
-    return userQuery.docs[0];
+  if (!stripeCustomerId) {
+    console.warn(`Webhook Warning: Stripe customer ID is missing.`);
+    return null;
+  }
+  const userQuery = await adminDb
+    .collection('users')
+    .where('stripeCustomerId', '==', stripeCustomerId)
+    .limit(1)
+    .get();
+  if (userQuery.empty) {
+    console.warn(`Webhook Warning: No user found with Stripe customer ID ${stripeCustomerId}`);
+    return null;
+  }
+  return userQuery.docs[0];
 }
 
+/** Log credit history for transparency */
 async function logCreditHistory(userId: string, amount: number, reason: string) {
-    if (!userId || !amount || !reason) return;
-    try {
-        await adminDb.collection('users').doc(userId).collection('creditHistory').add({
-            amount,
-            reason,
-            createdAt: FieldValue.serverTimestamp(),
-        });
-    } catch (error) {
-        console.error(`Failed to log credit history for user ${userId}:`, error);
-    }
+  if (!userId || !amount || !reason) return;
+  try {
+    await adminDb.collection('users').doc(userId).collection('creditHistory').add({
+      amount,
+      reason,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+  } catch (error) {
+    console.error(`Failed to log credit history for user ${userId}:`, error);
+  }
 }
 
+/** Award referral credits */
 async function awardReferralCredits(referralCode: string, newUserName: string | null) {
-    if (!referralCode) return;
-  
-    try {
-      const usersRef = adminDb.collection('users');
-      const snapshot = await usersRef.where('referralCode', '==', referralCode).limit(1).get();
-  
-      if (!snapshot.empty) {
-        const referringUserDoc = snapshot.docs[0];
-        const referredFriendName = newUserName || 'your friend';
-        await referringUserDoc.ref.update({
-          proposalCredits: FieldValue.increment(5)
-        });
-        await logCreditHistory(referringUserDoc.id, 5, `Referral bonus for ${referredFriendName} subscribing`);
-        console.log(`Awarded 5 credits to user ${referringUserDoc.id} for successful referral.`);
-      } else {
-          console.warn(`Attempted to award credits for non-existent referral code: "${referralCode}"`);
-      }
-    } catch (error) {
-      console.error('Error awarding referral credits:', error);
+  if (!referralCode) return;
+
+  try {
+    const usersRef = adminDb.collection('users');
+    const snapshot = await usersRef.where('referralCode', '==', referralCode).limit(1).get();
+
+    if (!snapshot.empty) {
+      const referringUserDoc = snapshot.docs[0];
+      const referredFriendName = newUserName || 'your friend';
+      await referringUserDoc.ref.update({
+        proposalCredits: FieldValue.increment(5),
+      });
+      await logCreditHistory(referringUserDoc.id, 5, `Referral bonus for ${referredFriendName} subscribing`);
+      console.log(`Awarded 5 credits to user ${referringUserDoc.id} for successful referral.`);
+    } else {
+      console.warn(`Attempted to award credits for non-existent referral code: "${referralCode}"`);
     }
+  } catch (error) {
+    console.error('Error awarding referral credits:', error);
+  }
 }
 
-/**
- * Handles subscription creation or update events from Stripe and updates the corresponding user document in Firestore.
- * @param subscription - The Stripe subscription object.
- * @param isUpgradingToYearly - A flag to indicate if the user is upgrading from monthly to yearly.
- */
+/** Core subscription handler */
 async function handleSubscriptionChange(subscription: Stripe.Subscription, isUpgradingToYearly = false) {
-    const stripeCustomerId = subscription.customer as string;
-    const userDocSnapshot = await findUserByStripeCustomerId(stripeCustomerId);
+  const stripeCustomerId = subscription.customer as string;
+  const userDocSnapshot = await findUserByStripeCustomerId(stripeCustomerId);
+  if (!userDocSnapshot) return;
 
-    if (!userDocSnapshot) {
-        console.warn(`No user found for Stripe customer ID: ${stripeCustomerId}. Skipping update.`);
-        return;
+  const userDocRef = userDocSnapshot.ref;
+  const userData = userDocSnapshot.data();
+  const price = subscription.items.data[0]?.price;
+  const newInterval = price?.recurring?.interval as 'month' | 'year' | undefined;
+  const previousStatus = userData?.subscriptionStatus;
+  let newStatus = subscription.status;
+  if (subscription.cancel_at_period_end) newStatus = 'canceled';
+
+  const subscriptionData: Record<string, any> = {
+    subscriptionId: subscription.id,
+    subscriptionStatus: newStatus,
+    subscriptionCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
+    updatedAt: FieldValue.serverTimestamp(),
+  };
+
+  if (newInterval) subscriptionData.subscriptionInterval = newInterval;
+  if (price?.unit_amount) subscriptionData.lastPrice = price.unit_amount / 100;
+
+  /** Trial start */
+  const isNewTrial = newStatus === 'trialing' && previousStatus !== 'trialing';
+  if (isNewTrial) {
+    let creditsToAdd = 3;
+    let reason = '2-Day trial activation';
+    if (userData?.referredBy) {
+      creditsToAdd += 5;
+      reason += ' (+5 referral bonus)';
     }
-    
-    const userDocRef = userDocSnapshot.ref;
-    const userData = userDocSnapshot.data();
-    
-    let newStatus = subscription.status;
-    if (subscription.cancel_at_period_end) {
-        newStatus = 'canceled';
-    }
+    subscriptionData.proposalCredits = FieldValue.increment(creditsToAdd);
+    await logCreditHistory(userDocRef.id, creditsToAdd, reason);
+  }
 
-    const price = subscription.items.data[0]?.price;
-    const newInterval = price?.recurring?.interval as 'month' | 'year' | undefined;
-    const previousStatus = userData?.subscriptionStatus;
-    
-    const subscriptionData: { [key: string]: any } = {
-        subscriptionId: subscription.id,
-        subscriptionStatus: newStatus,
-        subscriptionCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
-        updatedAt: FieldValue.serverTimestamp(),
-    };
-
-    if (newInterval) {
-        subscriptionData.subscriptionInterval = newInterval;
-    }
-    
-    if (price?.unit_amount) {
-        subscriptionData.lastPrice = price.unit_amount / 100;
-    }
-
-    // Scenario: A new trial is starting
-    const isNewTrial = newStatus === 'trialing' && previousStatus !== 'trialing';
-    if (isNewTrial) {
-        let creditsToAdd = 3;
-        let reason = '2-Day trial activation';
-
-        if (userData?.referredBy) {
-            creditsToAdd += 5; // Add 5 bonus credits for the new user for using a referral
-            reason += ' (+5 referral bonus)';
-        }
-        
-        subscriptionData.proposalCredits = FieldValue.increment(creditsToAdd);
-        await logCreditHistory(userDocRef.id, creditsToAdd, reason);
-    }
-    
-    // Scenario: A subscription is becoming active for the first time (from trial or direct purchase)
-    const isBecomingActive = newStatus === 'active' && previousStatus !== 'active';
-    if (isBecomingActive) {
-        let creditsToAdd = 0;
-        let reason = '';
-
-        if (newInterval === 'year') {
-            creditsToAdd = 100;
-            reason = 'Pro Yearly plan activation';
-        } else if (newInterval === 'month') {
-            creditsToAdd = 10;
-            reason = 'Pro Monthly plan activation';
-        }
-        
-        // Award the referrer only when the new user becomes a paying customer
-        if (userData?.referredBy) {
-            await awardReferralCredits(userData.referredBy, userData.displayName);
-            subscriptionData.referredBy = FieldValue.delete(); // Remove field after awarding
-        }
-
-        if (creditsToAdd > 0) {
-            subscriptionData.proposalCredits = FieldValue.increment(creditsToAdd);
-            await logCreditHistory(userDocRef.id, creditsToAdd, reason);
-        }
+  /** New activation (trial → active or direct active) */
+  const isBecomingActive = newStatus === 'active' && previousStatus !== 'active';
+  if (isBecomingActive) {
+    let creditsToAdd = 0;
+    let reason = '';
+    if (newInterval === 'year') {
+      creditsToAdd = 100;
+      reason = 'Pro Yearly plan activation';
+    } else if (newInterval === 'month') {
+      creditsToAdd = 10;
+      reason = 'Pro Monthly plan activation';
     }
 
-    // Scenario: An existing monthly subscriber upgrades to yearly
-    if (isUpgradingToYearly && !userData?.upgradeBonusGiven) {
-        const creditsToAdd = 100;
-        const reason = 'Upgraded to Pro Yearly';
-        subscriptionData.proposalCredits = FieldValue.increment(creditsToAdd);
-        subscriptionData.upgradeBonusGiven = true; // Flag to prevent awarding again
-        await logCreditHistory(userDocRef.id, creditsToAdd, reason);
+    if (userData?.referredBy) {
+      await awardReferralCredits(userData.referredBy, userData.displayName);
+      subscriptionData.referredBy = FieldValue.delete();
     }
 
+    if (creditsToAdd > 0) {
+      subscriptionData.proposalCredits = FieldValue.increment(creditsToAdd);
+      await logCreditHistory(userDocRef.id, creditsToAdd, reason);
+    }
+  }
 
-    await userDocRef.update(subscriptionData);
-    console.log(`Successfully synced subscription for user ${userDocRef.id}. New status: ${newStatus}, Interval: ${newInterval}`);
+  /** Upgrade Monthly → Yearly */
+  if (isUpgradingToYearly && !userData?.upgradeBonusGiven) {
+    const creditsToAdd = 100;
+    const reason = 'Upgraded from Pro Monthly → Yearly';
+    subscriptionData.proposalCredits = FieldValue.increment(creditsToAdd);
+    subscriptionData.upgradeBonusGiven = true;
+    await logCreditHistory(userDocRef.id, creditsToAdd, reason);
+  }
+
+  await userDocRef.update(subscriptionData);
+  console.log(`Synced subscription for user ${userDocRef.id}. Status: ${newStatus}, Interval: ${newInterval}`);
 }
 
-
+/** Webhook endpoint */
 export async function POST(req: Request) {
-    const body = await req.text();
-    const sig = headers().get('stripe-signature');
+  const body = await req.text();
+  const sig = headers().get('stripe-signature');
 
-    if (!webhookSecret) {
-        console.error('Stripe webhook secret is not set.');
-        return new NextResponse('Webhook secret not configured.', { status: 500 });
-    }
-    if (!sig) {
-        console.error('Missing stripe-signature header.');
-        return new NextResponse('Missing stripe-signature header.', { status: 400 });
-    }
+  if (!webhookSecret) return new NextResponse('Webhook secret not configured.', { status: 500 });
+  if (!sig) return new NextResponse('Missing stripe-signature header.', { status: 400 });
 
-    let event: Stripe.Event;
-    try {
-        event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
-    } catch (err: any) {
-        console.error(`Webhook signature verification failed: ${err.message}`);
-        return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
-    }
+  let event: Stripe.Event;
+  try {
+    event = stripe.webhooks.constructEvent(body, sig, webhookSecret);
+  } catch (err: any) {
+    console.error(`Webhook signature verification failed: ${err.message}`);
+    return new NextResponse(`Webhook Error: ${err.message}`, { status: 400 });
+  }
 
-    try {
-        switch (event.type) {
-            case 'checkout.session.completed':
-                const session = event.data.object as Stripe.Checkout.Session;
-                if (session.mode === 'subscription' && session.subscription) {
-                    const subscription = await stripe.subscriptions.retrieve(session.subscription as string, {
-                        expand: ['items.data.price'],
-                    });
-                    await handleSubscriptionChange(subscription);
-                }
-                break;
-            
-            case 'customer.subscription.created':
-                const subscriptionCreated = event.data.object as Stripe.Subscription;
-                await handleSubscriptionChange(subscriptionCreated);
-                break;
-
-            case 'customer.subscription.updated': {
-                const subscriptionUpdated = event.data.object as Stripe.Subscription;
-                
-                // Reliably detect upgrade by comparing previous state from the event with the new state
-                const oldInterval = event.data.previous_attributes?.items?.data?.[0]?.price?.recurring?.interval;
-                const newInterval = subscriptionUpdated.items.data[0].price?.recurring?.interval;
-                
-                const isUpgradingToYearly = oldInterval === 'month' && newInterval === 'year';
-
-                await handleSubscriptionChange(subscriptionUpdated, isUpgradingToYearly);
-                break;
-            }
-                  
-            case 'customer.subscription.deleted':
-                const deletedSubscription = event.data.object as Stripe.Subscription;
-                const stripeCustomerId = deletedSubscription.customer as string;
-                const userDoc = await findUserByStripeCustomerId(stripeCustomerId);
-
-                if (userDoc) {
-                    await userDoc.ref.update({
-                        subscriptionStatus: 'canceled',
-                        subscriptionInterval: null, // Clear interval on cancellation
-                        upgradeBonusGiven: FieldValue.delete(), // Reset upgrade bonus flag
-                    });
-                     console.log(`Successfully marked subscription as canceled for user ${userDoc.id}.`);
-                }
-                break;
-
-            case 'coupon.created':
-            case 'coupon.deleted':
-            case 'coupon.updated':
-                // We can revalidate the coupons page to show the latest data
-                revalidatePath('/admin-portal/coupons');
-                console.log(`Coupon event received: ${event.type}`);
-                break;
-            
-            default:
-                // Unhandled event type
-                console.log(`Unhandled event type: ${event.type}`);
+  try {
+    switch (event.type) {
+      case 'checkout.session.completed': {
+        const session = event.data.object as Stripe.Checkout.Session;
+        if (session.mode === 'subscription' && session.subscription) {
+          const subscription = await stripe.subscriptions.retrieve(session.subscription as string, {
+            expand: ['items.data.price'],
+          });
+          await handleSubscriptionChange(subscription);
         }
-    } catch (error: any) {
-        console.error(`Webhook handler failed for event type ${event.type}. Error: ${error.message}`);
-        return new NextResponse('Webhook handler failed.', { status: 500 });
-    }
+        break;
+      }
 
-    return new NextResponse(JSON.stringify({ received: true }), { status: 200 });
+      case 'customer.subscription.created': {
+        const subscription = event.data.object as Stripe.Subscription;
+        const expanded = await stripe.subscriptions.retrieve(subscription.id, { expand: ['items.data.price'] });
+        await handleSubscriptionChange(expanded);
+        break;
+      }
+
+      case 'customer.subscription.updated': {
+        const updated = event.data.object as Stripe.Subscription;
+        const expanded = await stripe.subscriptions.retrieve(updated.id, { expand: ['items.data.price'] });
+
+        // Detect Monthly → Yearly upgrade
+        const oldInterval = event.data.previous_attributes?.items?.data?.[0]?.price?.recurring?.interval;
+        const newInterval = expanded.items.data[0].price?.recurring?.interval;
+        const isUpgradingToYearly = oldInterval === 'month' && newInterval === 'year';
+
+        await handleSubscriptionChange(expanded, isUpgradingToYearly);
+        break;
+      }
+
+      case 'customer.subscription.deleted': {
+        const deleted = event.data.object as Stripe.Subscription;
+        const stripeCustomerId = deleted.customer as string;
+        const userDoc = await findUserByStripeCustomerId(stripeCustomerId);
+        if (userDoc) {
+          await userDoc.ref.update({
+            subscriptionStatus: 'canceled',
+            subscriptionInterval: null,
+            upgradeBonusGiven: FieldValue.delete(),
+          });
+          console.log(`Marked subscription as canceled for user ${userDoc.id}.`);
+        }
+        break;
+      }
+
+      case 'coupon.created':
+      case 'coupon.deleted':
+      case 'coupon.updated':
+        revalidatePath('/admin-portal/coupons');
+        console.log(`Coupon event received: ${event.type}`);
+        break;
+
+      default:
+        console.log(`Unhandled event type: ${event.type}`);
+    }
+  } catch (error: any) {
+    console.error(`Webhook handler failed for ${event.type}: ${error.message}`);
+    return new NextResponse('Webhook handler failed.', { status: 500 });
+  }
+
+  return new NextResponse(JSON.stringify({ received: true }), { status: 200 });
 }

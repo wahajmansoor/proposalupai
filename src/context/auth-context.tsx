@@ -7,6 +7,7 @@ import { auth, db } from '@/lib/firebase/config';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
 import { ProposalUpLogos } from '@/components/icons';
 import { Button } from '@/components/ui/button';
+import { useRouter } from 'next/navigation';
 
 interface UserProfile {
   uid: string;
@@ -35,6 +36,43 @@ interface AuthContextType {
 }
 
 const AuthContext = createContext<AuthContextType>({ user: null, userProfile: null, loading: true, handleLogout: async () => {}, creditChange: 0 });
+
+const LogoutScreen = () => {
+  const router = useRouter();
+  const [isLoggedOut, setIsLoggedOut] = useState(false);
+
+  useEffect(() => {
+    // After 2 seconds, update the state to show the logged-out message
+    const timer = setTimeout(() => {
+      setIsLoggedOut(true);
+    }, 2000);
+
+    return () => clearTimeout(timer);
+  }, []);
+
+  useEffect(() => {
+    if (isLoggedOut) {
+      // After showing the message, redirect to login
+      const redirectTimer = setTimeout(() => {
+        router.push('/login');
+      }, 1500);
+      return () => clearTimeout(redirectTimer);
+    }
+  }, [isLoggedOut, router]);
+
+  return (
+    <div className="flex flex-col items-center justify-center min-h-screen bg-background">
+      <ProposalUpLogos className="h-24 w-24 text-primary" />
+      <h1 className="mt-6 text-2xl font-semibold">
+        {isLoggedOut ? "Successfully Logged Out" : "Signing you out..."}
+      </h1>
+      <p className="text-muted-foreground mt-2 mb-6">
+        {isLoggedOut ? "Redirecting to the login page..." : "Please wait a moment."}
+      </p>
+    </div>
+  );
+};
+
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -101,16 +139,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   if (isLoggingOut) {
-    return (
-       <div className="flex flex-col items-center justify-center min-h-screen bg-background">
-        <ProposalUpLogos className="h-24 w-24 text-primary" />
-        <h1 className="mt-6 text-2xl font-semibold">Signing you out</h1>
-        <p className="text-muted-foreground mt-2 mb-6">You have been successfully logged out.</p>
-        <Button onClick={() => window.location.href = '/login'}>
-          Return to Login
-        </Button>
-      </div>
-    )
+    return <LogoutScreen />;
   }
 
   return (
