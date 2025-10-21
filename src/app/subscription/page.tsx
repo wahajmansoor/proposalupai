@@ -6,21 +6,38 @@ import { useAuth } from '@/context/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CreditCard, ExternalLink, Star } from 'lucide-react';
+import { Loader2, CreditCard, ExternalLink, Star, Copy, Check } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { createCustomerPortalSession } from '@/lib/stripe-actions';
 import { format, formatDistanceToNow } from 'date-fns';
-import { getBillingHistory, getCreditHistory, type InvoiceDetails, type CreditHistoryItem } from '@/app/lib/actions';
+import { getBillingHistory, getCreditHistory, type InvoiceDetails, type CreditHistoryItem } from '@/lib/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { Label } from '@/components/ui/label';
+import { Input } from '@/components/ui/input';
+import { ShareIcons } from '@/components/icons';
+
 
 function CreditHistory() {
+  const { userProfile } = useAuth();
   const [history, setHistory] = useState<CreditHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { toast } = useToast();
 
+  const [referralLink, setReferralLink] = useState('');
+  const [hasCopied, setHasCopied] = useState(false);
+  
+  const referralCode = userProfile?.referralCode;
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && referralCode) {
+      setReferralLink(`${window.location.origin}/signup?invite=${referralCode}`);
+    }
+  }, [referralCode]);
+  
   useEffect(() => {
     async function fetchHistory() {
       const result = await getCreditHistory();
@@ -33,6 +50,23 @@ function CreditHistory() {
     }
     fetchHistory();
   }, []);
+  
+  const copyToClipboard = () => {
+    if (!referralLink) return;
+    navigator.clipboard.writeText(referralLink);
+    setHasCopied(true);
+    toast({ title: "Copied!", description: "Referral link copied to clipboard." });
+    setTimeout(() => setHasCopied(false), 2000);
+  };
+  
+  const shareText = "Check out Proposal Up! The best way to generate winning proposals.";
+  const socialShareLinks = {
+    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(referralLink)}`,
+    twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(shareText)}`,
+    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(referralLink)}`,
+    whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + " " + referralLink)}`,
+  };
+
 
   return (
     <Card>
@@ -48,7 +82,9 @@ function CreditHistory() {
             <Skeleton className="h-10 w-full" />
           </div>
         ) : error ? (
-           <p className="text-destructive-foreground bg-destructive/10 p-3 rounded-md text-sm">{error}</p>
+           <div className="text-center py-4">
+            <p className="text-sm font-medium text-destructive">{error}</p>
+          </div>
         ) : history.length === 0 ? (
           <p className="text-sm text-muted-foreground text-center py-4">No credit history yet.</p>
         ) : (
@@ -70,6 +106,33 @@ function CreditHistory() {
           </div>
         )}
       </CardContent>
+      <CardFooter className="flex-col items-start gap-4 border-t pt-4">
+        <h4 className="font-semibold">Refer a Friend, Get Credits</h4>
+        <p className="text-sm text-muted-foreground -mt-3">When your friend becomes a paying subscriber, you'll both get 5 extra credits!</p>
+        <div className="w-full space-y-2">
+            <Label htmlFor="referral-link" className="sr-only">Your Unique Referral Link</Label>
+            <div className="flex items-center gap-2">
+              <Input id="referral-link" value={referralLink} readOnly />
+              <Button size="icon" variant="outline" onClick={copyToClipboard} disabled={!referralLink}>
+                {hasCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+              </Button>
+            </div>
+          </div>
+          <div className="flex items-center justify-start gap-8 w-full pt-2">
+            <Link href={socialShareLinks.facebook} target="_blank" passHref>
+              <ShareIcons.Facebook className="h-6 w-6 cursor-pointer dark:fill-white" />
+            </Link>
+             <Link href={socialShareLinks.twitter} target="_blank" passHref>
+              <ShareIcons.Twitter className="h-6 w-6 cursor-pointer dark:fill-white" />
+            </Link>
+             <Link href={socialShareLinks.linkedin} target="_blank" passHref>
+              <ShareIcons.LinkedIn className="h-6 w-6 cursor-pointer dark:fill-white" />
+            </Link>
+             <Link href={socialShareLinks.whatsapp} target="_blank" passHref>
+              <ShareIcons.WhatsApp className="h-6 w-6 cursor-pointer dark:fill-white" />
+            </Link>
+          </div>
+      </CardFooter>
     </Card>
   );
 }
@@ -203,7 +266,9 @@ export default function SubscriptionPage() {
                   <Skeleton className="h-10 w-full" />
                 </div>
               ) : historyError ? (
-                <p className="text-destructive-foreground bg-destructive/10 p-3 rounded-md text-sm">{historyError}</p>
+                 <div className="text-center py-4">
+                  <p className="text-sm font-medium text-destructive">{historyError}</p>
+                </div>
               ) : invoices.length === 0 ? (
                 <p className="text-muted-foreground text-sm text-center py-4">No billing history found.</p>
               ) : (
