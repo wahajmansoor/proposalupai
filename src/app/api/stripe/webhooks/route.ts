@@ -90,6 +90,7 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
     const newInterval = price?.recurring?.interval as 'month' | 'year' | undefined;
 
     const previousStatus = userData?.subscriptionStatus;
+    const previousInterval = userData?.subscriptionInterval;
 
     const subscriptionData: { [key: string]: any } = {
         subscriptionId: subscription.id,
@@ -106,7 +107,27 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
         subscriptionData.lastPrice = price.unit_amount / 100;
     }
 
+    const isNewTrial = newStatus === 'trialing' && previousStatus !== 'trialing';
     const isBecomingActive = newStatus === 'active' && previousStatus !== 'active';
+    const isUpgradingToYearly = newStatus === 'active' && previousStatus === 'active' && newInterval === 'year' && previousInterval === 'month';
+    
+
+    if (isNewTrial) {
+        let creditsToAdd = 3; // Base trial credits
+        let reason = '2-Day trial activation';
+
+        if (userData?.referredBy) {
+            creditsToAdd += 5; // Add 5 bonus credits for the new user for using a referral
+            reason += ' (+5 referral bonus)';
+            await awardReferralCredits(userData.referredBy, userData.displayName);
+            // We don't delete `referredBy` here, as the user might cancel and resubscribe.
+            // It will be cleared upon first paid activation.
+        }
+        
+        subscriptionData.proposalCredits = FieldValue.increment(creditsToAdd);
+        await logCreditHistory(userDocRef.id, creditsToAdd, reason);
+    }
+    
     if (isBecomingActive) {
         let creditsToAdd = 0;
         let reason = '';
@@ -120,9 +141,11 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
         }
         
         if (userData?.referredBy) {
-            creditsToAdd += 5; // Add 5 bonus credits for the new user
-            reason += ' (+5 referral bonus)';
-            await awardReferralCredits(userData.referredBy, userData.displayName);
+            // New user doesn't get bonus again, this is handled at trial start
+            // Just award the referrer if they haven't been already from the trial start
+            if (previousStatus !== 'trialing') {
+                await awardReferralCredits(userData.referredBy, userData.displayName);
+            }
             subscriptionData.referredBy = FieldValue.delete();
         }
 
@@ -130,6 +153,13 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
             subscriptionData.proposalCredits = FieldValue.increment(creditsToAdd);
             await logCreditHistory(userDocRef.id, creditsToAdd, reason);
         }
+    }
+    
+    if (isUpgradingToYearly) {
+        const creditsToAdd = 100;
+        const reason = 'Upgraded to Pro Yearly';
+        subscriptionData.proposalCredits = FieldValue.increment(creditsToAdd);
+        await logCreditHistory(userDocRef.id, creditsToAdd, reason);
     }
 
 

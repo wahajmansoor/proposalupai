@@ -56,7 +56,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
     try {
         // Scenario 1: New user starting a trial
         if (!subscriptionStatus) {
-             const checkoutSession = await stripe.checkout.sessions.create({
+            const sessionParams: Stripe.Checkout.SessionCreateParams = {
                 payment_method_types: ['card'],
                 customer: stripeCustomerId,
                 client_reference_id: user.uid,
@@ -68,7 +68,18 @@ export async function handlePlanChange(formData: FormData): Promise<{
                     trial_period_days: 2,
                 },
                 allow_promotion_codes: true,
-             });
+            };
+            if (coupon) {
+                sessionParams.discounts = [{ promotion_code: coupon }];
+            }
+            const checkoutSession = await stripe.checkout.sessions.create(sessionParams);
+            
+            // Store the price in Firestore before redirecting
+            const price = await stripe.prices.retrieve(priceId);
+            if (price.unit_amount) {
+                const userRef = adminDb.collection('users').doc(user.uid);
+                await userRef.update({ lastPrice: price.unit_amount / 100 });
+            }
 
             return { redirectUrl: checkoutSession.url! };
         }
@@ -81,7 +92,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
                 trial_end: 'now',
                 proration_behavior: 'none',
             };
-             if (coupon) {
+            if (coupon) {
                 updateParams.promotion_code = coupon;
             }
             const updatedSubscription = await stripe.subscriptions.update(subscriptionId, updateParams);
@@ -101,7 +112,6 @@ export async function handlePlanChange(formData: FormData): Promise<{
              const updateParams: Stripe.SubscriptionUpdateParams = {
                 items: [{ id: subscription.items.data[0].id, price: priceId }],
                 proration_behavior: 'create_prorations',
-                trial_end: 'now',
             };
              if (coupon) {
                 updateParams.promotion_code = coupon;
