@@ -68,9 +68,9 @@ async function awardReferralCredits(referralCode: string, newUserName: string | 
 /**
  * Handles subscription creation or update events from Stripe and updates the corresponding user document in Firestore.
  * @param subscription - The Stripe subscription object.
- * @param isUpgradingToYearly - A boolean indicating if this change is a direct upgrade from monthly to yearly.
+ * @param previousAttributes - The previous attributes of the subscription object from the webhook event.
  */
-async function handleSubscriptionChange(subscription: Stripe.Subscription, isUpgradingToYearly = false) {
+async function handleSubscriptionChange(subscription: Stripe.Subscription, previousAttributes: Stripe.Event.Data.PreviousAttributes | null) {
     const stripeCustomerId = subscription.customer as string;
     const userDocSnapshot = await findUserByStripeCustomerId(stripeCustomerId);
 
@@ -106,10 +106,8 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, isUpg
         subscriptionData.lastPrice = price.unit_amount / 100;
     }
 
+    // Scenario: A new trial is starting
     const isNewTrial = newStatus === 'trialing' && previousStatus !== 'trialing';
-    const isBecomingActive = newStatus === 'active' && previousStatus !== 'active';
-    
-
     if (isNewTrial) {
         let creditsToAdd = 3;
         let reason = '2-Day trial activation';
@@ -123,6 +121,8 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, isUpg
         await logCreditHistory(userDocRef.id, creditsToAdd, reason);
     }
     
+    // Scenario: A subscription is becoming active for the first time (from trial or direct purchase)
+    const isBecomingActive = newStatus === 'active' && previousStatus !== 'active';
     if (isBecomingActive) {
         let creditsToAdd = 0;
         let reason = '';
@@ -135,11 +135,10 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, isUpg
             reason = 'Pro Monthly plan activation';
         }
         
+        // Award the referrer only when the new user becomes a paying customer
         if (userData?.referredBy) {
-            // Award the referrer when the new user becomes a paying customer
             await awardReferralCredits(userData.referredBy, userData.displayName);
-            // After awarding, remove the referredBy field so it's not used again
-            subscriptionData.referredBy = FieldValue.delete();
+            subscriptionData.referredBy = FieldValue.delete(); // Remove field after awarding
         }
 
         if (creditsToAdd > 0) {
@@ -147,12 +146,20 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, isUpg
             await logCreditHistory(userDocRef.id, creditsToAdd, reason);
         }
     }
-    
+
+    // Scenario: An existing monthly subscriber upgrades to yearly
+    const previousInterval = previousAttributes?.items?.data?.[0]?.plan?.interval;
+    const isUpgradingToYearly = 
+        newStatus === 'active' && 
+        previousStatus === 'active' && 
+        newInterval === 'year' && 
+        (previousInterval === 'month' || userData?.subscriptionInterval === 'month');
+
     if (isUpgradingToYearly && !userData?.upgradeBonusGiven) {
         const creditsToAdd = 100;
         const reason = 'Upgraded to Pro Yearly';
         subscriptionData.proposalCredits = FieldValue.increment(creditsToAdd);
-        subscriptionData.upgradeBonusGiven = true;
+        subscriptionData.upgradeBonusGiven = true; // Flag to prevent awarding again
         await logCreditHistory(userDocRef.id, creditsToAdd, reason);
     }
 
@@ -191,7 +198,7 @@ export async function POST(req: Request) {
                     const subscription = await stripe.subscriptions.retrieve(session.subscription as string, {
                         expand: ['items.data.price'],
                     });
-                    await handleSubscriptionChange(subscription, false);
+                    await handleSubscriptionChange(subscription, null);
                 }
                 break;
             
@@ -200,7 +207,7 @@ export async function POST(req: Request) {
                 const expandedSubCreated = await stripe.subscriptions.retrieve(subscriptionCreated.id, {
                     expand: ['items.data.price'],
                 });
-                await handleSubscriptionChange(expandedSubCreated, false);
+                await handleSubscriptionChange(expandedSubCreated, null);
                 break;
 
             case 'customer.subscription.updated': {
@@ -208,20 +215,9 @@ export async function POST(req: Request) {
                 const expandedSubUpdated = await stripe.subscriptions.retrieve(subscriptionUpdated.id, {
                     expand: ['items.data.price'],
                 });
-                
-                const previousAttributes = event.data.previous_attributes || {};
-                const oldInterval = (previousAttributes as any)?.items?.data?.[0]?.plan?.interval;
-                const newInterval = expandedSubUpdated.items.data[0].price?.recurring?.interval;
-                
-                const isUpgradingToYearly =
-                    subscriptionUpdated.status === 'active' &&
-                    oldInterval === 'month' &&
-                    newInterval === 'year';
-                
-                await handleSubscriptionChange(expandedSubUpdated, isUpgradingToYearly);
+                await handleSubscriptionChange(expandedSubUpdated, event.data.previous_attributes);
                 break;
             }
-                  
                   
             case 'customer.subscription.deleted':
                 const deletedSubscription = event.data.object as Stripe.Subscription;
@@ -232,6 +228,7 @@ export async function POST(req: Request) {
                     await userDoc.ref.update({
                         subscriptionStatus: 'canceled',
                         subscriptionInterval: null, // Clear interval on cancellation
+                        upgradeBonusGiven: FieldValue.delete(), // Reset upgrade bonus flag
                     });
                      console.log(`Successfully marked subscription as canceled for user ${userDoc.id}.`);
                 }
