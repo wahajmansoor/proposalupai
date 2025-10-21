@@ -26,7 +26,6 @@ export function ReferralDialog({
   open: boolean;
   onOpenChange: (open: boolean) => void;
   referralCode?: string;
-  children: React.ReactNode;
 }) {
   const { toast } = useToast();
   const [hasCopied, setHasCopied] = useState(false);
@@ -54,7 +53,6 @@ export function ReferralDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      {children}
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Refer a Friend, Get Credits</DialogTitle>
