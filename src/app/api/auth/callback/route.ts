@@ -123,7 +123,7 @@ export async function GET(req: NextRequest) {
             subscriptionStatus: null,
             country: country,
             referralCode: userRecord.uid.substring(0, 8), // Generate and store referral code
-            proposalCredits: 3, // Initial credits for new users
+            proposalCredits: 0, // Initial credits for new users
         };
         
         if (referralCode) {
