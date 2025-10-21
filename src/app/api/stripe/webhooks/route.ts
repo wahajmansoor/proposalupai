@@ -148,10 +148,11 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, isUpg
         }
     }
     
-    if (isUpgradingToYearly) {
+    if (isUpgradingToYearly && !userData?.upgradeBonusGiven) {
         const creditsToAdd = 100;
         const reason = 'Upgraded to Pro Yearly';
         subscriptionData.proposalCredits = FieldValue.increment(creditsToAdd);
+        subscriptionData.upgradeBonusGiven = true;
         await logCreditHistory(userDocRef.id, creditsToAdd, reason);
     }
 
@@ -208,23 +209,19 @@ export async function POST(req: Request) {
                     expand: ['items.data.price'],
                 });
                 
-                const previousAttributes = (event.data as any).previous_attributes || {};
-                const oldInterval =
-                    previousAttributes?.items?.data?.[0]?.price?.recurring?.interval ||
-                    previousAttributes?.items?.data?.[0]?.plan?.interval ||
-                    previousAttributes?.price?.recurring?.interval;
+                const previousAttributes = event.data.previous_attributes || {};
+                const oldInterval = previousAttributes?.items?.data?.[0]?.price?.recurring?.interval;
                 const newInterval = expandedSubUpdated.items.data[0].price?.recurring?.interval;
                 
-                console.log('Old interval:', oldInterval, 'New interval:', newInterval);
-                
                 const isUpgradingToYearly =
+                    subscriptionUpdated.status === 'active' &&
                     oldInterval === 'month' &&
-                    newInterval === 'year' &&
-                    subscriptionUpdated.status === 'active';
+                    newInterval === 'year';
                 
                 await handleSubscriptionChange(expandedSubUpdated, isUpgradingToYearly);
                 break;
             }
+                  
                   
             case 'customer.subscription.deleted':
                 const deletedSubscription = event.data.object as Stripe.Subscription;
