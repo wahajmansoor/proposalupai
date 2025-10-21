@@ -3,7 +3,7 @@
 
 import { useAuth } from "@/context/auth-context";
 import { useRouter, usePathname } from "next/navigation";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ProposalUpLogos } from '@/components/icons';
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
@@ -14,12 +14,13 @@ export default function DashboardLayout({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, userProfile, loading } = useAuth();
+  const { user, userProfile, loading: authLoading } = useAuth();
   const router = useRouter();
   const pathname = usePathname();
+  const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
-    if (loading) {
+    if (authLoading) {
       return; // Wait for auth state to load
     }
     if (!user) {
@@ -37,15 +38,16 @@ export default function DashboardLayout({
         path === '/dashboard' ? pathname === path : pathname.startsWith(path)
     );
 
-    // If user is NOT subscribed (which includes past_due, unpaid, etc.) and is trying to access a protected path, redirect them.
     if (!isSubscribed && isAccessingProtectedPath) {
         router.replace('/pricing');
-        return; // Important: stop further execution
+    } else {
+        setIsAuthorized(true);
     }
     
-  }, [user, userProfile, loading, router, pathname]);
+  }, [user, userProfile, authLoading, router, pathname]);
   
-  if (loading || !user) {
+  // Render loading state until authorization check is complete.
+  if (authLoading || !isAuthorized) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <ProposalUpLogos className="h-24 w-24 animate-pulse text-primary" />
