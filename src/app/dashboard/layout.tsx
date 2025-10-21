@@ -30,15 +30,12 @@ export default function DashboardLayout({
 
     const isSubscribed = userProfile?.subscriptionStatus === 'active' || userProfile?.subscriptionStatus === 'trialing';
     
-    // Define paths that are PROTECTED and require a subscription.
-    const protectedPaths = ['/dashboard', '/dashboard/skill-profiles', '/dashboard/proposals'];
+    // Non-protected dashboard pages
+    const nonProtectedPaths = ['/pricing', '/profile', '/subscription'];
 
-    // Check if the user is trying to access a protected path.
-    const isAccessingProtectedPath = protectedPaths.some(path => 
-        path === '/dashboard' ? pathname === path : pathname.startsWith(path)
-    );
+    const isAccessingNonProtectedPath = nonProtectedPaths.some(path => pathname.startsWith(path));
 
-    if (!isSubscribed && isAccessingProtectedPath) {
+    if (!isSubscribed && !isAccessingNonProtectedPath) {
         router.replace('/pricing');
     } else {
         setIsAuthorized(true);
