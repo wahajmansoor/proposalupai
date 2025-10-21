@@ -128,6 +128,7 @@ export async function GET(req: NextRequest) {
         
         if (referralCode) {
           userData.referredBy = referralCode;
+          userData.proposalCredits = 5; // Award 5 credits to the new user
         }
         
         if (picture) {

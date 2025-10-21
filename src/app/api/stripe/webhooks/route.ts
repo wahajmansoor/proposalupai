@@ -94,6 +94,14 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
         subscriptionData.lastPrice = price.unit_amount / 100;
     }
 
+    const isNewTrial = newStatus === 'trialing' && previousStatus !== 'trialing';
+    if (isNewTrial && userData?.referredBy) {
+        await awardReferralCredits(userData.referredBy);
+        // We can remove the referredBy field after awarding credits to prevent double-awarding
+        subscriptionData.referredBy = FieldValue.delete();
+    }
+
+
     // SCENARIO 1: User activates trial for the first time
     if (newStatus === 'trialing' && previousStatus !== 'trialing') {
         subscriptionData.proposalCredits = FieldValue.increment(3);
@@ -106,13 +114,6 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
             subscriptionData.proposalCredits = FieldValue.increment(100);
         } else if (newInterval === 'month') {
             subscriptionData.proposalCredits = FieldValue.increment(10);
-        }
-        
-        // Handle referral credits on first paid activation
-        if (userData?.referredBy) {
-            await awardReferralCredits(userData.referredBy);
-            // We can remove the referredBy field after awarding credits to prevent double-awarding
-            subscriptionData.referredBy = FieldValue.delete();
         }
     }
 

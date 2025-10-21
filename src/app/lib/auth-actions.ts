@@ -15,31 +15,6 @@ const signUpSchema = z.object({
   referralCode: z.string().optional(),
 });
 
-async function awardReferralCredits(referralCode: string) {
-    if (!referralCode) return;
-  
-    try {
-      const usersRef = adminDb.collection('users');
-      const snapshot = await usersRef.where('referralCode', '==', referralCode).limit(1).get();
-  
-      if (!snapshot.empty) {
-        const referringUserDoc = snapshot.docs[0];
-        // Award credits only if the referred user is now active
-        const referredUserSnapshot = await usersRef.where('referredBy', '==', referralCode).where('subscriptionStatus', '==', 'active').limit(1).get();
-        if (!referredUserSnapshot.empty) {
-          await referringUserDoc.ref.update({
-            proposalCredits: FieldValue.increment(5)
-          });
-          console.log(`Awarded 5 credits to user ${referringUserDoc.id} for successful referral.`);
-        }
-      } else {
-          console.warn(`Referral code "${referralCode}" not found.`);
-      }
-    } catch (error) {
-      console.error('Error awarding referral credits:', error);
-    }
-  }
-
 export async function signUpWithEmail(input: z.infer<typeof signUpSchema>): Promise<{ error?: string }> {
   try {
     const { email, password, fullName, referralCode } = signUpSchema.parse(input);
@@ -81,14 +56,10 @@ export async function signUpWithEmail(input: z.infer<typeof signUpSchema>): Prom
 
     if (referralCode) {
       userData.referredBy = referralCode;
+      userData.proposalCredits = 5; // Award 5 credits to the new user
     }
 
     await userRef.set(userData);
-    
-    // If a referral code was used, check if the referrer needs credits
-    if (referralCode) {
-        // We can't award credits immediately, this should be handled by the webhook when the new user pays.
-    }
 
     return {};
 

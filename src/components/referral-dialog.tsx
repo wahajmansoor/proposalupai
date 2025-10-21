@@ -22,7 +22,6 @@ export function ReferralDialog({
   open,
   onOpenChange,
   referralCode,
-  children,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -60,7 +59,7 @@ export function ReferralDialog({
         <DialogHeader>
           <DialogTitle>Refer a Friend, Get Credits</DialogTitle>
           <DialogDescription>
-            Share your link with friends. When they sign up, you'll both get 5 extra proposal improvement credits!
+            Share your link with friends. When they sign up for a trial, you'll both get 5 extra proposal improvement credits!
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
