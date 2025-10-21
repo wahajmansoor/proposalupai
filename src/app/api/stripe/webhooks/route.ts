@@ -217,11 +217,15 @@ export async function POST(req: Request) {
                 const subscriptionUpdated = event.data.object as Stripe.Subscription;
                 const previousAttributes = event.data.previous_attributes;
 
-                // Check for upgrade from monthly to yearly
+                // Check for upgrade from monthly to yearly for an already active user
                 const newInterval = subscriptionUpdated.items.data[0].price?.recurring?.interval;
                 const oldInterval = previousAttributes?.items?.data?.[0]?.price?.recurring?.interval;
-                const isUpgradingToYearly = subscriptionUpdated.status === 'active' && newInterval === 'year' && oldInterval === 'month';
                 
+                const isUpgradingToYearly = 
+                    subscriptionUpdated.status === 'active' && 
+                    newInterval === 'year' && 
+                    oldInterval === 'month';
+
                 if (isUpgradingToYearly) {
                      const userDoc = await findUserByStripeCustomerId(subscriptionUpdated.customer as string);
                      if (userDoc) {
