@@ -1,4 +1,3 @@
-
 'use server';
 
 import { stripe } from '@/lib/stripe/config';
@@ -91,9 +90,8 @@ async function handleSubscriptionUpgrade(userDocRef: FirebaseFirestore.DocumentR
 /**
  * Handles subscription creation or update events from Stripe and updates the corresponding user document in Firestore.
  * @param subscription - The Stripe subscription object.
- * @param isUpgradingToYearly - A flag to indicate if the user is upgrading from monthly to yearly.
  */
-async function handleSubscriptionChange(subscription: Stripe.Subscription, isUpgradingToYearly = false) {
+async function handleSubscriptionChange(subscription: Stripe.Subscription) {
     const stripeCustomerId = subscription.customer as string;
     const userDocSnapshot = await findUserByStripeCustomerId(stripeCustomerId);
 
@@ -169,16 +167,6 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, isUpg
         }
     }
     
-    // SCENARIO: An active monthly subscriber upgrades to yearly
-    if (isUpgradingToYearly && !userData?.upgradeBonusGiven) {
-        const creditsToAdd = 100;
-        const reason = 'Upgraded to Pro Yearly';
-        subscriptionData.proposalCredits = FieldValue.increment(creditsToAdd);
-        subscriptionData.upgradeBonusGiven = true; // Flag to prevent double-awarding
-        await logCreditHistory(userDocRef.id, creditsToAdd, reason);
-        console.log(`Applied +100 upgrade credits for ${userDocRef.id}`);
-    }
-    
     await userDocRef.update(subscriptionData);
     console.log(`Successfully synced subscription for user ${userDocRef.id}. New status: ${newStatus}, Interval: ${newInterval}`);
 }
@@ -227,43 +215,41 @@ export async function POST(req: Request) {
 
             case 'customer.subscription.updated':
                 const subscriptionUpdated = event.data.object as Stripe.Subscription;
-                const expandedSubscription = await stripe.subscriptions.retrieve(subscriptionUpdated.id, {
-                    expand: ['items.data.price'],
-                });
-                
-                let isUpgradingToYearly = false;
                 const previousAttributes = event.data.previous_attributes;
 
-                if (previousAttributes && previousAttributes.items) {
-                    const newInterval = expandedSubscription.items.data[0].price?.recurring?.interval;
-                    // This is a more complex check, but it's necessary because the structure of previous_attributes is not guaranteed.
-                    // We check if the old plan's interval was 'month' and the new one is 'year'.
-                    // Note: This simplified check assumes a single subscription item.
-                    const oldPriceId = previousAttributes.items.data?.[0].price.id;
-                    if (oldPriceId) {
-                        const oldPrice = await stripe.prices.retrieve(oldPriceId);
-                        const oldInterval = oldPrice.recurring?.interval;
-                        if (oldInterval === 'month' && newInterval === 'year') {
-                            isUpgradingToYearly = true;
-                        }
+                const userDoc = await findUserByStripeCustomerId(subscriptionUpdated.customer as string);
+                if (userDoc) {
+                    const newInterval = subscriptionUpdated.items.data[0].price?.recurring?.interval;
+                    const oldInterval = previousAttributes?.items?.data?.[0]?.price?.recurring?.interval;
+                    
+                    const isUpgradingToYearly =
+                        subscriptionUpdated.status === 'active' &&
+                        newInterval === 'year' &&
+                        oldInterval === 'month';
+                    
+                    if (isUpgradingToYearly) {
+                        await handleSubscriptionUpgrade(userDoc.ref);
                     }
                 }
                 
-                await handleSubscriptionChange(expandedSubscription, isUpgradingToYearly);
+                const expandedSubscription = await stripe.subscriptions.retrieve(subscriptionUpdated.id, {
+                    expand: ['items.data.price'],
+                });
+                await handleSubscriptionChange(expandedSubscription);
                 break;
 
             case 'customer.subscription.deleted':
                 const deletedSubscription = event.data.object as Stripe.Subscription;
                 const stripeCustomerId = deletedSubscription.customer as string;
-                const userDoc = await findUserByStripeCustomerId(stripeCustomerId);
+                const userDocToDelete = await findUserByStripeCustomerId(stripeCustomerId);
 
-                if (userDoc) {
-                    await userDoc.ref.update({
+                if (userDocToDelete) {
+                    await userDocToDelete.ref.update({
                         subscriptionStatus: 'canceled',
                         subscriptionInterval: null, // Clear interval on cancellation
                         upgradeBonusGiven: FieldValue.delete(), // Reset bonus flag
                     });
-                     console.log(`Successfully marked subscription as canceled for user ${userDoc.id}.`);
+                     console.log(`Successfully marked subscription as canceled for user ${userDocToDelete.id}.`);
                 }
                 break;
 
@@ -284,4 +270,3 @@ export async function POST(req: Request) {
 
     return new NextResponse(JSON.stringify({ received: true }), { status: 200 });
 }
-
