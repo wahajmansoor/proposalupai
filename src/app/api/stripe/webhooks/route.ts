@@ -68,9 +68,9 @@ async function awardReferralCredits(referralCode: string, newUserName: string | 
 /**
  * Handles subscription creation or update events from Stripe and updates the corresponding user document in Firestore.
  * @param subscription - The Stripe subscription object.
- * @param event - The original Stripe event object.
+ * @param isUpgradingToYearly - A boolean indicating if this change is a direct upgrade from monthly to yearly.
  */
-async function handleSubscriptionChange(subscription: Stripe.Subscription, event: Stripe.Event) {
+async function handleSubscriptionChange(subscription: Stripe.Subscription, isUpgradingToYearly = false) {
     const stripeCustomerId = subscription.customer as string;
     const userDocSnapshot = await findUserByStripeCustomerId(stripeCustomerId);
 
@@ -91,10 +91,6 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, event
     const newInterval = price?.recurring?.interval as 'month' | 'year' | undefined;
     const previousStatus = userData?.subscriptionStatus;
     
-    // --- Start of Corrected Logic ---
-    const previousAttributes = (event.data as any).previous_attributes;
-    const previousInterval = previousAttributes?.items?.data[0]?.price?.recurring?.interval;
-
     const subscriptionData: { [key: string]: any } = {
         subscriptionId: subscription.id,
         subscriptionStatus: newStatus,
@@ -112,8 +108,6 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, event
 
     const isNewTrial = newStatus === 'trialing' && previousStatus !== 'trialing';
     const isBecomingActive = newStatus === 'active' && previousStatus !== 'active';
-    const isUpgradingToYearly = newStatus === 'active' && newInterval === 'year' && previousInterval === 'month';
-    // --- End of Corrected Logic ---
     
 
     if (isNewTrial) {
@@ -196,17 +190,32 @@ export async function POST(req: Request) {
                     const subscription = await stripe.subscriptions.retrieve(session.subscription as string, {
                         expand: ['items.data.price'],
                     });
-                    await handleSubscriptionChange(subscription, event);
+                    await handleSubscriptionChange(subscription, false);
                 }
                 break;
             
             case 'customer.subscription.created':
-            case 'customer.subscription.updated':
-                const subscriptionUpdated = event.data.object as Stripe.Subscription;
-                const expandedSubscription = await stripe.subscriptions.retrieve(subscriptionUpdated.id, {
+                const subscriptionCreated = event.data.object as Stripe.Subscription;
+                const expandedSubCreated = await stripe.subscriptions.retrieve(subscriptionCreated.id, {
                     expand: ['items.data.price'],
                 });
-                await handleSubscriptionChange(expandedSubscription, event);
+                await handleSubscriptionChange(expandedSubCreated, false);
+                break;
+
+            case 'customer.subscription.updated':
+                const subscriptionUpdated = event.data.object as Stripe.Subscription;
+                const expandedSubUpdated = await stripe.subscriptions.retrieve(subscriptionUpdated.id, {
+                    expand: ['items.data.price'],
+                });
+                
+                // Reliably detect upgrade via previous_attributes in the event data
+                const previousAttributes = (event.data as any).previous_attributes;
+                const oldInterval = previousAttributes?.items?.data?.[0]?.price?.recurring?.interval;
+                const newInterval = expandedSubUpdated.items.data[0].price?.recurring?.interval;
+
+                const isUpgradingToYearly = oldInterval === 'month' && newInterval === 'year' && subscriptionUpdated.status === 'active';
+                
+                await handleSubscriptionChange(expandedSubUpdated, isUpgradingToYearly);
                 break;
 
             case 'customer.subscription.deleted':
