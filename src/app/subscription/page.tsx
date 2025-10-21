@@ -5,19 +5,75 @@ import { useEffect, useState, useCallback } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CreditCard, ExternalLink } from 'lucide-react';
+import { Loader2, CreditCard, ExternalLink, Star } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { createCustomerPortalSession } from '@/lib/stripe-actions';
-import { format } from 'date-fns';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { getBillingHistory, updateUserDisplayNameAction, type InvoiceDetails } from '@/app/lib/actions';
+import { format, formatDistanceToNow } from 'date-fns';
+import { getBillingHistory, getCreditHistory, type InvoiceDetails, type CreditHistoryItem } from '@/app/lib/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+
+function CreditHistory() {
+  const [history, setHistory] = useState<CreditHistoryItem[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  useEffect(() => {
+    async function fetchHistory() {
+      const result = await getCreditHistory();
+      if (result.error) {
+        setError(result.error);
+      } else if (result.history) {
+        setHistory(result.history);
+      }
+      setIsLoading(false);
+    }
+    fetchHistory();
+  }, []);
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Credit History</CardTitle>
+        <CardDescription>A log of all the proposal improvement credits you've earned.</CardDescription>
+      </CardHeader>
+      <CardContent>
+        {isLoading ? (
+          <div className="space-y-4">
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        ) : error ? (
+           <p className="text-destructive-foreground bg-destructive/10 p-3 rounded-md text-sm">{error}</p>
+        ) : history.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-4">No credit history yet.</p>
+        ) : (
+          <div className="space-y-4">
+            {history.map((item) => (
+              <div key={item.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                <div className="flex items-center gap-3">
+                   <div className="p-2 bg-yellow-400/20 rounded-full">
+                       <Star className="h-5 w-5 text-yellow-500" />
+                   </div>
+                   <div>
+                       <p className="font-medium">{item.reason}</p>
+                       <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(item.createdAt), { addSuffix: true })}</p>
+                   </div>
+                </div>
+                <Badge variant="secondary" className="font-semibold text-lg">+{item.amount}</Badge>
+              </div>
+            ))}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+}
+
 
 export default function SubscriptionPage() {
   const { user, userProfile } = useAuth();
@@ -133,6 +189,7 @@ export default function SubscriptionPage() {
           </Card>
         </div>
         <div className="lg:col-span-3 space-y-8">
+           <CreditHistory />
            <Card>
             <CardHeader>
               <CardTitle>Billing History</CardTitle>
