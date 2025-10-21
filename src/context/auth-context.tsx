@@ -1,7 +1,7 @@
 
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
 import { onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
 import { doc, onSnapshot, setDoc } from 'firebase/firestore';
@@ -31,15 +31,19 @@ interface AuthContextType {
   userProfile: UserProfile | null;
   loading: boolean;
   handleLogout: () => Promise<void>;
+  creditChange: number;
 }
 
-const AuthContext = createContext<AuthContextType>({ user: null, userProfile: null, loading: true, handleLogout: async () => {} });
+const AuthContext = createContext<AuthContextType>({ user: null, userProfile: null, loading: true, handleLogout: async () => {}, creditChange: 0 });
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  
+  const [creditChange, setCreditChange] = useState(0);
+  const previousCreditsRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
@@ -53,12 +57,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
             const profile: UserProfile = {
               ...data,
-              // Convert Timestamp to ISO string to prevent serialization issues
               subscriptionCurrentPeriodEnd: data.subscriptionCurrentPeriodEnd?.toDate().toISOString(),
             } as UserProfile;
+            
+            // Check for credit changes
+            if (previousCreditsRef.current !== undefined && profile.proposalCredits !== undefined) {
+                const diff = profile.proposalCredits - previousCreditsRef.current;
+                if (diff > 0) {
+                    setCreditChange(diff);
+                    // Reset after a short delay to allow re-triggering for subsequent changes
+                    setTimeout(() => setCreditChange(0), 100);
+                }
+            }
+            previousCreditsRef.current = profile.proposalCredits;
+
             setUserProfile(profile);
           } else {
             setUserProfile(null);
+            previousCreditsRef.current = undefined;
           }
           setLoading(false);
         }, (error) => {
@@ -71,7 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         setUserProfile(null);
         setLoading(false);
-        // If sign out was successful, isLoggingOut will naturally be resolved by the redirect
+        previousCreditsRef.current = undefined;
       }
     });
 
@@ -80,11 +96,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
-    // Clear session cookie on the server
     await fetch('/api/auth/session', { method: 'DELETE' });
-    // Sign out from Firebase client-side
     await signOut(auth);
-    // The onAuthStateChanged listener will handle the rest
   };
 
   if (isLoggingOut) {
@@ -93,7 +106,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         <ProposalUpLogos className="h-24 w-24 text-primary" />
         <h1 className="mt-6 text-2xl font-semibold">Signing you out</h1>
         <p className="text-muted-foreground mt-2">You have been successfully logged out.</p>
-        <Button className="mt-6" onClick={() => window.location.href = '/login'}>
+        <Button onClick={() => window.location.href = '/login'}>
           Return to Login
         </Button>
       </div>
@@ -101,7 +114,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }
 
   return (
-    <AuthContext.Provider value={{ user, userProfile, loading, handleLogout }}>
+    <AuthContext.Provider value={{ user, userProfile, loading, handleLogout, creditChange }}>
       {children}
     </AuthContext.Provider>
   );

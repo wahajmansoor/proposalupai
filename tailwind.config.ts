@@ -85,10 +85,17 @@ export default {
             height: '0',
           },
         },
+         'credit-pop': {
+          '0%': { transform: 'translateY(0) scale(0.5)', opacity: '0' },
+          '20%': { transform: 'translateY(-10px) scale(1.1)', opacity: '1' },
+          '80%': { transform: 'translateY(-60px) scale(1)', opacity: '1' },
+          '100%': { transform: 'translateY(-70px) scale(0.8)', opacity: '0' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'credit-pop': 'credit-pop 1.5s ease-out forwards',
       },
     },
   },
