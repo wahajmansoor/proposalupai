@@ -18,6 +18,7 @@ import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { incrementProposalCount, decrementProposalCredits } from '@/lib/firebase/usage';
 import { stripe } from '@/lib/stripe/config';
 import type { PortfolioLink } from './types';
+import { collection, query, orderBy, getDocs, Timestamp } from 'firebase/firestore';
 
 export interface InvoiceDetails {
   id: string;
@@ -25,6 +26,13 @@ export interface InvoiceDetails {
   total: string;
   status: string;
   invoiceUrl: string | null;
+}
+
+export interface CreditHistoryItem {
+    id: string;
+    amount: number;
+    reason: string;
+    createdAt: string;
 }
 
 const projectDetailsSchema = z.object({
@@ -338,6 +346,30 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
   }
 }
 
-    
+export async function getCreditHistory(): Promise<{ history?: CreditHistoryItem[]; error?: string }> {
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+        return { error: 'User not authenticated.' };
+    }
 
-    
+    try {
+        const historyRef = adminDb.collection('users').doc(currentUser.user.uid).collection('creditHistory');
+        const q = query(historyRef, orderBy('createdAt', 'desc'));
+        const querySnapshot = await getDocs(q as any);
+        
+        const history: CreditHistoryItem[] = querySnapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                amount: data.amount,
+                reason: data.reason,
+                createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
+            };
+        });
+
+        return { history };
+    } catch (error: any) {
+        console.error('Error fetching credit history:', error);
+        return { error: 'Could not retrieve credit history.' };
+    }
+}

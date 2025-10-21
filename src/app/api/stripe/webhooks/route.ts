@@ -29,7 +29,20 @@ async function findUserByStripeCustomerId(stripeCustomerId: string) {
     return userQuery.docs[0];
 }
 
-async function awardReferralCredits(referralCode: string) {
+async function logCreditHistory(userId: string, amount: number, reason: string) {
+    if (!userId || !amount || !reason) return;
+    try {
+        await adminDb.collection('users').doc(userId).collection('creditHistory').add({
+            amount,
+            reason,
+            createdAt: FieldValue.serverTimestamp(),
+        });
+    } catch (error) {
+        console.error(`Failed to log credit history for user ${userId}:`, error);
+    }
+}
+
+async function awardReferralCredits(referralCode: string, newUserName: string | null) {
     if (!referralCode) return;
   
     try {
@@ -38,9 +51,11 @@ async function awardReferralCredits(referralCode: string) {
   
       if (!snapshot.empty) {
         const referringUserDoc = snapshot.docs[0];
+        const referredFriendName = newUserName || 'your friend';
         await referringUserDoc.ref.update({
           proposalCredits: FieldValue.increment(5)
         });
+        await logCreditHistory(referringUserDoc.id, 5, `Referral bonus for ${referredFriendName} subscribing`);
         console.log(`Awarded 5 credits to user ${referringUserDoc.id} for successful referral.`);
       } else {
           console.warn(`Attempted to award credits for non-existent referral code: "${referralCode}"`);
@@ -67,8 +82,6 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
     const userData = userDocSnapshot.data();
     
     let newStatus = subscription.status;
-    // If cancel_at_period_end is true, the subscription is considered 'canceled' in our system
-    // even if it's technically 'active' in Stripe until the period ends.
     if (subscription.cancel_at_period_end) {
         newStatus = 'canceled';
     }
@@ -93,36 +106,33 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
         subscriptionData.lastPrice = price.unit_amount / 100;
     }
 
-    // SCENARIO: A user starts a trial for the first time
-    const isStartingTrial = newStatus === 'trialing' && previousStatus !== 'trialing';
-    if (isStartingTrial) {
-        // Award 3 base credits for starting a trial
-        subscriptionData.proposalCredits = FieldValue.increment(3);
-        console.log(`Awarded 3 trial credits to new subscriber ${userDocRef.id}.`);
+    const isBecomingActive = newStatus === 'active' && previousStatus !== 'active';
+    if (isBecomingActive) {
+        let creditsToAdd = 0;
+        let reason = '';
 
-        // Check if this user was referred by someone
+        if (newInterval === 'year') {
+            creditsToAdd = 100;
+            reason = 'Pro Yearly plan activation';
+        } else if (newInterval === 'month') {
+            creditsToAdd = 10;
+            reason = 'Pro Monthly plan activation';
+        }
+        
         if (userData?.referredBy) {
-            // Award 5 credits to the referrer
-            await awardReferralCredits(userData.referredBy);
-            // Award 5 bonus credits to the new subscriber for being referred
-            subscriptionData.proposalCredits = FieldValue.increment(8); // 3 trial + 5 referral
-            console.log(`Awarded 5 bonus credits to new subscriber ${userDocRef.id} for being referred.`);
-            // We can remove the referredBy field after awarding credits to prevent double-awarding
+            creditsToAdd += 5; // Add 5 bonus credits for the new user
+            reason += ' (+5 referral bonus)';
+            await awardReferralCredits(userData.referredBy, userData.displayName);
             subscriptionData.referredBy = FieldValue.delete();
         }
-    }
 
-
-    // SCENARIO: A user's trial converts to an active paid plan
-    const isNewActivation = newStatus === 'active' && previousStatus === 'trialing';
-    if (isNewActivation) {
-        if (newInterval === 'year') {
-            subscriptionData.proposalCredits = FieldValue.increment(100);
-        } else if (newInterval === 'month') {
-            subscriptionData.proposalCredits = FieldValue.increment(10);
+        if (creditsToAdd > 0) {
+            subscriptionData.proposalCredits = FieldValue.increment(creditsToAdd);
+            await logCreditHistory(userDocRef.id, creditsToAdd, reason);
         }
     }
-    
+
+
     await userDocRef.update(subscriptionData);
     console.log(`Successfully synced subscription for user ${userDocRef.id}. New status: ${newStatus}, Interval: ${newInterval}`);
 }
@@ -164,7 +174,6 @@ export async function POST(req: Request) {
             case 'customer.subscription.created':
             case 'customer.subscription.updated':
                 const subscriptionUpdated = event.data.object as Stripe.Subscription;
-                // Expanding the items is crucial to get the price and interval.
                 const expandedSubscription = await stripe.subscriptions.retrieve(subscriptionUpdated.id, {
                     expand: ['items.data.price'],
                 });
