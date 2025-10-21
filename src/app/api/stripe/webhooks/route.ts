@@ -140,6 +140,7 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
         if (userData?.referredBy) {
             // Award the referrer when the new user becomes a paying customer
             await awardReferralCredits(userData.referredBy, userData.displayName);
+            // After awarding, remove the referredBy field so it's not used again
             subscriptionData.referredBy = FieldValue.delete();
         }
 
