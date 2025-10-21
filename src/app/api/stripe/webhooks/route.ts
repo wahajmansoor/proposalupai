@@ -109,19 +109,17 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
 
     const isNewTrial = newStatus === 'trialing' && previousStatus !== 'trialing';
     const isBecomingActive = newStatus === 'active' && previousStatus !== 'active';
-    const isUpgradingToYearly = newStatus === 'active' && previousStatus === 'active' && newInterval === 'year' && previousInterval === 'month';
+    const isUpgradingToYearly = newStatus === 'active' && newInterval === 'year' && previousInterval === 'month';
     
 
     if (isNewTrial) {
-        let creditsToAdd = 3; // Base trial credits
+        let creditsToAdd = 3;
         let reason = '2-Day trial activation';
 
         if (userData?.referredBy) {
             creditsToAdd += 5; // Add 5 bonus credits for the new user for using a referral
             reason += ' (+5 referral bonus)';
             await awardReferralCredits(userData.referredBy, userData.displayName);
-            // We don't delete `referredBy` here, as the user might cancel and resubscribe.
-            // It will be cleared upon first paid activation.
         }
         
         subscriptionData.proposalCredits = FieldValue.increment(creditsToAdd);
