@@ -7,7 +7,7 @@ import {
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogFooter,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -22,10 +22,12 @@ export function ReferralDialog({
   open,
   onOpenChange,
   referralCode,
+  children,
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   referralCode?: string;
+  children: React.ReactNode;
 }) {
   const { toast } = useToast();
   const [hasCopied, setHasCopied] = useState(false);
@@ -53,6 +55,7 @@ export function ReferralDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Refer a Friend, Get Credits</DialogTitle>
