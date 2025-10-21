@@ -2,12 +2,10 @@
 "use client";
 
 import {
-  Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
   DialogDescription,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,12 +17,8 @@ import { ShareIcons } from "./icons";
 import Link from "next/link";
 
 export function ReferralDialog({
-  open,
-  onOpenChange,
   referralCode,
 }: {
-  open: boolean;
-  onOpenChange: (open: boolean) => void;
   referralCode?: string;
 }) {
   const { toast } = useToast();
@@ -38,26 +32,27 @@ export function ReferralDialog({
   }, [referralCode]);
 
   const copyToClipboard = () => {
+    if (!referralLink) return;
     navigator.clipboard.writeText(referralLink);
     setHasCopied(true);
     toast({ title: "Copied!", description: "Referral link copied to clipboard." });
     setTimeout(() => setHasCopied(false), 2000);
   };
   
+  const shareText = "Check out Proposal Up! The best way to generate winning proposals.";
   const socialShareLinks = {
     facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(referralLink)}`,
-    twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent("Check out Proposal Up! The best way to generate winning proposals.")}`,
+    twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(shareText)}`,
     linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(referralLink)}`,
-    whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent("Check out Proposal Up! The best way to generate winning proposals. " + referralLink)}`,
+    whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + " " + referralLink)}`,
   };
 
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Refer a Friend, Get Credits</DialogTitle>
           <DialogDescription>
-            Share your link with friends. When they subscribe to a paid plan, you'll both get 5 extra proposal improvement credits!
+            Share your link with friends. When they sign up and activate their subscription, you'll both get 5 extra proposal improvement credits!
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4">
@@ -65,7 +60,7 @@ export function ReferralDialog({
             <Label htmlFor="referral-link">Your Unique Referral Link</Label>
             <div className="flex items-center gap-2">
               <Input id="referral-link" value={referralLink} readOnly />
-              <Button size="icon" variant="outline" onClick={copyToClipboard}>
+              <Button size="icon" variant="outline" onClick={copyToClipboard} disabled={!referralLink}>
                 {hasCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
@@ -86,6 +81,5 @@ export function ReferralDialog({
           </div>
         </div>
       </DialogContent>
-    </Dialog>
   );
 }
