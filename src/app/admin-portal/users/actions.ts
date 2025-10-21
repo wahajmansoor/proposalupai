@@ -16,6 +16,7 @@ export interface AppUser {
   createdAt: string | null; // Changed to string for serialization
   stripeCustomerId: string | null;
   country?: { code: string; name: string };
+  referralCode?: string;
 }
 
 export async function getUsers(): Promise<AppUser[]> {
@@ -30,8 +31,18 @@ export async function getUsers(): Promise<AppUser[]> {
       const userDocRef = adminDb.collection('users').doc(user.uid);
       const userDoc = await userDocRef.get();
       
+      let userData: any;
+
       if (userDoc.exists) {
-        const userData = userDoc.data();
+        userData = userDoc.data();
+        
+        // ** Backfill referral code for any user who doesn't have one **
+        if (!userData?.referralCode) {
+            const newReferralCode = user.uid.substring(0, 8);
+            await userDocRef.update({ referralCode: newReferralCode });
+            userData.referralCode = newReferralCode; // Update local object immediately
+        }
+
         // Convert timestamp to ISO string for safe serialization
         const createdAt = userData?.createdAt?.toDate()?.toISOString() || null;
         return {
@@ -44,6 +55,7 @@ export async function getUsers(): Promise<AppUser[]> {
           createdAt: createdAt,
           stripeCustomerId: userData?.stripeCustomerId || null,
           country: userData?.country || null,
+          referralCode: userData?.referralCode || null,
         };
       } else {
         // Fallback for users who might exist in Auth but not Firestore
@@ -57,6 +69,7 @@ export async function getUsers(): Promise<AppUser[]> {
           createdAt: null,
           stripeCustomerId: null,
           country: null,
+          referralCode: null,
         };
       }
     });
