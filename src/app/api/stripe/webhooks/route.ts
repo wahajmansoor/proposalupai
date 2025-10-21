@@ -93,21 +93,29 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
         subscriptionData.lastPrice = price.unit_amount / 100;
     }
 
-    // SCENARIO: A user activates a paid plan for the first time (e.g., trial ends and converts, or direct purchase)
-    const isNewActivation = newStatus === 'active' && previousStatus !== 'active';
-    if (isNewActivation) {
+    // SCENARIO: A user starts a trial for the first time
+    const isStartingTrial = newStatus === 'trialing' && previousStatus !== 'trialing';
+    if (isStartingTrial) {
+        // Award 3 base credits for starting a trial
+        subscriptionData.proposalCredits = FieldValue.increment(3);
+        console.log(`Awarded 3 trial credits to new subscriber ${userDocRef.id}.`);
+
         // Check if this user was referred by someone
         if (userData?.referredBy) {
             // Award 5 credits to the referrer
             await awardReferralCredits(userData.referredBy);
             // Award 5 bonus credits to the new subscriber for being referred
-            subscriptionData.proposalCredits = FieldValue.increment(5);
+            subscriptionData.proposalCredits = FieldValue.increment(8); // 3 trial + 5 referral
             console.log(`Awarded 5 bonus credits to new subscriber ${userDocRef.id} for being referred.`);
             // We can remove the referredBy field after awarding credits to prevent double-awarding
             subscriptionData.referredBy = FieldValue.delete();
         }
+    }
 
-        // Grant credits based on the plan they activated
+
+    // SCENARIO: A user's trial converts to an active paid plan
+    const isNewActivation = newStatus === 'active' && previousStatus === 'trialing';
+    if (isNewActivation) {
         if (newInterval === 'year') {
             subscriptionData.proposalCredits = FieldValue.increment(100);
         } else if (newInterval === 'month') {
@@ -145,8 +153,6 @@ export async function POST(req: Request) {
         switch (event.type) {
             case 'checkout.session.completed':
                 const session = event.data.object as Stripe.Checkout.Session;
-                // This event is useful for activating a paid plan immediately, 
-                // but for trials, 'customer.subscription.created' is more reliable.
                 if (session.mode === 'subscription' && session.subscription) {
                     const subscription = await stripe.subscriptions.retrieve(session.subscription as string, {
                         expand: ['items.data.price'],
