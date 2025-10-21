@@ -23,11 +23,17 @@ export async function getCurrentUser(): Promise<{
     const userDocRef = adminDb.collection('users').doc(user.uid);
     const userDocSnap = await userDocRef.get();
     
-    if (!userDocSnap.exists) {
-      return { user, userDoc: null };
+    let userDocData = userDocSnap.exists ? userDocSnap.data()! : null;
+
+    // Backfill referral code for old users if it doesn't exist.
+    if (userDocData && !userDocData.referralCode) {
+      const newReferralCode = user.uid.substring(0, 8);
+      await userDocRef.update({ referralCode: newReferralCode });
+      // Update the local object to include the new code immediately
+      userDocData.referralCode = newReferralCode;
     }
     
-    return { user, userDoc: userDocSnap.data()! };
+    return { user, userDoc: userDocData };
 
   } catch (error) {
     console.error('Error verifying session cookie:', error);
