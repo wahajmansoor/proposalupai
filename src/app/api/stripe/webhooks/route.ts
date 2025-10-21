@@ -103,6 +103,7 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
             await awardReferralCredits(userData.referredBy);
             // Award 5 credits to the new user for converting
             subscriptionData.proposalCredits = FieldValue.increment(5);
+            console.log(`Awarded 5 bonus credits to new subscriber ${userDocRef.id} for being referred.`);
             // We can remove the referredBy field after awarding credits to prevent double-awarding
             subscriptionData.referredBy = FieldValue.delete();
         }
