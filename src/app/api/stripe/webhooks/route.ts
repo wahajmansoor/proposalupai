@@ -202,17 +202,14 @@ export async function POST(req: Request) {
 
             case 'customer.subscription.updated': {
                 const subscriptionUpdated = event.data.object as Stripe.Subscription;
-                const expandedSubscription = await stripe.subscriptions.retrieve(subscriptionUpdated.id, {
-                    expand: ['items.data.price'],
-                });
                 
                 // Reliably detect upgrade by comparing previous state from the event with the new state
                 const oldInterval = event.data.previous_attributes?.items?.data?.[0]?.price?.recurring?.interval;
-                const newInterval = expandedSubscription.items.data[0].price?.recurring?.interval;
+                const newInterval = subscriptionUpdated.items.data[0].price?.recurring?.interval;
                 
                 const isUpgradingToYearly = oldInterval === 'month' && newInterval === 'year';
 
-                await handleSubscriptionChange(expandedSubscription, isUpgradingToYearly);
+                await handleSubscriptionChange(subscriptionUpdated, isUpgradingToYearly);
                 break;
             }
                   
