@@ -32,14 +32,12 @@ service cloud.firestore {
     // --- SUBCOLLECTIONS ---
     // Users can only manage their own skill profiles
     match /users/{userId}/skillProfiles/{profileId} {
-      allow read, create, update: if request.auth != null && request.auth.uid == userId;
-      allow delete: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
     // Users can only manage their own saved proposals
     match /users/{userId}/savedProposals/{proposalId} {
-      allow read, create, update: if request.auth != null && request.auth.uid == userId;
-      allow delete: if request.auth != null && request.auth.uid == userId;
+      allow read, write: if request.auth != null && request.auth.uid == userId;
     }
 
     // Users can only read their own credit history
