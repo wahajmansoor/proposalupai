@@ -1,5 +1,5 @@
 
-"use server";
+'use server';
 
 import { z } from 'zod';
 import { analyzeJobForProposal } from '@/ai/flows/analyze-job-for-proposal';
@@ -18,7 +18,7 @@ import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { incrementProposalCount, decrementProposalCredits } from '@/lib/firebase/usage';
 import { stripe } from '@/lib/stripe/config';
 import type { PortfolioLink } from './types';
-import { collection, query, orderBy, getDocs, Timestamp } from 'firebase/firestore';
+import type { Timestamp } from 'firebase-admin/firestore';
 
 export interface InvoiceDetails {
   id: string;
@@ -354,8 +354,7 @@ export async function getCreditHistory(): Promise<{ history?: CreditHistoryItem[
 
     try {
         const historyRef = adminDb.collection('users').doc(currentUser.user.uid).collection('creditHistory');
-        const q = query(historyRef, orderBy('createdAt', 'desc'));
-        const querySnapshot = await getDocs(q as any);
+        const querySnapshot = await historyRef.orderBy('createdAt', 'desc').get();
         
         const history: CreditHistoryItem[] = querySnapshot.docs.map(doc => {
             const data = doc.data();
