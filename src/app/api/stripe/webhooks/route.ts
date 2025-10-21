@@ -77,7 +77,6 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
     const newInterval = price?.recurring?.interval as 'month' | 'year' | undefined;
 
     const previousStatus = userData?.subscriptionStatus;
-    const previousInterval = userData?.subscriptionInterval;
 
     const subscriptionData: { [key: string]: any } = {
         subscriptionId: subscription.id,
@@ -94,14 +93,14 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
         subscriptionData.lastPrice = price.unit_amount / 100;
     }
 
-    // SCENARIO 1: A user activates a paid plan for the first time (e.g., trial ends and converts, or direct purchase)
+    // SCENARIO: A user activates a paid plan for the first time (e.g., trial ends and converts, or direct purchase)
     const isNewActivation = newStatus === 'active' && previousStatus !== 'active';
     if (isNewActivation) {
         // Check if this user was referred by someone
         if (userData?.referredBy) {
             // Award 5 credits to the referrer
             await awardReferralCredits(userData.referredBy);
-            // Award 5 credits to the new user for converting
+            // Award 5 bonus credits to the new subscriber for being referred
             subscriptionData.proposalCredits = FieldValue.increment(5);
             console.log(`Awarded 5 bonus credits to new subscriber ${userDocRef.id} for being referred.`);
             // We can remove the referredBy field after awarding credits to prevent double-awarding
@@ -114,12 +113,6 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
         } else if (newInterval === 'month') {
             subscriptionData.proposalCredits = FieldValue.increment(10);
         }
-    }
-
-    // SCENARIO 2: User upgrades from active monthly to active yearly
-    const isUpgrade = previousStatus === 'active' && previousInterval === 'month' && newStatus === 'active' && newInterval === 'year';
-    if (isUpgrade) {
-        subscriptionData.proposalCredits = FieldValue.increment(100);
     }
     
     await userDocRef.update(subscriptionData);
