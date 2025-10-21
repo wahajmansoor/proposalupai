@@ -40,7 +40,7 @@ import Link from 'next/link';
 import { Loader2 } from 'lucide-react';
 import { WelcomeDialog } from '@/components/welcome-dialog';
 import { useSearchParams, useRouter } from 'next/navigation';
-import { ReferralDialog } from '@/components/referral-dialog';
+import { CreditsButton } from '@/components/credits-button';
 
 type Suggestion = {
   template: 'standard' | 'video';
@@ -147,7 +147,6 @@ function DashboardContent() {
 
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
   const [planInterval, setPlanInterval] = useState<'monthly' | 'yearly' | null>(null);
-  const [isReferralDialogOpen, setIsReferralDialogOpen] = useState(false);
 
 
   const [customImprovementInstruction, setCustomImprovementInstruction] = useState('');
@@ -643,11 +642,6 @@ function DashboardContent() {
         subscriptionStatus={userProfile?.subscriptionStatus}
         planInterval={planInterval}
       />
-      <ReferralDialog
-        open={isReferralDialogOpen}
-        onOpenChange={setIsReferralDialogOpen}
-        referralCode={userProfile?.referralCode}
-      />
       {trialLimitReached && (
         <Card className="mb-6 border-destructive bg-destructive/5 text-destructive-foreground">
           <CardHeader>
@@ -1074,9 +1068,7 @@ function DashboardContent() {
                  ) : (
                     <div className="text-sm text-muted-foreground">
                        You have 0 improvement credits.
-                       <Button variant="link" className="p-1 h-auto" onClick={() => setIsReferralDialogOpen(true)}>
-                         Get more credits
-                       </Button>
+                       <CreditsButton />
                     </div>
                  )}
                   <div className="w-full space-y-2">
@@ -1187,10 +1179,8 @@ function DashboardContent() {
                         </CardFooter>
                      ) : (
                       <CardFooter className="border-t pt-4 text-center text-sm text-muted-foreground">
-                        You have 0 improvement credits.{' '}
-                        <Button variant="link" className="p-1 h-auto" onClick={() => setIsReferralDialogOpen(true)}>
-                            Get more credits
-                        </Button>
+                        You have 0 improvement credits.
+                        <CreditsButton />
                       </CardFooter>
                     )}
                 </Card>
@@ -1328,4 +1318,3 @@ export default function DashboardPage() {
     
 
     
-
