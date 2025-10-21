@@ -68,8 +68,9 @@ async function awardReferralCredits(referralCode: string, newUserName: string | 
 /**
  * Handles subscription creation or update events from Stripe and updates the corresponding user document in Firestore.
  * @param subscription - The Stripe subscription object.
+ * @param event - The original Stripe event object.
  */
-async function handleSubscriptionChange(subscription: Stripe.Subscription) {
+async function handleSubscriptionChange(subscription: Stripe.Subscription, event: Stripe.Event) {
     const stripeCustomerId = subscription.customer as string;
     const userDocSnapshot = await findUserByStripeCustomerId(stripeCustomerId);
 
@@ -88,9 +89,11 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
 
     const price = subscription.items.data[0]?.price;
     const newInterval = price?.recurring?.interval as 'month' | 'year' | undefined;
-
     const previousStatus = userData?.subscriptionStatus;
-    const previousInterval = userData?.subscriptionInterval;
+    
+    // --- Start of Corrected Logic ---
+    const previousAttributes = (event.data as any).previous_attributes;
+    const previousInterval = previousAttributes?.items?.data[0]?.price?.recurring?.interval;
 
     const subscriptionData: { [key: string]: any } = {
         subscriptionId: subscription.id,
@@ -109,7 +112,8 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
 
     const isNewTrial = newStatus === 'trialing' && previousStatus !== 'trialing';
     const isBecomingActive = newStatus === 'active' && previousStatus !== 'active';
-    const isUpgradingToYearly = newStatus === 'active' && previousStatus === 'active' && newInterval === 'year' && previousInterval === 'month';
+    const isUpgradingToYearly = newStatus === 'active' && newInterval === 'year' && previousInterval === 'month';
+    // --- End of Corrected Logic ---
     
 
     if (isNewTrial) {
@@ -192,7 +196,7 @@ export async function POST(req: Request) {
                     const subscription = await stripe.subscriptions.retrieve(session.subscription as string, {
                         expand: ['items.data.price'],
                     });
-                    await handleSubscriptionChange(subscription);
+                    await handleSubscriptionChange(subscription, event);
                 }
                 break;
             
@@ -202,7 +206,7 @@ export async function POST(req: Request) {
                 const expandedSubscription = await stripe.subscriptions.retrieve(subscriptionUpdated.id, {
                     expand: ['items.data.price'],
                 });
-                await handleSubscriptionChange(expandedSubscription);
+                await handleSubscriptionChange(expandedSubscription, event);
                 break;
 
             case 'customer.subscription.deleted':
