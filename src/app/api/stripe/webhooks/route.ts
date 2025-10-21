@@ -1,3 +1,4 @@
+
 'use server';
 
 import { stripe } from '@/lib/stripe/config';
@@ -67,6 +68,25 @@ async function awardReferralCredits(referralCode: string, newUserName: string | 
       console.error('Error awarding referral credits:', error);
     }
 }
+
+async function handleSubscriptionUpgrade(userDocRef: FirebaseFirestore.DocumentReference<FirebaseFirestore.DocumentData>) {
+    const userData = (await userDocRef.get()).data();
+    if (!userData || userData.upgradeBonusGiven) {
+        console.log(`Skipping upgrade bonus for ${userDocRef.id}, already given or user data missing.`);
+        return;
+    }
+
+    const creditsToAdd = 100;
+    const reason = 'Upgraded to Pro Yearly';
+    
+    await userDocRef.update({
+        proposalCredits: FieldValue.increment(creditsToAdd),
+        upgradeBonusGiven: true
+    });
+    await logCreditHistory(userDocRef.id, creditsToAdd, reason);
+    console.log(`Applied +100 upgrade credits for ${userDocRef.id}`);
+}
+
 
 /**
  * Handles subscription creation or update events from Stripe and updates the corresponding user document in Firestore.
@@ -211,11 +231,24 @@ export async function POST(req: Request) {
                     expand: ['items.data.price'],
                 });
                 
-                // Reliably detect upgrade by comparing previous attributes from the event
-                const oldInterval = event.data.previous_attributes?.items?.data?.[0]?.price?.recurring?.interval;
-                const newInterval = expandedSubscription.items.data[0].price?.recurring?.interval;
-                const isUpgradingToYearly = oldInterval === 'month' && newInterval === 'year';
+                let isUpgradingToYearly = false;
+                const previousAttributes = event.data.previous_attributes;
 
+                if (previousAttributes && previousAttributes.items) {
+                    const newInterval = expandedSubscription.items.data[0].price?.recurring?.interval;
+                    // This is a more complex check, but it's necessary because the structure of previous_attributes is not guaranteed.
+                    // We check if the old plan's interval was 'month' and the new one is 'year'.
+                    // Note: This simplified check assumes a single subscription item.
+                    const oldPriceId = previousAttributes.items.data?.[0].price.id;
+                    if (oldPriceId) {
+                        const oldPrice = await stripe.prices.retrieve(oldPriceId);
+                        const oldInterval = oldPrice.recurring?.interval;
+                        if (oldInterval === 'month' && newInterval === 'year') {
+                            isUpgradingToYearly = true;
+                        }
+                    }
+                }
+                
                 await handleSubscriptionChange(expandedSubscription, isUpgradingToYearly);
                 break;
 
@@ -251,3 +284,4 @@ export async function POST(req: Request) {
 
     return new NextResponse(JSON.stringify({ received: true }), { status: 200 });
 }
+
