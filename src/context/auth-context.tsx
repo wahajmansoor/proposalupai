@@ -25,6 +25,7 @@ interface UserProfile {
   proposalCredits?: number;
   referredBy?: string;
   lastPrice?: number;
+  upgradeBonusGiven?: boolean;
 }
 
 interface AuthContextType {
@@ -37,48 +38,11 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>({ user: null, userProfile: null, loading: true, handleLogout: async () => {}, creditChange: 0 });
 
-const LogoutScreen = () => {
-  const router = useRouter();
-  const [isLoggedOut, setIsLoggedOut] = useState(false);
-
-  useEffect(() => {
-    // After 2 seconds, update the state to show the logged-out message
-    const timer = setTimeout(() => {
-      setIsLoggedOut(true);
-    }, 2000);
-
-    return () => clearTimeout(timer);
-  }, []);
-
-  useEffect(() => {
-    if (isLoggedOut) {
-      // After showing the message, redirect to login
-      const redirectTimer = setTimeout(() => {
-        router.push('/login');
-      }, 1500);
-      return () => clearTimeout(redirectTimer);
-    }
-  }, [isLoggedOut, router]);
-
-  return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background">
-      <ProposalUpLogos className="h-24 w-24 text-primary" />
-      <h1 className="mt-6 text-2xl font-semibold">
-        {isLoggedOut ? "Successfully Logged Out" : "Signing you out..."}
-      </h1>
-      <p className="text-muted-foreground mt-2 mb-6">
-        {isLoggedOut ? "Redirecting to the login page..." : "Please wait a moment."}
-      </p>
-    </div>
-  );
-};
-
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const router = useRouter();
   
   const [creditChange, setCreditChange] = useState(0);
   const previousCreditsRef = useRef<number | undefined>(undefined);
@@ -87,7 +51,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       if (user) {
-        setIsLoggingOut(false); // Reset logout state if user logs in
         const userRef = doc(db, 'users', user.uid);
         const unsubscribeSnapshot = onSnapshot(userRef, (docSnap) => {
           if (docSnap.exists()) {
@@ -133,14 +96,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const handleLogout = async () => {
-    setIsLoggingOut(true);
     await fetch('/api/auth/session', { method: 'DELETE' });
     await signOut(auth);
+    router.push('/login');
   };
-
-  if (isLoggingOut) {
-    return <LogoutScreen />;
-  }
 
   return (
     <AuthContext.Provider value={{ user, userProfile, loading, handleLogout, creditChange }}>
