@@ -94,18 +94,23 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
         subscriptionData.lastPrice = price.unit_amount / 100;
     }
 
+    // This is a new trial subscription
     const isNewTrial = newStatus === 'trialing' && previousStatus !== 'trialing';
-    if (isNewTrial && userData?.referredBy) {
-        await awardReferralCredits(userData.referredBy);
-        // We can remove the referredBy field after awarding credits to prevent double-awarding
-        subscriptionData.referredBy = FieldValue.delete();
+    if (isNewTrial) {
+        // Check if this user was referred by someone
+        if (userData?.referredBy) {
+            // Award credits to the referrer
+            await awardReferralCredits(userData.referredBy);
+            // Award 5 credits to the new user for starting a trial via referral
+            subscriptionData.proposalCredits = FieldValue.increment(5);
+            // We can remove the referredBy field after awarding credits to prevent double-awarding
+            subscriptionData.referredBy = FieldValue.delete();
+        } else {
+            // If not referred, they still get some starting credits for trial
+             subscriptionData.proposalCredits = FieldValue.increment(3);
+        }
     }
 
-
-    // SCENARIO 1: User activates trial for the first time
-    if (newStatus === 'trialing' && previousStatus !== 'trialing') {
-        subscriptionData.proposalCredits = FieldValue.increment(3);
-    }
 
     // SCENARIO 2: User activates a paid plan for the first time (e.g., trial ends or direct purchase)
     const isNewActivation = newStatus === 'active' && previousStatus !== 'active';

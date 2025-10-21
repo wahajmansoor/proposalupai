@@ -123,12 +123,11 @@ export async function GET(req: NextRequest) {
             subscriptionStatus: null,
             country: country,
             referralCode: userRecord.uid.substring(0, 8), // Generate and store referral code
-            proposalCredits: 0, // Initial credits for new users
+            proposalCredits: 0, // Initial credits for new users is 0
         };
         
         if (referralCode) {
           userData.referredBy = referralCode;
-          userData.proposalCredits = 5; // Award 5 credits to the new user
         }
         
         if (picture) {
