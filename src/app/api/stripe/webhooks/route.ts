@@ -202,22 +202,30 @@ export async function POST(req: Request) {
                 await handleSubscriptionChange(expandedSubCreated, false);
                 break;
 
-            case 'customer.subscription.updated':
+            case 'customer.subscription.updated': {
                 const subscriptionUpdated = event.data.object as Stripe.Subscription;
                 const expandedSubUpdated = await stripe.subscriptions.retrieve(subscriptionUpdated.id, {
                     expand: ['items.data.price'],
                 });
                 
-                // Reliably detect upgrade via previous_attributes in the event data
-                const previousAttributes = (event.data as any).previous_attributes;
-                const oldInterval = previousAttributes?.items?.data?.[0]?.price?.recurring?.interval;
+                const previousAttributes = (event.data as any).previous_attributes || {};
+                const oldInterval =
+                    previousAttributes?.items?.data?.[0]?.price?.recurring?.interval ||
+                    previousAttributes?.items?.data?.[0]?.plan?.interval ||
+                    previousAttributes?.price?.recurring?.interval;
                 const newInterval = expandedSubUpdated.items.data[0].price?.recurring?.interval;
-
-                const isUpgradingToYearly = oldInterval === 'month' && newInterval === 'year' && subscriptionUpdated.status === 'active';
+                
+                console.log('Old interval:', oldInterval, 'New interval:', newInterval);
+                
+                const isUpgradingToYearly =
+                    oldInterval === 'month' &&
+                    newInterval === 'year' &&
+                    subscriptionUpdated.status === 'active';
                 
                 await handleSubscriptionChange(expandedSubUpdated, isUpgradingToYearly);
                 break;
-
+            }
+                  
             case 'customer.subscription.deleted':
                 const deletedSubscription = event.data.object as Stripe.Subscription;
                 const stripeCustomerId = deletedSubscription.customer as string;
