@@ -105,7 +105,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
        <div className="flex flex-col items-center justify-center min-h-screen bg-background">
         <ProposalUpLogos className="h-24 w-24 text-primary" />
         <h1 className="mt-6 text-2xl font-semibold">Signing you out</h1>
-        <p className="text-muted-foreground mt-2">You have been successfully logged out.</p>
+        <p className="text-muted-foreground mt-2 mb-6">You have been successfully logged out.</p>
         <Button onClick={() => window.location.href = '/login'}>
           Return to Login
         </Button>
