@@ -94,27 +94,20 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
         subscriptionData.lastPrice = price.unit_amount / 100;
     }
 
-    // This is a new trial subscription
-    const isNewTrial = newStatus === 'trialing' && previousStatus !== 'trialing';
-    if (isNewTrial) {
+    // SCENARIO 1: A user activates a paid plan for the first time (e.g., trial ends and converts, or direct purchase)
+    const isNewActivation = newStatus === 'active' && previousStatus !== 'active';
+    if (isNewActivation) {
         // Check if this user was referred by someone
         if (userData?.referredBy) {
-            // Award credits to the referrer
+            // Award 5 credits to the referrer
             await awardReferralCredits(userData.referredBy);
-            // Award 5 credits to the new user for starting a trial via referral
+            // Award 5 credits to the new user for converting
             subscriptionData.proposalCredits = FieldValue.increment(5);
             // We can remove the referredBy field after awarding credits to prevent double-awarding
             subscriptionData.referredBy = FieldValue.delete();
-        } else {
-            // If not referred, they still get some starting credits for trial
-             subscriptionData.proposalCredits = FieldValue.increment(3);
         }
-    }
 
-
-    // SCENARIO 2: User activates a paid plan for the first time (e.g., trial ends or direct purchase)
-    const isNewActivation = newStatus === 'active' && previousStatus !== 'active';
-    if (isNewActivation) {
+        // Grant credits based on the plan they activated
         if (newInterval === 'year') {
             subscriptionData.proposalCredits = FieldValue.increment(100);
         } else if (newInterval === 'month') {
@@ -122,7 +115,7 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription) {
         }
     }
 
-    // SCENARIO 3: User upgrades from active monthly to active yearly
+    // SCENARIO 2: User upgrades from active monthly to active yearly
     const isUpgrade = previousStatus === 'active' && previousInterval === 'month' && newStatus === 'active' && newInterval === 'year';
     if (isUpgrade) {
         subscriptionData.proposalCredits = FieldValue.increment(100);
