@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ProposalUpLogos, GoogleIcon } from '@/components/icons';
+import { ProposalUpLogos, GoogleIcon, ProposalUpLogoLight } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, XCircle, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { getGoogleAuthUrl } from '@/app/lib/actions';
@@ -304,7 +304,7 @@ function SignupForm() {
           <BgPattern />
           <div className="flex flex-col items-center text-center z-10">
             <Link href="/" className="mb-4">
-              <ProposalUpLogos className="h-32 w-32 text-white" />
+              <ProposalUpLogoLight className="h-32 w-32 text-white" />
             </Link>
             <h2 className="text-3xl font-bold mb-2">Proposal Up</h2>
             <p className="text-lg text-white/80 max-w-md">
