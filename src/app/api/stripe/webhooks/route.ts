@@ -210,7 +210,7 @@ export async function POST(req: Request) {
                 });
                 
                 const previousAttributes = event.data.previous_attributes || {};
-                const oldInterval = previousAttributes?.items?.data?.[0]?.price?.recurring?.interval;
+                const oldInterval = (previousAttributes as any)?.items?.data?.[0]?.plan?.interval;
                 const newInterval = expandedSubUpdated.items.data[0].price?.recurring?.interval;
                 
                 const isUpgradingToYearly =

@@ -33,6 +33,7 @@ export async function incrementProposalCount(userId: string): Promise<void> {
   }
 }
 
+
 /**
  * Decrements the proposal credits for a given user.
  * @param userId - The ID of the user.
