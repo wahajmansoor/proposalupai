@@ -2,12 +2,12 @@
 'use server';
 
 import { stripe } from '@/lib/stripe/config';
-import { getFirebaseAdmin } from '@/lib/firebase/admin';
 import { headers } from 'next/headers';
 import type Stripe from 'stripe';
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
+import { getFirebaseAdmin } from '@/lib/firebase/admin';
 import { handleNewTrial, handlePlanActivation, handlePlanUpgrade } from '@/lib/firebase/credits';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
