@@ -333,7 +333,7 @@ const initialProfileSchema = z.object({
 export async function createInitialUserProfile(input: z.infer<typeof initialProfileSchema>): Promise<{ success: boolean; error?: string }> {
   try {
     if (!adminAuth || !adminDb) {
-      throw new Error("Server is not configured for authentication.");
+      return { success: false, error: "Server is not configured for authentication. Please contact support." };
     }
     
     const validatedFields = initialProfileSchema.safeParse(input);
@@ -392,13 +392,7 @@ export async function createInitialUserProfile(input: z.infer<typeof initialProf
 
   } catch (error: any) {
     console.error("Error creating initial user profile:", error);
-    
-    // Check if the error is the specific one we're looking for
-    if (error.message.includes("Server is not configured for authentication")) {
-        return { success: false, error: error.message };
-    }
-    
-    return { success: false, error: "Failed to create user profile on the server." };
+    return { success: false, error: "Failed to create user profile on the server. Please try again." };
   }
 }
 

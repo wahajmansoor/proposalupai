@@ -3,16 +3,13 @@ import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getAuth, Auth } from 'firebase-admin/auth';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 
-let app: App;
-let adminAuth: Auth;
-let adminDb: Firestore;
+let app: App | undefined;
+let adminAuth: Auth | undefined;
+let adminDb: Firestore | undefined;
 
 const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-if (!serviceAccountString || serviceAccountString === 'your_firebase_service_account_key_here') {
-  console.error('FIREBASE_SERVICE_ACCOUNT_KEY is not set or is a placeholder. Firebase Admin features will be disabled.');
-}
 
-if (!getApps().length && serviceAccountString && serviceAccountString !== 'your_firebase_service_account_key_here') {
+if (getApps().length === 0 && serviceAccountString && serviceAccountString !== 'your_firebase_service_account_key_here') {
   try {
     const serviceAccount = JSON.parse(serviceAccountString);
     
@@ -24,22 +21,22 @@ if (!getApps().length && serviceAccountString && serviceAccountString !== 'your_
     app = initializeApp({
       credential: cert(serviceAccount),
     });
+
+    adminAuth = getAuth(app);
+    adminDb = getFirestore(app);
+
   } catch (error: any) {
-    console.error('Firebase Admin SDK initialization failed:', error);
-    throw new Error(
-      'Could not initialize Firebase Admin SDK. Verify the FIREBASE_SERVICE_ACCOUNT_KEY.'
-    );
+    console.error('Firebase Admin SDK initialization failed:', error.message);
+    console.error('Please verify the FIREBASE_SERVICE_ACCOUNT_KEY in your environment variables. Admin features will be disabled.');
   }
 } else if (getApps().length > 0) {
   app = getApps()[0];
-}
-
-// @ts-ignore
-if (app) {
-    // @ts-ignore
+  if (app) {
     adminAuth = getAuth(app);
-    // @ts-ignore
     adminDb = getFirestore(app);
+  }
+} else {
+    console.warn('FIREBASE_SERVICE_ACCOUNT_KEY is not set or is a placeholder. Firebase Admin features will be disabled.');
 }
 
 
