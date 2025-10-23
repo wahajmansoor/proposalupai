@@ -7,7 +7,7 @@ import { headers } from 'next/headers';
 import type Stripe from 'stripe';
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, type Firestore } from 'firebase-admin/firestore';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -16,13 +16,12 @@ const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
  * @param stripeCustomerId - The Stripe customer ID.
  * @returns The user's document snapshot or null if not found.
  */
-async function findUserByStripeCustomerId(stripeCustomerId: string) {
-    const { adminDb } = await getFirebaseAdmin();
+async function findUserByStripeCustomerId(db: Firestore, stripeCustomerId: string) {
     if (!stripeCustomerId) {
         console.warn(`Webhook Warning: Stripe customer ID is missing.`);
         return null;
     }
-    const userQuery = await adminDb.collection('users').where('stripeCustomerId', '==', stripeCustomerId).limit(1).get();
+    const userQuery = await db.collection('users').where('stripeCustomerId', '==', stripeCustomerId).limit(1).get();
     if (userQuery.empty) {
         console.warn(`Webhook Warning: No user found with Stripe customer ID ${stripeCustomerId}`);
         return null;
@@ -30,11 +29,10 @@ async function findUserByStripeCustomerId(stripeCustomerId: string) {
     return userQuery.docs[0];
 }
 
-async function logCreditHistory(userId: string, amount: number, reason: string) {
-    const { adminDb } = await getFirebaseAdmin();
+async function logCreditHistory(db: Firestore, userId: string, amount: number, reason: string) {
     if (!userId || !amount || !reason) return;
     try {
-        await adminDb.collection('users').doc(userId).collection('creditHistory').add({
+        await db.collection('users').doc(userId).collection('creditHistory').add({
             amount,
             reason,
             createdAt: FieldValue.serverTimestamp(),
@@ -44,12 +42,11 @@ async function logCreditHistory(userId: string, amount: number, reason: string) 
     }
 }
 
-async function awardReferralCredits(referralCode: string, newUserName: string | null) {
-    const { adminDb } = await getFirebaseAdmin();
+async function awardReferralCredits(db: Firestore, referralCode: string, newUserName: string | null) {
     if (!referralCode) return;
   
     try {
-      const usersRef = adminDb.collection('users');
+      const usersRef = db.collection('users');
       const snapshot = await usersRef.where('referralCode', '==', referralCode).limit(1).get();
   
       if (!snapshot.empty) {
@@ -58,7 +55,7 @@ async function awardReferralCredits(referralCode: string, newUserName: string | 
         await referringUserDoc.ref.update({
           proposalCredits: FieldValue.increment(5)
         });
-        await logCreditHistory(referringUserDoc.id, 5, `Referral bonus for ${referredFriendName} subscribing`);
+        await logCreditHistory(db, referringUserDoc.id, 5, `Referral bonus for ${referredFriendName} subscribing`);
         console.log(`Awarded 5 credits to user ${referringUserDoc.id} for successful referral.`);
       } else {
           console.warn(`Attempted to award credits for non-existent referral code: "${referralCode}"`);
@@ -73,9 +70,9 @@ async function awardReferralCredits(referralCode: string, newUserName: string | 
  * @param subscription - The Stripe subscription object.
  * @param isUpgradingToYearly - A flag to indicate if the user is upgrading from monthly to yearly.
  */
-async function handleSubscriptionChange(subscription: Stripe.Subscription, isUpgradingToYearly = false) {
+async function handleSubscriptionChange(db: Firestore, subscription: Stripe.Subscription, isUpgradingToYearly = false) {
     const stripeCustomerId = subscription.customer as string;
-    const userDocSnapshot = await findUserByStripeCustomerId(stripeCustomerId);
+    const userDocSnapshot = await findUserByStripeCustomerId(db, stripeCustomerId);
 
     if (!userDocSnapshot) {
         console.warn(`No user found for Stripe customer ID: ${stripeCustomerId}. Skipping update.`);
@@ -121,7 +118,7 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, isUpg
         }
         
         subscriptionData.proposalCredits = FieldValue.increment(creditsToAdd);
-        await logCreditHistory(userDocRef.id, creditsToAdd, reason);
+        await logCreditHistory(db, userDocRef.id, creditsToAdd, reason);
     }
     
     // Scenario: A subscription is becoming active for the first time (from trial or direct purchase)
@@ -140,13 +137,13 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, isUpg
         
         // Award the referrer only when the new user becomes a paying customer
         if (userData?.referredBy) {
-            await awardReferralCredits(userData.referredBy, userData.displayName);
+            await awardReferralCredits(db, userData.referredBy, userData.displayName);
             subscriptionData.referredBy = FieldValue.delete(); // Remove field after awarding
         }
 
         if (creditsToAdd > 0) {
             subscriptionData.proposalCredits = FieldValue.increment(creditsToAdd);
-            await logCreditHistory(userDocRef.id, creditsToAdd, reason);
+            await logCreditHistory(db, userDocRef.id, creditsToAdd, reason);
         }
     }
 
@@ -156,7 +153,7 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, isUpg
         const reason = 'Upgraded to Pro Yearly';
         subscriptionData.proposalCredits = FieldValue.increment(creditsToAdd);
         subscriptionData.upgradeBonusGiven = true; // Flag to prevent awarding again
-        await logCreditHistory(userDocRef.id, creditsToAdd, reason);
+        await logCreditHistory(db, userDocRef.id, creditsToAdd, reason);
     }
 
 
@@ -168,7 +165,8 @@ async function handleSubscriptionChange(subscription: Stripe.Subscription, isUpg
 export async function POST(req: Request) {
     const { adminDb } = await getFirebaseAdmin();
     if (!adminDb) {
-        return new NextResponse('Firebase Admin not initialized', { status: 500 });
+        console.error("Firebase Admin not initialized. Cannot process Stripe webhook.");
+        return new NextResponse('Server is not configured for Firebase Admin. Webhook processing failed.', { status: 500 });
     }
 
     const body = await req.text();
@@ -199,13 +197,13 @@ export async function POST(req: Request) {
                     const subscription = await stripe.subscriptions.retrieve(session.subscription as string, {
                         expand: ['items.data.price'],
                     });
-                    await handleSubscriptionChange(subscription);
+                    await handleSubscriptionChange(adminDb, subscription);
                 }
                 break;
             
             case 'customer.subscription.created':
                 const subscriptionCreated = event.data.object as Stripe.Subscription;
-                await handleSubscriptionChange(subscriptionCreated);
+                await handleSubscriptionChange(adminDb, subscriptionCreated);
                 break;
 
             case 'customer.subscription.updated': {
@@ -216,14 +214,14 @@ export async function POST(req: Request) {
                 
                 const isUpgradingToYearly = oldInterval === 'month' && newInterval === 'year';
 
-                await handleSubscriptionChange(subscriptionUpdated, isUpgradingToYearly);
+                await handleSubscriptionChange(adminDb, subscriptionUpdated, isUpgradingToYearly);
                 break;
             }
                   
             case 'customer.subscription.deleted':
                 const deletedSubscription = event.data.object as Stripe.Subscription;
                 const stripeCustomerId = deletedSubscription.customer as string;
-                const userDoc = await findUserByStripeCustomerId(stripeCustomerId);
+                const userDoc = await findUserByStripeCustomerId(adminDb, stripeCustomerId);
 
                 if (userDoc) {
                     await userDoc.ref.update({
@@ -253,5 +251,3 @@ export async function POST(req: Request) {
 
     return new NextResponse(JSON.stringify({ received: true }), { status: 200 });
 }
-
-    

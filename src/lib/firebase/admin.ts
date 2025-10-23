@@ -17,7 +17,8 @@ export async function getFirebaseAdmin() {
 
   const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
   if (!serviceAccountString || serviceAccountString === 'your_firebase_service_account_key_here') {
-    throw new Error('Could not initialize Firebase Admin SDK. Verify the FIREBASE_SERVICE_ACCOUNT_KEY.');
+    console.warn('Firebase Admin SDK not configured. The FIREBASE_SERVICE_ACCOUNT_KEY environment variable is missing or is a placeholder. Server-side Firebase features will be disabled.');
+    return { app: undefined, adminAuth: undefined, adminDb: undefined };
   }
 
   try {
@@ -36,8 +37,7 @@ export async function getFirebaseAdmin() {
     return { app, adminAuth, adminDb };
   } catch (error: any) {
     console.error('Firebase Admin SDK initialization failed:', error.message);
-    throw new Error('Could not initialize Firebase Admin SDK. Verify the FIREBASE_SERVICE_ACCOUNT_KEY.');
+    // Return undefined instances but don't throw, to prevent app crash
+    return { app: undefined, adminAuth: undefined, adminDb: undefined };
   }
 }
-
-    
