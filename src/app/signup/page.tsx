@@ -13,8 +13,7 @@ import { Loader2, XCircle, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { getGoogleAuthUrl } from '@/app/lib/actions';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
-import { signUpWithEmail } from '@/app/lib/auth-actions';
-import { signInWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { BgPattern } from '@/components/bg-pattern';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -157,20 +156,14 @@ function SignupForm() {
     setIsLoading(true);
 
     try {
-      const storedReferralCode = localStorage.getItem('referralCode') || undefined;
+      // Step 1: Create the user on the client-side
+      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       
-      // Step 1: Create the user via the server action
-      const result = await signUpWithEmail({ fullName, email, password, referralCode: storedReferralCode });
-      
-      if (result.error) {
-        throw new Error(result.error);
-      }
-      
-      // Step 2: Sign the new user in on the client
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const idToken = await userCredential.user.getIdToken();
+      // Step 2: Update the user's profile with their full name
+      await updateProfile(userCredential.user, { displayName: fullName });
 
       // Step 3: Create the session cookie
+      const idToken = await userCredential.user.getIdToken();
       const response = await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -181,15 +174,20 @@ function SignupForm() {
         throw new Error('Failed to create session after signup.');
       }
       
+      // The onAuthStateChanged listener in AuthProvider will handle creating the user doc.
+      
       localStorage.removeItem('referralCode'); // Clear code after successful use
       toast({
         title: 'Success!',
         description: "Account created. Let's get you set up.",
       });
-      router.push('/pricing');
+      router.push('/pricing'); // Redirect to pricing to choose a plan
 
     } catch (error: any) {
-      const errorMessage = error.message || 'An unexpected error occurred.';
+      let errorMessage = 'An unexpected error occurred.';
+       if (error.code === 'auth/email-already-in-use') {
+        errorMessage = 'This email is already in use by another account.';
+      }
       toast({
         title: 'Sign Up Failed',
         description: errorMessage,

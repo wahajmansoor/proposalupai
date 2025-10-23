@@ -4,10 +4,11 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
 import { onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
-import { doc, onSnapshot, setDoc } from 'firebase/firestore';
+import { doc, onSnapshot, getDoc } from 'firebase/firestore';
 import { ProposalUpLogos } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
+import { createStripeCustomerAndUserDoc } from '@/lib/stripe-actions';
 
 interface UserProfile {
   uid: string;
@@ -52,6 +53,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(user);
       if (user) {
         const userRef = doc(db, 'users', user.uid);
+
+        // Check once if the document exists. If not, create it.
+        getDoc(userRef).then(docSnap => {
+          if (!docSnap.exists()) {
+            // New user, create their Stripe customer and Firestore doc
+            console.log("New user detected, creating profile document...");
+            const storedReferralCode = localStorage.getItem('referralCode');
+            createStripeCustomerAndUserDoc({
+              uid: user.uid,
+              email: user.email!,
+              displayName: user.displayName,
+              photoURL: user.photoURL,
+              referralCode: storedReferralCode,
+            }).then(result => {
+              if (result.error) {
+                console.error("Failed to create user profile on server:", result.error);
+              } else {
+                console.log("User profile document created successfully.");
+              }
+            });
+          }
+        });
+
+        // Set up the real-time listener
         const unsubscribeSnapshot = onSnapshot(userRef, (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
@@ -74,8 +99,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
             setUserProfile(profile);
           } else {
-            setUserProfile(null);
-            previousCreditsRef.current = undefined;
+            // Document doesn't exist yet, it will be created shortly.
+            // Don't set profile to null here immediately, wait for creation.
           }
           setLoading(false);
         }, (error) => {
