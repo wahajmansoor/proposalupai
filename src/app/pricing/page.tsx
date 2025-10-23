@@ -90,7 +90,7 @@ export default function PricingPage() {
     }
   }, [isYearlyActive]);
 
-  const canShowCoupon = !!userProfile?.subscriptionStatus;
+  const canShowCoupon = userProfile !== null;
 
 
   const handleCouponValidation = async () => {
@@ -125,7 +125,7 @@ export default function PricingPage() {
 
   const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!user) {
+    if (!user || !userProfile) {
         toast({ title: "Not Authenticated", description: "Please log in to subscribe.", variant: "destructive" });
         router.push('/login');
         return;
@@ -134,6 +134,12 @@ export default function PricingPage() {
     setIsSubmitting(true);
     
     const formData = new FormData(event.currentTarget);
+    formData.append('firebaseUid', user.uid);
+    formData.append('stripeCustomerId', userProfile.stripeCustomerId || '');
+    formData.append('subscriptionStatus', userProfile.subscriptionStatus || 'null');
+    formData.append('subscriptionId', userProfile.subscriptionId || '');
+    formData.append('currentInterval', userProfile.subscriptionInterval || '');
+    
     const result = await handlePlanChange(formData);
 
     if (result?.error) {

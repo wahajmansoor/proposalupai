@@ -3,12 +3,9 @@
 
 import { stripe } from '@/lib/stripe/config';
 import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
-import { getCurrentUser } from '@/lib/firebase/server-auth';
-import { z } from 'zod';
-import type Stripe from 'stripe';
 import { revalidatePath } from 'next/cache';
 import { getFirebaseAdmin } from '@/lib/firebase/admin';
+import type Stripe from 'stripe';
 
 async function createCheckoutSession(
     firebaseUid: string,
@@ -65,31 +62,19 @@ export async function handlePlanChange(formData: FormData): Promise<{
     error?: string;
     redirectUrl?: string;
 }> {
-    let currentUser;
-    try {
-        currentUser = await getCurrentUser();
-    } catch (error: any) {
-        console.error("Authentication check failed:", error.message);
-        return { error: error.message };
-    }
-
-    if (!currentUser || !currentUser.userDoc) {
-        return { redirectUrl: '/login' };
-    }
-    
     const { adminDb } = await getFirebaseAdmin();
-    if (!adminDb) {
-        return { error: "Database service is not configured on the server." };
-    }
     
+    // Get all necessary data from the form data
     let interval = formData.get('interval') as 'monthly' | 'yearly' | null;
     const coupon = formData.get('coupon') as string | null;
+    const firebaseUid = formData.get('firebaseUid') as string | null;
+    const stripeCustomerId = formData.get('stripeCustomerId') as string | null;
+    const subscriptionStatus = formData.get('subscriptionStatus') as string | null;
+    const subscriptionId = formData.get('subscriptionId') as string | null;
+    const currentInterval = formData.get('currentInterval') as 'month' | 'year' | null;
 
-    const { user, userDoc } = currentUser;
-    const { stripeCustomerId, subscriptionStatus, subscriptionId } = userDoc;
-
-    if (!stripeCustomerId) {
-        return { error: 'Could not find Stripe customer ID. Please contact support.' };
+    if (!firebaseUid || !stripeCustomerId) {
+        return { redirectUrl: '/login' };
     }
     
     if (!interval) {
@@ -113,8 +98,13 @@ export async function handlePlanChange(formData: FormData): Promise<{
 
     try {
         // Scenario 1: New user starting a trial
-        if (!subscriptionStatus) {
-            return await createCheckoutSession(user.uid, stripeCustomerId, priceId, successUrl, cancelUrl, coupon, true);
+        if (!subscriptionStatus || subscriptionStatus === 'null') {
+            return await createCheckoutSession(firebaseUid, stripeCustomerId, priceId, successUrl, cancelUrl, coupon, true);
+        }
+        
+        // The adminDb is only needed for scenarios that update an existing user.
+        if (!adminDb) {
+            return { error: "Database service is not configured on the server. Cannot update subscription." };
         }
 
         // Scenario 2: User is in trial and activating their plan
@@ -131,7 +121,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
             const updatedSubscription = await stripe.subscriptions.update(subscriptionId, updateParams);
             const price = updatedSubscription.items.data[0].price;
             if (price.unit_amount) {
-                const userRef = adminDb.collection('users').doc(user.uid);
+                const userRef = adminDb.collection('users').doc(firebaseUid);
                 await userRef.update({ lastPrice: price.unit_amount / 100 });
             }
             revalidatePath('/pricing');
@@ -139,7 +129,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
         }
         
         // Scenario 3: User is on active monthly and upgrading to yearly
-        if (subscriptionStatus === 'active' && subscriptionId && userDoc.subscriptionInterval === 'month' && interval === 'yearly') {
+        if (subscriptionStatus === 'active' && subscriptionId && currentInterval === 'month' && interval === 'yearly') {
             const subscription = await stripe.subscriptions.retrieve(subscriptionId);
             const updateParams: Stripe.SubscriptionUpdateParams = {
                 items: [{ id: subscription.items.data[0].id, price: priceId }],
@@ -151,7 +141,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
             const updatedSubscription = await stripe.subscriptions.update(subscriptionId, updateParams);
             const price = updatedSubscription.items.data[0].price;
             if (price.unit_amount) {
-                const userRef = adminDb.collection('users').doc(user.uid);
+                const userRef = adminDb.collection('users').doc(firebaseUid);
                 await userRef.update({ lastPrice: price.unit_amount / 100 });
             }
             revalidatePath('/pricing');
@@ -160,13 +150,13 @@ export async function handlePlanChange(formData: FormData): Promise<{
 
         // Scenario 4: User had a canceled or failed sub and is reactivating
         if (subscriptionStatus === 'canceled' || subscriptionStatus === 'unpaid' || subscriptionStatus === 'past_due') {
-            const checkoutResult = await createCheckoutSession(user.uid, stripeCustomerId, priceId, successUrl, cancelUrl, coupon, false);
-            if (checkoutResult.error) {
+            const checkoutResult = await createCheckoutSession(firebaseUid, stripeCustomerId, priceId, successUrl, cancelUrl, coupon, false);
+             if (checkoutResult.error) {
                 return checkoutResult;
             }
             const price = await stripe.prices.retrieve(priceId);
             if (price.unit_amount) {
-                const userRef = adminDb.collection('users').doc(user.uid);
+                const userRef = adminDb.collection('users').doc(firebaseUid);
                 await userRef.update({ lastPrice: price.unit_amount / 100 });
             }
             return checkoutResult;
@@ -188,6 +178,11 @@ export async function handlePlanChange(formData: FormData): Promise<{
 
 
 export async function createCustomerPortalSession(): Promise<{ url?: string; error?: string }> {
+  // This function depends on getting the user from the server session,
+  // so it will correctly fail if the admin SDK is not configured.
+  // We will import this dynamically to avoid breaking the server start.
+  const { getCurrentUser } = await import('@/lib/firebase/server-auth');
+  
   let currentUser;
   try {
     currentUser = await getCurrentUser();
