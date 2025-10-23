@@ -90,24 +90,15 @@ export default function LoginPage() {
     }
     setIsLoading(true);
     try {
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      const idToken = await userCredential.user.getIdToken();
-      
-      const response = await fetch('/api/auth/session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken }),
-      });
-
-      if (!response.ok) {
-          throw new Error('Failed to create session.');
-      }
+      // Client-side sign-in is sufficient. The onAuthStateChanged listener
+      // in the AuthProvider will handle the user state.
+      await signInWithEmailAndPassword(auth, email, password);
       
       toast({ title: 'Login Successful', description: 'Welcome back!' });
       router.push('/dashboard');
 
     } catch (error: any) {
-      let errorMessage = 'Invalid email or password.';
+      let errorMessage = 'An unexpected error occurred.';
       if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
         errorMessage = 'Invalid email or password. Please try again.';
       } else {
