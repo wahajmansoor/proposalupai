@@ -331,20 +331,18 @@ const initialProfileSchema = z.object({
 });
 
 export async function createInitialUserProfile(input: z.infer<typeof initialProfileSchema>): Promise<{ success: boolean; error?: string }> {
-  if (!adminAuth || !adminDb) {
-    const errorMsg = "Server is not configured for authentication.";
-    console.error(errorMsg);
-    return { success: false, error: errorMsg };
-  }
-  
-  const validatedFields = initialProfileSchema.safeParse(input);
-  if (!validatedFields.success) {
-    return { success: false, error: "Invalid input." };
-  }
-
-  const { idToken, displayName, referralCode } = validatedFields.data;
-
   try {
+    if (!adminAuth || !adminDb) {
+      throw new Error("Server is not configured for authentication.");
+    }
+    
+    const validatedFields = initialProfileSchema.safeParse(input);
+    if (!validatedFields.success) {
+      return { success: false, error: "Invalid input." };
+    }
+
+    const { idToken, displayName, referralCode } = validatedFields.data;
+
     const decodedToken = await adminAuth.verifyIdToken(idToken);
     const { uid, email, picture } = decodedToken;
 
@@ -394,6 +392,12 @@ export async function createInitialUserProfile(input: z.infer<typeof initialProf
 
   } catch (error: any) {
     console.error("Error creating initial user profile:", error);
+    
+    // Check if the error is the specific one we're looking for
+    if (error.message.includes("Server is not configured for authentication")) {
+        return { success: false, error: error.message };
+    }
+    
     return { success: false, error: "Failed to create user profile on the server." };
   }
 }
