@@ -115,8 +115,6 @@ export async function handlePlanChange(formData: FormData): Promise<{
             }
             const updatedSubscription = await stripe.subscriptions.update(subscriptionId, updateParams);
             
-            // Try to update Firestore immediately for better UX, but don't fail the whole request if it errors.
-            // The webhook will eventually catch up.
             try {
                 const { adminDb } = await getFirebaseAdmin();
                 if (adminDb) {
@@ -127,11 +125,8 @@ export async function handlePlanChange(formData: FormData): Promise<{
                         lastPrice: newPrice?.unit_amount ? newPrice.unit_amount / 100 : null,
                         updatedAt: FieldValue.serverTimestamp(),
                     });
-                } else {
-                     throw new Error('Database service is not configured on the server. Cannot update subscription immediately.');
                 }
             } catch (dbError: any) {
-                // Log the error but don't return it to the user, as the primary action (Stripe update) was successful.
                 console.error("Non-critical error: Failed to immediately update Firestore after plan activation:", dbError.message);
             }
             
@@ -150,7 +145,22 @@ export async function handlePlanChange(formData: FormData): Promise<{
              if (coupon) {
                 updateParams.promotion_code = coupon;
             }
-            await stripe.subscriptions.update(subscriptionId, updateParams);
+            const updatedSubscription = await stripe.subscriptions.update(subscriptionId, updateParams);
+            
+            try {
+                const { adminDb } = await getFirebaseAdmin();
+                if (adminDb) {
+                    const newPrice = updatedSubscription.items.data[0]?.price;
+                    await adminDb.collection('users').doc(firebaseUid).update({
+                        subscriptionStatus: 'active', // Status remains active
+                        subscriptionInterval: newPrice?.recurring?.interval,
+                        lastPrice: newPrice?.unit_amount ? newPrice.unit_amount / 100 : null,
+                        updatedAt: FieldValue.serverTimestamp(),
+                    });
+                }
+            } catch (dbError: any) {
+                 console.error("Non-critical error: Failed to immediately update Firestore after plan upgrade:", dbError.message);
+            }
 
             revalidatePath('/pricing');
             return { success: true };
