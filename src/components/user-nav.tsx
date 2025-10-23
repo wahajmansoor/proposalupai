@@ -72,7 +72,7 @@ export function UserNav() {
     return name.substring(0, 2).toUpperCase();
   };
   
-  const displayName = user.displayName;
+  const displayName = userProfile?.displayName || user?.displayName;
   const photoURL = user.photoURL;
   const email = user.email;
   const isPremium = userProfile?.subscriptionStatus === 'active';
