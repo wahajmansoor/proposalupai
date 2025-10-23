@@ -1,7 +1,7 @@
 
 'use server';
 
-import type { Firestore, DocumentSnapshot } from 'firebase-admin/firestore';
+import type { Firestore, DocumentData } from 'firebase-admin/firestore';
 import { FieldValue } from 'firebase-admin/firestore';
 
 /**
@@ -64,7 +64,7 @@ async function awardReferralBonusToReferrer(db: Firestore, referralCode: string,
  * @param userData - The new user's Firestore document data.
  * @returns An object with the Firestore update payload.
  */
-export async function handleNewTrial(db: Firestore, userId: string, userData: any) {
+export async function handleNewTrial(db: Firestore, userId: string, userData: DocumentData) {
     let creditsToAdd = 3;
     let reason = '2-Day trial activation';
 
@@ -85,7 +85,7 @@ export async function handleNewTrial(db: Firestore, userId: string, userData: an
  * @param newInterval - The billing interval ('month' or 'year').
  * @returns An object with the Firestore update payload.
  */
-export async function handlePlanActivation(db: Firestore, userId: string, userData: any, newInterval?: 'month' | 'year') {
+export async function handlePlanActivation(db: Firestore, userId: string, userData: DocumentData, newInterval?: 'month' | 'year') {
     let creditsToAdd = 0;
     let reason = '';
     const updatePayload: { [key: string]: any } = {};
@@ -120,7 +120,7 @@ export async function handlePlanActivation(db: Firestore, userId: string, userDa
  * @param userData - The user's Firestore document data.
  * @returns An object with the Firestore update payload.
  */
-export async function handlePlanUpgrade(db: Firestore, userId: string, userData: any) {
+export async function handlePlanUpgrade(db: Firestore, userId: string, userData: DocumentData) {
     const creditsToAdd = 100;
     const reason = 'Upgraded to Pro Yearly';
     

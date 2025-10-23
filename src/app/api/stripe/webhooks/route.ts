@@ -181,6 +181,17 @@ export async function POST(req: Request) {
                 }
                 break;
 
+            case 'customer.subscription.created': {
+                // Often redundant with checkout.session.completed but good for imported subs
+                const subscriptionCreated = event.data.object as Stripe.Subscription;
+                // Avoid double-processing if it was just handled by checkout.completed
+                const userDoc = await findUserByStripeCustomerId(adminDb, subscriptionCreated.customer as string);
+                if (userDoc && userDoc.data()?.subscriptionId !== subscriptionCreated.id) {
+                     await handleSubscriptionChange(adminDb, subscriptionCreated);
+                }
+                break;
+            }
+            
             case 'customer.subscription.updated': {
                 const subscriptionUpdated = event.data.object as Stripe.Subscription;
                 await handleSubscriptionChange(adminDb, subscriptionUpdated);
