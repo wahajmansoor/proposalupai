@@ -25,10 +25,12 @@ export async function getFirebaseAdmin() {
 
   try {
     const serviceAccount = JSON.parse(serviceAccountString);
+    
+    // Vercel might escape newlines, so we need to replace them back.
     if (serviceAccount.private_key) {
       serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
     }
-
+    
     const app = initializeApp({
       credential: cert(serviceAccount),
     });

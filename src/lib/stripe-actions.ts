@@ -105,11 +105,6 @@ export async function handlePlanChange(formData: FormData): Promise<{
 
         // Scenario 2: User is in trial and activating their plan
         if (subscriptionStatus === 'trialing' && subscriptionId) {
-            const { adminDb } = await getFirebaseAdmin();
-            if (!adminDb) {
-                 return { error: 'Database service is not configured on the server. Cannot update subscription.' };
-            }
-
             const subscription = await stripe.subscriptions.retrieve(subscriptionId);
             const updateParams: Stripe.SubscriptionUpdateParams = {
                 items: [{ id: subscription.items.data[0].id, price: priceId }],
@@ -119,20 +114,9 @@ export async function handlePlanChange(formData: FormData): Promise<{
              if (coupon) {
                 updateParams.promotion_code = coupon;
             }
-            const updatedSubscription = await stripe.subscriptions.update(subscriptionId, updateParams);
+            await stripe.subscriptions.update(subscriptionId, updateParams);
             
-            // Immediately update Firestore instead of waiting for the webhook
-            const price = updatedSubscription.items.data[0].price;
-            const userRef = adminDb.collection('users').doc(firebaseUid);
-            const updateData: any = {
-                subscriptionStatus: 'active',
-                subscriptionInterval: price.recurring?.interval || null,
-            };
-            if (price.unit_amount) {
-                updateData.lastPrice = price.unit_amount / 100;
-            }
-            await userRef.update(updateData);
-            
+            // The Stripe webhook will handle the database update. Return success to the client.
             revalidatePath('/pricing');
             revalidatePath('/dashboard');
             return { success: true };
@@ -140,11 +124,6 @@ export async function handlePlanChange(formData: FormData): Promise<{
         
         // Scenario 3: User is on active monthly and upgrading to yearly
         if (subscriptionStatus === 'active' && subscriptionId && currentInterval === 'month' && interval === 'yearly') {
-             const { adminDb } = await getFirebaseAdmin();
-             if (!adminDb) {
-                 return { error: 'Database service is not configured on the server. Cannot update subscription.' };
-             }
-
              const subscription = await stripe.subscriptions.retrieve(subscriptionId);
              const updateParams: Stripe.SubscriptionUpdateParams = {
                 items: [{ id: subscription.items.data[0].id, price: priceId }],
