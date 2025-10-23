@@ -55,6 +55,14 @@ async function handleCheckoutCompleted(db: Firestore, session: Stripe.Checkout.S
         return;
     }
 
+    // Ensure proposalCredits field exists before trying to increment
+    if (userData && typeof userData.proposalCredits !== 'number') {
+        await userDocRef.set({ proposalCredits: 0 }, { merge: true });
+        // Re-fetch data after update
+        const updatedSnapshot = await userDocRef.get();
+        Object.assign(userData, updatedSnapshot.data());
+    }
+
     const subscription = await stripe.subscriptions.retrieve(subscriptionId, { expand: ['items.data.price'] });
     const newInterval = subscription.items.data[0]?.price?.recurring?.interval as 'month' | 'year' | undefined;
     const newStatus = subscription.status;
@@ -110,6 +118,14 @@ async function handleSubscriptionChange(db: Firestore, subscription: Stripe.Subs
     const price = subscription.items.data[0]?.price;
     const newInterval = price?.recurring?.interval as 'month' | 'year' | undefined;
     const previousStatus = userData?.subscriptionStatus;
+
+    // Ensure proposalCredits field exists before trying to increment
+    if (userData && typeof userData.proposalCredits !== 'number') {
+        await userDocRef.set({ proposalCredits: 0 }, { merge: true });
+        // Re-fetch data after update
+        const updatedSnapshot = await userDocRef.get();
+        Object.assign(userData, updatedSnapshot.data());
+    }
 
     const subscriptionData: { [key: string]: any } = {
         subscriptionId: subscription.id,
