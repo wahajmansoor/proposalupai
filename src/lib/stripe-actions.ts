@@ -10,7 +10,6 @@ import type Stripe from 'stripe';
 import { revalidatePath } from 'next/cache';
 import { getFirebaseAdmin } from '@/lib/firebase/admin';
 
-
 async function createCheckoutSession(
     firebaseUid: string,
     stripeCustomerId: string,
@@ -38,7 +37,6 @@ async function createCheckoutSession(
                     firebaseUID: firebaseUid
                 }
             };
-            // This is required to start a trial without a credit card
             sessionParams.payment_method_collection = 'if_required';
         } else {
             sessionParams.subscription_data = {
@@ -67,9 +65,21 @@ export async function handlePlanChange(formData: FormData): Promise<{
     error?: string;
     redirectUrl?: string;
 }> {
-    const currentUser = await getCurrentUser();
+    let currentUser;
+    try {
+        currentUser = await getCurrentUser();
+    } catch (error: any) {
+        console.error("Authentication check failed:", error.message);
+        return { error: error.message };
+    }
+
     if (!currentUser || !currentUser.userDoc) {
         return { redirectUrl: '/login' };
+    }
+    
+    const { adminDb } = await getFirebaseAdmin();
+    if (!adminDb) {
+        return { error: "Database service is not configured on the server." };
     }
     
     let interval = formData.get('interval') as 'monthly' | 'yearly' | null;
@@ -90,7 +100,6 @@ export async function handlePlanChange(formData: FormData): Promise<{
         return { error: 'Invalid billing interval selected.' };
     }
 
-
     const monthlyPriceId = process.env.STRIPE_MONTHLY_PRICE_ID!;
     const yearlyPriceId = process.env.STRIPE_YEARLY_PRICE_ID!;
     const priceId = interval === 'yearly' ? yearlyPriceId : monthlyPriceId;
@@ -110,9 +119,6 @@ export async function handlePlanChange(formData: FormData): Promise<{
 
         // Scenario 2: User is in trial and activating their plan
         if (subscriptionStatus === 'trialing' && subscriptionId) {
-            const { adminDb } = await getFirebaseAdmin();
-            if (!adminDb) return { error: "Server authentication is not configured." };
-
             const subscription = await stripe.subscriptions.retrieve(subscriptionId);
             const updateParams: Stripe.SubscriptionUpdateParams = {
                 items: [{ id: subscription.items.data[0].id, price: priceId }],
@@ -134,14 +140,10 @@ export async function handlePlanChange(formData: FormData): Promise<{
         
         // Scenario 3: User is on active monthly and upgrading to yearly
         if (subscriptionStatus === 'active' && subscriptionId && userDoc.subscriptionInterval === 'month' && interval === 'yearly') {
-            const { adminDb } = await getFirebaseAdmin();
-            if (!adminDb) return { error: "Server authentication is not configured." };
-            
             const subscription = await stripe.subscriptions.retrieve(subscriptionId);
             const updateParams: Stripe.SubscriptionUpdateParams = {
                 items: [{ id: subscription.items.data[0].id, price: priceId }],
                 proration_behavior: 'create_prorations',
-                trial_end: 'now',
             };
             if (coupon) {
                 updateParams.promotion_code = coupon;
@@ -158,11 +160,8 @@ export async function handlePlanChange(formData: FormData): Promise<{
 
         // Scenario 4: User had a canceled or failed sub and is reactivating
         if (subscriptionStatus === 'canceled' || subscriptionStatus === 'unpaid' || subscriptionStatus === 'past_due') {
-            const { adminDb } = await getFirebaseAdmin();
-             if (!adminDb) return { error: "Server authentication is not configured." };
-
             const checkoutResult = await createCheckoutSession(user.uid, stripeCustomerId, priceId, successUrl, cancelUrl, coupon, false);
-             if (checkoutResult.error) {
+            if (checkoutResult.error) {
                 return checkoutResult;
             }
             const price = await stripe.prices.retrieve(priceId);
@@ -189,7 +188,14 @@ export async function handlePlanChange(formData: FormData): Promise<{
 
 
 export async function createCustomerPortalSession(): Promise<{ url?: string; error?: string }> {
-  const currentUser = await getCurrentUser();
+  let currentUser;
+  try {
+    currentUser = await getCurrentUser();
+  } catch (error: any) {
+    console.error("Authentication check failed:", error.message);
+    return { error: error.message };
+  }
+  
   if (!currentUser) {
     return { error: 'User not authenticated. Please log in again.' };
   }

@@ -1,7 +1,7 @@
 
 'use server';
 
-import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { getFirebaseAdmin } from '@/lib/firebase/admin';
 import { cookies } from 'next/headers';
 import type { UserRecord } from 'firebase-admin/auth';
 import type { DocumentData } from 'firebase-admin/firestore';
@@ -15,6 +15,13 @@ export async function getCurrentUser(): Promise<{
   if (!sessionCookie) {
     return null;
   }
+  
+  const { adminAuth, adminDb } = await getFirebaseAdmin();
+
+  if (!adminAuth || !adminDb) {
+    // This is a critical server configuration issue.
+    throw new Error('The server is not configured to verify user sessions. Please check server logs.');
+  }
 
   try {
     const decodedIdToken = await adminAuth.verifySessionCookie(sessionCookie, true);
@@ -25,11 +32,9 @@ export async function getCurrentUser(): Promise<{
     
     let userDocData = userDocSnap.exists ? userDocSnap.data()! : null;
 
-    // Backfill referral code for old users if it doesn't exist.
     if (userDocData && !userDocData.referralCode) {
       const newReferralCode = user.uid.substring(0, 8);
       await userDocRef.update({ referralCode: newReferralCode });
-      // Update the local object to include the new code immediately
       userDocData.referralCode = newReferralCode;
     }
     
@@ -37,7 +42,6 @@ export async function getCurrentUser(): Promise<{
 
   } catch (error) {
     console.error('Error verifying session cookie:', error);
-    // Invalidate the corrupt cookie
     cookies().set('__session', '', { maxAge: 0 });
     return null;
   }
