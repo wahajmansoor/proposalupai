@@ -10,19 +10,70 @@ import type Stripe from 'stripe';
 import { revalidatePath } from 'next/cache';
 import { getFirebaseAdmin } from '@/lib/firebase/admin';
 
+
+async function createCheckoutSession(
+    firebaseUid: string,
+    stripeCustomerId: string,
+    priceId: string,
+    successUrl: string,
+    cancelUrl: string,
+    couponId: string | null,
+    isTrial: boolean = false
+): Promise<{ redirectUrl?: string; error?: string }> {
+    try {
+        const sessionParams: Stripe.Checkout.SessionCreateParams = {
+            customer: stripeCustomerId,
+            client_reference_id: firebaseUid,
+            success_url: successUrl,
+            cancel_url: cancelUrl,
+            mode: 'subscription',
+            line_items: [{ price: priceId, quantity: 1 }],
+            allow_promotion_codes: true,
+        };
+
+        if (isTrial) {
+            sessionParams.subscription_data = {
+                trial_period_days: 2,
+                metadata: {
+                    firebaseUID: firebaseUid
+                }
+            };
+            // This is required to start a trial without a credit card
+            sessionParams.payment_method_collection = 'if_required';
+        } else {
+            sessionParams.subscription_data = {
+                metadata: {
+                    firebaseUID: firebaseUid
+                }
+            };
+        }
+
+        if (couponId) {
+            sessionParams.discounts = [{ promotion_code: couponId }];
+        }
+
+        const session = await stripe.checkout.sessions.create(sessionParams);
+        return { redirectUrl: session.url! };
+
+    } catch (error: any) {
+        console.error("Error creating checkout session:", error);
+        return { error: error.message || 'An unexpected error occurred.' };
+    }
+}
+
+
 export async function handlePlanChange(formData: FormData): Promise<{
     success?: boolean;
     error?: string;
     redirectUrl?: string;
 }> {
-    // Manually get and validate form data
-    let interval = formData.get('interval') as 'monthly' | 'yearly' | null;
-    const coupon = formData.get('coupon') as string | null;
-
     const currentUser = await getCurrentUser();
     if (!currentUser || !currentUser.userDoc) {
         return { redirectUrl: '/login' };
     }
+    
+    let interval = formData.get('interval') as 'monthly' | 'yearly' | null;
+    const coupon = formData.get('coupon') as string | null;
 
     const { user, userDoc } = currentUser;
     const { stripeCustomerId, subscriptionStatus, subscriptionId } = userDoc;
@@ -31,12 +82,10 @@ export async function handlePlanChange(formData: FormData): Promise<{
         return { error: 'Could not find Stripe customer ID. Please contact support.' };
     }
     
-    // If interval isn't specified (e.g., new user trial form), infer it or default it.
     if (!interval) {
-        interval = 'monthly'; // Default for new users
+        interval = 'monthly';
     }
 
-    // Validate the interval manually
     if (interval !== 'monthly' && interval !== 'yearly') {
         return { error: 'Invalid billing interval selected.' };
     }
@@ -56,43 +105,24 @@ export async function handlePlanChange(formData: FormData): Promise<{
     try {
         // Scenario 1: New user starting a trial
         if (!subscriptionStatus) {
-             const checkoutSession = await stripe.checkout.sessions.create({
-                customer: stripeCustomerId,
-                client_reference_id: user.uid,
-                success_url: successUrl,
-                cancel_url: cancelUrl,
-                mode: 'subscription',
-                line_items: [{ price: priceId, quantity: 1 }],
-                subscription_data: {
-                    trial_period_days: 2,
-                    metadata: {
-                        firebaseUID: user.uid,
-                    }
-                },
-             });
-
-            return { redirectUrl: checkoutSession.url! };
+            return await createCheckoutSession(user.uid, stripeCustomerId, priceId, successUrl, cancelUrl, coupon, true);
         }
 
         // Scenario 2: User is in trial and activating their plan
         if (subscriptionStatus === 'trialing' && subscriptionId) {
             const { adminDb } = await getFirebaseAdmin();
-            if (!adminDb) return { error: "Server is not configured for authentication. Please contact support." };
+            if (!adminDb) return { error: "Server authentication is not configured." };
 
             const subscription = await stripe.subscriptions.retrieve(subscriptionId);
             const updateParams: Stripe.SubscriptionUpdateParams = {
                 items: [{ id: subscription.items.data[0].id, price: priceId }],
                 trial_end: 'now',
                 proration_behavior: 'none',
-                metadata: {
-                    firebaseUID: user.uid,
-                }
             };
-             if (coupon) {
+            if (coupon) {
                 updateParams.promotion_code = coupon;
             }
             const updatedSubscription = await stripe.subscriptions.update(subscriptionId, updateParams);
-             // Store the price in Firestore
             const price = updatedSubscription.items.data[0].price;
             if (price.unit_amount) {
                 const userRef = adminDb.collection('users').doc(user.uid);
@@ -105,22 +135,18 @@ export async function handlePlanChange(formData: FormData): Promise<{
         // Scenario 3: User is on active monthly and upgrading to yearly
         if (subscriptionStatus === 'active' && subscriptionId && userDoc.subscriptionInterval === 'month' && interval === 'yearly') {
             const { adminDb } = await getFirebaseAdmin();
-            if (!adminDb) return { error: "Server is not configured for authentication. Please contact support." };
+            if (!adminDb) return { error: "Server authentication is not configured." };
             
-             const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-             const updateParams: Stripe.SubscriptionUpdateParams = {
+            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+            const updateParams: Stripe.SubscriptionUpdateParams = {
                 items: [{ id: subscription.items.data[0].id, price: priceId }],
                 proration_behavior: 'create_prorations',
                 trial_end: 'now',
-                metadata: {
-                    firebaseUID: user.uid,
-                }
             };
-             if (coupon) {
+            if (coupon) {
                 updateParams.promotion_code = coupon;
             }
             const updatedSubscription = await stripe.subscriptions.update(subscriptionId, updateParams);
-             // Store the price in Firestore
             const price = updatedSubscription.items.data[0].price;
             if (price.unit_amount) {
                 const userRef = adminDb.collection('users').doc(user.uid);
@@ -130,29 +156,21 @@ export async function handlePlanChange(formData: FormData): Promise<{
             return { success: true };
         }
 
-        // Scenario 4: User had a canceled/failed sub and is reactivating
-        if ((subscriptionStatus === 'canceled' || subscriptionStatus === 'unpaid' || subscriptionStatus === 'past_due') && stripeCustomerId) {
-            const sessionParams: Stripe.Checkout.SessionCreateParams = {
-                payment_method_types: ['card'],
-                customer: stripeCustomerId,
-                client_reference_id: user.uid,
-                success_url: successUrl,
-                cancel_url: cancelUrl,
-                mode: 'subscription',
-                line_items: [{ price: priceId, quantity: 1 }],
-                allow_promotion_codes: true,
-                subscription_data: {
-                     metadata: {
-                        firebaseUID: user.uid,
-                    }
-                }
-            };
-            if (coupon) {
-                sessionParams.discounts = [{ promotion_code: coupon }];
+        // Scenario 4: User had a canceled or failed sub and is reactivating
+        if (subscriptionStatus === 'canceled' || subscriptionStatus === 'unpaid' || subscriptionStatus === 'past_due') {
+            const { adminDb } = await getFirebaseAdmin();
+             if (!adminDb) return { error: "Server authentication is not configured." };
+
+            const checkoutResult = await createCheckoutSession(user.uid, stripeCustomerId, priceId, successUrl, cancelUrl, coupon, false);
+             if (checkoutResult.error) {
+                return checkoutResult;
             }
-            const checkoutSession = await stripe.checkout.sessions.create(sessionParams);
-            
-            return { redirectUrl: checkoutSession.url! };
+            const price = await stripe.prices.retrieve(priceId);
+            if (price.unit_amount) {
+                const userRef = adminDb.collection('users').doc(user.uid);
+                await userRef.update({ lastPrice: price.unit_amount / 100 });
+            }
+            return checkoutResult;
         }
         
         return { error: 'No valid action could be determined for your subscription state.' };
