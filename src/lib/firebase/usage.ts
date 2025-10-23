@@ -1,7 +1,7 @@
 
 'use server';
 
-import { adminDb } from './admin';
+import { getFirebaseAdmin } from './admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
 /**
@@ -13,6 +13,12 @@ export async function incrementProposalCount(userId: string): Promise<void> {
     throw new Error('User ID is required to increment proposal count.');
   }
 
+  const { adminDb } = await getFirebaseAdmin();
+  if (!adminDb) {
+      console.error("Failed to increment proposal count: Firebase Admin not initialized.");
+      return;
+  }
+
   const userRef = adminDb.collection('users').doc(userId);
 
   try {
@@ -22,13 +28,17 @@ export async function incrementProposalCount(userId: string): Promise<void> {
   } catch (error) {
     console.error(`Failed to increment proposal count for user ${userId}:`, error);
     // If the field doesn't exist, it might throw an error. Let's try setting it.
-    const userDoc = await userRef.get();
-    if (userDoc.exists) {
-        // If the doc exists but the field doesn't, set it to 1
-        await userRef.update({ proposalCount: 1 });
-    } else {
-        // This case should ideally not happen if user is created correctly
-        throw new Error(`User document not found for user ${userId}.`);
+    try {
+        const userDoc = await userRef.get();
+        if (userDoc.exists) {
+            // If the doc exists but the field doesn't, set it to 1
+            await userRef.update({ proposalCount: 1 });
+        } else {
+            // This case should ideally not happen if user is created correctly
+            throw new Error(`User document not found for user ${userId}.`);
+        }
+    } catch (setError) {
+        console.error(`Failed to set proposal count for user ${userId}:`, setError);
     }
   }
 }
@@ -43,6 +53,12 @@ export async function decrementProposalCredits(userId: string): Promise<void> {
       throw new Error('User ID is required to decrement proposal credits.');
     }
   
+    const { adminDb } = await getFirebaseAdmin();
+     if (!adminDb) {
+      console.error("Failed to decrement credits: Firebase Admin not initialized.");
+      return;
+    }
+  
     const userRef = adminDb.collection('users').doc(userId);
   
     try {
@@ -51,17 +67,20 @@ export async function decrementProposalCredits(userId: string): Promise<void> {
       });
     } catch (error) {
       console.error(`Failed to decrement proposal credits for user ${userId}:`, error);
-      const userDoc = await userRef.get();
-      if (userDoc.exists) {
-        // If credits field doesn't exist, something is wrong, but let's set it to 0.
-        const data = userDoc.data();
-        if (data && typeof data.proposalCredits === 'undefined') {
-            await userRef.update({ proposalCredits: 0 });
+      try {
+        const userDoc = await userRef.get();
+        if (userDoc.exists) {
+            const data = userDoc.data();
+            if (data && typeof data.proposalCredits === 'undefined') {
+                await userRef.update({ proposalCredits: 0 });
+            } else {
+                throw new Error(`Could not decrement credits for user ${userId}.`);
+            }
         } else {
-            throw new Error(`Could not decrement credits for user ${userId}.`);
+            throw new Error(`User document not found for user ${userId}.`);
         }
-      } else {
-        throw new Error(`User document not found for user ${userId}.`);
+      } catch (setError) {
+        console.error(`Failed to set proposal credits for user ${userId}:`, setError);
       }
     }
 }
