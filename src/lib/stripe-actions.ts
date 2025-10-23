@@ -73,6 +73,8 @@ export async function handlePlanChange(formData: FormData): Promise<{
     const currentInterval = formData.get('currentInterval') as 'month' | 'year' | null;
 
     if (!firebaseUid || !stripeCustomerId) {
+        // This case might happen if client-side auth state is present but the profile isn't fully loaded yet.
+        // Redirecting to login is a safe fallback.
         return { redirectUrl: '/login' };
     }
     
@@ -97,12 +99,17 @@ export async function handlePlanChange(formData: FormData): Promise<{
 
     try {
         // Scenario 1: New user starting a trial
-        if (!subscriptionStatus || subscriptionStatus === 'null') {
+        if (!subscriptionStatus || subscriptionStatus === 'null' || subscriptionStatus === 'undefined') {
              return await createCheckoutSession(firebaseUid, stripeCustomerId, priceId, successUrl, cancelUrl, coupon, true);
         }
 
         // Scenario 2: User is in trial and activating their plan
         if (subscriptionStatus === 'trialing' && subscriptionId) {
+            const { adminDb } = await getFirebaseAdmin();
+            if (!adminDb) {
+                 return { error: 'Database service is not configured on the server. Cannot update subscription.' };
+            }
+
             const subscription = await stripe.subscriptions.retrieve(subscriptionId);
             const updateParams: Stripe.SubscriptionUpdateParams = {
                 items: [{ id: subscription.items.data[0].id, price: priceId }],
@@ -112,13 +119,32 @@ export async function handlePlanChange(formData: FormData): Promise<{
              if (coupon) {
                 updateParams.promotion_code = coupon;
             }
-            await stripe.subscriptions.update(subscriptionId, updateParams);
+            const updatedSubscription = await stripe.subscriptions.update(subscriptionId, updateParams);
+            
+            // Immediately update Firestore instead of waiting for the webhook
+            const price = updatedSubscription.items.data[0].price;
+            const userRef = adminDb.collection('users').doc(firebaseUid);
+            const updateData: any = {
+                subscriptionStatus: 'active',
+                subscriptionInterval: price.recurring?.interval || null,
+            };
+            if (price.unit_amount) {
+                updateData.lastPrice = price.unit_amount / 100;
+            }
+            await userRef.update(updateData);
+            
             revalidatePath('/pricing');
+            revalidatePath('/dashboard');
             return { success: true };
         }
         
         // Scenario 3: User is on active monthly and upgrading to yearly
         if (subscriptionStatus === 'active' && subscriptionId && currentInterval === 'month' && interval === 'yearly') {
+             const { adminDb } = await getFirebaseAdmin();
+             if (!adminDb) {
+                 return { error: 'Database service is not configured on the server. Cannot update subscription.' };
+             }
+
              const subscription = await stripe.subscriptions.retrieve(subscriptionId);
              const updateParams: Stripe.SubscriptionUpdateParams = {
                 items: [{ id: subscription.items.data[0].id, price: priceId }],
@@ -128,6 +154,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
                 updateParams.promotion_code = coupon;
             }
             await stripe.subscriptions.update(subscriptionId, updateParams);
+
             revalidatePath('/pricing');
             return { success: true };
         }
@@ -154,9 +181,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
 
 
 export async function createCustomerPortalSession(): Promise<{ url?: string; error?: string }> {
-  // This function depends on getting the user from the server session,
-  // so it will correctly fail if the admin SDK is not configured.
-  // We will import this dynamically to avoid breaking the server start.
+  // This function depends on getting the user from the server session.
   const { getCurrentUser } = await import('@/lib/firebase/server-auth');
   
   let currentUser;
