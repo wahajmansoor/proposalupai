@@ -31,14 +31,70 @@ async function findUserByStripeCustomerId(db: Firestore, stripeCustomerId: strin
     return userQuery.docs[0];
 }
 
+/**
+ * Handles the completion of a checkout session. This is the primary event for new subscriptions.
+ * It handles credit allocation for new trials and plan activations.
+ * @param db - The Firestore admin instance.
+ * @param session - The Stripe checkout session object.
+ */
+async function handleCheckoutCompleted(db: Firestore, session: Stripe.Checkout.Session) {
+    const stripeCustomerId = session.customer as string;
+    const userDocSnapshot = await findUserByStripeCustomerId(db, stripeCustomerId);
+
+    if (!userDocSnapshot) {
+        console.warn(`No user found for Stripe customer ID: ${stripeCustomerId} in checkout.session.completed. Skipping credit allocation.`);
+        return;
+    }
+
+    const userDocRef = userDocSnapshot.ref;
+    const userData = userDocSnapshot.data();
+    const subscriptionId = session.subscription as string;
+
+    if (!subscriptionId) {
+        console.warn(`No subscription ID found in checkout session ${session.id}.`);
+        return;
+    }
+
+    const subscription = await stripe.subscriptions.retrieve(subscriptionId, { expand: ['items.data.price'] });
+    const newInterval = subscription.items.data[0]?.price?.recurring?.interval as 'month' | 'year' | undefined;
+    const newStatus = subscription.status;
+    
+    // This is a new subscription. Check if it's a trial or a direct activation.
+    const isNewTrial = newStatus === 'trialing';
+    const isDirectActivation = newStatus === 'active' && (!userData?.subscriptionStatus || userData.subscriptionStatus === 'canceled');
+
+    let creditsPayload = {};
+
+    if (isNewTrial) {
+        Object.assign(creditsPayload, await handleNewTrial(db, userDocRef.id, userData));
+    }
+    
+    if (isDirectActivation) {
+        Object.assign(creditsPayload, await handlePlanActivation(db, userDocRef.id, userData, newInterval));
+    }
+
+    const subscriptionData: { [key: string]: any } = {
+        subscriptionId: subscription.id,
+        subscriptionStatus: newStatus,
+        subscriptionInterval: newInterval,
+        subscriptionCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
+        lastPrice: subscription.items.data[0]?.price?.unit_amount ? subscription.items.data[0].price.unit_amount / 100 : null,
+        updatedAt: FieldValue.serverTimestamp(),
+        ...creditsPayload, // Combine subscription data with credits
+    };
+
+    await userDocRef.update(subscriptionData);
+    console.log(`Successfully processed new subscription from checkout for user ${userDocRef.id}. Status: ${newStatus}`);
+}
+
 
 /**
  * Handles subscription creation or update events from Stripe and updates the corresponding user document in Firestore.
+ * This is primarily for ongoing changes like upgrades, downgrades, or post-trial activations.
  * @param db - The Firestore admin instance.
  * @param subscription - The Stripe subscription object.
- * @param isUpgradingToYearly - A flag to indicate if the user is upgrading from monthly to yearly.
  */
-async function handleSubscriptionChange(db: Firestore, subscription: Stripe.Subscription, isUpgradingToYearly = false) {
+async function handleSubscriptionChange(db: Firestore, subscription: Stripe.Subscription) {
     const stripeCustomerId = subscription.customer as string;
     const userDocSnapshot = await findUserByStripeCustomerId(db, stripeCustomerId);
 
@@ -58,7 +114,7 @@ async function handleSubscriptionChange(db: Firestore, subscription: Stripe.Subs
     const price = subscription.items.data[0]?.price;
     const newInterval = price?.recurring?.interval as 'month' | 'year' | undefined;
     const previousStatus = userData?.subscriptionStatus;
-    
+
     const subscriptionData: { [key: string]: any } = {
         subscriptionId: subscription.id,
         subscriptionStatus: newStatus,
@@ -74,21 +130,15 @@ async function handleSubscriptionChange(db: Firestore, subscription: Stripe.Subs
         subscriptionData.lastPrice = price.unit_amount / 100;
     }
 
-    // Scenario: A new trial is starting
-    const isNewTrial = newStatus === 'trialing' && previousStatus !== 'trialing';
-    if (isNewTrial) {
-        const trialCreditsPayload = await handleNewTrial(db, userDocRef.id, userData);
-        Object.assign(subscriptionData, trialCreditsPayload);
-    }
-    
-    // Scenario: A subscription is becoming active for the first time (from trial or direct purchase)
-    const isBecomingActive = newStatus === 'active' && previousStatus !== 'active';
-    if (isBecomingActive) {
+    // Scenario: A trial subscription becomes active after the trial period
+    const isBecomingActiveFromTrial = newStatus === 'active' && previousStatus === 'trialing';
+    if (isBecomingActiveFromTrial) {
         const activationCreditsPayload = await handlePlanActivation(db, userDocRef.id, userData, newInterval);
         Object.assign(subscriptionData, activationCreditsPayload);
     }
-
+    
     // Scenario: An existing monthly subscriber upgrades to yearly
+    const isUpgradingToYearly = newStatus === 'active' && previousStatus === 'active' && userData?.subscriptionInterval === 'month' && newInterval === 'year';
     if (isUpgradingToYearly && !userData?.upgradeBonusGiven) {
         const upgradeCreditsPayload = await handlePlanUpgrade(db, userDocRef.id, userData);
         Object.assign(subscriptionData, upgradeCreditsPayload);
@@ -130,28 +180,22 @@ export async function POST(req: Request) {
         switch (event.type) {
             case 'checkout.session.completed':
                 const session = event.data.object as Stripe.Checkout.Session;
-                if (session.mode === 'subscription' && session.subscription) {
-                    const subscription = await stripe.subscriptions.retrieve(session.subscription as string, {
-                        expand: ['items.data.price'],
-                    });
-                    await handleSubscriptionChange(adminDb, subscription);
+                if (session.mode === 'subscription') {
+                   await handleCheckoutCompleted(adminDb, session);
                 }
                 break;
             
             case 'customer.subscription.created':
+                // This can sometimes fire along with checkout.session.completed.
+                // We let checkout.session.completed handle the initial creation and credit logic
+                // to avoid race conditions. We can just sync the state here.
                 const subscriptionCreated = event.data.object as Stripe.Subscription;
                 await handleSubscriptionChange(adminDb, subscriptionCreated);
                 break;
 
             case 'customer.subscription.updated': {
                 const subscriptionUpdated = event.data.object as Stripe.Subscription;
-                
-                const oldInterval = event.data.previous_attributes?.items?.data?.[0]?.price?.recurring?.interval;
-                const newInterval = subscriptionUpdated.items.data[0].price?.recurring?.interval;
-                
-                const isUpgradingToYearly = oldInterval === 'month' && newInterval === 'year';
-
-                await handleSubscriptionChange(adminDb, subscriptionUpdated, isUpgradingToYearly);
+                await handleSubscriptionChange(adminDb, subscriptionUpdated);
                 break;
             }
                   
