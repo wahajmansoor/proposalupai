@@ -63,7 +63,7 @@ async function handleCheckoutCompleted(db: Firestore, session: Stripe.Checkout.S
 
     // Scenario: This is a brand new subscription starting a trial.
     const isNewTrial = newStatus === 'trialing';
-    if (isNewTrial) {
+    if (isNewTrial && userData?.subscriptionStatus !== 'trialing') {
         Object.assign(creditsPayload, await handleNewTrial(db, userDocRef.id, userData));
     }
 
@@ -183,12 +183,9 @@ export async function POST(req: Request) {
 
             case 'customer.subscription.created': {
                 // Often redundant with checkout.session.completed but good for imported subs
+                // The main logic is handled in updated to catch trial conversions
                 const subscriptionCreated = event.data.object as Stripe.Subscription;
-                // Avoid double-processing if it was just handled by checkout.completed
-                const userDoc = await findUserByStripeCustomerId(adminDb, subscriptionCreated.customer as string);
-                if (userDoc && userDoc.data()?.subscriptionId !== subscriptionCreated.id) {
-                     await handleSubscriptionChange(adminDb, subscriptionCreated);
-                }
+                await handleSubscriptionChange(adminDb, subscriptionCreated);
                 break;
             }
             
