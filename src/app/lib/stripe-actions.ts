@@ -237,6 +237,7 @@ export async function validateCouponAction(formData: FormData): Promise<{
   }
 }
 
+
 const userDetailsSchema = z.object({
   uid: z.string(),
   email: z.string().email(),
