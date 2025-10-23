@@ -34,6 +34,7 @@ async function findUserByStripeCustomerId(db: Firestore, stripeCustomerId: strin
 
 /**
  * Handles subscription creation or update events from Stripe and updates the corresponding user document in Firestore.
+ * @param db - The Firestore admin instance.
  * @param subscription - The Stripe subscription object.
  * @param isUpgradingToYearly - A flag to indicate if the user is upgrading from monthly to yearly.
  */
@@ -133,13 +134,13 @@ export async function POST(req: Request) {
                     const subscription = await stripe.subscriptions.retrieve(session.subscription as string, {
                         expand: ['items.data.price'],
                     });
-                    await handleSubscriptionChange(db, subscription);
+                    await handleSubscriptionChange(adminDb, subscription);
                 }
                 break;
             
             case 'customer.subscription.created':
                 const subscriptionCreated = event.data.object as Stripe.Subscription;
-                await handleSubscriptionChange(db, subscriptionCreated);
+                await handleSubscriptionChange(adminDb, subscriptionCreated);
                 break;
 
             case 'customer.subscription.updated': {
@@ -150,14 +151,14 @@ export async function POST(req: Request) {
                 
                 const isUpgradingToYearly = oldInterval === 'month' && newInterval === 'year';
 
-                await handleSubscriptionChange(db, subscriptionUpdated, isUpgradingToYearly);
+                await handleSubscriptionChange(adminDb, subscriptionUpdated, isUpgradingToYearly);
                 break;
             }
                   
             case 'customer.subscription.deleted':
                 const deletedSubscription = event.data.object as Stripe.Subscription;
                 const stripeCustomerId = deletedSubscription.customer as string;
-                const userDoc = await findUserByStripeCustomerId(db, stripeCustomerId);
+                const userDoc = await findUserByStripeCustomerId(adminDb, stripeCustomerId);
 
                 if (userDoc) {
                     await userDoc.ref.update({
