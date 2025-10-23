@@ -8,7 +8,7 @@ import { getCurrentUser } from '@/lib/firebase/server-auth';
 import { z } from 'zod';
 import type Stripe from 'stripe';
 import { revalidatePath } from 'next/cache';
-import { adminDb } from '@/lib/firebase/admin';
+import { adminDb, getFirebaseAdmin } from '@/lib/firebase/admin';
 import { getCountryFromIp } from '@/app/lib/location';
 
 async function createCheckoutSession(
@@ -30,23 +30,18 @@ async function createCheckoutSession(
       success_url: successUrl,
       cancel_url: cancelUrl,
       allow_promotion_codes: true,
+      subscription_data: {
+        metadata: {
+            firebaseUID: firebaseUid,
+        }
+      }
     };
 
     if (isTrial) {
-      sessionParams.subscription_data = {
-        trial_period_days: 2,
-        metadata: {
-          firebaseUID: firebaseUid,
-        }
-      };
-      // Do not require payment method for trial
-      sessionParams.payment_method_collection = 'if_required';
-    } else {
-        sessionParams.subscription_data = {
-            metadata: {
-                firebaseUID: firebaseUid,
-            }
-        };
+        sessionParams.subscription_data!.trial_period_days = 2;
+        // Don't require payment method for trial
+        sessionParams.payment_method_collection = 'if_required';
+        sessionParams.payment_method_setup_mode = 'if_required';
     }
     
     if (couponId) {
