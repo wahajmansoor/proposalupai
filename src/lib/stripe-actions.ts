@@ -74,8 +74,6 @@ export async function handlePlanChange(formData: FormData): Promise<{
     const currentInterval = formData.get('currentInterval') as 'month' | 'year' | null;
 
     if (!firebaseUid || !stripeCustomerId) {
-        // This case might happen if client-side auth state is present but the profile isn't fully loaded yet.
-        // Redirecting to login is a safe fallback.
         return { error: "User is not properly authenticated. Please log in again." };
     }
     
@@ -117,21 +115,26 @@ export async function handlePlanChange(formData: FormData): Promise<{
             }
             const updatedSubscription = await stripe.subscriptions.update(subscriptionId, updateParams);
             
-            // Directly update Firestore instead of waiting for webhook
-            const { adminDb } = await getFirebaseAdmin();
-            if (!adminDb) {
-                return { error: 'Database service is not configured on the server. Cannot update subscription.' };
+            // Try to update Firestore immediately for better UX, but don't fail the whole request if it errors.
+            // The webhook will eventually catch up.
+            try {
+                const { adminDb } = await getFirebaseAdmin();
+                if (adminDb) {
+                    const newPrice = updatedSubscription.items.data[0]?.price;
+                    await adminDb.collection('users').doc(firebaseUid).update({
+                        subscriptionStatus: 'active',
+                        subscriptionInterval: newPrice?.recurring?.interval,
+                        lastPrice: newPrice?.unit_amount ? newPrice.unit_amount / 100 : null,
+                        updatedAt: FieldValue.serverTimestamp(),
+                    });
+                } else {
+                     throw new Error('Database service is not configured on the server. Cannot update subscription immediately.');
+                }
+            } catch (dbError: any) {
+                // Log the error but don't return it to the user, as the primary action (Stripe update) was successful.
+                console.error("Non-critical error: Failed to immediately update Firestore after plan activation:", dbError.message);
             }
-
-            const newPrice = updatedSubscription.items.data[0]?.price;
-
-            await adminDb.collection('users').doc(firebaseUid).update({
-                subscriptionStatus: 'active',
-                subscriptionInterval: newPrice?.recurring?.interval,
-                lastPrice: newPrice?.unit_amount ? newPrice.unit_amount / 100 : null,
-                updatedAt: FieldValue.serverTimestamp(),
-            });
-
+            
             revalidatePath('/pricing');
             revalidatePath('/dashboard');
             return { success: true };

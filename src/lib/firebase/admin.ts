@@ -20,11 +20,18 @@ export async function getFirebaseAdmin() {
   const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
   if (!serviceAccountString || serviceAccountString === 'your_firebase_service_account_key_here') {
     console.warn('Firebase Admin SDK not configured. The FIREBASE_SERVICE_ACCOUNT_KEY environment variable is missing or is a placeholder. Server-side Firebase features will be disabled.');
+    // Explicitly return undefined for all properties
     return { app: undefined, adminAuth: undefined, adminDb: undefined };
   }
 
   try {
-    const serviceAccount = JSON.parse(serviceAccountString);
+    let serviceAccount;
+    try {
+      serviceAccount = JSON.parse(serviceAccountString);
+    } catch (e: any) {
+      // Throw a more specific error if JSON parsing fails
+      throw new Error(`Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY. Make sure it's a valid JSON string. Details: ${e.message}`);
+    }
     
     // Vercel might escape newlines, so we need to replace them back.
     if (serviceAccount.private_key) {
@@ -41,7 +48,7 @@ export async function getFirebaseAdmin() {
     return { app, adminAuth, adminDb };
   } catch (error: any) {
     console.error('Firebase Admin SDK initialization failed:', error.message);
-    // Return undefined instances but don't throw, to prevent app crash
-    return { app: undefined, adminAuth: undefined, adminDb: undefined };
+    // Re-throw the error to be caught by the calling function
+    throw new Error(`Firebase Admin SDK initialization failed: ${error.message}`);
   }
 }
