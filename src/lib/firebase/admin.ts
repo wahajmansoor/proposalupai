@@ -37,7 +37,6 @@ try {
   
 } catch (error: any) {
   console.error('Firebase Admin SDK initialization failed:', error);
-  // Do not re-throw the error to prevent app crash
 }
 
 // Export potentially undefined values. Code using these must handle the case where they are not available.

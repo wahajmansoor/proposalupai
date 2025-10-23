@@ -16,6 +16,12 @@ const signUpSchema = z.object({
 });
 
 export async function signUpWithEmail(input: z.infer<typeof signUpSchema>): Promise<{ error?: string }> {
+  // Critical check: Ensure admin SDK is initialized before proceeding.
+  if (!adminAuth || !adminDb) {
+    console.error("Firebase Admin not initialized. Sign-up cannot proceed.");
+    return { error: "Server is not configured for authentication. Please contact support." };
+  }
+
   try {
     const { email, password, fullName, referralCode } = signUpSchema.parse(input);
 
