@@ -1,13 +1,13 @@
 
 'use server';
-import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
+import { initializeApp, getApps, cert, App, ServiceAccount } from 'firebase-admin/app';
 import { getAuth, Auth } from 'firebase-admin/auth';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 
 // This function can be called by any server-side code to ensure
 // the Firebase Admin SDK is initialized before use.
 export async function getFirebaseAdmin() {
-  const existingApp = getApps().find(app => app.name === 'DEFAULT');
+  const existingApp = getApps().find(app => app.name === '[DEFAULT]');
   
   if (existingApp) {
     return { 
@@ -17,27 +17,22 @@ export async function getFirebaseAdmin() {
     };
   }
 
-  const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-  if (!serviceAccountString || serviceAccountString === 'your_firebase_service_account_key_here') {
-    console.warn('Firebase Admin SDK not configured. The FIREBASE_SERVICE_ACCOUNT_KEY environment variable is missing or is a placeholder. Server-side Firebase features will be disabled.');
+  // Construct the service account from individual environment variables
+  const serviceAccount: ServiceAccount = {
+    projectId: process.env.FIREBASE_PROJECT_ID,
+    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
+    // Replace escaped newlines from .env file
+    privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
+  };
+
+  // Check if all necessary service account details are present
+  if (!serviceAccount.projectId || !serviceAccount.clientEmail || !serviceAccount.privateKey) {
+    console.error('Firebase Admin SDK not configured. The FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY environment variables are required. Server-side Firebase features will be disabled.');
     // Explicitly return undefined for all properties
     return { app: undefined, adminAuth: undefined, adminDb: undefined };
   }
 
   try {
-    let serviceAccount;
-    try {
-      serviceAccount = JSON.parse(serviceAccountString);
-    } catch (e: any) {
-      // Throw a more specific error if JSON parsing fails
-      throw new Error(`Failed to parse FIREBASE_SERVICE_ACCOUNT_KEY. Make sure it's a valid JSON string. Details: ${e.message}`);
-    }
-    
-    // Vercel might escape newlines, so we need to replace them back.
-    if (serviceAccount.private_key) {
-      serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
-    }
-    
     const app = initializeApp({
       credential: cert(serviceAccount),
     });
