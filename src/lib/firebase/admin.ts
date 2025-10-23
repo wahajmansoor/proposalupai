@@ -1,39 +1,44 @@
-
 'server-only';
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getAuth, Auth } from 'firebase-admin/auth';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 
-const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-if (!serviceAccountString || serviceAccountString === 'your_firebase_service_account_key_here') {
-  throw new Error('Missing or placeholder FIREBASE_SERVICE_ACCOUNT_KEY environment variable. Please add your service account key to the .env file.');
-}
+let app: App | undefined;
+let adminAuth: Auth | undefined;
+let adminDb: Firestore | undefined;
 
-let app: App;
+try {
+  const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
-if (!getApps().length) {
-  try {
-    const serviceAccount = JSON.parse(serviceAccountString);
-    
-    // Vercel might escape newlines, so we need to replace them back.
-    if (serviceAccount.private_key) {
-      serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+  if (serviceAccountString && serviceAccountString !== 'your_firebase_service_account_key_here') {
+    if (!getApps().length) {
+      const serviceAccount = JSON.parse(serviceAccountString);
+      
+      if (serviceAccount.private_key) {
+        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+      }
+      
+      app = initializeApp({
+        credential: cert(serviceAccount),
+      });
+    } else {
+      app = getApps()[0];
     }
-    
-    app = initializeApp({
-      credential: cert(serviceAccount),
-    });
-  } catch (error: any) {
-    console.error('Firebase Admin SDK initialization failed:', error);
-    throw new Error(
-      'Could not initialize Firebase Admin SDK. Verify the FIREBASE_SERVICE_ACCOUNT_KEY.'
+  } else {
+    console.warn(
+      'FIREBASE_SERVICE_ACCOUNT_KEY is not set or is a placeholder. Firebase Admin features will be disabled.'
     );
   }
-} else {
-  app = getApps()[0];
+
+  if (app) {
+    adminAuth = getAuth(app);
+    adminDb = getFirestore(app);
+  }
+  
+} catch (error: any) {
+  console.error('Firebase Admin SDK initialization failed:', error);
+  // Do not re-throw the error to prevent app crash
 }
 
-const adminAuth: Auth = getAuth(app);
-const adminDb: Firestore = getFirestore(app);
-
+// Export potentially undefined values. Code using these must handle the case where they are not available.
 export { adminAuth, adminDb };
