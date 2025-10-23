@@ -33,7 +33,7 @@ async function findUserByStripeCustomerId(db: Firestore, stripeCustomerId: strin
 
 /**
  * Handles the completion of a checkout session. This is the primary event for new subscriptions.
- * It handles credit allocation for new trials and plan activations.
+ * It handles credit allocation for new trials.
  * @param db - The Firestore admin instance.
  * @param session - The Stripe checkout session object.
  */
@@ -59,18 +59,12 @@ async function handleCheckoutCompleted(db: Firestore, session: Stripe.Checkout.S
     const newInterval = subscription.items.data[0]?.price?.recurring?.interval as 'month' | 'year' | undefined;
     const newStatus = subscription.status;
     
-    // This is a new subscription. Check if it's a trial or a direct activation.
-    const isNewTrial = newStatus === 'trialing';
-    const isDirectActivation = newStatus === 'active' && (!userData?.subscriptionStatus || userData.subscriptionStatus === 'canceled');
-
     let creditsPayload = {};
 
+    // Scenario: This is a brand new subscription starting a trial.
+    const isNewTrial = newStatus === 'trialing';
     if (isNewTrial) {
         Object.assign(creditsPayload, await handleNewTrial(db, userDocRef.id, userData));
-    }
-    
-    if (isDirectActivation) {
-        Object.assign(creditsPayload, await handlePlanActivation(db, userDocRef.id, userData, newInterval));
     }
 
     const subscriptionData: { [key: string]: any } = {
@@ -80,7 +74,7 @@ async function handleCheckoutCompleted(db: Firestore, session: Stripe.Checkout.S
         subscriptionCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
         lastPrice: subscription.items.data[0]?.price?.unit_amount ? subscription.items.data[0].price.unit_amount / 100 : null,
         updatedAt: FieldValue.serverTimestamp(),
-        ...creditsPayload, // Combine subscription data with credits
+        ...creditsPayload, // Combine subscription data with trial credits
     };
 
     await userDocRef.update(subscriptionData);
@@ -90,7 +84,7 @@ async function handleCheckoutCompleted(db: Firestore, session: Stripe.Checkout.S
 
 /**
  * Handles subscription creation or update events from Stripe and updates the corresponding user document in Firestore.
- * This is primarily for ongoing changes like upgrades, downgrades, or post-trial activations.
+ * This is for ongoing changes like upgrades, downgrades, or post-trial activations.
  * @param db - The Firestore admin instance.
  * @param subscription - The Stripe subscription object.
  */
@@ -107,6 +101,8 @@ async function handleSubscriptionChange(db: Firestore, subscription: Stripe.Subs
     const userData = userDocSnapshot.data();
     
     let newStatus = subscription.status;
+    // Stripe sends 'active' for subscriptions that are set to cancel at period end.
+    // We want to reflect 'canceled' in our DB immediately.
     if (subscription.cancel_at_period_end) {
         newStatus = 'canceled';
     }
@@ -184,14 +180,6 @@ export async function POST(req: Request) {
                    await handleCheckoutCompleted(adminDb, session);
                 }
                 break;
-            
-            case 'customer.subscription.created':
-                // This can sometimes fire along with checkout.session.completed.
-                // We let checkout.session.completed handle the initial creation and credit logic
-                // to avoid race conditions. We can just sync the state here.
-                const subscriptionCreated = event.data.object as Stripe.Subscription;
-                await handleSubscriptionChange(adminDb, subscriptionCreated);
-                break;
 
             case 'customer.subscription.updated': {
                 const subscriptionUpdated = event.data.object as Stripe.Subscription;
@@ -223,7 +211,6 @@ export async function POST(req: Request) {
             
             default:
                 // Unhandled event type
-                // console.log(`Unhandled event type: ${event.type}`);
         }
     } catch (error: any) {
         console.error(`Webhook handler failed for event type ${event.type}. Error: ${error.message}`);
