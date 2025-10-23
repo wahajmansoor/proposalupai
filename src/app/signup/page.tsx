@@ -10,10 +10,10 @@ import { Label } from '@/components/ui/label';
 import { ProposalUpLogos, GoogleIcon, ProposalUpLogoLight } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, XCircle, CheckCircle2, ArrowLeft } from 'lucide-react';
-import { getGoogleAuthUrl } from '@/app/lib/actions';
+import { getGoogleAuthUrl, createInitialUserProfile } from '@/app/lib/actions';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
+import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth } from '@/lib/firebase/config';
 import { BgPattern } from '@/components/bg-pattern';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -136,63 +136,58 @@ function SignupForm() {
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!fullName || !email || !password) {
-      toast({
-        title: 'Missing Fields',
-        description: 'Please fill out all fields.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Missing Fields', description: 'Please fill out all fields.', variant: 'destructive' });
       return;
     }
-
     if (!allRequirementsMet) {
-      toast({
-        title: 'Weak Password',
-        description: 'Please ensure your password meets all the requirements.',
-        variant: 'destructive',
-      });
+      toast({ title: 'Weak Password', description: 'Please ensure your password meets all requirements.', variant: 'destructive' });
       return;
     }
 
     setIsLoading(true);
 
     try {
-      // Step 1: Create the user on the client-side
+      // Step 1: Create user client-side
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       
-      // Step 2: Update the user's profile with their full name
-      await updateProfile(userCredential.user, { displayName: fullName });
-
-      // Step 3: Create the session cookie
+      // Step 2: Get the ID token
       const idToken = await userCredential.user.getIdToken();
-      const response = await fetch('/api/auth/session', {
+      const storedReferralCode = localStorage.getItem('referralCode');
+
+      // Step 3: Call server action to create backend profile
+      const profileResult = await createInitialUserProfile({
+        idToken,
+        displayName: fullName,
+        referralCode: storedReferralCode,
+      });
+
+      if (!profileResult.success) {
+        throw new Error(profileResult.error || "Failed to create user profile on server.");
+      }
+
+      // Step 4: Create session cookie
+      const sessionResponse = await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idToken }),
       });
 
-      if (!response.ok) {
+      if (!sessionResponse.ok) {
         throw new Error('Failed to create session after signup.');
       }
       
-      // The onAuthStateChanged listener in AuthProvider will handle creating the user doc.
-      
-      localStorage.removeItem('referralCode'); // Clear code after successful use
-      toast({
-        title: 'Success!',
-        description: "Account created. Let's get you set up.",
-      });
+      localStorage.removeItem('referralCode');
+      toast({ title: 'Success!', description: "Account created. Let's get you set up." });
       router.push('/pricing'); // Redirect to pricing to choose a plan
 
     } catch (error: any) {
       let errorMessage = 'An unexpected error occurred.';
        if (error.code === 'auth/email-already-in-use') {
         errorMessage = 'This email is already in use by another account.';
+      } else if (error.message) {
+        errorMessage = error.message;
       }
-      toast({
-        title: 'Sign Up Failed',
-        description: errorMessage,
-        variant: 'destructive',
-      });
+      toast({ title: 'Sign Up Failed', description: errorMessage, variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }

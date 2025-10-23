@@ -8,7 +8,6 @@ import { doc, onSnapshot, getDoc } from 'firebase/firestore';
 import { ProposalUpLogos } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { createStripeCustomerAndUserDoc } from '@/app/lib/stripe-actions';
 
 interface UserProfile {
   uid: string;
@@ -53,30 +52,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(user);
       if (user) {
         const userRef = doc(db, 'users', user.uid);
-
-        // Check once if the document exists. If not, create it.
-        getDoc(userRef).then(docSnap => {
-          if (!docSnap.exists()) {
-            // New user, create their Stripe customer and Firestore doc
-            console.log("New user detected, creating profile document...");
-            const storedReferralCode = localStorage.getItem('referralCode');
-            createStripeCustomerAndUserDoc({
-              uid: user.uid,
-              email: user.email!,
-              displayName: user.displayName,
-              photoURL: user.photoURL,
-              referralCode: storedReferralCode,
-            }).then(result => {
-              if (result.error) {
-                console.error("Failed to create user profile on server:", result.error);
-              } else {
-                console.log("User profile document created successfully.");
-              }
-            });
-          }
-        });
-
-        // Set up the real-time listener
         const unsubscribeSnapshot = onSnapshot(userRef, (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
@@ -99,8 +74,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
             setUserProfile(profile);
           } else {
-            // Document doesn't exist yet, it will be created shortly.
-            // Don't set profile to null here immediately, wait for creation.
+             // User is authenticated, but no profile doc exists yet.
+             // This happens briefly during signup. The signup flow is now
+             // responsible for creating the doc. We set the profile to null
+             // and loading to false to allow redirects to /pricing etc.
+             setUserProfile(null);
           }
           setLoading(false);
         }, (error) => {
