@@ -63,6 +63,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
     success?: boolean;
     error?: string;
     redirectUrl?: string;
+    message?: string;
 }> {
     
     let interval = formData.get('interval') as 'monthly' | 'yearly' | null;
@@ -132,7 +133,9 @@ export async function handlePlanChange(formData: FormData): Promise<{
             
             revalidatePath('/pricing');
             revalidatePath('/dashboard');
-            return { success: true };
+
+            const planName = interval === 'yearly' ? 'Yearly' : 'Monthly';
+            return { success: true, message: `Your ${planName} plan has been activated successfully!` };
         }
         
         // Scenario 3: User is on active monthly and upgrading to yearly
@@ -163,7 +166,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
             }
 
             revalidatePath('/pricing');
-            return { success: true };
+            return { success: true, message: 'Your plan has been successfully switched to Yearly!' };
         }
 
         // Scenario 4: User had a canceled or failed sub and is reactivating
