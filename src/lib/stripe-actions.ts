@@ -6,6 +6,7 @@ import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import { getFirebaseAdmin } from '@/lib/firebase/admin';
 import type Stripe from 'stripe';
+import { z } from 'zod';
 
 async function createCheckoutSession(
     firebaseUid: string,
@@ -62,7 +63,6 @@ export async function handlePlanChange(formData: FormData): Promise<{
     error?: string;
     redirectUrl?: string;
 }> {
-    const { adminDb } = await getFirebaseAdmin();
     
     // Get all necessary data from the form data
     let interval = formData.get('interval') as 'monthly' | 'yearly' | null;
@@ -102,7 +102,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
             return await createCheckoutSession(firebaseUid, stripeCustomerId, priceId, successUrl, cancelUrl, coupon, true);
         }
         
-        // The adminDb is only needed for scenarios that update an existing user.
+        const { adminDb } = await getFirebaseAdmin();
         if (!adminDb) {
             return { error: "Database service is not configured on the server. Cannot update subscription." };
         }
