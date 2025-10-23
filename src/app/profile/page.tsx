@@ -13,16 +13,18 @@ import { Label } from '@/components/ui/label';
 import { updateUserDisplayNameAction } from '@/app/lib/actions';
 
 export default function ProfilePage() {
-  const { user } = useAuth();
+  const { user, userProfile } = useAuth();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [displayName, setDisplayName] = useState('');
   
   useEffect(() => {
-    if (user?.displayName) {
-      setDisplayName(user.displayName);
+    // Prioritize userProfile which is from Firestore
+    const name = userProfile?.displayName || user?.displayName;
+    if (name) {
+      setDisplayName(name);
     }
-  }, [user?.displayName]);
+  }, [user?.displayName, userProfile?.displayName]);
 
   const getInitials = (name: string | null | undefined) => {
     if (!name) return 'U';
@@ -35,7 +37,8 @@ export default function ProfilePage() {
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (!displayName || displayName === user?.displayName) {
+    const currentName = userProfile?.displayName || user?.displayName;
+    if (!displayName || displayName === currentName) {
       return;
     }
     setIsSaving(true);
@@ -49,6 +52,8 @@ export default function ProfilePage() {
     }
     setIsSaving(false);
   };
+  
+  const currentName = userProfile?.displayName || user?.displayName;
 
   return (
     <div className="space-y-8">
@@ -65,8 +70,8 @@ export default function ProfilePage() {
             <CardContent className="space-y-4">
                 <div className="flex items-center gap-4">
                 <Avatar className="h-16 w-16">
-                    {user?.photoURL && <AvatarImage src={user.photoURL} alt={user.displayName || 'User avatar'} />}
-                    <AvatarFallback>{getInitials(user?.displayName)}</AvatarFallback>
+                    {user?.photoURL && <AvatarImage src={user.photoURL} alt={currentName || 'User avatar'} />}
+                    <AvatarFallback>{getInitials(currentName)}</AvatarFallback>
                 </Avatar>
                 <div className="grid w-full gap-1.5">
                     <Label htmlFor="displayName">Display Name</Label>
@@ -89,7 +94,7 @@ export default function ProfilePage() {
                 </div>
             </CardContent>
             <CardFooter className="border-t px-6 py-4">
-                <Button type="submit" disabled={isSaving || displayName === user?.displayName}>
+                <Button type="submit" disabled={isSaving || displayName === currentName}>
                 {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                 Save Changes
                 </Button>
