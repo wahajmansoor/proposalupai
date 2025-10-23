@@ -39,6 +39,8 @@ async function createCheckoutSession(
           firebaseUID: firebaseUid,
         }
       };
+      // Do not require payment method for trial
+      sessionParams.payment_method_collection = 'if_required';
     } else {
         sessionParams.subscription_data = {
             metadata: {
@@ -99,23 +101,25 @@ export async function handlePlanChange(formData: FormData): Promise<{
             return await createCheckoutSession(stripeCustomerId, user.uid, priceId, successUrl, cancelUrl, coupon, true);
         }
 
-        // Scenario: Active trial user is activating their plan
+        // Scenario: Active trial user is activating their plan by providing payment details
         if (subscriptionStatus === 'trialing' && subscriptionId) {
-            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-            await stripe.subscriptions.update(subscriptionId, {
-                items: [{
-                    id: subscription.items.data[0].id,
-                    price: priceId,
-                }],
-                trial_end: 'now',
-                proration_behavior: 'none',
-                promotion_code: coupon || undefined,
-                metadata: {
-                    firebaseUID: user.uid,
-                }
+             const checkoutSession = await stripe.checkout.sessions.create({
+                payment_method_types: ['card'],
+                mode: 'setup',
+                customer: stripeCustomerId,
+                setup_intent_data: {
+                    metadata: {
+                        customer_id: stripeCustomerId,
+                        subscription_id: subscriptionId,
+                    },
+                },
+                success_url: successUrl,
+                cancel_url: cancelUrl,
             });
-            revalidatePath('/pricing');
-            return { success: true };
+             if (!checkoutSession.url) {
+                return { error: 'Could not create checkout session.' };
+            }
+            return { redirectUrl: checkoutSession.url };
         }
 
         // Scenario: Active monthly user switching to yearly
