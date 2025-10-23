@@ -2,14 +2,6 @@
 'use server';
 
 import { z } from 'zod';
-import { analyzeJobForProposal } from '@/ai/flows/analyze-job-for-proposal';
-import { autofillProposalSections } from '@/ai/flows/autofill-proposal-sections';
-import { answerClientQuestions } from '@/ai/flows/answer-client-questions';
-import { generateProposal } from '@/ai/flows/generate-proposal-from-job-analysis';
-import { improveProposal } from '@/ai/flows/improve-proposal';
-import { suggestProposalTemplate } from '@/ai/flows/suggest-proposal-template';
-import { suggestOpeningStrategy } from '@/ai/flows/suggest-opening-strategy';
-import { suggestWordLimit } from '@/ai/flows/suggest-word-limit';
 import { OAuth2Client } from 'google-auth-library';
 import { headers } from 'next/headers';
 import { getCurrentUser } from '@/lib/firebase/server-auth';
@@ -20,6 +12,48 @@ import { stripe } from '@/lib/stripe/config';
 import type { PortfolioLink } from './types';
 import type { Timestamp } from 'firebase-admin/firestore';
 import { getCountryFromIp } from '@/app/lib/location';
+import { ai } from '@/ai/genkit';
+import type {
+  AnalyzeJobForProposalInput,
+  AnalyzeJobForProposalOutput,
+} from '@/ai/flows/analyze-job-for-proposal';
+import { analyzeJobForProposal } from '@/ai/flows/analyze-job-for-proposal';
+import type {
+  AutofillProposalSectionsInput,
+  AutofillProposalSectionsOutput,
+} from '@/ai/flows/autofill-proposal-sections';
+import { autofillProposalSections } from '@/ai/flows/autofill-proposal-sections';
+import type {
+  AnswerClientQuestionsInput,
+  AnswerClientQuestionsOutput,
+} from '@/ai/flows/answer-client-questions';
+import { answerClientQuestions } from '@/ai/flows/answer-client-questions';
+import type {
+  GenerateProposalInput,
+  GenerateProposalOutput,
+} from '@/ai/flows/generate-proposal-from-job-analysis';
+import { generateProposal } from '@/ai/flows/generate-proposal-from-job-analysis';
+import type {
+  ImproveProposalInput,
+  ImproveProposalOutput,
+} from '@/ai/flows/improve-proposal';
+import { improveProposal } from '@/ai/flows/improve-proposal';
+import type {
+  SuggestOpeningStrategyInput,
+  SuggestOpeningStrategyOutput,
+} from '@/ai/flows/suggest-opening-strategy';
+import { suggestOpeningStrategy } from '@/ai/flows/suggest-opening-strategy';
+import type {
+  SuggestProposalTemplateInput,
+  SuggestProposalTemplateOutput,
+} from '@/ai/flows/suggest-proposal-template';
+import { suggestProposalTemplate } from '@/ai/flows/suggest-proposal-template';
+import type {
+  SuggestWordLimitInput,
+  SuggestWordLimitOutput,
+} from '@/ai/flows/suggest-word-limit';
+import { suggestWordLimit } from '@/ai/flows/suggest-word-limit';
+
 
 export interface InvoiceDetails {
   id: string;
@@ -254,7 +288,7 @@ export async function getGoogleAuthUrl(referralCode: string | null) {
     );
 
     const state = JSON.stringify({
-        referralCode: referralCode
+        referralCode: referralCode || null
     });
 
     const authorizeUrl = oAuth2Client.generateAuthUrl({
@@ -264,7 +298,7 @@ export async function getGoogleAuthUrl(referralCode: string | null) {
             'https://www.googleapis.com/auth/userinfo.profile',
         ],
         prompt: 'consent',
-        state: state
+        state: encodeURIComponent(state),
     });
     
     return authorizeUrl;
