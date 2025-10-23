@@ -1,3 +1,4 @@
+
 'use server';
 
 import { z } from 'zod';
@@ -13,7 +14,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { headers } from 'next/headers';
 import { getCurrentUser } from '@/lib/firebase/server-auth';
 import { revalidatePath } from 'next/cache';
-import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { getFirebaseAdmin } from '@/lib/firebase/admin';
 import { incrementProposalCount, decrementProposalCredits } from '@/lib/firebase/usage';
 import { stripe } from '@/lib/stripe/config';
 import type { PortfolioLink } from './types';
@@ -274,6 +275,7 @@ const updateDisplayNameSchema = z.object({
 });
 
 async function updateUserInFirestore(uid: string, data: { displayName: string }) {
+  const { adminDb } = await getFirebaseAdmin();
   if (!adminDb) {
     throw new Error('Database admin is not initialized.');
   }
@@ -283,6 +285,7 @@ async function updateUserInFirestore(uid: string, data: { displayName: string })
 
 async function updateUserDisplayName(uid: string, displayName: string) {
   if (!uid) throw new Error('You must be logged in to update your profile.');
+  const { adminAuth } = await getFirebaseAdmin();
   if (!adminAuth) {
     throw new Error('Auth admin is not initialized.');
   }
@@ -323,75 +326,30 @@ export async function updateUserDisplayNameAction(formData: FormData) {
     }
 }
 
-const initialProfileSchema = z.object({
-  idToken: z.string(),
-  displayName: z.string(),
-  referralCode: z.string().nullable(),
+const createStripeCustomerSchema = z.object({
+  email: z.string().email(),
+  name: z.string(),
+  firebaseUID: z.string(),
 });
 
-export async function createInitialUserProfile(input: z.infer<typeof initialProfileSchema>): Promise<{ success: boolean; error?: string }> {
+export async function createStripeCustomer(input: z.infer<typeof createStripeCustomerSchema>): Promise<{ customerId?: string, error?: string }> {
+  const validatedFields = createStripeCustomerSchema.safeParse(input);
+  if (!validatedFields.success) {
+    return { error: 'Invalid input for creating Stripe customer.' };
+  }
+  
+  const { email, name, firebaseUID } = validatedFields.data;
+
   try {
-    if (!adminAuth || !adminDb) {
-      return { success: false, error: "Server is not configured for authentication. Please contact support." };
-    }
-    
-    const validatedFields = initialProfileSchema.safeParse(input);
-    if (!validatedFields.success) {
-      return { success: false, error: "Invalid input." };
-    }
-
-    const { idToken, displayName, referralCode } = validatedFields.data;
-
-    const decodedToken = await adminAuth.verifyIdToken(idToken);
-    const { uid, email, picture } = decodedToken;
-
-    // Check if user document already exists
-    const userRef = adminDb.collection('users').doc(uid);
-    const docSnap = await userRef.get();
-    if (docSnap.exists) {
-      console.log(`User profile for ${uid} already exists. Skipping creation.`);
-      return { success: true };
-    }
-    
-    // Update auth profile
-    await adminAuth.updateUser(uid, { displayName, photoURL: picture });
-    
-    // Create Stripe Customer
     const customer = await stripe.customers.create({
       email,
-      name: displayName,
-      metadata: { firebaseUID: uid },
+      name,
+      metadata: { firebaseUID },
     });
-    
-    // Get country from IP
-    const ip = headers().get('x-forwarded-for');
-    const country = await getCountryFromIp(ip);
-
-    // Create user document in Firestore
-    const userData: { [key: string]: any } = {
-      uid: uid,
-      email: email,
-      displayName: displayName,
-      photoURL: picture || null,
-      createdAt: new Date(),
-      stripeCustomerId: customer.id,
-      proposalCount: 0,
-      subscriptionStatus: null,
-      country: country,
-      referralCode: uid.substring(0, 8),
-      proposalCredits: 0,
-    };
-
-    if (referralCode) {
-      userData.referredBy = referralCode;
-    }
-
-    await userRef.set(userData);
-    return { success: true };
-
+    return { customerId: customer.id };
   } catch (error: any) {
-    console.error("Error creating initial user profile:", error);
-    return { success: false, error: "Failed to create user profile on the server. Please try again." };
+    console.error("Error creating Stripe customer:", error);
+    return { error: "Failed to create customer in our payment system." };
   }
 }
 
@@ -430,6 +388,7 @@ export async function getCreditHistory(): Promise<{ history?: CreditHistoryItem[
     if (!currentUser) {
         return { error: 'User not authenticated.' };
     }
+    const { adminDb } = await getFirebaseAdmin();
      if (!adminDb) {
         return { error: 'Database not initialized.' };
     }
