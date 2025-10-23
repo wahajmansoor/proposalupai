@@ -15,11 +15,6 @@ export async function handlePlanChange(formData: FormData): Promise<{
     error?: string;
     redirectUrl?: string;
 }> {
-    const { adminDb } = await getFirebaseAdmin();
-    if (!adminDb) {
-        return { error: "Server is not configured for authentication. Please contact support." };
-    }
-
     // Manually get and validate form data
     let interval = formData.get('interval') as 'monthly' | 'yearly' | null;
     const coupon = formData.get('coupon') as string | null;
@@ -62,7 +57,6 @@ export async function handlePlanChange(formData: FormData): Promise<{
         // Scenario 1: New user starting a trial
         if (!subscriptionStatus) {
              const checkoutSession = await stripe.checkout.sessions.create({
-                payment_method_types: ['card'],
                 customer: stripeCustomerId,
                 client_reference_id: user.uid,
                 success_url: successUrl,
@@ -75,7 +69,6 @@ export async function handlePlanChange(formData: FormData): Promise<{
                         firebaseUID: user.uid,
                     }
                 },
-                allow_promotion_codes: true,
              });
 
             return { redirectUrl: checkoutSession.url! };
@@ -83,6 +76,9 @@ export async function handlePlanChange(formData: FormData): Promise<{
 
         // Scenario 2: User is in trial and activating their plan
         if (subscriptionStatus === 'trialing' && subscriptionId) {
+            const { adminDb } = await getFirebaseAdmin();
+            if (!adminDb) return { error: "Server is not configured for authentication. Please contact support." };
+
             const subscription = await stripe.subscriptions.retrieve(subscriptionId);
             const updateParams: Stripe.SubscriptionUpdateParams = {
                 items: [{ id: subscription.items.data[0].id, price: priceId }],
@@ -108,6 +104,9 @@ export async function handlePlanChange(formData: FormData): Promise<{
         
         // Scenario 3: User is on active monthly and upgrading to yearly
         if (subscriptionStatus === 'active' && subscriptionId && userDoc.subscriptionInterval === 'month' && interval === 'yearly') {
+            const { adminDb } = await getFirebaseAdmin();
+            if (!adminDb) return { error: "Server is not configured for authentication. Please contact support." };
+            
              const subscription = await stripe.subscriptions.retrieve(subscriptionId);
              const updateParams: Stripe.SubscriptionUpdateParams = {
                 items: [{ id: subscription.items.data[0].id, price: priceId }],
