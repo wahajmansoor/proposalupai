@@ -124,6 +124,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
                         subscriptionStatus: 'active',
                         subscriptionInterval: newPrice?.recurring?.interval,
                         lastPrice: newPrice?.unit_amount ? newPrice.unit_amount / 100 : null,
+                        subscriptionCurrentPeriodEnd: new Date(updatedSubscription.current_period_end * 1000),
                         updatedAt: FieldValue.serverTimestamp(),
                     });
                 }
@@ -158,6 +159,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
                         subscriptionStatus: 'active', // Status remains active
                         subscriptionInterval: newPrice?.recurring?.interval,
                         lastPrice: newPrice?.unit_amount ? newPrice.unit_amount / 100 : null,
+                        subscriptionCurrentPeriodEnd: new Date(updatedSubscription.current_period_end * 1000),
                         updatedAt: FieldValue.serverTimestamp(),
                     });
                 }
@@ -308,3 +310,6 @@ export async function validateCouponAction(formData: FormData): Promise<{
     return { success: false, error: 'Could not validate coupon code.' };
   }
 }
+
+
+    
