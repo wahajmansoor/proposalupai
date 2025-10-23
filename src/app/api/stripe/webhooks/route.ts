@@ -1,4 +1,3 @@
-
 'use server';
 
 import { stripe } from '@/lib/stripe/config';
@@ -20,14 +19,21 @@ async function findUserByStripeCustomerId(stripeCustomerId: string) {
 
 async function handleSubscriptionChange(subscription: Stripe.Subscription) {
     const stripeCustomerId = subscription.customer as string;
-
-    // First, try to find user via metadata if it exists
+    
+    // Most reliable: find user via firebaseUID in metadata
     let firebaseUID = subscription.metadata?.firebaseUID;
     
-    // If not in metadata, try to find user by stripeCustomerId in DB
-    const userDocSnapshot = await findUserByStripeCustomerId(stripeCustomerId);
-
-    if (!userDocSnapshot) {
+    let userDocSnapshot;
+    if (firebaseUID) {
+        userDocSnapshot = await adminDb.collection('users').doc(firebaseUID).get();
+    }
+    
+    // Fallback: find user by stripeCustomerId
+    if (!userDocSnapshot || !userDocSnapshot.exists) {
+        userDocSnapshot = await findUserByStripeCustomerId(stripeCustomerId);
+    }
+    
+    if (!userDocSnapshot || !userDocSnapshot.exists) {
         console.warn(`Webhook Warning: No user found with Stripe customer ID ${stripeCustomerId}. Cannot sync subscription.`);
         return;
     }

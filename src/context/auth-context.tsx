@@ -8,7 +8,7 @@ import { doc, onSnapshot, getDoc } from 'firebase/firestore';
 import { ProposalUpLogos } from '@/components/icons';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
-import { createStripeCustomerAndUserDoc } from '@/lib/stripe-actions';
+import { createStripeCustomerAndUserDoc } from '@/app/lib/stripe-actions';
 
 interface UserProfile {
   uid: string;
