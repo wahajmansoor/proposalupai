@@ -3,10 +3,11 @@
 
 import { stripe } from '@/lib/stripe/config';
 import { headers } from 'next/headers';
+import { redirect } from 'next/navigation';
+import { z } from 'zod';
+import type Stripe from 'stripe';
 import { revalidatePath } from 'next/cache';
 import { getFirebaseAdmin } from '@/lib/firebase/admin';
-import type Stripe from 'stripe';
-import { z } from 'zod';
 
 async function createCheckoutSession(
     firebaseUid: string,
@@ -31,7 +32,7 @@ async function createCheckoutSession(
         if (isTrial) {
             sessionParams.subscription_data = {
                 trial_period_days: 2,
-                metadata: {
+                 metadata: {
                     firebaseUID: firebaseUid
                 }
             };
@@ -42,7 +43,7 @@ async function createCheckoutSession(
                 }
             };
         }
-
+        
         if (couponId) {
             sessionParams.discounts = [{ promotion_code: couponId }];
         }
@@ -97,12 +98,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
     try {
         // Scenario 1: New user starting a trial
         if (!subscriptionStatus || subscriptionStatus === 'null') {
-            return await createCheckoutSession(firebaseUid, stripeCustomerId, priceId, successUrl, cancelUrl, coupon, true);
-        }
-        
-        const { adminDb } = await getFirebaseAdmin();
-        if (!adminDb) {
-            return { error: "Database service is not configured on the server. Cannot update subscription." };
+             return await createCheckoutSession(firebaseUid, stripeCustomerId, priceId, successUrl, cancelUrl, coupon, true);
         }
 
         // Scenario 2: User is in trial and activating their plan
@@ -113,35 +109,25 @@ export async function handlePlanChange(formData: FormData): Promise<{
                 trial_end: 'now',
                 proration_behavior: 'none',
             };
-            if (coupon) {
+             if (coupon) {
                 updateParams.promotion_code = coupon;
             }
-            const updatedSubscription = await stripe.subscriptions.update(subscriptionId, updateParams);
-            const price = updatedSubscription.items.data[0].price;
-            if (price.unit_amount) {
-                const userRef = adminDb.collection('users').doc(firebaseUid);
-                await userRef.update({ lastPrice: price.unit_amount / 100 });
-            }
+            await stripe.subscriptions.update(subscriptionId, updateParams);
             revalidatePath('/pricing');
             return { success: true };
         }
         
         // Scenario 3: User is on active monthly and upgrading to yearly
         if (subscriptionStatus === 'active' && subscriptionId && currentInterval === 'month' && interval === 'yearly') {
-            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-            const updateParams: Stripe.SubscriptionUpdateParams = {
+             const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+             const updateParams: Stripe.SubscriptionUpdateParams = {
                 items: [{ id: subscription.items.data[0].id, price: priceId }],
                 proration_behavior: 'create_prorations',
             };
-            if (coupon) {
+             if (coupon) {
                 updateParams.promotion_code = coupon;
             }
-            const updatedSubscription = await stripe.subscriptions.update(subscriptionId, updateParams);
-            const price = updatedSubscription.items.data[0].price;
-            if (price.unit_amount) {
-                const userRef = adminDb.collection('users').doc(firebaseUid);
-                await userRef.update({ lastPrice: price.unit_amount / 100 });
-            }
+            await stripe.subscriptions.update(subscriptionId, updateParams);
             revalidatePath('/pricing');
             return { success: true };
         }
@@ -149,14 +135,6 @@ export async function handlePlanChange(formData: FormData): Promise<{
         // Scenario 4: User had a canceled or failed sub and is reactivating
         if (subscriptionStatus === 'canceled' || subscriptionStatus === 'unpaid' || subscriptionStatus === 'past_due') {
             const checkoutResult = await createCheckoutSession(firebaseUid, stripeCustomerId, priceId, successUrl, cancelUrl, coupon, false);
-             if (checkoutResult.error) {
-                return checkoutResult;
-            }
-            const price = await stripe.prices.retrieve(priceId);
-            if (price.unit_amount) {
-                const userRef = adminDb.collection('users').doc(firebaseUid);
-                await userRef.update({ lastPrice: price.unit_amount / 100 });
-            }
             return checkoutResult;
         }
         
