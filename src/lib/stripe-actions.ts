@@ -35,7 +35,6 @@ async function createCheckoutSession(
                     firebaseUID: firebaseUid
                 }
             };
-            sessionParams.payment_method_collection = 'if_required';
         } else {
             sessionParams.subscription_data = {
                 metadata: {
@@ -64,7 +63,6 @@ export async function handlePlanChange(formData: FormData): Promise<{
     redirectUrl?: string;
 }> {
     
-    // Get all necessary data from the form data
     let interval = formData.get('interval') as 'monthly' | 'yearly' | null;
     const coupon = formData.get('coupon') as string | null;
     const firebaseUid = formData.get('firebaseUid') as string | null;
