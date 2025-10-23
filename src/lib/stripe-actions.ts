@@ -112,7 +112,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
              const updateParams: Stripe.SubscriptionUpdateParams = {
                 items: [{ id: subscription.items.data[0].id, price: priceId }],
                 proration_behavior: 'create_prorations',
-                // trial_end: 'now', // This should not be here for a simple plan change
+                trial_end: 'now',
             };
              if (coupon) {
                 updateParams.promotion_code = coupon;
