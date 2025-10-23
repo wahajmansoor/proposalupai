@@ -4,15 +4,17 @@ import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getAuth, Auth } from 'firebase-admin/auth';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 
-let app: App | undefined;
-let adminAuth: Auth | undefined;
-let adminDb: Firestore | undefined;
-
 // This function can be called by any server-side code to ensure
 // the Firebase Admin SDK is initialized before use.
 export async function getFirebaseAdmin() {
-  if (app) {
-    return { app, adminAuth: adminAuth!, adminDb: adminDb! };
+  const existingApp = getApps().find(app => app.name === 'DEFAULT');
+  
+  if (existingApp) {
+    return { 
+      app: existingApp, 
+      adminAuth: getAuth(existingApp), 
+      adminDb: getFirestore(existingApp) 
+    };
   }
 
   const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
@@ -27,12 +29,12 @@ export async function getFirebaseAdmin() {
       serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
     }
 
-    app = initializeApp({
+    const app = initializeApp({
       credential: cert(serviceAccount),
     });
 
-    adminAuth = getAuth(app);
-    adminDb = getFirestore(app);
+    const adminAuth = getAuth(app);
+    const adminDb = getFirestore(app);
 
     return { app, adminAuth, adminDb };
   } catch (error: any) {

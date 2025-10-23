@@ -1,8 +1,9 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { adminAuth } from '@/lib/firebase/admin';
+import { getFirebaseAdmin } from '@/lib/firebase/admin';
 
 export async function POST(req: NextRequest) {
+  const { adminAuth } = await getFirebaseAdmin();
   // Check if Firebase Admin is initialized
   if (!adminAuth) {
     console.error("Firebase Admin has not been initialized. Check your server configuration.");

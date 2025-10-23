@@ -1,7 +1,7 @@
 
 'use server';
 
-import { adminDb } from './admin';
+import { getFirebaseAdmin } from './admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
 /**
@@ -11,6 +11,12 @@ import { FieldValue } from 'firebase-admin/firestore';
 export async function incrementProposalCount(userId: string): Promise<void> {
   if (!userId) {
     throw new Error('User ID is required to increment proposal count.');
+  }
+
+  const { adminDb } = await getFirebaseAdmin();
+  if (!adminDb) {
+      console.error("Failed to increment proposal count: Firebase Admin not initialized.");
+      return;
   }
 
   const userRef = adminDb.collection('users').doc(userId);
@@ -31,4 +37,43 @@ export async function incrementProposalCount(userId: string): Promise<void> {
         throw new Error(`User document not found for user ${userId}.`);
     }
   }
+}
+
+
+/**
+ * Decrements the proposal credits for a given user.
+ * @param userId - The ID of the user.
+ */
+export async function decrementProposalCredits(userId: string): Promise<void> {
+    if (!userId) {
+      throw new Error('User ID is required to decrement proposal credits.');
+    }
+  
+    const { adminDb } = await getFirebaseAdmin();
+     if (!adminDb) {
+      console.error("Failed to decrement credits: Firebase Admin not initialized.");
+      return;
+    }
+  
+    const userRef = adminDb.collection('users').doc(userId);
+  
+    try {
+      await userRef.update({
+        proposalCredits: FieldValue.increment(-1),
+      });
+    } catch (error) {
+      console.error(`Failed to decrement proposal credits for user ${userId}:`, error);
+      const userDoc = await userRef.get();
+      if (userDoc.exists) {
+        // If credits field doesn't exist, something is wrong, but let's set it to 0.
+        const data = userDoc.data();
+        if (data && typeof data.proposalCredits === 'undefined') {
+            await userRef.update({ proposalCredits: 0 });
+        } else {
+            throw new Error(`Could not decrement credits for user ${userId}.`);
+        }
+      } else {
+        throw new Error(`User document not found for user ${userId}.`);
+      }
+    }
 }

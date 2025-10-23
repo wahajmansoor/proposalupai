@@ -1,7 +1,7 @@
 
 "use server";
 
-import { adminAuth, adminDb } from "@/lib/firebase/admin";
+import { getFirebaseAdmin } from "@/lib/firebase/admin";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { stripe } from "@/lib/stripe/config";
@@ -20,7 +20,8 @@ export interface AppUser {
 }
 
 export async function getUsers(): Promise<AppUser[]> {
-  if (!adminAuth) {
+  const { adminAuth, adminDb } = await getFirebaseAdmin();
+  if (!adminAuth || !adminDb) {
     throw new Error("Firebase Admin SDK not initialized. Check server logs for details.");
   }
   try {
@@ -102,7 +103,8 @@ export async function updateUser(formData: FormData): Promise<{ success: boolean
   const { id, name, email } = validatedFields.data;
 
   try {
-    if (!adminAuth) throw new Error("Firebase Admin SDK not initialized.");
+    const { adminAuth, adminDb } = await getFirebaseAdmin();
+    if (!adminAuth || !adminDb) throw new Error("Firebase Admin SDK not initialized.");
     await adminAuth.updateUser(id, {
       displayName: name,
       email: email,
@@ -121,7 +123,8 @@ export async function updateUser(formData: FormData): Promise<{ success: boolean
 
 export async function deleteUser(userId: string): Promise<{ success: boolean, error?: string }> {
   try {
-    if (!adminAuth) throw new Error("Firebase Admin SDK not initialized.");
+    const { adminAuth, adminDb } = await getFirebaseAdmin();
+    if (!adminAuth || !adminDb) throw new Error("Firebase Admin SDK not initialized.");
     
     // Delete from Firebase Auth
     await adminAuth.deleteUser(userId);
@@ -138,6 +141,8 @@ export async function deleteUser(userId: string): Promise<{ success: boolean, er
     // If user is already deleted from auth, but not from firestore, we can still proceed to delete from firestore
     if (error.code === 'auth/user-not-found') {
         try {
+            const { adminDb } = await getFirebaseAdmin();
+            if (!adminDb) throw new Error("Firebase Admin SDK not initialized for Firestore deletion.");
             const userDocRef = adminDb.collection('users').doc(userId);
             await userDocRef.delete();
             revalidatePath('/admin-portal/users');
@@ -201,6 +206,7 @@ export async function sendPasswordResetLink(formData: FormData): Promise<{ succe
     const { email } = validatedFields.data;
 
     try {
+        const { adminAuth } = await getFirebaseAdmin();
         if (!adminAuth) throw new Error("Firebase Admin SDK not initialized.");
         await adminAuth.getUserByEmail(email); // First check if user exists.
         
