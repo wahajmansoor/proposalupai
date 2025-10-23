@@ -8,6 +8,7 @@ import { z } from 'zod';
 import type Stripe from 'stripe';
 import { revalidatePath } from 'next/cache';
 import { getFirebaseAdmin } from '@/lib/firebase/admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 async function createCheckoutSession(
     firebaseUid: string,
@@ -75,7 +76,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
     if (!firebaseUid || !stripeCustomerId) {
         // This case might happen if client-side auth state is present but the profile isn't fully loaded yet.
         // Redirecting to login is a safe fallback.
-        return { redirectUrl: '/login' };
+        return { error: "User is not properly authenticated. Please log in again." };
     }
     
     if (!interval) {
@@ -114,9 +115,23 @@ export async function handlePlanChange(formData: FormData): Promise<{
              if (coupon) {
                 updateParams.promotion_code = coupon;
             }
-            await stripe.subscriptions.update(subscriptionId, updateParams);
+            const updatedSubscription = await stripe.subscriptions.update(subscriptionId, updateParams);
             
-            // The Stripe webhook will handle the database update. Return success to the client.
+            // Directly update Firestore instead of waiting for webhook
+            const { adminDb } = await getFirebaseAdmin();
+            if (!adminDb) {
+                return { error: 'Database service is not configured on the server. Cannot update subscription.' };
+            }
+
+            const newPrice = updatedSubscription.items.data[0]?.price;
+
+            await adminDb.collection('users').doc(firebaseUid).update({
+                subscriptionStatus: 'active',
+                subscriptionInterval: newPrice?.recurring?.interval,
+                lastPrice: newPrice?.unit_amount ? newPrice.unit_amount / 100 : null,
+                updatedAt: FieldValue.serverTimestamp(),
+            });
+
             revalidatePath('/pricing');
             revalidatePath('/dashboard');
             return { success: true };
