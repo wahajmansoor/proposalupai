@@ -1,3 +1,4 @@
+
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
 import {
@@ -13,7 +14,7 @@ import { useAuth } from '@/context/auth-context';
 import Link from 'next/link';
 import { Skeleton } from './ui/skeleton';
 import { ChevronDown, CreditCard, LogOut, User, Loader2, Star } from 'lucide-react';
-import { createCustomerPortalSession } from '@/app/lib/stripe-actions';
+import { createCustomerPortalSession } from '@/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useState } from 'react';
 
