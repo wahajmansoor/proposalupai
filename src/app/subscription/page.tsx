@@ -193,7 +193,7 @@ function BuyCredits() {
 }
 
 export default function SubscriptionPage() {
-  const { user, userProfile } = useAuth();
+  const { userProfile } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const [isManagingBilling, setIsManagingBilling] = useState(false);
