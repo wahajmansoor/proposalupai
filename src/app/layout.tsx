@@ -3,11 +3,9 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Outfit } from 'next/font/google';
-import { AuthProvider } from '@/context/auth-context';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { Analytics } from '@vercel/analytics/next';
-import { ThemeProvider } from '@/components/theme-provider';
-import { SidebarProvider } from '@/components/ui/sidebar';
+import { Providers } from '@/components/providers';
 
 const outfit = Outfit({
   subsets: ['latin'],
@@ -50,21 +48,12 @@ export default function RootLayout({
     <html lang="en" className={outfit.variable} suppressHydrationWarning>
       <head />
       <body>
-        <ThemeProvider
-          attribute="class"
-          defaultTheme="system"
-          enableSystem
-          disableTransitionOnChange
-        >
-          <AuthProvider>
-            <SidebarProvider>
-              {children}
-              <Toaster />
-            </SidebarProvider>
-          </AuthProvider>
-          <SpeedInsights />
-          <Analytics />
-        </ThemeProvider>
+        <Providers>
+          {children}
+          <Toaster />
+        </Providers>
+        <SpeedInsights />
+        <Analytics />
       </body>
     </html>
   );
