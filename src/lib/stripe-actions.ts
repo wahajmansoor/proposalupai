@@ -3,10 +3,111 @@
 
 import { stripe } from '@/lib/stripe/config';
 import { headers } from 'next/headers';
-import { redirect } from 'next/navigation';
-import { z } from 'zod';
-import type Stripe from 'stripe';
 import { revalidatePath } from 'next/cache';
+import type Stripe from 'stripe';
+import { adminDb } from '@/lib/firebase/admin';
+import type { Firestore, DocumentData } from 'firebase-admin/firestore';
+import { FieldValue } from 'firebase-admin/firestore';
+import { z } from 'zod';
+
+// --- Credit Logic (Moved from credits.ts for stability) ---
+
+async function logCreditHistory(db: Firestore, userId: string, amount: number, reason:string) {
+  if (!userId || !amount || !reason) return;
+  try {
+    await db.collection('users').doc(userId).collection('creditHistory').add({
+      amount,
+      reason,
+      createdAt: FieldValue.serverTimestamp(),
+    });
+    console.log(`Logged ${amount} credits for user ${userId}. Reason: ${reason}`);
+  } catch (error) {
+    console.error(`Failed to log credit history for user ${userId}:`, error);
+  }
+}
+
+async function awardReferralBonusToReferrer(db: Firestore, referralCode: string, newUserName: string | null) {
+  if (!referralCode) return;
+
+  try {
+    const usersRef = db.collection('users');
+    const snapshot = await usersRef.where('referralCode', '==', referralCode).limit(1).get();
+
+    if (!snapshot.empty) {
+      const referringUserDoc = snapshot.docs[0];
+      const referredFriendName = newUserName || 'your friend';
+      
+      await referringUserDoc.ref.update({
+        proposalCredits: FieldValue.increment(5)
+      });
+      
+      await logCreditHistory(db, referringUserDoc.id, 5, `Referral bonus for ${referredFriendName} subscribing`);
+      console.log(`Awarded 5 credits to user ${referringUserDoc.id} for successful referral.`);
+    } else {
+      console.warn(`Attempted to award referral bonus for non-existent referral code: "${referralCode}"`);
+    }
+  } catch (error) {
+    console.error('Error awarding referral credits:', error);
+  }
+}
+
+async function handleNewTrial(db: Firestore, userId: string, userData: DocumentData) {
+    let creditsToAdd = 3;
+    let reason = '2-Day trial activation';
+
+    if (userData?.referredBy) {
+        creditsToAdd += 5;
+        reason += ' (+5 referral bonus)';
+    }
+    
+    await logCreditHistory(db, userId, creditsToAdd, reason);
+    await db.collection('users').doc(userId).update({
+        proposalCredits: FieldValue.increment(creditsToAdd)
+    });
+}
+
+async function handlePlanActivation(db: Firestore, userId: string, userData: DocumentData, newInterval?: 'month' | 'year') {
+    let creditsToAdd = 0;
+    let reason = '';
+    const updatePayload: { [key: string]: any } = {};
+
+    if (newInterval === 'year') {
+        creditsToAdd = 100;
+        reason = 'Pro Yearly plan activation';
+    } else if (newInterval === 'month') {
+        creditsToAdd = 10;
+        reason = 'Pro Monthly plan activation';
+    }
+    
+    if (userData?.referredBy) {
+        await awardReferralBonusToReferrer(db, userData.referredBy, userData.displayName);
+        updatePayload.referredBy = FieldValue.delete();
+    }
+
+    if (creditsToAdd > 0) {
+        updatePayload.proposalCredits = FieldValue.increment(creditsToAdd);
+        await logCreditHistory(db, userId, creditsToAdd, reason);
+    }
+    
+    if (Object.keys(updatePayload).length > 0) {
+        await db.collection('users').doc(userId).update(updatePayload);
+    }
+}
+
+async function handlePlanUpgrade(db: Firestore, userId: string, userData: DocumentData) {
+    const creditsToAdd = 100;
+    const reason = 'Upgraded to Pro Yearly';
+    
+    await logCreditHistory(db, userId, creditsToAdd, reason);
+    
+    await db.collection('users').doc(userId).update({
+        proposalCredits: FieldValue.increment(creditsToAdd),
+        upgradeBonusGiven: true,
+    });
+}
+
+
+// --- Main Stripe Actions ---
 
 export async function handlePlanChange(formData: FormData): Promise<{
   success?: boolean;
@@ -14,10 +115,6 @@ export async function handlePlanChange(formData: FormData): Promise<{
   redirectUrl?: string;
   message?: string;
 }> {
-  const { handleNewTrial, handlePlanActivation, handlePlanUpgrade } = await import('./firebase/credits');
-  const { adminDb } = await import('./firebase/admin');
-
-
   let interval = formData.get('interval') as 'monthly' | 'yearly' | null;
   const coupon = formData.get('coupon') as string | null;
   const firebaseUid = formData.get('firebaseUid') as string | null;
@@ -25,6 +122,10 @@ export async function handlePlanChange(formData: FormData): Promise<{
   const subscriptionStatus = formData.get('subscriptionStatus') as string | null;
   const subscriptionId = formData.get('subscriptionId') as string | null;
   const currentInterval = formData.get('currentInterval') as 'month' | 'year' | null;
+
+  if (!adminDb) {
+    return { error: 'The server is not configured correctly. Please contact support.' };
+  }
 
   if (!firebaseUid || !stripeCustomerId) {
     return { error: 'User is not properly authenticated. Please log in again.' };
@@ -50,9 +151,6 @@ export async function handlePlanChange(formData: FormData): Promise<{
   const cancelUrl = `${origin}/pricing`;
 
   try {
-    if (!adminDb) {
-      throw new Error("Firebase Admin not initialized.");
-    }
     const userQuery = await adminDb.collection('users').where('stripeCustomerId', '==', stripeCustomerId).limit(1).get();
     if (userQuery.empty) {
       return { error: 'User not found in database.' };
@@ -153,7 +251,6 @@ export async function handlePlanChange(formData: FormData): Promise<{
 }
 
 export async function createCustomerPortalSession(): Promise<{ url?: string; error?: string }> {
-  // This function depends on getting the user from the server session.
   const { getCurrentUser } = await import('@/lib/firebase/server-auth');
   const currentUser = await getCurrentUser();
   if (!currentUser) {
