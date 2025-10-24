@@ -30,51 +30,6 @@ export async function addCredits(db: Firestore, userRef: DocumentReference, amou
     });
 }
 
-export async function handleNewTrial(db: Firestore, userId: string) {
-    const userRef = db.collection('users').doc(userId);
-    const userDoc = await userRef.get();
-    
-    if (!userDoc.exists) {
-        console.error(`handleNewTrial: User document ${userId} does not exist.`);
-        return;
-    }
-    
-    const userData = userDoc.data();
-    if (!userData) return;
-
-    // Prevent giving trial credits multiple times
-    if (userData.trialCreditsAwarded) {
-        console.log(`handleNewTrial: Trial credits already awarded for user ${userId}. Skipping.`);
-        return;
-    }
-
-    let creditsToAward = 5;
-    let creditReason = 'Started a new trial';
-
-    // If the user was referred, they get a bonus, and the referrer gets a bonus.
-    if (userData.referredBy) {
-        const referrerQuery = await db.collection('users').where('referralCode', '==', userData.referredBy).limit(1).get();
-        if (!referrerQuery.empty) {
-            const referrerRef = referrerQuery.docs[0].ref;
-            
-            // Award 5 credits to the referrer
-            await addCredits(db, referrerRef, 5, `Referral bonus for ${userData.displayName || 'a new user'}`);
-            console.log(`Awarded 5 referral credits to referrer ${referrerRef.id}.`);
-
-            // The new user gets 10 credits total
-            creditsToAward = 10;
-            creditReason = 'Started trial with referral bonus';
-        }
-    }
-
-    await addCredits(db, userRef, creditsToAward, creditReason);
-    // Mark that trial credits have been given
-    await userRef.update({ trialCreditsAwarded: true });
-    
-    console.log(`Awarded ${creditsToAward} initial credits to new user ${userId}.`);
-}
-
-
 // --- Main Stripe Actions ---
 
 export async function handlePlanChange(formData: FormData): Promise<{
@@ -116,37 +71,63 @@ export async function handlePlanChange(formData: FormData): Promise<{
   const cancelUrl = `${origin}/pricing`;
 
   try {
-    const userQuery = await adminDb.collection('users').where('stripeCustomerId', '==', stripeCustomerId).limit(1).get();
-    if (userQuery.empty) {
-      return { error: 'User not found in database.' };
+    const userRef = adminDb.collection('users').doc(firebaseUid);
+    const userDoc = await userRef.get();
+    
+    if (!userDoc.exists) {
+        return { error: 'User not found in database.' };
     }
-    const userDoc = userQuery.docs[0];
+    const userData = userDoc.data()!;
+
 
     // Scenario 1: New user starting a trial
     if (!subscriptionStatus || subscriptionStatus === 'null' || subscriptionStatus === 'undefined') {
        
-      // Award credits BEFORE creating the session
-      await handleNewTrial(adminDb, firebaseUid);
+        // Prevent awarding trial credits multiple times
+        if (!userData.trialCreditsAwarded) {
+            let creditsToAward = 5;
+            let creditReason = 'Started a new trial';
 
-      const sessionParams: Stripe.Checkout.SessionCreateParams = {
-        customer: stripeCustomerId,
-        client_reference_id: firebaseUid,
-        success_url: successUrl,
-        cancel_url: cancelUrl,
-        mode: 'subscription',
-        line_items: [{ price: priceId, quantity: 1 }],
-        allow_promotion_codes: true,
-        subscription_data: {
-          trial_period_days: 2,
-        },
-      };
+            // Check for referral
+            if (userData.referredBy) {
+                const referrerQuery = await adminDb.collection('users').where('referralCode', '==', userData.referredBy).limit(1).get();
+                if (!referrerQuery.empty) {
+                    const referrerRef = referrerQuery.docs[0].ref;
+                    // Award 5 credits to the referrer
+                    await addCredits(adminDb, referrerRef, 5, `Referral bonus for ${userData.displayName || 'a new user'}`);
+                    console.log(`Awarded 5 referral credits to referrer ${referrerRef.id}.`);
 
-      if (coupon) {
-        sessionParams.discounts = [{ coupon }];
-      }
+                    // New user gets 10 credits total (5 for trial + 5 for referral)
+                    creditsToAward = 10;
+                    creditReason = 'Started trial with referral bonus';
+                }
+            }
+            
+            await addCredits(adminDb, userRef, creditsToAward, creditReason);
+            // Mark that trial credits have been given
+            await userRef.update({ trialCreditsAwarded: true });
+            console.log(`Awarded ${creditsToAward} initial credits to new user ${firebaseUid}.`);
+        }
 
-      const session = await stripe.checkout.sessions.create(sessionParams);
-      return { redirectUrl: session.url! };
+        const sessionParams: Stripe.Checkout.SessionCreateParams = {
+            customer: stripeCustomerId,
+            client_reference_id: firebaseUid,
+            success_url: successUrl,
+            cancel_url: cancelUrl,
+            mode: 'subscription',
+            line_items: [{ price: priceId, quantity: 1 }],
+            allow_promotion_codes: true,
+            subscription_data: {
+              trial_period_days: 2,
+            },
+        };
+
+        if (coupon) {
+            sessionParams.discounts = [{ coupon }];
+        }
+
+        const session = await stripe.checkout.sessions.create(sessionParams);
+        return { redirectUrl: session.url! };
     }
     
     // Scenario 2: User is on a trial and activating a plan
@@ -165,7 +146,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
             });
 
             // Directly update Firestore to ensure status is reflected immediately
-            await userDoc.ref.update({
+            await userRef.update({
                 subscriptionStatus: 'active',
                 subscriptionInterval: updatedSubscription.items.data[0].price.recurring?.interval,
                 subscriptionCurrentPeriodEnd: new Date(updatedSubscription.current_period_end * 1000),
@@ -176,9 +157,9 @@ export async function handlePlanChange(formData: FormData): Promise<{
             // Award initial credits upon first activation
             const planInterval = updatedSubscription.items.data[0].price.recurring?.interval;
             if (planInterval === 'month') {
-                await addCredits(adminDb, userDoc.ref, 10, 'Monthly plan activation bonus');
+                await addCredits(adminDb, userRef, 10, 'Monthly plan activation bonus');
             } else if (planInterval === 'year') {
-                await addCredits(adminDb, userDoc.ref, 100, 'Yearly plan activation bonus');
+                await addCredits(adminDb, userRef, 100, 'Yearly plan activation bonus');
             }
 
             revalidatePath('/pricing');
@@ -219,7 +200,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
       });
 
       // Immediately update the database
-      await userDoc.ref.update({
+      await userRef.update({
           subscriptionStatus: 'active',
           subscriptionInterval: 'year',
           subscriptionCurrentPeriodEnd: new Date(updatedSubscription.current_period_end * 1000),
@@ -228,7 +209,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
       });
       
       // Award the difference in credits for upgrading
-      await addCredits(adminDb, userDoc.ref, 90, 'Yearly plan upgrade bonus');
+      await addCredits(adminDb, userRef, 90, 'Yearly plan upgrade bonus');
 
       revalidatePath('/pricing');
       revalidatePath('/subscription');
