@@ -26,6 +26,7 @@ interface UserProfile {
   referredBy?: string;
   lastPrice?: number;
   upgradeBonusGiven?: boolean;
+  trialCreditsAwarded?: boolean;
 }
 
 interface AuthContextType {

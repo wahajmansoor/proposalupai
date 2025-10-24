@@ -34,36 +34,44 @@ export async function handleNewTrial(db: Firestore, userId: string) {
     const userRef = db.collection('users').doc(userId);
     const userDoc = await userRef.get();
     
-    if (userDoc.exists) {
-        const userData = userDoc.data();
-        if (!userData) return;
+    if (!userDoc.exists) {
+        console.error(`handleNewTrial: User document ${userId} does not exist.`);
+        return;
+    }
+    
+    const userData = userDoc.data();
+    if (!userData) return;
 
-        let initialCredits = 5;
-        let initialReason = 'Started a new trial';
-        
-        // Check if the new user was referred and add bonus credits
-        if (userData.referredBy) {
-            const referrerQuery = await db.collection('users').where('referralCode', '==', userData.referredBy).limit(1).get();
-            if (!referrerQuery.empty) {
-                const referrerDoc = referrerQuery.docs[0];
-                const referrerRef = referrerDoc.ref;
-                
-                console.log(`Processing trial referral: ${referrerDoc.id} referred ${userId}. Awarding credits.`);
-                
-                // Award 5 credits to the referrer
-                await addCredits(db, referrerRef, 5, `Referral bonus for ${userData.displayName || 'a new user'}`);
+    // Prevent giving trial credits multiple times
+    if (userData.trialCreditsAwarded) {
+        console.log(`handleNewTrial: Trial credits already awarded for user ${userId}. Skipping.`);
+        return;
+    }
 
-                // The new user gets 5 trial credits + 5 referral bonus credits
-                initialCredits += 5;
-                initialReason = 'Started trial with referral bonus';
-            }
-        }
+    let creditsToAward = 5;
+    let creditReason = 'Started a new trial';
 
-        // Award credits to the new user if they don't have any yet
-        if (userData && (userData.proposalCredits === undefined || userData.proposalCredits === null || userData.proposalCredits === 0)) {
-            await addCredits(db, userRef, initialCredits, initialReason);
+    // If the user was referred, they get a bonus, and the referrer gets a bonus.
+    if (userData.referredBy) {
+        const referrerQuery = await db.collection('users').where('referralCode', '==', userData.referredBy).limit(1).get();
+        if (!referrerQuery.empty) {
+            const referrerRef = referrerQuery.docs[0].ref;
+            
+            // Award 5 credits to the referrer
+            await addCredits(db, referrerRef, 5, `Referral bonus for ${userData.displayName || 'a new user'}`);
+            console.log(`Awarded 5 referral credits to referrer ${referrerRef.id}.`);
+
+            // The new user gets 10 credits total
+            creditsToAward = 10;
+            creditReason = 'Started trial with referral bonus';
         }
     }
+
+    await addCredits(db, userRef, creditsToAward, creditReason);
+    // Mark that trial credits have been given
+    await userRef.update({ trialCreditsAwarded: true });
+    
+    console.log(`Awarded ${creditsToAward} initial credits to new user ${userId}.`);
 }
 
 

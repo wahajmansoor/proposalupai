@@ -79,11 +79,6 @@ export async function POST(req: Request) {
 
                         await userRef.update(subscriptionData);
                         console.log(`Successfully synced new subscription for user ${userRef.id}`);
-                        
-                        // This is a new subscription, if it's a trial, handle trial logic
-                        if (subscription.status === 'trialing') {
-                            await handleNewTrial(adminDb, userRef.id);
-                        }
                     }
                 } else if (session.mode === 'payment') {
                     const paymentIntentId = session.payment_intent as string;
@@ -102,19 +97,22 @@ export async function POST(req: Request) {
                         }
                     }
                 } else if (session.mode === 'setup') {
-                    const setupIntentId = session.setup_intent as string;
-                    const setupIntent = await stripe.setupIntents.retrieve(setupIntentId);
-                    if (setupIntent.metadata?.subscription_id) {
-                         // This is likely a trial activation, we can handle new trial logic here if needed
-                        const userRef = await findUserByStripeCustomerId(adminDb, session.customer as string);
-                        if (userRef) {
-                            await handleNewTrial(adminDb, userRef.id);
-                        }
-                    }
+                    // This is a trial activation. The actual credit award is handled in `customer.subscription.created`.
                 }
                 break;
 
-            case 'customer.subscription.created':
+            case 'customer.subscription.created': {
+                const subscription = event.data.object as Stripe.Subscription;
+                // If the subscription is trialing, it's a new user starting their journey.
+                if (subscription.status === 'trialing') {
+                    const stripeCustomerId = subscription.customer as string;
+                    const userRef = await findUserByStripeCustomerId(adminDb, stripeCustomerId);
+                    if (userRef) {
+                        await handleNewTrial(adminDb, userRef.id);
+                    }
+                }
+                 // Fallthrough to update subscription details
+            }
             case 'customer.subscription.updated': {
                 const subscription = event.data.object as Stripe.Subscription;
                 const stripeCustomerId = subscription.customer as string;
@@ -136,11 +134,6 @@ export async function POST(req: Request) {
                         lastPrice: price?.unit_amount ? price.unit_amount / 100 : null,
                         updatedAt: FieldValue.serverTimestamp(),
                     };
-                    
-                    // If a user is activating a trial by adding a payment method
-                    if (subscription.status === 'trialing' && event.type === 'customer.subscription.created') {
-                        await handleNewTrial(adminDb, userRef.id);
-                    }
 
                     await userRef.update(subscriptionData);
                     console.log(`Successfully synced subscription for user ${userRef.id}. New status: ${newStatus}`);
