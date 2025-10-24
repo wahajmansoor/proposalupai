@@ -115,7 +115,7 @@ export function CreditsButton() {
         </DialogHeader>
         <div className="space-y-4 pt-4">
           <div className="space-y-2">
-            <Label htmlFor="referral-link" className="text-center w-full block">Your Unique Referral Link</Label>
+            <Label htmlFor="referral-link" className="text-center w-full block">Your Referral Link</Label>
             <div className="flex items-center gap-2">
               <Input id="referral-link" value={referralLink} readOnly />
               <Button size="icon" variant="outline" onClick={copyToClipboard} disabled={!referralLink}>
