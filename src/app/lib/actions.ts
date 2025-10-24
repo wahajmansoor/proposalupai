@@ -4,10 +4,10 @@
 import { z } from 'zod';
 import { OAuth2Client } from 'google-auth-library';
 import { headers } from 'next/headers';
-import { getCurrentUser } from '@/lib/firebase/server-auth';
+import { getCurrentUser, incrementProposalCount, decrementProposalCredits } from '@/lib/firebase/server-auth';
 import { revalidatePath } from 'next/cache';
 import { adminDb } from '@/lib/firebase/admin';
-import { incrementProposalCount, decrementProposalCredits } from '@/lib/firebase/usage';
+
 import type { PortfolioLink } from './types';
 import type { Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getCountryFromIp } from '@/app/lib/location';
@@ -309,9 +309,6 @@ const updateDisplayNameSchema = z.object({
 });
 
 async function updateUserInFirestore(uid: string, data: { displayName: string }) {
-  if (!adminDb) {
-    throw new Error('Database admin is not initialized.');
-  }
   const userRef = adminDb.collection('users').doc(uid);
   await userRef.update(data);
 }
@@ -319,9 +316,6 @@ async function updateUserInFirestore(uid: string, data: { displayName: string })
 async function updateUserDisplayName(uid: string, displayName: string) {
   const { adminAuth } = await import('@/lib/firebase/admin');
   if (!uid) throw new Error('You must be logged in to update your profile.');
-  if (!adminAuth) {
-    throw new Error('Auth admin is not initialized.');
-  }
 
   try {
     // Update Firebase Auth profile (server-side)
@@ -394,10 +388,6 @@ export async function getCreditHistory(): Promise<{ history?: CreditHistoryItem[
         return { error: 'User not authenticated.' };
     }
     
-     if (!adminDb) {
-        return { error: 'Database not initialized.' };
-    }
-
     try {
         const historyRef = adminDb.collection('users').doc(currentUser.user.uid).collection('creditHistory');
         const querySnapshot = await historyRef.orderBy('createdAt', 'desc').get();
