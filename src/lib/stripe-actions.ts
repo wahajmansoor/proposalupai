@@ -125,6 +125,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
       const subscription = await stripe.subscriptions.retrieve(subscriptionId);
       const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
         trial_end: 'now',
+        cancel_at_period_end: false, // Ensure any pending cancellation is removed
         items: [{
           id: subscription.items.data[0].id,
           price: priceId,
