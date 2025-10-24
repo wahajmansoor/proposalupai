@@ -7,7 +7,6 @@ import { headers } from 'next/headers';
 import type { UserRecord } from 'firebase-admin/auth';
 import { stripe } from '@/lib/stripe/config';
 import { getCountryFromIp } from '@/app/lib/location';
-import { FieldValue } from 'firebase-admin/firestore';
 
 export async function GET(req: NextRequest) {
   const headersList = headers();
@@ -128,7 +127,6 @@ export async function GET(req: NextRequest) {
             subscriptionStatus: null,
             country: country,
             referralCode: userRecord.uid.substring(0, 8), // Generate and store referral code
-            proposalCredits: 0, // All new users start with 0 credits
         };
         
         if (referralCode) {

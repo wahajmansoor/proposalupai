@@ -31,15 +31,7 @@ export async function getCurrentUser(): Promise<{
     const userDocRef = adminDb.collection('users').doc(user.uid);
     const userDocSnap = await userDocRef.get();
     
-    let userDocData = userDocSnap.exists ? userDocSnap.data()! : null;
-
-    if (userDocData && !userDocData.referralCode) {
-      const newReferralCode = user.uid.substring(0, 8);
-      await userDocRef.update({ referralCode: newReferralCode });
-      userDocData.referralCode = newReferralCode;
-    }
-    
-    return { user, userDoc: userDocData };
+    return { user, userDoc: userDocSnap.exists ? userDocSnap.data()! : null };
 
   } catch (error) {
     console.error('Error verifying session cookie:', error);

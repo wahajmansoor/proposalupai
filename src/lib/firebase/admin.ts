@@ -1,49 +1,39 @@
 
-'use server';
-import { initializeApp, getApps, cert, App, ServiceAccount } from 'firebase-admin/app';
+'server-only';
+import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getAuth, Auth } from 'firebase-admin/auth';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 
-// This function can be called by any server-side code to ensure
-// the Firebase Admin SDK is initialized before use.
-export async function getFirebaseAdmin() {
-  const existingApp = getApps().find(app => app.name === '[DEFAULT]');
-  
-  if (existingApp) {
-    return { 
-      app: existingApp, 
-      adminAuth: getAuth(existingApp), 
-      adminDb: getFirestore(existingApp) 
-    };
-  }
+const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
+if (!serviceAccountString || serviceAccountString === 'your_firebase_service_account_key_here') {
+  throw new Error('Missing or placeholder FIREBASE_SERVICE_ACCOUNT_KEY environment variable. Please add your service account key to the .env file.');
+}
 
-  // Construct the service account from individual environment variables
-  const serviceAccount: ServiceAccount = {
-    projectId: process.env.FIREBASE_PROJECT_ID,
-    clientEmail: process.env.FIREBASE_CLIENT_EMAIL,
-    // Replace escaped newlines from .env file
-    privateKey: (process.env.FIREBASE_PRIVATE_KEY || '').replace(/\\n/g, '\n'),
-  };
+let app: App;
 
-  // Check if all necessary service account details are present
-  if (!serviceAccount.projectId || !serviceAccount.clientEmail || !serviceAccount.privateKey) {
-    console.error('Firebase Admin SDK not configured. The FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY environment variables are required. Server-side Firebase features will be disabled.');
-    // Explicitly return undefined for all properties
-    return { app: undefined, adminAuth: undefined, adminDb: undefined };
-  }
-
+if (!getApps().length) {
   try {
-    const app = initializeApp({
+    const serviceAccount = JSON.parse(serviceAccountString);
+    
+    // Vercel might escape newlines, so we need to replace them back.
+    if (serviceAccount.private_key) {
+      serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+    }
+    
+    app = initializeApp({
       credential: cert(serviceAccount),
     });
-
-    const adminAuth = getAuth(app);
-    const adminDb = getFirestore(app);
-
-    return { app, adminAuth, adminDb };
   } catch (error: any) {
-    console.error('Firebase Admin SDK initialization failed:', error.message);
-    // Re-throw the error to be caught by the calling function
-    throw new Error(`Firebase Admin SDK initialization failed: ${error.message}`);
+    console.error('Firebase Admin SDK initialization failed:', error);
+    throw new Error(
+      'Could not initialize Firebase Admin SDK. Verify the FIREBASE_SERVICE_ACCOUNT_KEY.'
+    );
   }
+} else {
+  app = getApps()[0];
 }
+
+const adminAuth: Auth = getAuth(app);
+const adminDb: Firestore = getFirestore(app);
+
+export { adminAuth, adminDb };

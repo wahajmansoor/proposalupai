@@ -7,19 +7,84 @@ import { redirect } from 'next/navigation';
 import { z } from 'zod';
 import type Stripe from 'stripe';
 import { revalidatePath } from 'next/cache';
-import { getFirebaseAdmin } from '@/lib/firebase/admin';
-import { FieldValue } from 'firebase-admin/firestore';
 
-async function createCheckoutSession(
-    firebaseUid: string,
-    stripeCustomerId: string,
-    priceId: string,
-    successUrl: string,
-    cancelUrl: string,
-    couponId: string | null,
-    isTrial: boolean = false
-): Promise<{ redirectUrl?: string; error?: string }> {
-    try {
+export async function handleSubscriptionChange(formData: FormData): Promise<{
+  success?: boolean;
+  error?: string;
+  redirectUrl?: string;
+  message?: string;
+}> {
+  let interval = formData.get('interval') as 'monthly' | 'yearly' | null;
+  const coupon = formData.get('coupon') as string | null;
+  const firebaseUid = formData.get('firebaseUid') as string | null;
+  const stripeCustomerId = formData.get('stripeCustomerId') as string | null;
+  const subscriptionStatus = formData.get('subscriptionStatus') as string | null;
+  const subscriptionId = formData.get('subscriptionId') as string | null;
+  const currentInterval = formData.get('currentInterval') as 'month' | 'year' | null;
+
+  if (!firebaseUid || !stripeCustomerId) {
+    return { error: 'User is not properly authenticated. Please log in again.' };
+  }
+  
+  if (!interval) {
+    interval = 'monthly';
+  }
+
+  if (interval !== 'monthly' && interval !== 'yearly') {
+    return { error: 'Invalid billing interval selected.' };
+  }
+
+  const monthlyPriceId = process.env.STRIPE_MONTHLY_PRICE_ID!;
+  const yearlyPriceId = process.env.STRIPE_YEARLY_PRICE_ID!;
+  const priceId = interval === 'yearly' ? yearlyPriceId : monthlyPriceId;
+
+  const headersList = headers();
+  const protocol = headersList.get('x-forwarded-proto') || 'http';
+  const host = headersList.get('host');
+  const origin = `${protocol}://${host}`;
+  const successUrl = `${origin}/dashboard?subscribed=true&interval=${interval}`;
+  const cancelUrl = `${origin}/pricing`;
+
+  try {
+    // Scenario 1: New user starting a trial
+    if (!subscriptionStatus || subscriptionStatus === 'null' || subscriptionStatus === 'undefined') {
+      const sessionParams: Stripe.Checkout.SessionCreateParams = {
+        customer: stripeCustomerId,
+        client_reference_id: firebaseUid,
+        success_url: successUrl,
+        cancel_url: cancelUrl,
+        mode: 'subscription',
+        line_items: [{ price: priceId, quantity: 1 }],
+        allow_promotion_codes: true,
+        subscription_data: {
+          trial_period_days: 2,
+        },
+      };
+
+      if (coupon) {
+        sessionParams.discounts = [{ coupon }];
+      }
+
+      const session = await stripe.checkout.sessions.create(sessionParams);
+      return { redirectUrl: session.url! };
+    }
+    
+    // Scenario 2: User is on active monthly and upgrading to yearly
+    if (subscriptionStatus === 'active' && subscriptionId && currentInterval === 'month' && interval === 'yearly') {
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
+        items: [{ id: subscription.items.data[0].id, price: priceId }],
+        proration_behavior: 'create_prorations',
+        coupon: coupon || undefined,
+      });
+
+      revalidatePath('/pricing');
+      return { success: true, message: 'Your plan has been successfully switched to Yearly!' };
+    }
+
+    // Scenario 3: User had a canceled or failed sub and is reactivating
+    // This is simplified to just creating a new checkout session.
+    if (subscriptionStatus === 'canceled' || subscriptionStatus === 'unpaid' || subscriptionStatus === 'past_due') {
         const sessionParams: Stripe.Checkout.SessionCreateParams = {
             customer: stripeCustomerId,
             client_reference_id: firebaseUid,
@@ -30,180 +95,33 @@ async function createCheckoutSession(
             allow_promotion_codes: true,
         };
 
-        if (isTrial) {
-            sessionParams.subscription_data = {
-                trial_period_days: 2,
-                 metadata: {
-                    firebaseUID: firebaseUid
-                }
-            };
-        } else {
-            sessionParams.subscription_data = {
-                metadata: {
-                    firebaseUID: firebaseUid
-                }
-            };
+        if (coupon) {
+            sessionParams.discounts = [{ coupon }];
         }
         
-        if (couponId) {
-            sessionParams.discounts = [{ promotion_code: couponId }];
-        }
-
         const session = await stripe.checkout.sessions.create(sessionParams);
         return { redirectUrl: session.url! };
-
-    } catch (error: any) {
-        console.error("Error creating checkout session:", error);
-        return { error: error.message || 'An unexpected error occurred.' };
-    }
-}
-
-
-export async function handlePlanChange(formData: FormData): Promise<{
-    success?: boolean;
-    error?: string;
-    redirectUrl?: string;
-    message?: string;
-}> {
-    
-    let interval = formData.get('interval') as 'monthly' | 'yearly' | null;
-    const coupon = formData.get('coupon') as string | null;
-    const firebaseUid = formData.get('firebaseUid') as string | null;
-    const stripeCustomerId = formData.get('stripeCustomerId') as string | null;
-    const subscriptionStatus = formData.get('subscriptionStatus') as string | null;
-    const subscriptionId = formData.get('subscriptionId') as string | null;
-    const currentInterval = formData.get('currentInterval') as 'month' | 'year' | null;
-
-    if (!firebaseUid || !stripeCustomerId) {
-        return { error: "User is not properly authenticated. Please log in again." };
     }
     
-    if (!interval) {
-        interval = 'monthly';
+    // Fallback if no specific action is matched (e.g., trying to subscribe to the same plan)
+    return { error: 'No valid action could be determined for your subscription state.' };
+
+  } catch (error: any) {
+    console.error("Error in handleSubscriptionChange:", error);
+    if (error.raw?.message?.includes('not specified for use with this customer')) {
+        return { error: 'This coupon code is not valid for your account.' };
     }
-
-    if (interval !== 'monthly' && interval !== 'yearly') {
-        return { error: 'Invalid billing interval selected.' };
+    if (error.code === 'coupon_invalid' || error.code === 'promotion_code_invalid' || error.code === 'promotion_code_expired') {
+        return { error: 'The provided coupon code is invalid or has expired.' };
     }
-
-    const monthlyPriceId = process.env.STRIPE_MONTHLY_PRICE_ID!;
-    const yearlyPriceId = process.env.STRIPE_YEARLY_PRICE_ID!;
-    const priceId = interval === 'yearly' ? yearlyPriceId : monthlyPriceId;
-
-    const headersList = headers();
-    const protocol = headersList.get('x-forwarded-proto') || 'http';
-    const host = headersList.get('host');
-    const origin = `${protocol}://${host}`;
-    const successUrl = `${origin}/dashboard?subscribed=true&interval=${interval}`;
-    const cancelUrl = `${origin}/pricing`;
-
-    try {
-        // Scenario 1: New user starting a trial
-        if (!subscriptionStatus || subscriptionStatus === 'null' || subscriptionStatus === 'undefined') {
-             return await createCheckoutSession(firebaseUid, stripeCustomerId, priceId, successUrl, cancelUrl, coupon, true);
-        }
-
-        // Scenario 2: User is in trial and activating their plan
-        if (subscriptionStatus === 'trialing' && subscriptionId) {
-            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-            const updateParams: Stripe.SubscriptionUpdateParams = {
-                items: [{ id: subscription.items.data[0].id, price: priceId }],
-                trial_end: 'now',
-                proration_behavior: 'none',
-            };
-             if (coupon) {
-                updateParams.promotion_code = coupon;
-            }
-            const updatedSubscription = await stripe.subscriptions.update(subscriptionId, updateParams);
-            
-            try {
-                const { adminDb } = await getFirebaseAdmin();
-                if (adminDb) {
-                    const newPrice = updatedSubscription.items.data[0]?.price;
-                    await adminDb.collection('users').doc(firebaseUid).update({
-                        subscriptionStatus: 'active',
-                        subscriptionInterval: newPrice?.recurring?.interval,
-                        lastPrice: newPrice?.unit_amount ? newPrice.unit_amount / 100 : null,
-                        subscriptionCurrentPeriodEnd: new Date(updatedSubscription.current_period_end * 1000),
-                        updatedAt: FieldValue.serverTimestamp(),
-                    });
-                }
-            } catch (dbError: any) {
-                console.error("Non-critical error: Failed to immediately update Firestore after plan activation:", dbError.message);
-            }
-            
-            revalidatePath('/pricing');
-            revalidatePath('/dashboard');
-
-            const planName = interval === 'yearly' ? 'Yearly' : 'Monthly';
-            return { success: true, message: `Your ${planName} plan has been activated successfully!` };
-        }
-        
-        // Scenario 3: User is on active monthly and upgrading to yearly
-        if (subscriptionStatus === 'active' && subscriptionId && currentInterval === 'month' && interval === 'yearly') {
-             const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-             const updateParams: Stripe.SubscriptionUpdateParams = {
-                items: [{ id: subscription.items.data[0].id, price: priceId }],
-                proration_behavior: 'create_prorations',
-            };
-             if (coupon) {
-                updateParams.promotion_code = coupon;
-            }
-            const updatedSubscription = await stripe.subscriptions.update(subscriptionId, updateParams);
-            
-            try {
-                const { adminDb } = await getFirebaseAdmin();
-                if (adminDb) {
-                    const newPrice = updatedSubscription.items.data[0]?.price;
-                    await adminDb.collection('users').doc(firebaseUid).update({
-                        subscriptionStatus: 'active', // Status remains active
-                        subscriptionInterval: newPrice?.recurring?.interval,
-                        lastPrice: newPrice?.unit_amount ? newPrice.unit_amount / 100 : null,
-                        subscriptionCurrentPeriodEnd: new Date(updatedSubscription.current_period_end * 1000),
-                        updatedAt: FieldValue.serverTimestamp(),
-                    });
-                }
-            } catch (dbError: any) {
-                 console.error("Non-critical error: Failed to immediately update Firestore after plan upgrade:", dbError.message);
-            }
-
-            revalidatePath('/pricing');
-            return { success: true, message: 'Your plan has been successfully switched to Yearly!' };
-        }
-
-        // Scenario 4: User had a canceled or failed sub and is reactivating
-        if (subscriptionStatus === 'canceled' || subscriptionStatus === 'unpaid' || subscriptionStatus === 'past_due') {
-            const checkoutResult = await createCheckoutSession(firebaseUid, stripeCustomerId, priceId, successUrl, cancelUrl, coupon, false);
-            return checkoutResult;
-        }
-        
-        return { error: 'No valid action could be determined for your subscription state.' };
-
-    } catch (error: any) {
-        console.error("Error in handlePlanChange:", error);
-        if (error.raw?.message?.includes('not specified for use with this customer')) {
-            return { error: 'This coupon code is not valid for your account.' };
-        }
-        if (error.code === 'coupon_invalid' || error.code === 'promotion_code_invalid' || error.code === 'promotion_code_expired') {
-            return { error: 'The provided coupon code is invalid or has expired.' };
-        }
-        return { error: error.message || 'An unexpected error occurred.' };
-    }
+    return { error: error.message || 'An unexpected error occurred.' };
+  }
 }
-
 
 export async function createCustomerPortalSession(): Promise<{ url?: string; error?: string }> {
   // This function depends on getting the user from the server session.
   const { getCurrentUser } = await import('@/lib/firebase/server-auth');
-  
-  let currentUser;
-  try {
-    currentUser = await getCurrentUser();
-  } catch (error: any) {
-    console.error("Authentication check failed:", error.message);
-    return { error: error.message };
-  }
-  
+  const currentUser = await getCurrentUser();
   if (!currentUser) {
     return { error: 'User not authenticated. Please log in again.' };
   }
@@ -299,7 +217,7 @@ export async function validateCouponAction(formData: FormData): Promise<{
     return {
       success: true,
       coupon: {
-        id: promoCode.id,
+        id: coupon.id,
         name: coupon.name,
         percent_off: coupon.percent_off,
         amount_off: coupon.amount_off,
@@ -312,4 +230,41 @@ export async function validateCouponAction(formData: FormData): Promise<{
 }
 
 
+export async function cancelSubscription(subscriptionId: string): Promise<{ success?: boolean; error?: string }> {
+    if (!subscriptionId) {
+        return { error: 'Subscription ID is missing.' };
+    }
     
+    // This action requires admin privileges, so we need to ensure the admin SDK is initialized.
+    const { getFirebaseAdmin } = await import('@/lib/firebase/admin');
+    const { adminDb } = await getFirebaseAdmin();
+    if (!adminDb) {
+      return { error: "Server is not configured to perform this action." };
+    }
+    
+    try {
+        const canceledSubscription = await stripe.subscriptions.update(subscriptionId, {
+            cancel_at_period_end: true,
+        });
+
+        // Update Firestore to reflect the cancellation
+        const stripeCustomerId = canceledSubscription.customer as string;
+        const userQuery = await adminDb.collection('users').where('stripeCustomerId', '==', stripeCustomerId).limit(1).get();
+        
+        if (!userQuery.empty) {
+            const userDoc = userQuery.docs[0];
+            await userDoc.ref.update({
+                subscriptionStatus: 'canceled',
+                updatedAt: FieldValue.serverTimestamp(),
+            });
+        }
+        
+        revalidatePath('/pricing');
+        revalidatePath('/dashboard');
+        
+        return { success: true };
+    } catch (error: any) {
+        console.error('Error canceling subscription:', error);
+        return { error: error.message || 'An unexpected error occurred while canceling the subscription.' };
+    }
+}

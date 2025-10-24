@@ -174,7 +174,6 @@ function SignupForm() {
         proposalCount: 0,
         subscriptionStatus: null,
         referralCode: newUser.uid.substring(0, 8),
-        proposalCredits: 0,
       };
 
       if (storedReferralCode) {
