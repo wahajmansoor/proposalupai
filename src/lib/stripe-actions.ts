@@ -5,7 +5,7 @@ import { stripe } from '@/lib/stripe/config';
 import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import type Stripe from 'stripe';
-import { FieldValue, type Firestore, type DocumentReference, type DocumentData } from 'firebase-admin/firestore';
+import { FieldValue, type Firestore, type DocumentReference } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { adminDb } from '@/lib/firebase/admin';
 
@@ -31,16 +31,28 @@ async function addCredits(db: Firestore, userRef: DocumentReference, amount: num
     });
 }
 
-async function handleNewTrial(db: Firestore, userId: string, userData: DocumentData) {
+async function handleNewTrial(db: Firestore, userId: string) {
     const userRef = db.collection('users').doc(userId);
-    // Only give trial credits if they haven't been given them before.
-     if (userData.proposalCredits === undefined || userData.proposalCredits === null) {
-        await addCredits(db, userRef, 5, 'Started a new trial');
+    const userDoc = await userRef.get();
+    
+    if (userDoc.exists) {
+        const userData = userDoc.data();
+        if (userData && (userData.proposalCredits === undefined || userData.proposalCredits === null)) {
+            await addCredits(db, userRef, 5, 'Started a new trial');
+        }
     }
 }
 
-export async function handleSubscriptionCreation(db: Firestore, userId: string, userData: DocumentData) {
+export async function handleSubscriptionCreation(db: Firestore, userId: string) {
     const userRef = db.collection('users').doc(userId);
+    const userDoc = await userRef.get();
+
+    if (!userDoc.exists) {
+        console.error(`handleSubscriptionCreation failed: User document ${userId} does not exist.`);
+        return;
+    }
+    const userData = userDoc.data();
+    if (!userData) return;
 
     // Check if the new subscriber was referred
     if (userData.referredBy) {
@@ -120,11 +132,10 @@ export async function handlePlanChange(formData: FormData): Promise<{
       return { error: 'User not found in database.' };
     }
     const userDoc = userQuery.docs[0];
-    const userData = userDoc.data();
 
     // Scenario 1: New user starting a trial
     if (!subscriptionStatus || subscriptionStatus === 'null' || subscriptionStatus === 'undefined') {
-       await handleNewTrial(adminDb, userDoc.id, userData);
+       await handleNewTrial(adminDb, userDoc.id);
 
       const sessionParams: Stripe.Checkout.SessionCreateParams = {
         customer: stripeCustomerId,
@@ -423,4 +434,3 @@ export async function createCreditPurchaseSession(formData: FormData): Promise<{
     return { error: 'Could not create a checkout session for credits.' };
   }
 }
-

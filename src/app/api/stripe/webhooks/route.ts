@@ -41,9 +41,9 @@ async function addCredits(db: Firestore, userId: string, amount: number, reason:
 }
 
 const creditProducts: Record<string, number> = {
-    [process.env.STRIPE_CREDITS_10_PRICE_ID!]: 10,
-    [process.env.STRIPE_CREDITS_25_PRICE_ID!]: 25,
-    [process.env.STRIPE_CREDITS_50_PRICE_ID!]: 50,
+    [process.env.NEXT_PUBLIC_STRIPE_CREDITS_10_PRICE_ID!]: 10,
+    [process.env.NEXT_PUBLIC_STRIPE_CREDITS_25_PRICE_ID!]: 25,
+    [process.env.NEXT_PUBLIC_STRIPE_CREDITS_50_PRICE_ID!]: 50,
 };
 
 export async function POST(req: Request) {
@@ -95,7 +95,7 @@ export async function POST(req: Request) {
                         console.log(`Successfully synced new subscription for user ${userDoc.id}`);
                         
                         // Handle referral credits if it's a new subscription
-                        await handleSubscriptionCreation(adminDb, userDoc.id, userDoc.data());
+                        await handleSubscriptionCreation(adminDb, userDoc.id);
                     }
                 } else if (session.mode === 'payment') {
                     const paymentIntentId = session.payment_intent as string;
@@ -175,4 +175,3 @@ export async function POST(req: Request) {
 
     return new NextResponse(JSON.stringify({ received: true }), { status: 200 });
 }
-
