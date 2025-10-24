@@ -43,7 +43,7 @@ export async function getUsers(): Promise<AppUser[]> {
       const createdAt = userData?.createdAt?.toDate()?.toISOString() || null;
       return {
         id: user.uid,
-        name: user.displayName,
+        name: userData?.displayName || user.displayName, // Prioritize Firestore displayName
         email: user.email,
         subscriptionStatus: userData?.subscriptionStatus || 'N/A',
         proposalCount: userData?.proposalCount || 0,
