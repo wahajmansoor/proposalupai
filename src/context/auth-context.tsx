@@ -39,10 +39,43 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>({ user: null, userProfile: null, loading: true, handleLogout: async () => {}, creditChange: 0 });
 
+function LogoutScreen() {
+    const [showRedirecting, setShowRedirecting] = useState(false);
+    const router = useRouter();
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            setShowRedirecting(true);
+            
+            // Perform the actual sign out and redirect after showing the message
+            setTimeout(async () => {
+                 await fetch('/api/auth/session', { method: 'DELETE' });
+                 await signOut(auth);
+                 router.push('/login');
+            }, 500);
+
+        }, 2000);
+
+        return () => clearTimeout(timer);
+    }, [router]);
+
+    return (
+        <div className="fixed inset-0 z-50 flex flex-col items-center justify-center bg-background text-foreground">
+            <ProposalUpLogos className="h-24 w-24 text-primary" />
+            <h1 className="mt-6 text-3xl font-bold">You’ve been logged out.</h1>
+            <p className="mt-2 text-lg text-muted-foreground">See you soon & keep winning projects!</p>
+            {showRedirecting && (
+                 <p className="mt-8 text-sm text-muted-foreground animate-pulse">Redirecting to login...</p>
+            )}
+        </div>
+    )
+}
+
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
   
   const [creditChange, setCreditChange] = useState(0);
@@ -100,10 +133,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const handleLogout = async () => {
-    await fetch('/api/auth/session', { method: 'DELETE' });
-    await signOut(auth);
-    router.push('/login');
+    setIsLoggingOut(true);
   };
+  
+  if (isLoggingOut) {
+    return <LogoutScreen />;
+  }
 
   return (
     <AuthContext.Provider value={{ user, userProfile, loading, handleLogout, creditChange }}>
