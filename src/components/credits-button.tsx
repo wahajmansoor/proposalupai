@@ -96,24 +96,24 @@ export function CreditsButton() {
           </Button>
       </DialogTrigger>
        <DialogContent className="sm:max-w-md">
-        <DialogHeader>
+        <DialogHeader className="items-center text-center">
+            <div className="flex justify-center pb-4">
+                <div 
+                    className="flex items-center justify-center h-32 w-32 rounded-full"
+                    style={{ backgroundColor: '#facc15' }}
+                >
+                    <div className="text-center">
+                        <p className="text-4xl font-bold" style={{ color: '#713f12' }}>{credits}</p>
+                        <p className="text-sm font-medium uppercase tracking-wider" style={{ color: '#713f12' }}>Credits</p>
+                    </div>
+                </div>
+            </div>
           <DialogTitle>Refer a Friend, Get Credits</DialogTitle>
            <DialogDescription>
             Share your link with friends. When they sign up and become a paying subscriber, you'll both get 5 extra proposal improvement credits!
           </DialogDescription>
         </DialogHeader>
-        <div className="flex justify-center py-4">
-            <div 
-                className="flex items-center justify-center h-32 w-32 rounded-full"
-                style={{ backgroundColor: '#facc15' }}
-            >
-                <div className="text-center">
-                    <p className="text-4xl font-bold" style={{ color: '#713f12' }}>{credits}</p>
-                    <p className="text-sm font-medium uppercase tracking-wider" style={{ color: '#713f12' }}>Credits</p>
-                </div>
-            </div>
-        </div>
-        <div className="space-y-4">
+        <div className="space-y-4 pt-4">
           <div className="space-y-2">
             <Label htmlFor="referral-link">Your Unique Referral Link</Label>
             <div className="flex items-center gap-2">
@@ -123,7 +123,7 @@ export function CreditsButton() {
               </Button>
             </div>
           </div>
-          <div className="flex items-center justify-center gap-8">
+          <div className="flex items-center justify-center gap-8 pt-2">
             <Link href={socialShareLinks.facebook} target="_blank" passHref>
               <ShareIcons.Facebook className="h-6 w-6 cursor-pointer dark:fill-white" />
             </Link>
