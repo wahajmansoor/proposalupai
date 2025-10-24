@@ -16,7 +16,6 @@ async function addCredits(db: Firestore, userRef: DocumentReference, amount: num
     await db.runTransaction(async (transaction) => {
         const userDoc = await transaction.get(userRef);
         if (!userDoc.exists) {
-            // This might happen in a race condition, so we stop the transaction.
             console.error(`User document ${userRef.id} does not exist. Cannot add credits.`);
             return;
         }
@@ -37,12 +36,31 @@ async function handleNewTrial(db: Firestore, userId: string) {
     
     if (userDoc.exists) {
         const userData = userDoc.data();
+        if (!userData) return;
+
+        // Award initial 5 credits for starting a trial if they don't have any
         if (userData && (userData.proposalCredits === undefined || userData.proposalCredits === null)) {
             await addCredits(db, userRef, 5, 'Started a new trial');
+        }
+
+        // Check if the new user was referred and award credits
+        if (userData.referredBy) {
+            const referrerQuery = await db.collection('users').where('referralCode', '==', userData.referredBy).limit(1).get();
+            if (!referrerQuery.empty) {
+                const referrerDoc = referrerQuery.docs[0];
+                const referrerRef = referrerDoc.ref;
+                
+                console.log(`Processing trial referral: ${referrerDoc.id} referred ${userId}. Awarding credits.`);
+                
+                // Award 5 credits to the referrer
+                await addCredits(db, referrerRef, 5, `Referral bonus for ${userData.displayName || 'a new user'}`);
+            }
         }
     }
 }
 
+// This function is for when a user converts from trial/free to a paid plan.
+// It is separate from the trial creation logic.
 export async function handleSubscriptionCreation(db: Firestore, userId: string) {
     const userRef = db.collection('users').doc(userId);
     const userDoc = await userRef.get();
@@ -50,38 +68,6 @@ export async function handleSubscriptionCreation(db: Firestore, userId: string) 
     if (!userDoc.exists) {
         console.error(`handleSubscriptionCreation failed: User document ${userId} does not exist.`);
         return;
-    }
-    const userData = userDoc.data();
-    if (!userData) return;
-
-    // Check if the new subscriber was referred
-    if (userData.referredBy) {
-        const referrerQuery = await db.collection('users').where('referralCode', '==', userData.referredBy).limit(1).get();
-        if (!referrerQuery.empty) {
-            const referrerDoc = referrerQuery.docs[0];
-            const referrerRef = referrerDoc.ref;
-            
-            console.log(`Processing referral: ${referrerDoc.id} referred ${userId}. Awarding credits.`);
-
-            // Use a transaction to award credits to both users
-            await db.runTransaction(async (transaction) => {
-                // Award 5 credits to the new user
-                transaction.update(userRef, { proposalCredits: FieldValue.increment(5) });
-                transaction.set(userRef.collection('creditHistory').doc(), {
-                    amount: 5,
-                    reason: `Referral bonus from ${referrerDoc.data().displayName || 'a user'}`,
-                    createdAt: FieldValue.serverTimestamp()
-                });
-
-                // Award 5 credits to the referrer
-                transaction.update(referrerRef, { proposalCredits: FieldValue.increment(5) });
-                transaction.set(referrerRef.collection('creditHistory').doc(), {
-                    amount: 5,
-                    reason: `Referral bonus for ${userData.displayName || 'a new user'}`,
-                    createdAt: FieldValue.serverTimestamp()
-                });
-            });
-        }
     }
 }
 
