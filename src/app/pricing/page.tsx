@@ -10,7 +10,6 @@ import { handlePlanChange, validateCouponAction, createCustomerPortalSession } f
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { ProposalUpLogo, ProposalUpLogoLight } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 import { Switch } from '@/components/ui/switch';
@@ -54,7 +53,7 @@ type ValidCoupon = {
 };
 
 export default function PricingPage() {
-  const { user, userProfile, loading: authLoading } = useAuth();
+  const { user, userProfile } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -199,16 +198,6 @@ export default function PricingPage() {
   }
 
   const isButtonDisabled = isSubmitting || (isMonthlyActive && billingInterval === 'monthly') || (isYearlyActive && billingInterval === 'yearly');
-
-
-  if (authLoading) {
-    return (
-        <div className="flex items-center justify-center min-h-screen">
-          <ProposalUpLogo className="dark:hidden h-24 w-24 animate-pulse text-primary" />
-          <ProposalUpLogoLight className="hidden dark:block h-24 w-24 animate-pulse text-primary" />
-        </div>
-      );
-  }
 
   return (
     <div className="flex flex-col items-center justify-center p-4 md:p-8">
