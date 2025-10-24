@@ -28,7 +28,7 @@ async function addCredits(db: Firestore, userRef: DocumentReference, amount: num
 async function handleNewTrial(db: Firestore, userId: string, userData: DocumentData) {
     const userRef = db.collection('users').doc(userId);
     // Only give trial credits if they haven't been given them before.
-    if (userData.proposalCredits === undefined || userData.proposalCredits < 5) {
+    if (userData.proposalCredits === undefined || userData.proposalCredits === 0) {
         await addCredits(db, userRef, 5, 'Started a new trial');
     }
 }
@@ -160,11 +160,19 @@ export async function handlePlanChange(formData: FormData): Promise<{
     if (subscriptionStatus === 'active' && subscriptionId && currentInterval === 'month' && interval === 'yearly') {
       const subscription = await stripe.subscriptions.retrieve(subscriptionId);
       
-      await stripe.subscriptions.update(subscriptionId, {
+      const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
         items: [{ id: subscription.items.data[0].id, price: priceId }],
         proration_behavior: 'create_prorations',
         coupon: coupon || undefined,
         cancel_at_period_end: false,
+      });
+
+      // Immediately update the database
+      await userDoc.ref.update({
+          subscriptionStatus: 'active',
+          subscriptionInterval: 'year',
+          lastPrice: updatedSubscription.items.data[0].price.unit_amount ? updatedSubscription.items.data[0].price.unit_amount / 100 : null,
+          updatedAt: FieldValue.serverTimestamp(),
       });
 
       revalidatePath('/pricing');
