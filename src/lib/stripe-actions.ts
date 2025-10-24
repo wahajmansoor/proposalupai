@@ -8,12 +8,17 @@ import { z } from 'zod';
 import type Stripe from 'stripe';
 import { revalidatePath } from 'next/cache';
 
-export async function handleSubscriptionChange(formData: FormData): Promise<{
+export async function handlePlanChange(formData: FormData): Promise<{
   success?: boolean;
   error?: string;
   redirectUrl?: string;
   message?: string;
 }> {
+  const { handleNewTrial, handlePlanActivation, handlePlanUpgrade } = await import('./firebase/credits');
+  const { getFirebaseAdmin } = await import('./firebase/admin');
+  const { adminDb } = await getFirebaseAdmin();
+
+
   let interval = formData.get('interval') as 'monthly' | 'yearly' | null;
   const coupon = formData.get('coupon') as string | null;
   const firebaseUid = formData.get('firebaseUid') as string | null;
@@ -46,8 +51,17 @@ export async function handleSubscriptionChange(formData: FormData): Promise<{
   const cancelUrl = `${origin}/pricing`;
 
   try {
+    const userQuery = await adminDb.collection('users').where('stripeCustomerId', '==', stripeCustomerId).limit(1).get();
+    if (userQuery.empty) {
+      return { error: 'User not found in database.' };
+    }
+    const userDoc = userQuery.docs[0];
+    const userData = userDoc.data();
+
     // Scenario 1: New user starting a trial
     if (!subscriptionStatus || subscriptionStatus === 'null' || subscriptionStatus === 'undefined') {
+       await handleNewTrial(adminDb, userDoc.id, userData);
+
       const sessionParams: Stripe.Checkout.SessionCreateParams = {
         customer: stripeCustomerId,
         client_reference_id: firebaseUid,
@@ -69,10 +83,29 @@ export async function handleSubscriptionChange(formData: FormData): Promise<{
       return { redirectUrl: session.url! };
     }
     
-    // Scenario 2: User is on active monthly and upgrading to yearly
+    // Scenario 2: User is on a trial and activating a plan
+    if (subscriptionStatus === 'trialing' && subscriptionId) {
+      await stripe.subscriptions.update(subscriptionId, {
+        trial_end: 'now',
+        coupon: coupon || undefined,
+      });
+
+      await handlePlanActivation(adminDb, userDoc.id, userData, interval);
+      
+      revalidatePath('/pricing');
+      return { success: true, message: 'Your plan has been successfully activated!' };
+    }
+
+
+    // Scenario 3: User is on active monthly and upgrading to yearly
     if (subscriptionStatus === 'active' && subscriptionId && currentInterval === 'month' && interval === 'yearly') {
       const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-      const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
+      
+      if (!userData.upgradeBonusGiven) {
+        await handlePlanUpgrade(adminDb, userDoc.id, userData);
+      }
+      
+      await stripe.subscriptions.update(subscriptionId, {
         items: [{ id: subscription.items.data[0].id, price: priceId }],
         proration_behavior: 'create_prorations',
         coupon: coupon || undefined,
@@ -82,8 +115,7 @@ export async function handleSubscriptionChange(formData: FormData): Promise<{
       return { success: true, message: 'Your plan has been successfully switched to Yearly!' };
     }
 
-    // Scenario 3: User had a canceled or failed sub and is reactivating
-    // This is simplified to just creating a new checkout session.
+    // Scenario 4: User had a canceled or failed sub and is reactivating
     if (subscriptionStatus === 'canceled' || subscriptionStatus === 'unpaid' || subscriptionStatus === 'past_due') {
         const sessionParams: Stripe.Checkout.SessionCreateParams = {
             customer: stripeCustomerId,
@@ -107,7 +139,7 @@ export async function handleSubscriptionChange(formData: FormData): Promise<{
     return { error: 'No valid action could be determined for your subscription state.' };
 
   } catch (error: any) {
-    console.error("Error in handleSubscriptionChange:", error);
+    console.error("Error in handlePlanChange:", error);
     if (error.raw?.message?.includes('not specified for use with this customer')) {
         return { error: 'This coupon code is not valid for your account.' };
     }
@@ -227,44 +259,4 @@ export async function validateCouponAction(formData: FormData): Promise<{
     console.error("Stripe API error validating coupon:", error);
     return { success: false, error: 'Could not validate coupon code.' };
   }
-}
-
-
-export async function cancelSubscription(subscriptionId: string): Promise<{ success?: boolean; error?: string }> {
-    if (!subscriptionId) {
-        return { error: 'Subscription ID is missing.' };
-    }
-    
-    // This action requires admin privileges, so we need to ensure the admin SDK is initialized.
-    const { getFirebaseAdmin } = await import('@/lib/firebase/admin');
-    const { adminDb } = await getFirebaseAdmin();
-    if (!adminDb) {
-      return { error: "Server is not configured to perform this action." };
-    }
-    
-    try {
-        const canceledSubscription = await stripe.subscriptions.update(subscriptionId, {
-            cancel_at_period_end: true,
-        });
-
-        // Update Firestore to reflect the cancellation
-        const stripeCustomerId = canceledSubscription.customer as string;
-        const userQuery = await adminDb.collection('users').where('stripeCustomerId', '==', stripeCustomerId).limit(1).get();
-        
-        if (!userQuery.empty) {
-            const userDoc = userQuery.docs[0];
-            await userDoc.ref.update({
-                subscriptionStatus: 'canceled',
-                updatedAt: FieldValue.serverTimestamp(),
-            });
-        }
-        
-        revalidatePath('/pricing');
-        revalidatePath('/dashboard');
-        
-        return { success: true };
-    } catch (error: any) {
-        console.error('Error canceling subscription:', error);
-        return { error: error.message || 'An unexpected error occurred while canceling the subscription.' };
-    }
 }

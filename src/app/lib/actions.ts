@@ -9,7 +9,7 @@ import { revalidatePath } from 'next/cache';
 import { getFirebaseAdmin } from '@/lib/firebase/admin';
 import { incrementProposalCount, decrementProposalCredits } from '@/lib/firebase/usage';
 import type { PortfolioLink } from './types';
-import type { Timestamp } from 'firebase-admin/firestore';
+import type { Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getCountryFromIp } from '@/app/lib/location';
 import { ai } from '@/ai/genkit';
 import type {
@@ -52,6 +52,7 @@ import type {
   SuggestWordLimitOutput,
 } from '@/ai/flows/suggest-word-limit';
 import { suggestWordLimit } from '@/ai/flows/suggest-word-limit';
+import { stripe } from '@/lib/stripe/config';
 
 
 export interface InvoiceDetails {
@@ -366,7 +367,6 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
   }
 
   const { stripeCustomerId } = currentUser.userDoc;
-  const { stripe } = await import('@/lib/stripe/config');
 
   try {
     const invoices = await stripe.invoices.list({
@@ -417,5 +417,44 @@ export async function getCreditHistory(): Promise<{ history?: CreditHistoryItem[
     } catch (error: any) {
         console.error('Error fetching credit history:', error);
         return { error: 'Could not retrieve credit history.' };
+    }
+}
+
+export async function cancelSubscription(subscriptionId: string): Promise<{ success?: boolean; error?: string }> {
+    const { adminDb, adminAuth } = await getFirebaseAdmin();
+    const { FieldValue } = await import('firebase-admin/firestore');
+    
+    if (!subscriptionId) {
+        return { error: 'Subscription ID is missing.' };
+    }
+    
+    if (!adminDb) {
+      return { error: "Server is not configured to perform this action." };
+    }
+    
+    try {
+        const canceledSubscription = await stripe.subscriptions.update(subscriptionId, {
+            cancel_at_period_end: true,
+        });
+
+        // Update Firestore to reflect the cancellation
+        const stripeCustomerId = canceledSubscription.customer as string;
+        const userQuery = await adminDb.collection('users').where('stripeCustomerId', '==', stripeCustomerId).limit(1).get();
+        
+        if (!userQuery.empty) {
+            const userDoc = userQuery.docs[0];
+            await userDoc.ref.update({
+                subscriptionStatus: 'canceled',
+                updatedAt: FieldValue.serverTimestamp(),
+            });
+        }
+        
+        revalidatePath('/pricing');
+        revalidatePath('/dashboard');
+        
+        return { success: true };
+    } catch (error: any) {
+        console.error('Error canceling subscription:', error);
+        return { error: error.message || 'An unexpected error occurred while canceling the subscription.' };
     }
 }
