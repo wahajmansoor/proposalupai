@@ -26,8 +26,10 @@ async function addCredits(db: Firestore, userRef: DocumentReference, amount: num
 }
 
 async function handleNewTrial(db: Firestore, userId: string, userData: DocumentData) {
+    const userRef = db.collection('users').doc(userId);
+    // Only give trial credits if they haven't been given them before.
     if (userData.proposalCredits === undefined || userData.proposalCredits < 5) {
-        await addCredits(db, db.collection('users').doc(userId), 5, 'Started a new trial');
+        await addCredits(db, userRef, 5, 'Started a new trial');
     }
 }
 
@@ -40,9 +42,6 @@ export async function handlePlanChange(formData: FormData): Promise<{
   redirectUrl?: string;
   message?: string;
 }> {
-  if (!adminDb) {
-      return { error: "The server is not configured correctly. Please contact support." };
-  }
   
   let interval = formData.get('interval') as 'monthly' | 'yearly' | null;
   const coupon = formData.get('coupon') as string | null;
@@ -112,7 +111,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
     if (subscriptionStatus === 'trialing' && subscriptionId) {
         try {
             const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-            await stripe.subscriptions.update(subscriptionId, {
+            const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
                 trial_end: 'now',
                 cancel_at_period_end: false,
                 items: [{
@@ -122,6 +121,15 @@ export async function handlePlanChange(formData: FormData): Promise<{
                 proration_behavior: 'create_prorations',
                 coupon: coupon || undefined,
             });
+
+            // Directly update Firestore to ensure status is reflected immediately
+            await userDoc.ref.update({
+                subscriptionStatus: 'active',
+                subscriptionInterval: updatedSubscription.items.data[0].price.recurring?.interval,
+                lastPrice: updatedSubscription.items.data[0].price.unit_amount ? updatedSubscription.items.data[0].price.unit_amount / 100 : null,
+                updatedAt: FieldValue.serverTimestamp(),
+            });
+
             revalidatePath('/pricing');
             revalidatePath('/subscription');
             return { success: true, message: `Your trial has ended and your ${interval} plan is now active!` };
@@ -130,11 +138,16 @@ export async function handlePlanChange(formData: FormData): Promise<{
                  // The user started trial without a card, so we need to send them to checkout to add one.
                 const session = await stripe.checkout.sessions.create({
                     customer: stripeCustomerId,
-                    success_url: successUrl,
+                    success_url: `${origin}/api/stripe/activate-trial?session_id={CHECKOUT_SESSION_ID}`,
                     cancel_url: cancelUrl,
-                    mode: 'subscription',
-                    line_items: [{ price: priceId, quantity: 1 }],
-                    allow_promotion_codes: true,
+                    mode: 'setup',
+                    setup_intent_data: {
+                        metadata: {
+                            subscription_id: subscriptionId,
+                            price_id: priceId,
+                            coupon_id: coupon || '',
+                        }
+                    }
                 });
                 return { redirectUrl: session.url! };
             }
