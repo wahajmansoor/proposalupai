@@ -41,7 +41,11 @@ async function handleNewTrial(db: Firestore, userId: string) {
         let initialCredits = 0;
         let initialReason = '';
         
-        // Check if the new user was referred
+        // Award 5 credits for starting a trial regardless
+        initialCredits = 5;
+        initialReason = 'Started a new trial';
+
+        // Check if the new user was referred and add bonus credits
         if (userData.referredBy) {
             const referrerQuery = await db.collection('users').where('referralCode', '==', userData.referredBy).limit(1).get();
             if (!referrerQuery.empty) {
@@ -54,19 +58,13 @@ async function handleNewTrial(db: Firestore, userId: string) {
                 await addCredits(db, referrerRef, 5, `Referral bonus for ${userData.displayName || 'a new user'}`);
 
                 // The new user gets 5 trial credits + 5 referral bonus credits
-                initialCredits = 10;
+                initialCredits += 5;
                 initialReason = 'Started trial with referral bonus';
             }
         }
 
-        // If not referred, they just get the standard 5 trial credits.
-        if (initialCredits === 0) {
-            initialCredits = 5;
-            initialReason = 'Started a new trial';
-        }
-
         // Award credits to the new user if they don't have any yet
-        if (userData && (userData.proposalCredits === undefined || userData.proposalCredits === null)) {
+        if (userData && (userData.proposalCredits === undefined || userData.proposalCredits === null || userData.proposalCredits === 0)) {
             await addCredits(db, userRef, initialCredits, initialReason);
         }
     }
@@ -80,6 +78,16 @@ export async function handleSubscriptionCreation(db: Firestore, userId: string) 
     if (!userDoc.exists) {
         console.error(`handleSubscriptionCreation failed: User document ${userId} does not exist.`);
         return;
+    }
+    
+    const userData = userDoc.data();
+    if (!userData) return;
+
+    // Award credits based on the newly activated plan
+    if (userData.subscriptionInterval === 'month') {
+        await addCredits(db, userRef, 10, 'Monthly plan activation bonus');
+    } else if (userData.subscriptionInterval === 'year') {
+        await addCredits(db, userRef, 100, 'Yearly plan activation bonus');
     }
 }
 
@@ -133,7 +141,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
 
     // Scenario 1: New user starting a trial
     if (!subscriptionStatus || subscriptionStatus === 'null' || subscriptionStatus === 'undefined') {
-       await handleNewTrial(adminDb, userDoc.id);
+       
 
       const sessionParams: Stripe.Checkout.SessionCreateParams = {
         customer: stripeCustomerId,
@@ -179,6 +187,9 @@ export async function handlePlanChange(formData: FormData): Promise<{
                 lastPrice: updatedSubscription.items.data[0].price.unit_amount ? updatedSubscription.items.data[0].price.unit_amount / 100 : null,
                 updatedAt: FieldValue.serverTimestamp(),
             });
+            
+            // Award initial credits upon first activation
+            await handleSubscriptionCreation(adminDb, userDoc.id);
 
             revalidatePath('/pricing');
             revalidatePath('/subscription');
@@ -432,4 +443,5 @@ export async function createCreditPurchaseSession(formData: FormData): Promise<{
     return { error: 'Could not create a checkout session for credits.' };
   }
 }
+
 
