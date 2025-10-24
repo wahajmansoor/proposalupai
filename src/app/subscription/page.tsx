@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useEffect, useState, useCallback, useTransition } from 'react';
@@ -7,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { Loader2, CreditCard, ExternalLink, Star, Copy, Check, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { createCustomerPortalSession, createCreditPurchaseSession } from '@/lib/stripe-actions';
+import { createCustomerPortalSession, chargeCardForCredits } from '@/lib/stripe-actions';
 import { format, formatDistanceToNow } from 'date-fns';
 import { getBillingHistory, getCreditHistory, type InvoiceDetails, type CreditHistoryItem } from '@/app/lib/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -148,6 +149,7 @@ const creditPackages = [
 
 function BuyCredits() {
     const { toast } = useToast();
+    const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [selectedPriceId, setSelectedPriceId] = useState<string | null>(null);
 
@@ -156,12 +158,13 @@ function BuyCredits() {
         startTransition(async () => {
             const formData = new FormData();
             formData.append('priceId', priceId);
-            const result = await createCreditPurchaseSession(formData);
+            const result = await chargeCardForCredits(formData);
 
             if (result.error) {
                 toast({ title: "Error", description: result.error, variant: "destructive" });
-            } else if (result.url) {
-                window.location.href = result.url;
+            } else if (result.success) {
+                toast({ title: "Purchase Successful!", description: result.message });
+                router.refresh(); // Refresh the page to show new credit balance
             }
             setSelectedPriceId(null);
         });
@@ -192,31 +195,20 @@ function BuyCredits() {
 }
 
 export default function SubscriptionPage() {
-  const { userProfile } = useAuth();
+  const { userProfile, loading } = useAuth();
   const { toast } = useToast();
   const router = useRouter();
   const [isManagingBilling, setIsManagingBilling] = useState(false);
   
   const [invoices, setInvoices] = useState<InvoiceDetails[]>([]);
-  const [isLoadingHistory, setIsLoadingHistory] = useState(false);
+  const [isLoadingHistory, setIsLoadingHistory] = useState(true);
   const [historyError, setHistoryError] = useState<string | null>(null);
-  
-  useEffect(() => {
-    // Check for purchase success query param and show toast
-    const urlParams = new URLSearchParams(window.location.search);
-    if (urlParams.get('credits_purchased') === 'true') {
-      toast({
-        title: 'Purchase Successful!',
-        description: 'Your credits have been added to your account.',
-      });
-      // Remove query param from URL without reloading
-      router.replace('/subscription', { scroll: false });
-    }
-  }, [router, toast]);
-
 
   const fetchHistory = useCallback(async () => {
-    if (!userProfile?.stripeCustomerId) return;
+    if (!userProfile?.stripeCustomerId) {
+      setIsLoadingHistory(false);
+      return
+    };
     
     setIsLoadingHistory(true);
     setHistoryError(null);
@@ -230,8 +222,10 @@ export default function SubscriptionPage() {
   }, [userProfile?.stripeCustomerId]);
 
   useEffect(() => {
-    fetchHistory();
-  }, [fetchHistory]);
+    if (!loading) {
+      fetchHistory();
+    }
+  }, [loading, fetchHistory]);
   
   const handleBillingSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -308,13 +302,17 @@ export default function SubscriptionPage() {
                 )}
               </div>
 
-              {userProfile?.stripeCustomerId && (
+              {userProfile?.stripeCustomerId ? (
                 <form onSubmit={handleBillingSubmit}>
                   <Button type="submit" disabled={isManagingBilling} className="w-full">
                     {isManagingBilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2" />}
                     Manage Billing & Subscription
                   </Button>
                 </form>
+              ) : (
+                <Button asChild className="w-full">
+                    <Link href="/pricing">Upgrade to Pro</Link>
+                </Button>
               )}
             </CardContent>
           </Card>

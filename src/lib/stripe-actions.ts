@@ -8,6 +8,7 @@ import type Stripe from 'stripe';
 import { FieldValue, type Firestore, type DocumentReference } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { adminDb } from '@/lib/firebase/admin';
+import { getCurrentUser } from './firebase/server-auth';
 
 
 // --- Credit Handling Logic ---
@@ -252,7 +253,6 @@ export async function handlePlanChange(formData: FormData): Promise<{
 }
 
 export async function createCustomerPortalSession(): Promise<{ url?: string; error?: string }> {
-  const { getCurrentUser } = await import('@/lib/firebase/server-auth');
   const currentUser = await getCurrentUser();
   if (!currentUser) {
     return { error: 'User not authenticated. Please log in again.' };
@@ -361,15 +361,21 @@ export async function validateCouponAction(formData: FormData): Promise<{
   }
 }
 
+
 const creditPurchaseSchema = z.object({
-  priceId: z.string(),
+    priceId: z.string().startsWith('price_'),
 });
 
-export async function createCreditPurchaseSession(formData: FormData): Promise<{ url?: string; error?: string }> {
-  const { getCurrentUser } = await import('@/lib/firebase/server-auth');
+const creditPackages: Record<string, { amount: number; credits: number }> = {
+    [process.env.NEXT_PUBLIC_STRIPE_CREDITS_10_PRICE_ID!]: { amount: 500, credits: 10 },
+    [process.env.NEXT_PUBLIC_STRIPE_CREDITS_25_PRICE_ID!]: { amount: 1000, credits: 25 },
+    [process.env.NEXT_PUBLIC_STRIPE_CREDITS_50_PRICE_ID!]: { amount: 1800, credits: 50 },
+};
+
+export async function chargeCardForCredits(formData: FormData): Promise<{ success: boolean; error?: string; message?: string }> {
   const currentUser = await getCurrentUser();
-  if (!currentUser) {
-    return { error: 'User not authenticated. Please log in again.' };
+  if (!currentUser?.userDoc) {
+    return { success: false, error: 'User not authenticated.' };
   }
 
   const validatedFields = creditPurchaseSchema.safeParse({
@@ -377,43 +383,58 @@ export async function createCreditPurchaseSession(formData: FormData): Promise<{
   });
 
   if (!validatedFields.success) {
-    return { error: 'Invalid credit package selected.' };
-  }
-  
-  const { priceId } = validatedFields.data;
-  const { stripeCustomerId, uid } = currentUser.userDoc as { stripeCustomerId: string, uid: string };
-  
-  if (!stripeCustomerId) {
-    return { error: 'Stripe customer ID not found for this user.' };
+    return { success: false, error: 'Invalid credit package selected.' };
   }
 
-  const headersList = headers();
-  const protocol = headersList.get('x-forwarded-proto') || 'http';
-  const host = headersList.get('host');
-  const origin = `${protocol}://${host}`;
-  const successUrl = `${origin}/subscription?credits_purchased=true`;
-  const cancelUrl = `${origin}/subscription`;
+  const { priceId } = validatedFields.data;
+  const creditPackage = creditPackages[priceId];
+
+  if (!creditPackage) {
+    return { success: false, error: 'Selected credit package not found.' };
+  }
+
+  const { stripeCustomerId, uid } = currentUser.userDoc as { stripeCustomerId: string; uid: string };
+  const userRef = adminDb.collection('users').doc(uid);
 
   try {
-    const session = await stripe.checkout.sessions.create({
+    // Retrieve the customer to get their default payment method
+    const customer = await stripe.customers.retrieve(stripeCustomerId) as Stripe.Customer;
+    const paymentMethodId = customer.invoice_settings?.default_payment_method as string | undefined;
+
+    if (!paymentMethodId) {
+      // This is a fallback. We should ideally prompt them to add a card.
+      // For now, we'll return an error.
+      return { success: false, error: 'No payment method on file. Please add a payment method in your billing settings.' };
+    }
+
+    // Create and confirm a PaymentIntent to charge the card
+    const paymentIntent = await stripe.paymentIntents.create({
+      amount: creditPackage.amount,
+      currency: 'usd',
       customer: stripeCustomerId,
-      client_reference_id: uid,
-      success_url: successUrl,
-      cancel_url: cancelUrl,
-      mode: 'payment',
-      line_items: [{ price: priceId, quantity: 1 }],
-      payment_intent_data: {
-        metadata: {
+      payment_method: paymentMethodId,
+      off_session: true, // Charge immediately without user interaction
+      confirm: true,
+      description: `Purchase of ${creditPackage.credits} credits for Proposal Up`,
+       metadata: {
           purchase_type: 'credits',
           firebase_uid: uid,
           price_id: priceId
         },
-      },
     });
 
-    return { url: session.url! };
+    if (paymentIntent.status === 'succeeded') {
+      // Payment was successful, now add credits
+      await addCredits(adminDb, userRef, creditPackage.credits, `Purchased ${creditPackage.credits} credits`);
+      revalidatePath('/subscription');
+      return { success: true, message: `${creditPackage.credits} credits have been added to your account!` };
+    } else {
+      // Payment failed for some reason (e.g., insufficient funds, card declined)
+      return { success: false, error: 'Payment failed. Please check your card details or try a different card.' };
+    }
+
   } catch (error: any) {
-    console.error('Error creating credit purchase session:', error);
-    return { error: 'Could not create a checkout session for credits.' };
+    console.error('Error charging card for credits:', error);
+    return { success: false, error: error.message || 'An unexpected error occurred during payment.' };
   }
 }
