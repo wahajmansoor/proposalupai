@@ -8,7 +8,7 @@ import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { FieldValue, type Firestore, type DocumentData, DocumentReference } from 'firebase-admin/firestore';
 import { adminDb } from '@/lib/firebase/admin';
-import { handleSubscriptionCreation, handleNewTrial } from '@/lib/stripe-actions';
+import { handleNewTrial, addCredits } from '@/lib/stripe-actions';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -25,25 +25,6 @@ async function findUserByStripeCustomerId(db: Firestore, stripeCustomerId: strin
     return userQuery.docs[0].ref;
 }
 
-
-async function addCredits(db: Firestore, userRef: DocumentReference, amount: number, reason: string) {
-    const creditHistoryRef = userRef.collection('creditHistory');
-    await db.runTransaction(async (transaction) => {
-        const userDoc = await transaction.get(userRef);
-        if (!userDoc.exists) {
-            console.error(`User document ${userRef.id} does not exist. Cannot add credits.`);
-            return;
-        }
-        transaction.update(userRef, {
-            proposalCredits: FieldValue.increment(amount)
-        });
-        transaction.set(creditHistoryRef.doc(), {
-            amount: amount,
-            reason: reason,
-            createdAt: FieldValue.serverTimestamp()
-        });
-    });
-}
 
 const creditProducts: Record<string, number> = {
     [process.env.NEXT_PUBLIC_STRIPE_CREDITS_10_PRICE_ID!]: 10,
@@ -99,7 +80,10 @@ export async function POST(req: Request) {
                         await userRef.update(subscriptionData);
                         console.log(`Successfully synced new subscription for user ${userRef.id}`);
                         
-                        await handleSubscriptionCreation(adminDb, userRef.id);
+                        // This is a new subscription, if it's a trial, handle trial logic
+                        if (subscription.status === 'trialing') {
+                            await handleNewTrial(adminDb, userRef.id);
+                        }
                     }
                 } else if (session.mode === 'payment') {
                     const paymentIntentId = session.payment_intent as string;
@@ -166,35 +150,45 @@ export async function POST(req: Request) {
                   
             case 'customer.subscription.deleted':
                 const deletedSubscription = event.data.object as Stripe.Subscription;
-                const stripeCustomerId = deletedSubscription.customer as string;
-                const userRef = await findUserByStripeCustomerId(adminDb, stripeCustomerId);
+                const stripeCustomerId_deleted = deletedSubscription.customer as string;
+                const userRef_deleted = await findUserByStripeCustomerId(adminDb, stripeCustomerId_deleted);
 
-                if (userRef) {
-                    await userRef.update({
+                if (userRef_deleted) {
+                    await userRef_deleted.update({
                         subscriptionStatus: 'canceled',
                         subscriptionInterval: null, 
                     });
-                     console.log(`Successfully marked subscription as canceled for user ${userRef.id}.`);
+                     console.log(`Successfully marked subscription as canceled for user ${userRef_deleted.id}.`);
                 }
                 break;
                 
             case 'invoice.payment_succeeded': {
                 const invoice = event.data.object as Stripe.Invoice;
-                // Only handle subscription renewals
-                if (invoice.billing_reason === 'subscription_cycle' && invoice.customer) {
-                    const stripeCustomerId = invoice.customer as string;
-                    const userRef = await findUserByStripeCustomerId(adminDb, stripeCustomerId);
+                const stripeCustomerId_invoice = invoice.customer as string;
+                const userRef_invoice = await findUserByStripeCustomerId(adminDb, stripeCustomerId_invoice);
 
-                    if (userRef) {
-                        const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
-                        const interval = subscription.items.data[0]?.price.recurring?.interval;
-                        
+                if (userRef_invoice) {
+                    const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
+                    const interval = subscription.items.data[0]?.price.recurring?.interval;
+                    
+                     // Award initial credits if this is the first payment after a trial
+                    if (invoice.billing_reason === 'subscription_create') {
                         if (interval === 'month') {
-                            await addCredits(adminDb, userRef, 10, 'Monthly subscription credits');
-                            console.log(`Added 10 monthly credits to user ${userRef.id}`);
+                            await addCredits(adminDb, userRef_invoice, 10, 'Monthly plan activation bonus');
+                            console.log(`Added 10 initial monthly credits to user ${userRef_invoice.id}`);
                         } else if (interval === 'year') {
-                            await addCredits(adminDb, userRef, 100, 'Yearly subscription credits');
-                             console.log(`Added 100 yearly credits to user ${userRef.id}`);
+                            await addCredits(adminDb, userRef_invoice, 100, 'Yearly plan activation bonus');
+                            console.log(`Added 100 initial yearly credits to user ${userRef_invoice.id}`);
+                        }
+                    }
+                    // Award renewal credits
+                    else if (invoice.billing_reason === 'subscription_cycle') {
+                        if (interval === 'month') {
+                            await addCredits(adminDb, userRef_invoice, 10, 'Monthly subscription credits');
+                            console.log(`Added 10 monthly credits to user ${userRef_invoice.id}`);
+                        } else if (interval === 'year') {
+                            await addCredits(adminDb, userRef_invoice, 100, 'Yearly subscription credits');
+                             console.log(`Added 100 yearly credits to user ${userRef_invoice.id}`);
                         }
                     }
                 }
