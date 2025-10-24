@@ -10,6 +10,7 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
+  DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from './ui/input';
 import { Label } from './ui/label';
@@ -107,7 +108,7 @@ export function CreditsButton() {
                     </div>
                 </div>
             </div>
-          <DialogTitle>Refer a Friend, Get Credits</DialogTitle>
+          <DialogTitle className="text-center">Refer a Friend, Get Credits</DialogTitle>
            <DialogDescription className="text-center">
             Share your link with friends. When they sign up and become a paying subscriber, you'll both get 5 extra proposal improvement credits!
           </DialogDescription>
