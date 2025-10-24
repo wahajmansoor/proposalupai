@@ -149,7 +149,7 @@ export async function POST(req: Request) {
                 const stripeCustomerId_invoice = invoice.customer as string;
                 const userRef_invoice = await findUserByStripeCustomerId(adminDb, stripeCustomerId_invoice);
 
-                if (userRef_invoice) {
+                if (userRef_invoice && invoice.subscription) {
                     const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
                     const interval = subscription.items.data[0]?.price.recurring?.interval;
                     
