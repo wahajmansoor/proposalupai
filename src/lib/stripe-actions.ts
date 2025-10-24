@@ -7,8 +7,9 @@ import { revalidatePath } from 'next/cache';
 import type Stripe from 'stripe';
 import { FieldValue, type Firestore, type DocumentReference, type DocumentData } from 'firebase-admin/firestore';
 import { z } from 'zod';
+import { adminDb } from '@/lib/firebase/admin';
 
-// --- Credit Handling Logic (Integrated to fix build error) ---
+// --- Credit Handling Logic ---
 
 async function addCredits(db: Firestore, userRef: DocumentReference, amount: number, reason: string) {
     const creditHistoryRef = userRef.collection('creditHistory');
@@ -55,14 +56,6 @@ export async function handlePlanChange(formData: FormData): Promise<{
   redirectUrl?: string;
   message?: string;
 }> {
-  // Lazily import server-only modules
-  const { adminDb } = await import('@/lib/firebase/admin');
-  
-  if (!adminDb) {
-    console.error("handlePlanChange failed: Firebase Admin not initialized.");
-    return { error: 'The server is not configured correctly. Please contact support.' };
-  }
-
   let interval = formData.get('interval') as 'monthly' | 'yearly' | null;
   const coupon = formData.get('coupon') as string | null;
   const firebaseUid = formData.get('firebaseUid') as string | null;

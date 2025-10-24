@@ -50,11 +50,6 @@ export async function GET(req: NextRequest) {
   }
 
   try {
-    if (!adminAuth || !adminDb) {
-      console.error("Firebase Admin SDK not initialized. Cannot process auth callback.");
-      throw new Error("Server is not configured for authentication.");
-    }
-    
     const { tokens } = await oAuth2Client.getToken(code);
     if (!tokens.id_token) {
       throw new Error('ID token not found in Google response');

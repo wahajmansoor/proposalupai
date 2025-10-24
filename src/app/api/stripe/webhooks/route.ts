@@ -25,11 +25,6 @@ async function findUserByStripeCustomerId(db: Firestore, stripeCustomerId: strin
 }
 
 export async function POST(req: Request) {
-    if (!adminDb) {
-        console.error("Firebase Admin not initialized. Cannot process Stripe webhook.");
-        return new NextResponse('Server is not configured for Firebase Admin. Webhook processing failed.', { status: 500 });
-    }
-
     const body = await req.text();
     const sig = headers().get('stripe-signature');
 

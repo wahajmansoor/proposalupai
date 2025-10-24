@@ -20,67 +20,57 @@ export interface AppUser {
 }
 
 export async function getUsers(): Promise<AppUser[]> {
-  if (!adminAuth || !adminDb) {
-    console.error("Firebase Admin SDK not initialized. Check server logs for details.");
-    throw new Error(`Failed to fetch user data: Firebase Admin not available.`);
-  }
-  try {
-    const listUsersResult = await adminAuth.listUsers(1000); // max 1000 per request
-    const authUsers = listUsersResult.users;
+  const listUsersResult = await adminAuth.listUsers(1000); // max 1000 per request
+  const authUsers = listUsersResult.users;
 
-    const userPromises = authUsers.map(async (user, index) => {
-      const userDocRef = adminDb.collection('users').doc(user.uid);
-      const userDoc = await userDocRef.get();
+  const userPromises = authUsers.map(async (user, index) => {
+    const userDocRef = adminDb.collection('users').doc(user.uid);
+    const userDoc = await userDocRef.get();
+    
+    let userData: any;
+
+    if (userDoc.exists) {
+      userData = userDoc.data();
       
-      let userData: any;
-
-      if (userDoc.exists) {
-        userData = userDoc.data();
-        
-        // ** Backfill referral code for any user who doesn't have one **
-        if (!userData?.referralCode) {
-            const newReferralCode = user.uid.substring(0, 8);
-            await userDocRef.update({ referralCode: newReferralCode });
-            userData.referralCode = newReferralCode; // Update local object immediately
-        }
-
-        // Convert timestamp to ISO string for safe serialization
-        const createdAt = userData?.createdAt?.toDate()?.toISOString() || null;
-        return {
-          id: user.uid,
-          name: user.displayName,
-          email: user.email,
-          subscriptionStatus: userData?.subscriptionStatus || 'N/A',
-          proposalCount: userData?.proposalCount || 0,
-          subscriptionInterval: userData?.subscriptionInterval || null,
-          createdAt: createdAt,
-          stripeCustomerId: userData?.stripeCustomerId || null,
-          country: userData?.country || null,
-          referralCode: userData?.referralCode || null,
-        };
-      } else {
-        // Fallback for users who might exist in Auth but not Firestore
-        return {
-          id: user.uid,
-          name: user.displayName,
-          email: user.email,
-          subscriptionStatus: 'No Record',
-          proposalCount: 0,
-          subscriptionInterval: null,
-          createdAt: null,
-          stripeCustomerId: null,
-          country: null,
-          referralCode: null,
-        };
+      // ** Backfill referral code for any user who doesn't have one **
+      if (!userData?.referralCode) {
+          const newReferralCode = user.uid.substring(0, 8);
+          await userDocRef.update({ referralCode: newReferralCode });
+          userData.referralCode = newReferralCode; // Update local object immediately
       }
-    });
 
-    return Promise.all(userPromises);
+      // Convert timestamp to ISO string for safe serialization
+      const createdAt = userData?.createdAt?.toDate()?.toISOString() || null;
+      return {
+        id: user.uid,
+        name: user.displayName,
+        email: user.email,
+        subscriptionStatus: userData?.subscriptionStatus || 'N/A',
+        proposalCount: userData?.proposalCount || 0,
+        subscriptionInterval: userData?.subscriptionInterval || null,
+        createdAt: createdAt,
+        stripeCustomerId: userData?.stripeCustomerId || null,
+        country: userData?.country || null,
+        referralCode: userData?.referralCode || null,
+      };
+    } else {
+      // Fallback for users who might exist in Auth but not Firestore
+      return {
+        id: user.uid,
+        name: user.displayName,
+        email: user.email,
+        subscriptionStatus: 'No Record',
+        proposalCount: 0,
+        subscriptionInterval: null,
+        createdAt: null,
+        stripeCustomerId: null,
+        country: null,
+        referralCode: null,
+      };
+    }
+  });
 
-  } catch (error: any) {
-    console.error("Failed to fetch user data:", error);
-    throw new Error(`Failed to fetch user data: ${error.message}`);
-  }
+  return Promise.all(userPromises);
 }
 
 const userUpdateSchema = z.object({
@@ -103,7 +93,6 @@ export async function updateUser(formData: FormData): Promise<{ success: boolean
   const { id, name, email } = validatedFields.data;
 
   try {
-    if (!adminAuth || !adminDb) throw new Error("Firebase Admin SDK not initialized.");
     await adminAuth.updateUser(id, {
       displayName: name,
       email: email,
@@ -122,8 +111,6 @@ export async function updateUser(formData: FormData): Promise<{ success: boolean
 
 export async function deleteUser(userId: string): Promise<{ success: boolean, error?: string }> {
   try {
-    if (!adminAuth || !adminDb) throw new Error("Firebase Admin SDK not initialized.");
-    
     // Delete from Firebase Auth
     await adminAuth.deleteUser(userId);
     
@@ -139,7 +126,6 @@ export async function deleteUser(userId: string): Promise<{ success: boolean, er
     // If user is already deleted from auth, but not from firestore, we can still proceed to delete from firestore
     if (error.code === 'auth/user-not-found') {
         try {
-            if (!adminDb) throw new Error("Firebase Admin SDK not initialized for Firestore deletion.");
             const userDocRef = adminDb.collection('users').doc(userId);
             await userDocRef.delete();
             revalidatePath('/admin-portal/users');
@@ -203,7 +189,6 @@ export async function sendPasswordResetLink(formData: FormData): Promise<{ succe
     const { email } = validatedFields.data;
 
     try {
-        if (!adminAuth) throw new Error("Firebase Admin SDK not initialized.");
         await adminAuth.getUserByEmail(email); // First check if user exists.
         
         console.log(`(Simulated) Password reset email sent to ${email}.`);

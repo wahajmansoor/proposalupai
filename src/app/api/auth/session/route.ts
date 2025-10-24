@@ -3,15 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth } from '@/lib/firebase/admin';
 
 export async function POST(req: NextRequest) {
-  // Check if Firebase Admin is initialized
-  if (!adminAuth) {
-    console.error("Firebase Admin has not been initialized. Check your server configuration.");
-    return NextResponse.json(
-      { error: "Server is not configured for authentication. Please contact support." },
-      { status: 500 }
-    );
-  }
-
   try {
     const { idToken } = await req.json();
     if (!idToken) {

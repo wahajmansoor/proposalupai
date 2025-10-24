@@ -16,11 +16,6 @@ export async function getCurrentUser(): Promise<{
     return null;
   }
 
-  if (!adminAuth || !adminDb) {
-    console.error("Firebase Admin has not been initialized. Check your server configuration and environment variables.");
-    throw new Error('The server is not configured to verify user sessions. Please contact support.');
-  }
-
   try {
     const decodedIdToken = await adminAuth.verifySessionCookie(sessionCookie, true);
     const user = await adminAuth.getUser(decodedIdToken.uid);
