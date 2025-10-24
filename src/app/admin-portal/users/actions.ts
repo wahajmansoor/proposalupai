@@ -1,7 +1,7 @@
 
 "use server";
 
-import { getFirebaseAdmin } from "@/lib/firebase/admin";
+import { adminAuth, adminDb } from "@/lib/firebase/admin";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { stripe } from "@/lib/stripe/config";
@@ -20,7 +20,6 @@ export interface AppUser {
 }
 
 export async function getUsers(): Promise<AppUser[]> {
-  const { adminAuth, adminDb } = await getFirebaseAdmin();
   if (!adminAuth || !adminDb) {
     throw new Error("Firebase Admin SDK not initialized. Check server logs for details.");
   }
@@ -103,7 +102,6 @@ export async function updateUser(formData: FormData): Promise<{ success: boolean
   const { id, name, email } = validatedFields.data;
 
   try {
-    const { adminAuth, adminDb } = await getFirebaseAdmin();
     if (!adminAuth || !adminDb) throw new Error("Firebase Admin SDK not initialized.");
     await adminAuth.updateUser(id, {
       displayName: name,
@@ -123,7 +121,6 @@ export async function updateUser(formData: FormData): Promise<{ success: boolean
 
 export async function deleteUser(userId: string): Promise<{ success: boolean, error?: string }> {
   try {
-    const { adminAuth, adminDb } = await getFirebaseAdmin();
     if (!adminAuth || !adminDb) throw new Error("Firebase Admin SDK not initialized.");
     
     // Delete from Firebase Auth
@@ -141,7 +138,6 @@ export async function deleteUser(userId: string): Promise<{ success: boolean, er
     // If user is already deleted from auth, but not from firestore, we can still proceed to delete from firestore
     if (error.code === 'auth/user-not-found') {
         try {
-            const { adminDb } = await getFirebaseAdmin();
             if (!adminDb) throw new Error("Firebase Admin SDK not initialized for Firestore deletion.");
             const userDocRef = adminDb.collection('users').doc(userId);
             await userDocRef.delete();
@@ -206,7 +202,6 @@ export async function sendPasswordResetLink(formData: FormData): Promise<{ succe
     const { email } = validatedFields.data;
 
     try {
-        const { adminAuth } = await getFirebaseAdmin();
         if (!adminAuth) throw new Error("Firebase Admin SDK not initialized.");
         await adminAuth.getUserByEmail(email); // First check if user exists.
         

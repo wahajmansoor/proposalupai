@@ -7,7 +7,7 @@ import type Stripe from 'stripe';
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
-import { getFirebaseAdmin } from '@/lib/firebase/admin';
+import { adminDb } from '@/lib/firebase/admin';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -25,7 +25,6 @@ async function findUserByStripeCustomerId(db: Firestore, stripeCustomerId: strin
 }
 
 export async function POST(req: Request) {
-    const { adminDb } = await getFirebaseAdmin();
     if (!adminDb) {
         console.error("Firebase Admin not initialized. Cannot process Stripe webhook.");
         return new NextResponse('Server is not configured for Firebase Admin. Webhook processing failed.', { status: 500 });

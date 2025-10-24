@@ -1,7 +1,7 @@
 
 'use server';
 
-import { getFirebaseAdmin } from '@/lib/firebase/admin';
+import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { cookies } from 'next/headers';
 import type { UserRecord } from 'firebase-admin/auth';
 import type { DocumentData } from 'firebase-admin/firestore';
@@ -15,8 +15,6 @@ export async function getCurrentUser(): Promise<{
   if (!sessionCookie) {
     return null;
   }
-  
-  const { adminAuth, adminDb } = await getFirebaseAdmin();
 
   if (!adminAuth || !adminDb) {
     // This is a critical server configuration issue.

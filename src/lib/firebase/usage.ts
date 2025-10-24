@@ -1,7 +1,7 @@
 
 'use server';
 
-import { getFirebaseAdmin } from './admin';
+import { adminDb } from './admin';
 import { FieldValue } from 'firebase-admin/firestore';
 
 /**
@@ -13,7 +13,6 @@ export async function incrementProposalCount(userId: string): Promise<void> {
     throw new Error('User ID is required to increment proposal count.');
   }
 
-  const { adminDb } = await getFirebaseAdmin();
   if (!adminDb) {
       console.error("Failed to increment proposal count: Firebase Admin not initialized.");
       return;
@@ -53,8 +52,7 @@ export async function decrementProposalCredits(userId: string): Promise<void> {
       throw new Error('User ID is required to decrement proposal credits.');
     }
   
-    const { adminDb } = await getFirebaseAdmin();
-     if (!adminDb) {
+    if (!adminDb) {
       console.error("Failed to decrement credits: Firebase Admin not initialized.");
       return;
     }

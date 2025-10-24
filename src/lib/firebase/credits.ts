@@ -74,7 +74,9 @@ export async function handleNewTrial(db: Firestore, userId: string, userData: Do
     }
     
     await logCreditHistory(db, userId, creditsToAdd, reason);
-    return { proposalCredits: FieldValue.increment(creditsToAdd) };
+    await db.collection('users').doc(userId).update({
+        proposalCredits: FieldValue.increment(creditsToAdd)
+    });
 }
 
 /**
@@ -109,7 +111,9 @@ export async function handlePlanActivation(db: Firestore, userId: string, userDa
         await logCreditHistory(db, userId, creditsToAdd, reason);
     }
     
-    return updatePayload;
+    if (Object.keys(updatePayload).length > 0) {
+        await db.collection('users').doc(userId).update(updatePayload);
+    }
 }
 
 
@@ -126,8 +130,8 @@ export async function handlePlanUpgrade(db: Firestore, userId: string, userData:
     
     await logCreditHistory(db, userId, creditsToAdd, reason);
     
-    return {
+    await db.collection('users').doc(userId).update({
         proposalCredits: FieldValue.increment(creditsToAdd),
         upgradeBonusGiven: true, // Flag to prevent awarding again
-    };
+    });
 }

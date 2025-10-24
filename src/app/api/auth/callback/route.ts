@@ -2,7 +2,7 @@
 'use server';
 import { NextRequest, NextResponse } from 'next/server';
 import { OAuth2Client } from 'google-auth-library';
-import { getFirebaseAdmin } from '@/lib/firebase/admin';
+import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { headers } from 'next/headers';
 import type { UserRecord } from 'firebase-admin/auth';
 import { stripe } from '@/lib/stripe/config';
@@ -67,7 +67,6 @@ export async function GET(req: NextRequest) {
       throw new Error('Invalid ID token payload');
     }
     
-    const { adminAuth, adminDb } = await getFirebaseAdmin();
     if (!adminAuth || !adminDb) {
       throw new Error("Could not initialize Firebase Admin SDK on the server.");
     }
