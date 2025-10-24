@@ -109,8 +109,8 @@ export function CreditsButton() {
                 </div>
             </div>
           <DialogTitle className="text-center">Refer a Friend, Get Credits</DialogTitle>
-           <DialogDescription className="text-center">
-            Share your link with friends. When they sign up and become a paying subscriber, you'll both get 5 extra proposal improvement credits!
+           <DialogDescription className="text-base text-center">
+            Invite a friend using your referral link. When they sign up and start their trial, you both get 5 free credits to improve your proposals!
           </DialogDescription>
         </DialogHeader>
         <div className="space-y-4 pt-4">
