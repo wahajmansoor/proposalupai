@@ -38,13 +38,9 @@ async function handleNewTrial(db: Firestore, userId: string) {
         const userData = userDoc.data();
         if (!userData) return;
 
-        let initialCredits = 0;
-        let initialReason = '';
+        let initialCredits = 5; // Base trial credits
+        let initialReason = 'Started a new trial';
         
-        // Award 5 credits for starting a trial regardless
-        initialCredits = 5;
-        initialReason = 'Started a new trial';
-
         // Check if the new user was referred and add bonus credits
         if (userData.referredBy) {
             const referrerQuery = await db.collection('users').where('referralCode', '==', userData.referredBy).limit(1).get();
@@ -236,6 +232,9 @@ export async function handlePlanChange(formData: FormData): Promise<{
           lastPrice: updatedSubscription.items.data[0].price.unit_amount ? updatedSubscription.items.data[0].price.unit_amount / 100 : null,
           updatedAt: FieldValue.serverTimestamp(),
       });
+      
+      // Award the difference in credits for upgrading
+      await addCredits(adminDb, userDoc.ref, 90, 'Yearly plan upgrade bonus');
 
       revalidatePath('/pricing');
       revalidatePath('/subscription');
@@ -443,5 +442,6 @@ export async function createCreditPurchaseSession(formData: FormData): Promise<{
     return { error: 'Could not create a checkout session for credits.' };
   }
 }
+
 
 
