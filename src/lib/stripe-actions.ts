@@ -12,9 +12,6 @@ import { adminDb } from '@/lib/firebase/admin';
 
 // --- Credit Handling Logic ---
 async function addCredits(db: Firestore, userRef: DocumentReference, amount: number, reason: string) {
-    if (!adminDb) {
-      throw new Error("Server is not configured correctly. Please contact support.");
-    }
     const creditHistoryRef = userRef.collection('creditHistory');
     await db.runTransaction(async (transaction) => {
         transaction.update(userRef, {
@@ -29,14 +26,11 @@ async function addCredits(db: Firestore, userRef: DocumentReference, amount: num
 }
 
 async function handleNewTrial(db: Firestore, userId: string, userData: DocumentData) {
-    if (!adminDb) {
-      throw new Error("Server is not configured correctly. Please contact support.");
-    }
-    // Award 5 credits for starting a trial if they haven't been awarded before.
     if (userData.proposalCredits === undefined || userData.proposalCredits < 5) {
         await addCredits(db, db.collection('users').doc(userId), 5, 'Started a new trial');
     }
 }
+
 
 // --- Main Stripe Actions ---
 
@@ -47,7 +41,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
   message?: string;
 }> {
   if (!adminDb) {
-      throw new Error("Server is not configured correctly. Please contact support.");
+      return { error: "The server is not configured correctly. Please contact support." };
   }
   
   let interval = formData.get('interval') as 'monthly' | 'yearly' | null;
@@ -116,22 +110,36 @@ export async function handlePlanChange(formData: FormData): Promise<{
     
     // Scenario 2: User is on a trial and activating a plan
     if (subscriptionStatus === 'trialing' && subscriptionId) {
-        const session = await stripe.checkout.sessions.create({
-            payment_method_types: ['card'],
-            mode: 'setup',
-            customer: stripeCustomerId,
-            setup_intent_data: {
-                metadata: {
-                    subscription_id: subscriptionId,
-                    price_id: priceId,
-                    coupon_id: coupon || '',
-                },
-            },
-            success_url: `${origin}/api/stripe/activate-trial?session_id={CHECKOUT_SESSION_ID}`,
-            cancel_url: cancelUrl,
-        });
-
-        return { redirectUrl: session.url! };
+        try {
+            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+            await stripe.subscriptions.update(subscriptionId, {
+                trial_end: 'now',
+                cancel_at_period_end: false,
+                items: [{
+                    id: subscription.items.data[0].id,
+                    price: priceId,
+                }],
+                proration_behavior: 'create_prorations',
+                coupon: coupon || undefined,
+            });
+            revalidatePath('/pricing');
+            revalidatePath('/subscription');
+            return { success: true, message: `Your trial has ended and your ${interval} plan is now active!` };
+        } catch (error: any) {
+            if (error.code === 'customer_without_payment_method') {
+                 // The user started trial without a card, so we need to send them to checkout to add one.
+                const session = await stripe.checkout.sessions.create({
+                    customer: stripeCustomerId,
+                    success_url: successUrl,
+                    cancel_url: cancelUrl,
+                    mode: 'subscription',
+                    line_items: [{ price: priceId, quantity: 1 }],
+                    allow_promotion_codes: true,
+                });
+                return { redirectUrl: session.url! };
+            }
+            throw error; // Re-throw other errors
+        }
     }
 
 

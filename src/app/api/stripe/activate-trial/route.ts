@@ -2,29 +2,8 @@
 'use server';
 
 import { stripe } from '@/lib/stripe/config';
-import { adminDb } from '@/lib/firebase/admin';
 import { NextRequest, NextResponse } from 'next/server';
 import type Stripe from 'stripe';
-
-async function handlePlanActivation(db: any, userId: string, userData: any, interval: 'monthly' | 'yearly') {
-    if (!userData.paidBonusGiven) {
-        const userRef = db.collection('users').doc(userId);
-        const creditHistoryRef = userRef.collection('creditHistory');
-        
-        await db.runTransaction(async (transaction: any) => {
-            transaction.update(userRef, { 
-                proposalCredits: FieldValue.increment(10),
-                paidBonusGiven: true 
-            });
-            transaction.set(creditHistoryRef.doc(), {
-                amount: 10,
-                reason: 'Subscribed to a Pro plan',
-                createdAt: FieldValue.serverTimestamp()
-            });
-        });
-    }
-}
-
 
 export async function GET(req: NextRequest) {
     const { searchParams } = new URL(req.url);
@@ -92,5 +71,3 @@ export async function GET(req: NextRequest) {
         return NextResponse.redirect(`${origin}/pricing?error=${encodeURIComponent(error.message)}`);
     }
 }
-
-
