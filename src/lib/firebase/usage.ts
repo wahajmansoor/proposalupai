@@ -15,7 +15,7 @@ export async function incrementProposalCount(userId: string): Promise<void> {
 
   if (!adminDb) {
       console.error("Failed to increment proposal count: Firebase Admin not initialized.");
-      return;
+      throw new Error("Server is not configured correctly.");
   }
 
   const userRef = adminDb.collection('users').doc(userId);
@@ -54,7 +54,7 @@ export async function decrementProposalCredits(userId: string): Promise<void> {
   
     if (!adminDb) {
       console.error("Failed to decrement credits: Firebase Admin not initialized.");
-      return;
+      throw new Error("Server is not configured correctly.");
     }
   
     const userRef = adminDb.collection('users').doc(userId);

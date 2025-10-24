@@ -5,107 +5,8 @@ import { stripe } from '@/lib/stripe/config';
 import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import type Stripe from 'stripe';
-import { adminDb } from '@/lib/firebase/admin';
-import type { Firestore, DocumentData } from 'firebase-admin/firestore';
 import { FieldValue } from 'firebase-admin/firestore';
 import { z } from 'zod';
-
-// --- Credit Logic (Moved from credits.ts for stability) ---
-
-async function logCreditHistory(db: Firestore, userId: string, amount: number, reason:string) {
-  if (!userId || !amount || !reason) return;
-  try {
-    await db.collection('users').doc(userId).collection('creditHistory').add({
-      amount,
-      reason,
-      createdAt: FieldValue.serverTimestamp(),
-    });
-    console.log(`Logged ${amount} credits for user ${userId}. Reason: ${reason}`);
-  } catch (error) {
-    console.error(`Failed to log credit history for user ${userId}:`, error);
-  }
-}
-
-async function awardReferralBonusToReferrer(db: Firestore, referralCode: string, newUserName: string | null) {
-  if (!referralCode) return;
-
-  try {
-    const usersRef = db.collection('users');
-    const snapshot = await usersRef.where('referralCode', '==', referralCode).limit(1).get();
-
-    if (!snapshot.empty) {
-      const referringUserDoc = snapshot.docs[0];
-      const referredFriendName = newUserName || 'your friend';
-      
-      await referringUserDoc.ref.update({
-        proposalCredits: FieldValue.increment(5)
-      });
-      
-      await logCreditHistory(db, referringUserDoc.id, 5, `Referral bonus for ${referredFriendName} subscribing`);
-      console.log(`Awarded 5 credits to user ${referringUserDoc.id} for successful referral.`);
-    } else {
-      console.warn(`Attempted to award referral bonus for non-existent referral code: "${referralCode}"`);
-    }
-  } catch (error) {
-    console.error('Error awarding referral credits:', error);
-  }
-}
-
-async function handleNewTrial(db: Firestore, userId: string, userData: DocumentData) {
-    let creditsToAdd = 3;
-    let reason = '2-Day trial activation';
-
-    if (userData?.referredBy) {
-        creditsToAdd += 5;
-        reason += ' (+5 referral bonus)';
-    }
-    
-    await logCreditHistory(db, userId, creditsToAdd, reason);
-    await db.collection('users').doc(userId).update({
-        proposalCredits: FieldValue.increment(creditsToAdd)
-    });
-}
-
-async function handlePlanActivation(db: Firestore, userId: string, userData: DocumentData, newInterval?: 'month' | 'year') {
-    let creditsToAdd = 0;
-    let reason = '';
-    const updatePayload: { [key: string]: any } = {};
-
-    if (newInterval === 'year') {
-        creditsToAdd = 100;
-        reason = 'Pro Yearly plan activation';
-    } else if (newInterval === 'month') {
-        creditsToAdd = 10;
-        reason = 'Pro Monthly plan activation';
-    }
-    
-    if (userData?.referredBy) {
-        await awardReferralBonusToReferrer(db, userData.referredBy, userData.displayName);
-        updatePayload.referredBy = FieldValue.delete();
-    }
-
-    if (creditsToAdd > 0) {
-        updatePayload.proposalCredits = FieldValue.increment(creditsToAdd);
-        await logCreditHistory(db, userId, creditsToAdd, reason);
-    }
-    
-    if (Object.keys(updatePayload).length > 0) {
-        await db.collection('users').doc(userId).update(updatePayload);
-    }
-}
-
-async function handlePlanUpgrade(db: Firestore, userId: string, userData: DocumentData) {
-    const creditsToAdd = 100;
-    const reason = 'Upgraded to Pro Yearly';
-    
-    await logCreditHistory(db, userId, creditsToAdd, reason);
-    
-    await db.collection('users').doc(userId).update({
-        proposalCredits: FieldValue.increment(creditsToAdd),
-        upgradeBonusGiven: true,
-    });
-}
-
 
 // --- Main Stripe Actions ---
 
@@ -115,6 +16,10 @@ export async function handlePlanChange(formData: FormData): Promise<{
   redirectUrl?: string;
   message?: string;
 }> {
+  // Lazily import server-only modules
+  const { adminDb } = await import('@/lib/firebase/admin');
+  const { handleNewTrial, handlePlanActivation, handlePlanUpgrade } = await import('@/lib/firebase/credits');
+
   let interval = formData.get('interval') as 'monthly' | 'yearly' | null;
   const coupon = formData.get('coupon') as string | null;
   const firebaseUid = formData.get('firebaseUid') as string | null;
@@ -124,6 +29,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
   const currentInterval = formData.get('currentInterval') as 'month' | 'year' | null;
 
   if (!adminDb) {
+    console.error("handlePlanChange failed: Firebase Admin not initialized.");
     return { error: 'The server is not configured correctly. Please contact support.' };
   }
 
@@ -185,14 +91,24 @@ export async function handlePlanChange(formData: FormData): Promise<{
     
     // Scenario 2: User is on a trial and activating a plan
     if (subscriptionStatus === 'trialing' && subscriptionId) {
-      await stripe.subscriptions.update(subscriptionId, {
+      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+      const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
         trial_end: 'now',
+        items: [{
+          id: subscription.items.data[0].id,
+          price: priceId,
+        }],
+        proration_behavior: 'none', // Don't prorate when ending trial
         coupon: coupon || undefined,
       });
 
+      // The webhook will handle DB updates, but we can optimistically update credits
       await handlePlanActivation(adminDb, userDoc.id, userData, interval);
       
       revalidatePath('/pricing');
+      revalidatePath('/dashboard');
+      revalidatePath('/subscription');
+      
       return { success: true, message: 'Your plan has been successfully activated!' };
     }
 
@@ -212,6 +128,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
       });
 
       revalidatePath('/pricing');
+      revalidatePath('/subscription');
       return { success: true, message: 'Your plan has been successfully switched to Yearly!' };
     }
 

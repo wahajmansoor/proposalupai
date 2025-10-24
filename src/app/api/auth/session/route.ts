@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
     // Set session expiration to 5 days.
     const expiresIn = 60 * 60 * 24 * 5 * 1000;
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
-    const options = { name: '__session', value: sessionCookie, maxAge: expiresIn, httpOnly: true, secure: true };
+    const options = { name: '__session', value: sessionCookie, maxAge: expiresIn, httpOnly: true, secure: process.env.NODE_ENV === 'production' };
 
     const response = NextResponse.json({ status: 'success' });
     response.cookies.set(options);

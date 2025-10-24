@@ -17,9 +17,8 @@ export async function getCurrentUser(): Promise<{
   }
 
   if (!adminAuth || !adminDb) {
-    // This is a critical server configuration issue.
-    // Throw an error that can be caught by the calling function.
-    throw new Error('The server is not configured to verify user sessions. Please check server logs.');
+    console.error("Firebase Admin has not been initialized. Check your server configuration and environment variables.");
+    throw new Error('The server is not configured to verify user sessions. Please contact support.');
   }
 
   try {

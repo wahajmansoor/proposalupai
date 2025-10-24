@@ -21,7 +21,8 @@ export interface AppUser {
 
 export async function getUsers(): Promise<AppUser[]> {
   if (!adminAuth || !adminDb) {
-    throw new Error("Firebase Admin SDK not initialized. Check server logs for details.");
+    console.error("Firebase Admin SDK not initialized. Check server logs for details.");
+    throw new Error(`Failed to fetch user data: Firebase Admin not available.`);
   }
   try {
     const listUsersResult = await adminAuth.listUsers(1000); // max 1000 per request
