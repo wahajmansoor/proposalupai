@@ -79,7 +79,7 @@ export async function GET(req: NextRequest) {
                 id: subscription.items.data[0].id,
                 price: priceId,
             }],
-            proration_behavior: 'none',
+            proration_behavior: 'create_prorations',
             coupon: couponId || undefined,
         });
 
@@ -92,4 +92,5 @@ export async function GET(req: NextRequest) {
         return NextResponse.redirect(`${origin}/pricing?error=${encodeURIComponent(error.message)}`);
     }
 }
+
 
