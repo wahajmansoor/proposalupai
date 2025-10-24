@@ -15,7 +15,7 @@ import {
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Copy, Check } from 'lucide-react';
+import { Copy, Check, Star } from 'lucide-react';
 import { ShareIcons } from './icons';
 import Link from 'next/link';
 
@@ -102,6 +102,17 @@ export function CreditsButton() {
             Share your link with friends. When they sign up and become a paying subscriber, you'll both get 5 extra proposal improvement credits!
           </DialogDescription>
         </DialogHeader>
+        <div className="flex justify-center py-4">
+            <div 
+                className="flex items-center justify-center h-32 w-32 rounded-full"
+                style={{ backgroundColor: '#facc15' }}
+            >
+                <div className="text-center">
+                    <p className="text-4xl font-bold" style={{ color: '#713f12' }}>{credits}</p>
+                    <p className="text-sm font-medium uppercase tracking-wider" style={{ color: '#713f12' }}>Credits</p>
+                </div>
+            </div>
+        </div>
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="referral-link">Your Unique Referral Link</Label>
