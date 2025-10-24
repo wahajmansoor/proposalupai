@@ -9,8 +9,8 @@ import { FieldValue, type Firestore, type DocumentReference, type DocumentData }
 import { z } from 'zod';
 import { adminDb } from '@/lib/firebase/admin';
 
-// --- Credit Handling Logic ---
 
+// --- Credit Handling Logic ---
 async function addCredits(db: Firestore, userRef: DocumentReference, amount: number, reason: string) {
     const creditHistoryRef = userRef.collection('creditHistory');
     await db.runTransaction(async (transaction) => {
@@ -26,13 +26,20 @@ async function addCredits(db: Firestore, userRef: DocumentReference, amount: num
 }
 
 async function handleNewTrial(db: Firestore, userId: string, userData: DocumentData) {
+    if (!adminDb) {
+      throw new Error("Server is not configured correctly. Please contact support.");
+    }
+    // Award 5 credits for starting a trial if they haven't been awarded before.
     if (userData.proposalCredits === undefined || userData.proposalCredits < 5) {
         await addCredits(db, db.collection('users').doc(userId), 5, 'Started a new trial');
     }
 }
 
 async function handlePlanActivation(db: Firestore, userId: string, userData: DocumentData, interval: 'monthly' | 'yearly') {
-    // Award credits for becoming a paying customer if they haven't received it
+    if (!adminDb) {
+      throw new Error("Server is not configured correctly. Please contact support.");
+    }
+    // Award 10 credits for becoming a paying customer if they haven't received it
     if (!userData.paidBonusGiven) {
         await addCredits(db, db.collection('users').doc(userId), 10, 'Subscribed to a Pro plan');
         await db.collection('users').doc(userId).update({ paidBonusGiven: true });
@@ -40,7 +47,10 @@ async function handlePlanActivation(db: Firestore, userId: string, userData: Doc
 }
 
 async function handlePlanUpgrade(db: Firestore, userId: string, userData: DocumentData) {
-    // Award credits for upgrading from monthly to yearly
+    if (!adminDb) {
+      throw new Error("Server is not configured correctly. Please contact support.");
+    }
+    // Award 15 credits for upgrading from monthly to yearly
     if (!userData.upgradeBonusGiven) {
         await addCredits(db, db.collection('users').doc(userId), 15, 'Upgraded to Pro Yearly');
         await db.collection('users').doc(userId).update({ upgradeBonusGiven: true });
@@ -56,6 +66,10 @@ export async function handlePlanChange(formData: FormData): Promise<{
   redirectUrl?: string;
   message?: string;
 }> {
+  if (!adminDb) {
+      throw new Error("Server is not configured correctly. Please contact support.");
+  }
+  
   let interval = formData.get('interval') as 'monthly' | 'yearly' | null;
   const coupon = formData.get('coupon') as string | null;
   const firebaseUid = formData.get('firebaseUid') as string | null;
@@ -122,26 +136,22 @@ export async function handlePlanChange(formData: FormData): Promise<{
     
     // Scenario 2: User is on a trial and activating a plan
     if (subscriptionStatus === 'trialing' && subscriptionId) {
-      const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-      const updatedSubscription = await stripe.subscriptions.update(subscriptionId, {
-        trial_end: 'now',
-        cancel_at_period_end: false, // Ensure any pending cancellation is removed
-        items: [{
-          id: subscription.items.data[0].id,
-          price: priceId,
-        }],
-        proration_behavior: 'none', // Don't prorate when ending trial
-        coupon: coupon || undefined,
-      });
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            mode: 'setup',
+            customer: stripeCustomerId,
+            setup_intent_data: {
+                metadata: {
+                    subscription_id: subscriptionId,
+                    price_id: priceId,
+                    coupon_id: coupon || '',
+                },
+            },
+            success_url: `${origin}/api/stripe/activate-trial?session_id={CHECKOUT_SESSION_ID}`,
+            cancel_url: cancelUrl,
+        });
 
-      // The webhook will handle DB updates, but we can optimistically update credits
-      await handlePlanActivation(adminDb, userDoc.id, userData, interval);
-      
-      revalidatePath('/pricing');
-      revalidatePath('/dashboard');
-      revalidatePath('/subscription');
-      
-      return { success: true, message: 'Your plan has been successfully activated!' };
+        return { redirectUrl: session.url! };
     }
 
 
@@ -149,14 +159,13 @@ export async function handlePlanChange(formData: FormData): Promise<{
     if (subscriptionStatus === 'active' && subscriptionId && currentInterval === 'month' && interval === 'yearly') {
       const subscription = await stripe.subscriptions.retrieve(subscriptionId);
       
-      if (!userData.upgradeBonusGiven) {
-        await handlePlanUpgrade(adminDb, userDoc.id, userData);
-      }
+      await handlePlanUpgrade(adminDb, userDoc.id, userData);
       
       await stripe.subscriptions.update(subscriptionId, {
         items: [{ id: subscription.items.data[0].id, price: priceId }],
         proration_behavior: 'create_prorations',
         coupon: coupon || undefined,
+        cancel_at_period_end: false,
       });
 
       revalidatePath('/pricing');
