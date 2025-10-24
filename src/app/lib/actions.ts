@@ -40,7 +40,7 @@ import { improveProposal } from '@/ai/flows/improve-proposal';
 import type {
   SuggestOpeningStrategyInput,
   SuggestOpeningStrategyOutput,
-} from '@/aiflows/suggest-opening-strategy';
+} from '@/ai/flows/suggest-opening-strategy';
 import { suggestOpeningStrategy } from '@/ai/flows/suggest-opening-strategy';
 import type {
   SuggestProposalTemplateInput,
@@ -355,7 +355,10 @@ export async function updateUserDisplayNameAction(formData: FormData) {
 
 export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]; error?: string }> {
   const currentUser = await getCurrentUser();
-  if (!currentUser?.userDoc?.stripeCustomerId) {
+  if (!currentUser) {
+    return { error: 'User not authenticated.' };
+  }
+  if (!currentUser.userDoc?.stripeCustomerId) {
     return { error: 'Stripe customer ID not found.' };
   }
 

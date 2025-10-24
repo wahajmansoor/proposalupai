@@ -1,10 +1,10 @@
 
 'use server';
 
-import { adminAuth, adminDb } from '@/lib/firebase/admin';
 import { cookies } from 'next/headers';
 import type { UserRecord } from 'firebase-admin/auth';
 import { FieldValue, type DocumentData } from 'firebase-admin/firestore';
+import { adminAuth, adminDb } from '@/lib/firebase/admin';
 
 export async function getCurrentUser(): Promise<{
   user: UserRecord;
@@ -32,6 +32,7 @@ export async function getCurrentUser(): Promise<{
     return null;
   }
 }
+
 
 /**
  * Increments the proposal count for a given user.
