@@ -6,13 +6,13 @@ import { headers } from 'next/headers';
 import type Stripe from 'stripe';
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
-import { FieldValue, type Firestore } from 'firebase-admin/firestore';
+import { FieldValue, type Firestore, type DocumentData, DocumentReference } from 'firebase-admin/firestore';
 import { adminDb } from '@/lib/firebase/admin';
-import { handleSubscriptionCreation } from '@/lib/stripe-actions';
+import { handleSubscriptionCreation, handleNewTrial } from '@/lib/stripe-actions';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
-async function findUserByStripeCustomerId(db: Firestore, stripeCustomerId: string) {
+async function findUserByStripeCustomerId(db: Firestore, stripeCustomerId: string): Promise<DocumentReference | null> {
     if (!stripeCustomerId) {
         console.warn(`Webhook Warning: Stripe customer ID is missing.`);
         return null;
@@ -22,13 +22,18 @@ async function findUserByStripeCustomerId(db: Firestore, stripeCustomerId: strin
         console.warn(`Webhook Warning: No user found with Stripe customer ID ${stripeCustomerId}`);
         return null;
     }
-    return userQuery.docs[0];
+    return userQuery.docs[0].ref;
 }
 
-async function addCredits(db: Firestore, userId: string, amount: number, reason: string) {
-    const userRef = db.collection('users').doc(userId);
+
+async function addCredits(db: Firestore, userRef: DocumentReference, amount: number, reason: string) {
     const creditHistoryRef = userRef.collection('creditHistory');
     await db.runTransaction(async (transaction) => {
+        const userDoc = await transaction.get(userRef);
+        if (!userDoc.exists) {
+            console.error(`User document ${userRef.id} does not exist. Cannot add credits.`);
+            return;
+        }
         transaction.update(userRef, {
             proposalCredits: FieldValue.increment(amount)
         });
@@ -74,9 +79,9 @@ export async function POST(req: Request) {
                 
                 if (session.mode === 'subscription') {
                     const stripeCustomerId = session.customer as string;
-                    const userDoc = await findUserByStripeCustomerId(adminDb, stripeCustomerId);
+                    const userRef = await findUserByStripeCustomerId(adminDb, stripeCustomerId);
                     
-                    if (userDoc) {
+                    if (userRef) {
                         const subscription = await stripe.subscriptions.retrieve(session.subscription as string, {
                            expand: ['items.data.price'],
                         });
@@ -91,11 +96,10 @@ export async function POST(req: Request) {
                             updatedAt: FieldValue.serverTimestamp(),
                         };
 
-                        await userDoc.ref.update(subscriptionData);
-                        console.log(`Successfully synced new subscription for user ${userDoc.id}`);
+                        await userRef.update(subscriptionData);
+                        console.log(`Successfully synced new subscription for user ${userRef.id}`);
                         
-                        // Handle referral credits if it's a new subscription
-                        await handleSubscriptionCreation(adminDb, userDoc.id);
+                        await handleSubscriptionCreation(adminDb, userRef.id);
                     }
                 } else if (session.mode === 'payment') {
                     const paymentIntentId = session.payment_intent as string;
@@ -106,10 +110,21 @@ export async function POST(req: Request) {
                         const userId = paymentIntent.metadata.firebase_uid;
                         const priceId = paymentIntent.metadata.price_id;
                         const creditsToAdd = creditProducts[priceId];
-
+                        
                         if (userId && creditsToAdd) {
-                           await addCredits(adminDb, userId, creditsToAdd, `Purchased ${creditsToAdd} credits`);
+                           const userRef = adminDb.collection('users').doc(userId);
+                           await addCredits(adminDb, userRef, creditsToAdd, `Purchased ${creditsToAdd} credits`);
                            console.log(`Added ${creditsToAdd} credits to user ${userId}`);
+                        }
+                    }
+                } else if (session.mode === 'setup') {
+                    const setupIntentId = session.setup_intent as string;
+                    const setupIntent = await stripe.setupIntents.retrieve(setupIntentId);
+                    if (setupIntent.metadata?.subscription_id) {
+                         // This is likely a trial activation, we can handle new trial logic here if needed
+                        const userRef = await findUserByStripeCustomerId(adminDb, session.customer as string);
+                        if (userRef) {
+                            await handleNewTrial(adminDb, userRef.id);
                         }
                     }
                 }
@@ -119,9 +134,9 @@ export async function POST(req: Request) {
             case 'customer.subscription.updated': {
                 const subscription = event.data.object as Stripe.Subscription;
                 const stripeCustomerId = subscription.customer as string;
-                const userDoc = await findUserByStripeCustomerId(adminDb, stripeCustomerId);
+                const userRef = await findUserByStripeCustomerId(adminDb, stripeCustomerId);
 
-                if (userDoc) {
+                if (userRef) {
                      let newStatus = subscription.status;
                      if (subscription.cancel_at_period_end) {
                         newStatus = 'canceled';
@@ -129,7 +144,7 @@ export async function POST(req: Request) {
                     
                     const price = subscription.items.data[0]?.price;
 
-                    const subscriptionData = {
+                    const subscriptionData: { [key: string]: any } = {
                         subscriptionId: subscription.id,
                         subscriptionStatus: newStatus,
                         subscriptionInterval: price?.recurring?.interval,
@@ -137,9 +152,14 @@ export async function POST(req: Request) {
                         lastPrice: price?.unit_amount ? price.unit_amount / 100 : null,
                         updatedAt: FieldValue.serverTimestamp(),
                     };
+                    
+                    // If a user is activating a trial by adding a payment method
+                    if (subscription.status === 'trialing' && event.type === 'customer.subscription.created') {
+                        await handleNewTrial(adminDb, userRef.id);
+                    }
 
-                    await userDoc.ref.update(subscriptionData);
-                    console.log(`Successfully synced subscription for user ${userDoc.id}. New status: ${newStatus}`);
+                    await userRef.update(subscriptionData);
+                    console.log(`Successfully synced subscription for user ${userRef.id}. New status: ${newStatus}`);
                 }
                 break;
             }
@@ -147,16 +167,40 @@ export async function POST(req: Request) {
             case 'customer.subscription.deleted':
                 const deletedSubscription = event.data.object as Stripe.Subscription;
                 const stripeCustomerId = deletedSubscription.customer as string;
-                const userDoc = await findUserByStripeCustomerId(adminDb, stripeCustomerId);
+                const userRef = await findUserByStripeCustomerId(adminDb, stripeCustomerId);
 
-                if (userDoc) {
-                    await userDoc.ref.update({
+                if (userRef) {
+                    await userRef.update({
                         subscriptionStatus: 'canceled',
                         subscriptionInterval: null, 
                     });
-                     console.log(`Successfully marked subscription as canceled for user ${userDoc.id}.`);
+                     console.log(`Successfully marked subscription as canceled for user ${userRef.id}.`);
                 }
                 break;
+                
+            case 'invoice.payment_succeeded': {
+                const invoice = event.data.object as Stripe.Invoice;
+                // Only handle subscription renewals
+                if (invoice.billing_reason === 'subscription_cycle' && invoice.customer) {
+                    const stripeCustomerId = invoice.customer as string;
+                    const userRef = await findUserByStripeCustomerId(adminDb, stripeCustomerId);
+
+                    if (userRef) {
+                        const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
+                        const interval = subscription.items.data[0]?.price.recurring?.interval;
+                        
+                        if (interval === 'month') {
+                            await addCredits(adminDb, userRef, 10, 'Monthly subscription credits');
+                            console.log(`Added 10 monthly credits to user ${userRef.id}`);
+                        } else if (interval === 'year') {
+                            await addCredits(adminDb, userRef, 100, 'Yearly subscription credits');
+                             console.log(`Added 100 yearly credits to user ${userRef.id}`);
+                        }
+                    }
+                }
+                break;
+            }
+
 
             case 'coupon.created':
             case 'coupon.deleted':
