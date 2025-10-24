@@ -14,6 +14,9 @@ import { adminDb } from '@/lib/firebase/admin';
 async function addCredits(db: Firestore, userRef: DocumentReference, amount: number, reason: string) {
     const creditHistoryRef = userRef.collection('creditHistory');
     await db.runTransaction(async (transaction) => {
+        const userDoc = await transaction.get(userRef);
+        const currentCredits = userDoc.data()?.proposalCredits || 0;
+        
         transaction.update(userRef, {
             proposalCredits: FieldValue.increment(amount)
         });
@@ -28,7 +31,7 @@ async function addCredits(db: Firestore, userRef: DocumentReference, amount: num
 async function handleNewTrial(db: Firestore, userId: string, userData: DocumentData) {
     const userRef = db.collection('users').doc(userId);
     // Only give trial credits if they haven't been given them before.
-    if (userData.proposalCredits === undefined || userData.proposalCredits === 0) {
+    if (userData.proposalCredits === undefined || userData.proposalCredits < 5) {
         await addCredits(db, userRef, 5, 'Started a new trial');
     }
 }
@@ -127,6 +130,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
                 subscriptionStatus: 'active',
                 subscriptionInterval: updatedSubscription.items.data[0].price.recurring?.interval,
                 lastPrice: updatedSubscription.items.data[0].price.unit_amount ? updatedSubscription.items.data[0].price.unit_amount / 100 : null,
+                subscriptionCurrentPeriodEnd: new Date(updatedSubscription.current_period_end * 1000),
                 updatedAt: FieldValue.serverTimestamp(),
             });
 
@@ -135,7 +139,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
             return { success: true, message: `Your trial has ended and your ${interval} plan is now active!` };
         } catch (error: any) {
             if (error.code === 'customer_without_payment_method') {
-                 // The user started trial without a card, so we need to send them to checkout to add one.
+                 // The user started trial without a card, so we need to send them to a checkout page to add one.
                 const session = await stripe.checkout.sessions.create({
                     customer: stripeCustomerId,
                     success_url: `${origin}/api/stripe/activate-trial?session_id={CHECKOUT_SESSION_ID}`,
@@ -172,6 +176,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
           subscriptionStatus: 'active',
           subscriptionInterval: 'year',
           lastPrice: updatedSubscription.items.data[0].price.unit_amount ? updatedSubscription.items.data[0].price.unit_amount / 100 : null,
+          subscriptionCurrentPeriodEnd: new Date(updatedSubscription.current_period_end * 1000),
           updatedAt: FieldValue.serverTimestamp(),
       });
 
@@ -381,3 +386,4 @@ export async function createCreditPurchaseSession(formData: FormData): Promise<{
     return { error: 'Could not create a checkout session for credits.' };
   }
 }
+
