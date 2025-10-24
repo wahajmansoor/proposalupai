@@ -5,8 +5,47 @@ import { stripe } from '@/lib/stripe/config';
 import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
 import type Stripe from 'stripe';
-import { FieldValue } from 'firebase-admin/firestore';
+import { FieldValue, type Firestore, type DocumentReference, type DocumentData } from 'firebase-admin/firestore';
 import { z } from 'zod';
+
+// --- Credit Handling Logic (Integrated to fix build error) ---
+
+async function addCredits(db: Firestore, userRef: DocumentReference, amount: number, reason: string) {
+    const creditHistoryRef = userRef.collection('creditHistory');
+    await db.runTransaction(async (transaction) => {
+        transaction.update(userRef, {
+            proposalCredits: FieldValue.increment(amount)
+        });
+        transaction.set(creditHistoryRef.doc(), {
+            amount: amount,
+            reason: reason,
+            createdAt: FieldValue.serverTimestamp()
+        });
+    });
+}
+
+async function handleNewTrial(db: Firestore, userId: string, userData: DocumentData) {
+    if (userData.proposalCredits === undefined || userData.proposalCredits < 5) {
+        await addCredits(db, db.collection('users').doc(userId), 5, 'Started a new trial');
+    }
+}
+
+async function handlePlanActivation(db: Firestore, userId: string, userData: DocumentData, interval: 'monthly' | 'yearly') {
+    // Award credits for becoming a paying customer if they haven't received it
+    if (!userData.paidBonusGiven) {
+        await addCredits(db, db.collection('users').doc(userId), 10, 'Subscribed to a Pro plan');
+        await db.collection('users').doc(userId).update({ paidBonusGiven: true });
+    }
+}
+
+async function handlePlanUpgrade(db: Firestore, userId: string, userData: DocumentData) {
+    // Award credits for upgrading from monthly to yearly
+    if (!userData.upgradeBonusGiven) {
+        await addCredits(db, db.collection('users').doc(userId), 15, 'Upgraded to Pro Yearly');
+        await db.collection('users').doc(userId).update({ upgradeBonusGiven: true });
+    }
+}
+
 
 // --- Main Stripe Actions ---
 
@@ -18,7 +57,11 @@ export async function handlePlanChange(formData: FormData): Promise<{
 }> {
   // Lazily import server-only modules
   const { adminDb } = await import('@/lib/firebase/admin');
-  const { handleNewTrial, handlePlanActivation, handlePlanUpgrade } = await import('@/lib/firebase/credits');
+  
+  if (!adminDb) {
+    console.error("handlePlanChange failed: Firebase Admin not initialized.");
+    return { error: 'The server is not configured correctly. Please contact support.' };
+  }
 
   let interval = formData.get('interval') as 'monthly' | 'yearly' | null;
   const coupon = formData.get('coupon') as string | null;
@@ -27,11 +70,6 @@ export async function handlePlanChange(formData: FormData): Promise<{
   const subscriptionStatus = formData.get('subscriptionStatus') as string | null;
   const subscriptionId = formData.get('subscriptionId') as string | null;
   const currentInterval = formData.get('currentInterval') as 'month' | 'year' | null;
-
-  if (!adminDb) {
-    console.error("handlePlanChange failed: Firebase Admin not initialized.");
-    return { error: 'The server is not configured correctly. Please contact support.' };
-  }
 
   if (!firebaseUid || !stripeCustomerId) {
     return { error: 'User is not properly authenticated. Please log in again.' };
