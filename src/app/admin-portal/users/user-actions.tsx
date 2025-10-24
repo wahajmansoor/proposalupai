@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash2, Loader2, CreditCard, Mail } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, Loader2, CreditCard, Mail, Star } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
@@ -14,7 +14,7 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { deleteUser, updateUser, AppUser, createAdminCustomerPortalSession, sendPasswordResetLink } from './actions';
+import { deleteUser, updateUser, AppUser, createAdminCustomerPortalSession, sendPasswordResetLink, updateUserCredits } from './actions';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 
@@ -22,10 +22,13 @@ export function UserActions({ user }: { user: AppUser }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isPasswordResetDialogOpen, setIsPasswordResetDialogOpen] = useState(false);
+  const [isCreditsDialogOpen, setIsCreditsDialogOpen] = useState(false);
+
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isManagingBilling, setIsManagingBilling] = useState(false);
   const [isSendingReset, setIsSendingReset] = useState(false);
+  const [isSavingCredits, setIsSavingCredits] = useState(false);
   const { toast } = useToast();
 
   const handleDelete = async () => {
@@ -54,6 +57,22 @@ export function UserActions({ user }: { user: AppUser }) {
     }
     setIsSaving(false);
   }
+
+  const handleCreditsUpdate = async (event: React.FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    setIsSavingCredits(true);
+    const formData = new FormData(event.currentTarget);
+    const result = await updateUserCredits(formData);
+    
+    if (result.success) {
+        toast({ title: 'Credits Updated', description: "The user's credit balance has been updated." });
+        setIsCreditsDialogOpen(false);
+    } else {
+        toast({ title: 'Error', description: result.error, variant: 'destructive' });
+    }
+    setIsSavingCredits(false);
+  }
+
 
   const handleManageBilling = async () => {
     if (!user.stripeCustomerId) {
@@ -105,6 +124,10 @@ export function UserActions({ user }: { user: AppUser }) {
           <DropdownMenuItem onSelect={() => setIsEditDialogOpen(true)}>
             <Edit className="mr-2 h-4 w-4" />
             Edit User
+          </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => setIsCreditsDialogOpen(true)}>
+            <Star className="mr-2 h-4 w-4" />
+            Manage Credits
           </DropdownMenuItem>
            <DropdownMenuItem onSelect={handleManageBilling} disabled={!user.stripeCustomerId || isManagingBilling}>
             {isManagingBilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
@@ -169,6 +192,35 @@ export function UserActions({ user }: { user: AppUser }) {
         </DialogContent>
       </Dialog>
       
+       <Dialog open={isCreditsDialogOpen} onOpenChange={setIsCreditsDialogOpen}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Manage Credits</DialogTitle>
+                <DialogDescription>Adjust the credit balance for {user.name || user.email}.</DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleCreditsUpdate}>
+                <input type="hidden" name="userId" value={user.id} />
+                <div className="grid gap-4 py-4">
+                    <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="credits" className="text-right">Credits</Label>
+                        <Input id="credits" name="credits" type="number" defaultValue={user.proposalCredits || 0} className="col-span-3" />
+                    </div>
+                     <div className="grid grid-cols-4 items-center gap-4">
+                        <Label htmlFor="reason" className="text-right">Reason</Label>
+                        <Input id="reason" name="reason" type="text" placeholder="e.g., Admin grant" className="col-span-3" required />
+                    </div>
+                </div>
+                 <DialogFooter>
+                    <Button type="button" variant="outline" onClick={() => setIsCreditsDialogOpen(false)}>Cancel</Button>
+                    <Button type="submit" disabled={isSavingCredits}>
+                        {isSavingCredits && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                        Update Credits
+                    </Button>
+                </DialogFooter>
+            </form>
+        </DialogContent>
+      </Dialog>
+
       <AlertDialog open={isPasswordResetDialogOpen} onOpenChange={setIsPasswordResetDialogOpen}>
         <AlertDialogContent>
           <AlertDialogHeader>

@@ -5,6 +5,7 @@ import { adminAuth, adminDb } from "@/lib/firebase/admin";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { stripe } from "@/lib/stripe/config";
+import { addCredits } from "@/lib/stripe-actions";
 
 export interface AppUser {
   id: string;
@@ -12,6 +13,7 @@ export interface AppUser {
   email: string | null;
   subscriptionStatus: string | null;
   proposalCount: number;
+  proposalCredits: number;
   subscriptionInterval: 'month' | 'year' | null;
   createdAt: string | null; // Changed to string for serialization
   stripeCustomerId: string | null;
@@ -47,6 +49,7 @@ export async function getUsers(): Promise<AppUser[]> {
         email: user.email,
         subscriptionStatus: userData?.subscriptionStatus || 'N/A',
         proposalCount: userData?.proposalCount || 0,
+        proposalCredits: userData?.proposalCredits || 0,
         subscriptionInterval: userData?.subscriptionInterval || null,
         createdAt: createdAt,
         stripeCustomerId: userData?.stripeCustomerId || null,
@@ -61,6 +64,7 @@ export async function getUsers(): Promise<AppUser[]> {
         email: user.email,
         subscriptionStatus: 'No Record',
         proposalCount: 0,
+        proposalCredits: 0,
         subscriptionInterval: null,
         createdAt: null,
         stripeCustomerId: null,
@@ -108,6 +112,46 @@ export async function updateUser(formData: FormData): Promise<{ success: boolean
     return { success: false, error: error.message };
   }
 }
+
+const updateUserCreditsSchema = z.object({
+    userId: z.string(),
+    newCreditAmount: z.coerce.number().int("Credit amount must be a whole number."),
+    reason: z.string().min(1, "Reason is required."),
+});
+
+export async function updateUserCredits(formData: FormData): Promise<{ success: boolean; error?: string }> {
+    const validatedFields = updateUserCreditsSchema.safeParse({
+        userId: formData.get('userId'),
+        newCreditAmount: formData.get('credits'),
+        reason: formData.get('reason'),
+    });
+
+    if (!validatedFields.success) {
+        return { success: false, error: validatedFields.error.flatten().fieldErrors.newCreditAmount?.[0] || 'Invalid data provided.' };
+    }
+
+    const { userId, newCreditAmount, reason } = validatedFields.data;
+    
+    try {
+        const userRef = adminDb.collection('users').doc(userId);
+        const userDoc = await userRef.get();
+        if (!userDoc.exists) {
+            return { success: false, error: 'User not found.' };
+        }
+        const currentCredits = userDoc.data()?.proposalCredits || 0;
+        const creditsToAdd = newCreditAmount - currentCredits;
+        
+        await addCredits(adminDb, userRef, creditsToAdd, reason);
+
+        revalidatePath('/admin-portal/users');
+        return { success: true };
+
+    } catch (error: any) {
+        console.error("Failed to update user credits:", error);
+        return { success: false, error: error.message };
+    }
+}
+
 
 export async function deleteUser(userId: string): Promise<{ success: boolean, error?: string }> {
   try {

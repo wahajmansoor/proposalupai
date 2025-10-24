@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Search, Loader2 } from "lucide-react";
+import { ArrowUpDown, Search, Loader2, Star } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -55,7 +55,7 @@ function SubscriptionBadge({ status }: { status: string | null }) {
     );
 }
 
-type SortKey = 'name' | 'email' | 'createdAt' | 'proposalCount';
+type SortKey = 'name' | 'email' | 'createdAt' | 'proposalCount' | 'proposalCredits';
 type StatusFilter = 'all' | 'trialing' | 'active' | 'payment_due' | 'canceled' | 'na';
 
 const filterOptions: { label: string, value: StatusFilter }[] = [
@@ -258,6 +258,11 @@ export default function AdminUsersPage() {
                   </TableHead>
                   <TableHead>Plan</TableHead>
                   <TableHead>Status</TableHead>
+                  <TableHead className="text-center">
+                      <button onClick={() => requestSort('proposalCredits')} className="flex items-center">
+                          Credits {getSortIndicator('proposalCredits')}
+                      </button>
+                  </TableHead>
                   <TableHead>
                       <button onClick={() => requestSort('createdAt')} className="flex items-center">
                           Sign-up Date {getSortIndicator('createdAt')}
@@ -308,6 +313,12 @@ export default function AdminUsersPage() {
                     </TableCell>
                     <TableCell>
                         <SubscriptionBadge status={user.subscriptionStatus} />
+                    </TableCell>
+                    <TableCell className="text-center">
+                        <div className="flex items-center justify-center gap-1">
+                            <Star className="h-4 w-4 text-yellow-400" />
+                            {user.proposalCredits}
+                        </div>
                     </TableCell>
                     <TableCell>
                       {user.createdAt ? format(new Date(user.createdAt), "MMM d, yyyy") : "NA"}
@@ -360,5 +371,3 @@ export default function AdminUsersPage() {
     </div>
   );
 }
-
-    
