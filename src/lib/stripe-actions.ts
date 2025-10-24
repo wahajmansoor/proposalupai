@@ -38,12 +38,10 @@ async function handleNewTrial(db: Firestore, userId: string) {
         const userData = userDoc.data();
         if (!userData) return;
 
-        // Award initial 5 credits for starting a trial if they don't have any
-        if (userData && (userData.proposalCredits === undefined || userData.proposalCredits === null)) {
-            await addCredits(db, userRef, 5, 'Started a new trial');
-        }
-
-        // Check if the new user was referred and award credits
+        let initialCredits = 0;
+        let initialReason = '';
+        
+        // Check if the new user was referred
         if (userData.referredBy) {
             const referrerQuery = await db.collection('users').where('referralCode', '==', userData.referredBy).limit(1).get();
             if (!referrerQuery.empty) {
@@ -54,13 +52,27 @@ async function handleNewTrial(db: Firestore, userId: string) {
                 
                 // Award 5 credits to the referrer
                 await addCredits(db, referrerRef, 5, `Referral bonus for ${userData.displayName || 'a new user'}`);
+
+                // The new user gets 5 trial credits + 5 referral bonus credits
+                initialCredits = 10;
+                initialReason = 'Started trial with referral bonus';
             }
+        }
+
+        // If not referred, they just get the standard 5 trial credits.
+        if (initialCredits === 0) {
+            initialCredits = 5;
+            initialReason = 'Started a new trial';
+        }
+
+        // Award credits to the new user if they don't have any yet
+        if (userData && (userData.proposalCredits === undefined || userData.proposalCredits === null)) {
+            await addCredits(db, userRef, initialCredits, initialReason);
         }
     }
 }
 
-// This function is for when a user converts from trial/free to a paid plan.
-// It is separate from the trial creation logic.
+
 export async function handleSubscriptionCreation(db: Firestore, userId: string) {
     const userRef = db.collection('users').doc(userId);
     const userDoc = await userRef.get();
@@ -420,3 +432,4 @@ export async function createCreditPurchaseSession(formData: FormData): Promise<{
     return { error: 'Could not create a checkout session for credits.' };
   }
 }
+
