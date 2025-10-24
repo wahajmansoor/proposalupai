@@ -125,6 +125,9 @@ export async function handlePlanChange(formData: FormData): Promise<{
     // Scenario 1: New user starting a trial
     if (!subscriptionStatus || subscriptionStatus === 'null' || subscriptionStatus === 'undefined') {
        
+      // Award credits BEFORE creating the session
+      await handleNewTrial(adminDb, firebaseUid);
+
       const sessionParams: Stripe.Checkout.SessionCreateParams = {
         customer: stripeCustomerId,
         client_reference_id: firebaseUid,

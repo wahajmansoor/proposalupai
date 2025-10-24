@@ -6,9 +6,9 @@ import { headers } from 'next/headers';
 import type Stripe from 'stripe';
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
-import { FieldValue, type Firestore, type DocumentData, DocumentReference } from 'firebase-admin/firestore';
+import { FieldValue, type Firestore, type DocumentReference } from 'firebase-admin/firestore';
 import { adminDb } from '@/lib/firebase/admin';
-import { handleNewTrial, addCredits } from '@/lib/stripe-actions';
+import { addCredits } from '@/lib/stripe-actions';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -101,18 +101,7 @@ export async function POST(req: Request) {
                 }
                 break;
 
-            case 'customer.subscription.created': {
-                const subscription = event.data.object as Stripe.Subscription;
-                // If the subscription is trialing, it's a new user starting their journey.
-                if (subscription.status === 'trialing') {
-                    const stripeCustomerId = subscription.customer as string;
-                    const userRef = await findUserByStripeCustomerId(adminDb, stripeCustomerId);
-                    if (userRef) {
-                        await handleNewTrial(adminDb, userRef.id);
-                    }
-                }
-                 // Fallthrough to update subscription details
-            }
+            case 'customer.subscription.created':
             case 'customer.subscription.updated': {
                 const subscription = event.data.object as Stripe.Subscription;
                 const stripeCustomerId = subscription.customer as string;
