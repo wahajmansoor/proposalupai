@@ -111,7 +111,7 @@ function CreditHistory() {
       </CardContent>
       <CardFooter className="flex-col items-start gap-4 border-t pt-4">
         <h4 className="font-semibold">Refer a Friend, Get Credits</h4>
-        <p className="text-sm text-muted-foreground -mt-3">Share your referral link with friends. When they sign up and subscribe to a paid plan, you both earn 5 bonus proposal improvement credits!</p>
+        <p className="text-sm text-muted-foreground -mt-3">Invite a friend using your referral link. When they sign up and start their trial, you both get 5 free credits to improve your proposals!</p>
         <div className="w-full space-y-2">
             <Label htmlFor="referral-link" className="sr-only">Your Referral Link</Label>
             <div className="flex items-center gap-2">
