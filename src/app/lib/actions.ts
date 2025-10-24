@@ -8,7 +8,6 @@ import { getCurrentUser } from '@/lib/firebase/server-auth';
 import { revalidatePath } from 'next/cache';
 import { getFirebaseAdmin } from '@/lib/firebase/admin';
 import { incrementProposalCount, decrementProposalCredits } from '@/lib/firebase/usage';
-import { stripe } from '@/lib/stripe/config';
 import type { PortfolioLink } from './types';
 import type { Timestamp } from 'firebase-admin/firestore';
 import { getCountryFromIp } from '@/app/lib/location';
@@ -360,34 +359,6 @@ export async function updateUserDisplayNameAction(formData: FormData) {
     }
 }
 
-const createStripeCustomerSchema = z.object({
-  email: z.string().email(),
-  name: z.string(),
-  firebaseUID: z.string(),
-});
-
-export async function createStripeCustomer(input: z.infer<typeof createStripeCustomerSchema>): Promise<{ customerId?: string, error?: string }> {
-  const validatedFields = createStripeCustomerSchema.safeParse(input);
-  if (!validatedFields.success) {
-    return { error: 'Invalid input for creating Stripe customer.' };
-  }
-  
-  const { email, name, firebaseUID } = validatedFields.data;
-
-  try {
-    const customer = await stripe.customers.create({
-      email,
-      name,
-      metadata: { firebaseUID },
-    });
-    return { customerId: customer.id };
-  } catch (error: any) {
-    console.error("Error creating Stripe customer:", error);
-    return { error: "Failed to create customer in our payment system." };
-  }
-}
-
-
 export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]; error?: string }> {
   const currentUser = await getCurrentUser();
   if (!currentUser?.userDoc?.stripeCustomerId) {
@@ -395,6 +366,7 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
   }
 
   const { stripeCustomerId } = currentUser.userDoc;
+  const { stripe } = await import('@/lib/stripe/config');
 
   try {
     const invoices = await stripe.invoices.list({
