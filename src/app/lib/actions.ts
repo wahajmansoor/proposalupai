@@ -9,7 +9,6 @@ import { revalidatePath } from 'next/cache';
 import { adminDb } from '@/lib/firebase/admin';
 
 import type { PortfolioLink } from './types';
-import type { Timestamp, FieldValue } from 'firebase-admin/firestore';
 import { getCountryFromIp } from '@/app/lib/location';
 import { ai } from '@/ai/genkit';
 import type {
@@ -397,11 +396,12 @@ export async function getCreditHistory(): Promise<{ history?: CreditHistoryItem[
         
         const history: CreditHistoryItem[] = querySnapshot.docs.map(doc => {
             const data = doc.data();
+            const createdAtTimestamp = data.createdAt as { toDate: () => Date };
             return {
                 id: doc.id,
                 amount: data.amount,
                 reason: data.reason,
-                createdAt: (data.createdAt as Timestamp).toDate().toISOString(),
+                createdAt: createdAtTimestamp.toDate().toISOString(),
             };
         });
 
