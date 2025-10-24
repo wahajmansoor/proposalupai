@@ -4,34 +4,29 @@ import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getAuth, Auth } from 'firebase-admin/auth';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 
-const projectId = process.env.FIREBASE_PROJECT_ID;
-const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
-// Replace escaped newlines in the private key
-const privateKey = process.env.FIREBASE_PRIVATE_KEY?.replace(/\\n/g, '\n');
+const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
-if (!projectId || !clientEmail || !privateKey) {
-  throw new Error(
-    'Missing Firebase Admin credentials. Please ensure FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, and FIREBASE_PRIVATE_KEY are set in your .env file.'
-  );
+if (!serviceAccountString) {
+  throw new Error('Missing FIREBASE_SERVICE_ACCOUNT_KEY environment variable.');
 }
-
-const serviceAccount = {
-  projectId,
-  clientEmail,
-  privateKey,
-};
 
 let app: App;
 
 if (!getApps().length) {
   try {
+    // Vercel escapes newlines, so we need to parse and then un-escape.
+    const serviceAccountJson = JSON.parse(serviceAccountString);
+    if (serviceAccountJson.private_key) {
+      serviceAccountJson.private_key = serviceAccountJson.private_key.replace(/\\n/g, '\n');
+    }
+
     app = initializeApp({
-      credential: cert(serviceAccount),
+      credential: cert(serviceAccountJson),
     });
   } catch (error: any) {
     console.error('Firebase Admin SDK initialization failed:', error);
     throw new Error(
-      'Could not initialize Firebase Admin SDK. Verify your Firebase credentials.'
+      'Could not initialize Firebase Admin SDK. Verify the FIREBASE_SERVICE_ACCOUNT_KEY.'
     );
   }
 } else {
