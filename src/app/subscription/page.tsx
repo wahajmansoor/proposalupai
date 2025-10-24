@@ -1,14 +1,14 @@
 
 "use client";
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useTransition } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CreditCard, ExternalLink, Star, Copy, Check } from 'lucide-react';
+import { Loader2, CreditCard, ExternalLink, Star, Copy, Check, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { createCustomerPortalSession } from '@/lib/stripe-actions';
+import { createCustomerPortalSession, createCreditPurchaseSession } from '@/lib/stripe-actions';
 import { format, formatDistanceToNow } from 'date-fns';
 import { getBillingHistory, getCreditHistory, type InvoiceDetails, type CreditHistoryItem } from '@/app/lib/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -18,6 +18,8 @@ import { cn } from '@/lib/utils';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { ShareIcons } from '@/components/icons';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useRouter } from 'next/navigation';
 
 
 function CreditHistory() {
@@ -74,7 +76,7 @@ function CreditHistory() {
     <Card>
       <CardHeader>
         <CardTitle>Credit History</CardTitle>
-        <CardDescription>A log of all the proposal improvement credits you've earned.</CardDescription>
+        <CardDescription>A log of all the proposal improvement credits you've earned or purchased.</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -139,15 +141,80 @@ function CreditHistory() {
   );
 }
 
+const creditPackages = [
+    { name: "10 Credits", price: 5, priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_10_PRICE_ID! },
+    { name: "25 Credits", price: 10, priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_25_PRICE_ID! },
+    { name: "50 Credits", price: 18, priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_50_PRICE_ID! }
+];
+
+function BuyCredits() {
+    const { toast } = useToast();
+    const [isPending, startTransition] = useTransition();
+    const [selectedPriceId, setSelectedPriceId] = useState<string | null>(null);
+
+    const handlePurchase = (priceId: string) => {
+        setSelectedPriceId(priceId);
+        startTransition(async () => {
+            const formData = new FormData();
+            formData.append('priceId', priceId);
+            const result = await createCreditPurchaseSession(formData);
+
+            if (result.error) {
+                toast({ title: "Error", description: result.error, variant: "destructive" });
+            } else if (result.url) {
+                window.location.href = result.url;
+            }
+            setSelectedPriceId(null);
+        });
+    };
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Buy More Credits</CardTitle>
+                <CardDescription>Need more improvements? Purchase a credit pack below.</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {creditPackages.map((pkg) => (
+                    <div key={pkg.priceId} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                        <div>
+                            <p className="font-semibold">{pkg.name}</p>
+                            <p className="text-muted-foreground">${pkg.price}</p>
+                        </div>
+                        <Button onClick={() => handlePurchase(pkg.priceId)} disabled={isPending}>
+                           {isPending && selectedPriceId === pkg.priceId ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
+                           Buy Now
+                        </Button>
+                    </div>
+                ))}
+            </CardContent>
+        </Card>
+    );
+}
 
 export default function SubscriptionPage() {
   const { user, userProfile } = useAuth();
   const { toast } = useToast();
+  const router = useRouter();
   const [isManagingBilling, setIsManagingBilling] = useState(false);
   
   const [invoices, setInvoices] = useState<InvoiceDetails[]>([]);
   const [isLoadingHistory, setIsLoadingHistory] = useState(false);
   const [historyError, setHistoryError] = useState<string | null>(null);
+  
+  useEffect(() => {
+    // Check for purchase success query param and show toast
+    const urlParams = new URLSearchParams(window.location.search);
+    if (urlParams.get('credits_purchased') === 'true') {
+      toast({
+        title: 'Purchase Successful!',
+        description: 'Your credits have been added to your account.',
+      });
+      // Remove query param from URL without reloading
+      router.replace('/subscription', { scroll: false });
+    }
+  }, [router, toast]);
+
 
   const fetchHistory = useCallback(async () => {
     if (!userProfile?.stripeCustomerId) return;
@@ -211,11 +278,11 @@ export default function SubscriptionPage() {
   return (
     <div className="space-y-8">
       <div>
-        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Subscription</h1>
-        <p className="text-muted-foreground">View and manage your subscription and billing details.</p>
+        <h1 className="text-2xl md:text-3xl font-bold tracking-tight">Subscription & Credits</h1>
+        <p className="text-muted-foreground">View your plan details, purchase credits, and manage billing.</p>
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 items-start">
-        <div className="lg:col-span-2">
+        <div className="lg:col-span-2 flex flex-col gap-8">
           <Card>
             <CardHeader>
               <CardTitle>Subscription Details</CardTitle>
@@ -252,6 +319,7 @@ export default function SubscriptionPage() {
               )}
             </CardContent>
           </Card>
+          <BuyCredits />
         </div>
         <div className="lg:col-span-3 space-y-8">
            <CreditHistory />

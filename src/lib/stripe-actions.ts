@@ -12,6 +12,9 @@ import { adminDb } from '@/lib/firebase/admin';
 
 // --- Credit Handling Logic ---
 async function addCredits(db: Firestore, userRef: DocumentReference, amount: number, reason: string) {
+    if (!adminDb) {
+      throw new Error("Server is not configured correctly. Please contact support.");
+    }
     const creditHistoryRef = userRef.collection('creditHistory');
     await db.runTransaction(async (transaction) => {
         transaction.update(userRef, {
@@ -34,29 +37,6 @@ async function handleNewTrial(db: Firestore, userId: string, userData: DocumentD
         await addCredits(db, db.collection('users').doc(userId), 5, 'Started a new trial');
     }
 }
-
-async function handlePlanActivation(db: Firestore, userId: string, userData: DocumentData, interval: 'monthly' | 'yearly') {
-    if (!adminDb) {
-      throw new Error("Server is not configured correctly. Please contact support.");
-    }
-    // Award 10 credits for becoming a paying customer if they haven't received it
-    if (!userData.paidBonusGiven) {
-        await addCredits(db, db.collection('users').doc(userId), 10, 'Subscribed to a Pro plan');
-        await db.collection('users').doc(userId).update({ paidBonusGiven: true });
-    }
-}
-
-async function handlePlanUpgrade(db: Firestore, userId: string, userData: DocumentData) {
-    if (!adminDb) {
-      throw new Error("Server is not configured correctly. Please contact support.");
-    }
-    // Award 15 credits for upgrading from monthly to yearly
-    if (!userData.upgradeBonusGiven) {
-        await addCredits(db, db.collection('users').doc(userId), 15, 'Upgraded to Pro Yearly');
-        await db.collection('users').doc(userId).update({ upgradeBonusGiven: true });
-    }
-}
-
 
 // --- Main Stripe Actions ---
 
@@ -158,8 +138,6 @@ export async function handlePlanChange(formData: FormData): Promise<{
     // Scenario 3: User is on active monthly and upgrading to yearly
     if (subscriptionStatus === 'active' && subscriptionId && currentInterval === 'month' && interval === 'yearly') {
       const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-      
-      await handlePlanUpgrade(adminDb, userDoc.id, userData);
       
       await stripe.subscriptions.update(subscriptionId, {
         items: [{ id: subscription.items.data[0].id, price: priceId }],
@@ -315,5 +293,62 @@ export async function validateCouponAction(formData: FormData): Promise<{
   } catch (error: any) {
     console.error("Stripe API error validating coupon:", error);
     return { success: false, error: 'Could not validate coupon code.' };
+  }
+}
+
+const creditPurchaseSchema = z.object({
+  priceId: z.string(),
+});
+
+export async function createCreditPurchaseSession(formData: FormData): Promise<{ url?: string; error?: string }> {
+  const { getCurrentUser } = await import('@/lib/firebase/server-auth');
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
+    return { error: 'User not authenticated. Please log in again.' };
+  }
+
+  const validatedFields = creditPurchaseSchema.safeParse({
+    priceId: formData.get('priceId'),
+  });
+
+  if (!validatedFields.success) {
+    return { error: 'Invalid credit package selected.' };
+  }
+  
+  const { priceId } = validatedFields.data;
+  const { stripeCustomerId, uid } = currentUser.userDoc as { stripeCustomerId: string, uid: string };
+  
+  if (!stripeCustomerId) {
+    return { error: 'Stripe customer ID not found for this user.' };
+  }
+
+  const headersList = headers();
+  const protocol = headersList.get('x-forwarded-proto') || 'http';
+  const host = headersList.get('host');
+  const origin = `${protocol}://${host}`;
+  const successUrl = `${origin}/subscription?credits_purchased=true`;
+  const cancelUrl = `${origin}/subscription`;
+
+  try {
+    const session = await stripe.checkout.sessions.create({
+      customer: stripeCustomerId,
+      client_reference_id: uid,
+      success_url: successUrl,
+      cancel_url: cancelUrl,
+      mode: 'payment',
+      line_items: [{ price: priceId, quantity: 1 }],
+      payment_intent_data: {
+        metadata: {
+          purchase_type: 'credits',
+          firebase_uid: uid,
+          price_id: priceId
+        },
+      },
+    });
+
+    return { url: session.url! };
+  } catch (error: any) {
+    console.error('Error creating credit purchase session:', error);
+    return { error: 'Could not create a checkout session for credits.' };
   }
 }

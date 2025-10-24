@@ -24,6 +24,30 @@ async function findUserByStripeCustomerId(db: Firestore, stripeCustomerId: strin
     return userQuery.docs[0];
 }
 
+async function addCredits(db: Firestore, userId: string, amount: number, reason: string) {
+    if (!adminDb) {
+      throw new Error("Server is not configured correctly. Please contact support.");
+    }
+    const userRef = db.collection('users').doc(userId);
+    const creditHistoryRef = userRef.collection('creditHistory');
+    await db.runTransaction(async (transaction) => {
+        transaction.update(userRef, {
+            proposalCredits: FieldValue.increment(amount)
+        });
+        transaction.set(creditHistoryRef.doc(), {
+            amount: amount,
+            reason: reason,
+            createdAt: FieldValue.serverTimestamp()
+        });
+    });
+}
+
+const creditProducts: Record<string, number> = {
+    [process.env.STRIPE_CREDITS_10_PRICE_ID!]: 10,
+    [process.env.STRIPE_CREDITS_25_PRICE_ID!]: 25,
+    [process.env.STRIPE_CREDITS_50_PRICE_ID!]: 50,
+};
+
 export async function POST(req: Request) {
     const body = await req.text();
     const sig = headers().get('stripe-signature');
@@ -49,6 +73,7 @@ export async function POST(req: Request) {
         switch (event.type) {
             case 'checkout.session.completed':
                 const session = event.data.object as Stripe.Checkout.Session;
+                
                 if (session.mode === 'subscription') {
                     const stripeCustomerId = session.customer as string;
                     const userDoc = await findUserByStripeCustomerId(adminDb, stripeCustomerId);
@@ -71,6 +96,21 @@ export async function POST(req: Request) {
                         await userDoc.ref.update(subscriptionData);
                         console.log(`Successfully synced new subscription for user ${userDoc.id}`);
                     }
+                } else if (session.mode === 'payment') {
+                    const paymentIntentId = session.payment_intent as string;
+                    const paymentIntent = await stripe.paymentIntents.retrieve(paymentIntentId);
+                    const purchaseType = paymentIntent.metadata.purchase_type;
+
+                    if (purchaseType === 'credits') {
+                        const userId = paymentIntent.metadata.firebase_uid;
+                        const priceId = paymentIntent.metadata.price_id;
+                        const creditsToAdd = creditProducts[priceId];
+
+                        if (userId && creditsToAdd) {
+                           await addCredits(adminDb, userId, creditsToAdd, `Purchased ${creditsToAdd} credits`);
+                           console.log(`Added ${creditsToAdd} credits to user ${userId}`);
+                        }
+                    }
                 }
                 break;
 
@@ -82,8 +122,6 @@ export async function POST(req: Request) {
 
                 if (userDoc) {
                      let newStatus = subscription.status;
-                     // Stripe sends 'active' for subscriptions that are set to cancel at period end.
-                     // We want to reflect 'canceled' in our DB immediately.
                      if (subscription.cancel_at_period_end) {
                         newStatus = 'canceled';
                      }
@@ -114,7 +152,6 @@ export async function POST(req: Request) {
                     await userDoc.ref.update({
                         subscriptionStatus: 'canceled',
                         subscriptionInterval: null, 
-                        // We can also clear other subscription related fields if needed
                     });
                      console.log(`Successfully marked subscription as canceled for user ${userDoc.id}.`);
                 }
