@@ -8,6 +8,7 @@ import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { FieldValue, type Firestore } from 'firebase-admin/firestore';
 import { adminDb } from '@/lib/firebase/admin';
+import { handleSubscriptionCreation } from '@/lib/stripe-actions';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
 
@@ -25,9 +26,6 @@ async function findUserByStripeCustomerId(db: Firestore, stripeCustomerId: strin
 }
 
 async function addCredits(db: Firestore, userId: string, amount: number, reason: string) {
-    if (!adminDb) {
-      throw new Error("Server is not configured correctly. Please contact support.");
-    }
     const userRef = db.collection('users').doc(userId);
     const creditHistoryRef = userRef.collection('creditHistory');
     await db.runTransaction(async (transaction) => {
@@ -95,6 +93,9 @@ export async function POST(req: Request) {
 
                         await userDoc.ref.update(subscriptionData);
                         console.log(`Successfully synced new subscription for user ${userDoc.id}`);
+                        
+                        // Handle referral credits if it's a new subscription
+                        await handleSubscriptionCreation(adminDb, userDoc.id, userDoc.data());
                     }
                 } else if (session.mode === 'payment') {
                     const paymentIntentId = session.payment_intent as string;
@@ -174,3 +175,4 @@ export async function POST(req: Request) {
 
     return new NextResponse(JSON.stringify({ received: true }), { status: 200 });
 }
+

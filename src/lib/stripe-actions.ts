@@ -15,8 +15,11 @@ async function addCredits(db: Firestore, userRef: DocumentReference, amount: num
     const creditHistoryRef = userRef.collection('creditHistory');
     await db.runTransaction(async (transaction) => {
         const userDoc = await transaction.get(userRef);
-        const currentCredits = userDoc.data()?.proposalCredits || 0;
-        
+        if (!userDoc.exists) {
+            // This might happen in a race condition, so we stop the transaction.
+            console.error(`User document ${userRef.id} does not exist. Cannot add credits.`);
+            return;
+        }
         transaction.update(userRef, {
             proposalCredits: FieldValue.increment(amount)
         });
@@ -31,8 +34,42 @@ async function addCredits(db: Firestore, userRef: DocumentReference, amount: num
 async function handleNewTrial(db: Firestore, userId: string, userData: DocumentData) {
     const userRef = db.collection('users').doc(userId);
     // Only give trial credits if they haven't been given them before.
-    if (userData.proposalCredits === undefined || userData.proposalCredits < 5) {
+     if (userData.proposalCredits === undefined || userData.proposalCredits === null) {
         await addCredits(db, userRef, 5, 'Started a new trial');
+    }
+}
+
+export async function handleSubscriptionCreation(db: Firestore, userId: string, userData: DocumentData) {
+    const userRef = db.collection('users').doc(userId);
+
+    // Check if the new subscriber was referred
+    if (userData.referredBy) {
+        const referrerQuery = await db.collection('users').where('referralCode', '==', userData.referredBy).limit(1).get();
+        if (!referrerQuery.empty) {
+            const referrerDoc = referrerQuery.docs[0];
+            const referrerRef = referrerDoc.ref;
+            
+            console.log(`Processing referral: ${referrerDoc.id} referred ${userId}. Awarding credits.`);
+
+            // Use a transaction to award credits to both users
+            await db.runTransaction(async (transaction) => {
+                // Award 5 credits to the new user
+                transaction.update(userRef, { proposalCredits: FieldValue.increment(5) });
+                transaction.set(userRef.collection('creditHistory').doc(), {
+                    amount: 5,
+                    reason: `Referral bonus from ${referrerDoc.data().displayName || 'a user'}`,
+                    createdAt: FieldValue.serverTimestamp()
+                });
+
+                // Award 5 credits to the referrer
+                transaction.update(referrerRef, { proposalCredits: FieldValue.increment(5) });
+                transaction.set(referrerRef.collection('creditHistory').doc(), {
+                    amount: 5,
+                    reason: `Referral bonus for ${userData.displayName || 'a new user'}`,
+                    createdAt: FieldValue.serverTimestamp()
+                });
+            });
+        }
     }
 }
 
@@ -129,8 +166,8 @@ export async function handlePlanChange(formData: FormData): Promise<{
             await userDoc.ref.update({
                 subscriptionStatus: 'active',
                 subscriptionInterval: updatedSubscription.items.data[0].price.recurring?.interval,
-                lastPrice: updatedSubscription.items.data[0].price.unit_amount ? updatedSubscription.items.data[0].price.unit_amount / 100 : null,
                 subscriptionCurrentPeriodEnd: new Date(updatedSubscription.current_period_end * 1000),
+                lastPrice: updatedSubscription.items.data[0].price.unit_amount ? updatedSubscription.items.data[0].price.unit_amount / 100 : null,
                 updatedAt: FieldValue.serverTimestamp(),
             });
 
@@ -175,8 +212,8 @@ export async function handlePlanChange(formData: FormData): Promise<{
       await userDoc.ref.update({
           subscriptionStatus: 'active',
           subscriptionInterval: 'year',
-          lastPrice: updatedSubscription.items.data[0].price.unit_amount ? updatedSubscription.items.data[0].price.unit_amount / 100 : null,
           subscriptionCurrentPeriodEnd: new Date(updatedSubscription.current_period_end * 1000),
+          lastPrice: updatedSubscription.items.data[0].price.unit_amount ? updatedSubscription.items.data[0].price.unit_amount / 100 : null,
           updatedAt: FieldValue.serverTimestamp(),
       });
 
