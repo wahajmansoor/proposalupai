@@ -6,7 +6,6 @@ import { onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
 import { doc, onSnapshot, getDoc } from 'firebase/firestore';
 import { ProposalUpLogos } from '@/components/icons';
-import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 
 interface UserProfile {
@@ -33,17 +32,38 @@ interface AuthContextType {
   user: User | null;
   userProfile: UserProfile | null;
   loading: boolean;
-  handleLogout: () => Promise<void>;
+  handleLogout: () => void;
   creditChange: number;
 }
 
-const AuthContext = createContext<AuthContextType>({ user: null, userProfile: null, loading: true, handleLogout: async () => {}, creditChange: 0 });
+const AuthContext = createContext<AuthContextType>({ user: null, userProfile: null, loading: true, handleLogout: () => {}, creditChange: 0 });
+
+function LogoutScreen() {
+    const router = useRouter();
+
+    useEffect(() => {
+        const timer = setTimeout(() => {
+            router.push('/login');
+        }, 2500); // 2.5 second delay before redirecting
+
+        return () => clearTimeout(timer);
+    }, [router]);
+    
+    return (
+        <div className="flex flex-col items-center justify-center min-h-screen bg-background text-center">
+            <ProposalUpLogos className="h-24 w-24 mb-6 text-primary" />
+            <h1 className="text-3xl font-bold">You’ve been logged out.</h1>
+            <p className="text-muted-foreground mt-2 text-lg">See you soon & keep winning projects!</p>
+            <p className="text-sm text-muted-foreground mt-8 animate-pulse">Redirecting to login...</p>
+        </div>
+    );
+}
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
-  const router = useRouter();
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   
   const [creditChange, setCreditChange] = useState(0);
   const previousCreditsRef = useRef<number | undefined>(undefined);
@@ -100,16 +120,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   }, []);
 
   const handleLogout = async () => {
+    setIsLoggingOut(true);
     try {
         await signOut(auth); // Sign out from Firebase Auth
         await fetch('/api/auth/session', { method: 'DELETE' }); // Clear server session cookie
-        router.push('/login'); // Redirect to login page
     } catch (error) {
         console.error("Error during logout:", error);
-        // Even if there's an error, try to force redirect
-        router.push('/login');
     }
   };
+  
+  if (isLoggingOut) {
+    return <LogoutScreen />;
+  }
 
   return (
     <AuthContext.Provider value={{ user, userProfile, loading, handleLogout, creditChange }}>
