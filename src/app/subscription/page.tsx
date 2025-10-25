@@ -148,16 +148,23 @@ const creditPackages = [
 ];
 
 function BuyCredits() {
+    const { user } = useAuth();
     const { toast } = useToast();
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [selectedPriceId, setSelectedPriceId] = useState<string | null>(null);
 
     const handlePurchase = (priceId: string) => {
+        if (!user) {
+            toast({ title: "Authentication Error", description: "You must be logged in to purchase credits.", variant: "destructive"});
+            return;
+        }
         setSelectedPriceId(priceId);
         startTransition(async () => {
             const formData = new FormData();
             formData.append('priceId', priceId);
+            formData.append('userId', user.uid);
+
             const result = await chargeCardForCredits(formData);
 
             if (result.error) {
@@ -395,3 +402,5 @@ export default function SubscriptionPage() {
     </div>
   );
 }
+
+    

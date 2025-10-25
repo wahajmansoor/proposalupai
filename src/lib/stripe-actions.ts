@@ -8,8 +8,6 @@ import type Stripe from 'stripe';
 import { FieldValue, type Firestore, type DocumentReference } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { adminDb } from '@/lib/firebase/admin';
-import { getCurrentUser } from './firebase/server-auth';
-
 
 // --- Credit Handling Logic ---
 export async function addCredits(db: Firestore, userRef: DocumentReference, amount: number, reason: string) {
@@ -363,6 +361,7 @@ export async function validateCouponAction(formData: FormData): Promise<{
 
 
 const creditPurchaseSchema = z.object({
+    userId: z.string().min(1, 'User ID is required.'),
     priceId: z.string().startsWith('price_'),
 });
 
@@ -373,37 +372,40 @@ const creditPackages: Record<string, { amount: number; credits: number }> = {
 };
 
 export async function chargeCardForCredits(formData: FormData): Promise<{ success: boolean; error?: string; message?: string }> {
-  const currentUser = await getCurrentUser();
-  if (!currentUser?.userDoc) {
-    return { success: false, error: 'User not authenticated.' };
-  }
-
   const validatedFields = creditPurchaseSchema.safeParse({
     priceId: formData.get('priceId'),
+    userId: formData.get('userId'),
   });
 
   if (!validatedFields.success) {
-    return { success: false, error: 'Invalid credit package selected.' };
+    return { success: false, error: 'Invalid credit package or user ID.' };
   }
 
-  const { priceId } = validatedFields.data;
+  const { priceId, userId } = validatedFields.data;
   const creditPackage = creditPackages[priceId];
 
   if (!creditPackage) {
     return { success: false, error: 'Selected credit package not found.' };
   }
 
-  const { stripeCustomerId, uid } = currentUser.userDoc as { stripeCustomerId: string; uid: string };
-  const userRef = adminDb.collection('users').doc(uid);
-
+  const userRef = adminDb.collection('users').doc(userId);
+  
   try {
+    const userDoc = await userRef.get();
+    if (!userDoc.exists) {
+        return { success: false, error: 'User not found.' };
+    }
+    
+    const stripeCustomerId = userDoc.data()?.stripeCustomerId;
+    if (!stripeCustomerId) {
+        return { success: false, error: 'User does not have a Stripe customer ID.' };
+    }
+
     // Retrieve the customer to get their default payment method
     const customer = await stripe.customers.retrieve(stripeCustomerId) as Stripe.Customer;
     const paymentMethodId = customer.invoice_settings?.default_payment_method as string | undefined;
 
     if (!paymentMethodId) {
-      // This is a fallback. We should ideally prompt them to add a card.
-      // For now, we'll return an error.
       return { success: false, error: 'No payment method on file. Please add a payment method in your billing settings.' };
     }
 
@@ -418,7 +420,7 @@ export async function chargeCardForCredits(formData: FormData): Promise<{ succes
       description: `Purchase of ${creditPackage.credits} credits for Proposal Up`,
        metadata: {
           purchase_type: 'credits',
-          firebase_uid: uid,
+          firebase_uid: userId,
           price_id: priceId
         },
     });
@@ -438,3 +440,5 @@ export async function chargeCardForCredits(formData: FormData): Promise<{ succes
     return { success: false, error: error.message || 'An unexpected error occurred during payment.' };
   }
 }
+
+    
