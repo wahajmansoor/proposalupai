@@ -1,4 +1,4 @@
-// src/app/dashboard/client-layout.tsx
+// src/app/dashboard/dashboard-client.tsx
 "use client";
 
 import { useAuth } from "@/context/auth-context";
@@ -9,7 +9,7 @@ import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
 import { SidebarInset } from "@/components/ui/sidebar";
 
-export function DashboardClientLayout({
+export function DashboardClient({
   children,
 }: {
   children: React.ReactNode;

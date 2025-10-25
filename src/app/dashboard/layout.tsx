@@ -1,10 +1,10 @@
 // src/app/dashboard/layout.tsx
-import { DashboardClientLayout } from './client-layout';
+import { DashboardClient } from './dashboard-client';
 
 export default function DashboardLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <DashboardClientLayout>{children}</DashboardClientLayout>;
+  return <DashboardClient>{children}</DashboardClient>;
 }
