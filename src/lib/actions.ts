@@ -337,37 +337,31 @@ export async function updateUserDisplayNameAction(formData: FormData) {
 }
 
 export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]; error?: string }> {
-  const currentUser = await getCurrentUser();
-  if (!currentUser) {
-    return { error: 'User not authenticated.' };
-  }
-  
-  const { userDoc } = currentUser;
-  const stripeCustomerId = userDoc?.stripeCustomerId;
-  
-  if (!stripeCustomerId) {
-    return { invoices: [] }; // Return empty array if no customer ID, not an error
-  }
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+        return { error: 'User not authenticated.' };
+    }
 
-  try {
-    const invoices = await stripe.invoices.list({
-      customer: stripeCustomerId,
-      limit: 20, // Get the last 20 invoices
-    });
+    try {
+        const historyRef = adminDb.collection('users').doc(currentUser.user.uid).collection('billingHistory');
+        const querySnapshot = await historyRef.orderBy('date', 'desc').limit(20).get();
 
-    const invoiceDetails: InvoiceDetails[] = invoices.data.map(invoice => ({
-      id: invoice.id,
-      date: new Date(invoice.created * 1000).toLocaleDateString(),
-      total: `$${(invoice.total / 100).toFixed(2)}`,
-      status: invoice.status || 'unknown',
-      invoiceUrl: invoice.hosted_invoice_url,
-    }));
+        const invoices: InvoiceDetails[] = querySnapshot.docs.map(doc => {
+            const data = doc.data();
+            return {
+                id: doc.id,
+                date: data.date.toDate().toLocaleDateString(),
+                total: `$${(data.total / 100).toFixed(2)}`,
+                status: data.status || 'unknown',
+                invoiceUrl: data.invoiceUrl,
+            };
+        });
 
-    return { invoices: invoiceDetails };
-  } catch (error: any) {
-    console.error('Error fetching billing history from Stripe:', error);
-    return { error: 'Could not retrieve billing history.' };
-  }
+        return { invoices };
+    } catch (error: any) {
+        console.error('Error fetching billing history from Firestore:', error);
+        return { error: 'Could not retrieve billing history.' };
+    }
 }
 
 export async function getCreditHistory(): Promise<{ history?: CreditHistoryItem[]; error?: string }> {
