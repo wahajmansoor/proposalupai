@@ -8,6 +8,8 @@ import type Stripe from 'stripe';
 import { FieldValue, type Firestore, type DocumentReference } from 'firebase-admin/firestore';
 import { z } from 'zod';
 import { adminDb } from '@/lib/firebase/admin';
+import { getCurrentUser } from './firebase/server-auth';
+
 
 // --- Credit Handling Logic ---
 export async function addCredits(db: Firestore, userRef: DocumentReference, amount: number, reason: string) {
@@ -37,16 +39,21 @@ export async function handlePlanChange(formData: FormData): Promise<{
   redirectUrl?: string;
   message?: string;
 }> {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
+    return { error: 'User not authenticated. Please log in again.' };
+  }
+
+  const { user, userDoc } = currentUser;
   
   let interval = formData.get('interval') as 'monthly' | 'yearly' | null;
   const coupon = formData.get('coupon') as string | null;
-  const firebaseUid = formData.get('firebaseUid') as string | null;
-  const stripeCustomerId = formData.get('stripeCustomerId') as string | null;
-  const subscriptionStatus = formData.get('subscriptionStatus') as string | null;
-  const subscriptionId = formData.get('subscriptionId') as string | null;
-  const currentInterval = formData.get('currentInterval') as 'month' | 'year' | null;
+  const stripeCustomerId = userDoc?.stripeCustomerId;
+  const subscriptionStatus = userDoc?.subscriptionStatus;
+  const subscriptionId = userDoc?.subscriptionId;
+  const currentInterval = userDoc?.subscriptionInterval;
 
-  if (!firebaseUid || !stripeCustomerId) {
+  if (!stripeCustomerId) {
     return { error: 'User is not properly authenticated. Please log in again.' };
   }
   
@@ -70,30 +77,23 @@ export async function handlePlanChange(formData: FormData): Promise<{
   const cancelUrl = `${origin}/pricing`;
 
   try {
-    const userRef = adminDb.collection('users').doc(firebaseUid);
-    const userDoc = await userRef.get();
-    
-    if (!userDoc.exists) {
-        return { error: 'User not found in database.' };
-    }
-    const userData = userDoc.data()!;
-
+    const userRef = adminDb.collection('users').doc(user.uid);
 
     // Scenario 1: New user starting a trial
     if (!subscriptionStatus || subscriptionStatus === 'null' || subscriptionStatus === 'undefined') {
        
         // Prevent awarding trial credits multiple times
-        if (!userData.trialCreditsAwarded) {
+        if (!userDoc?.trialCreditsAwarded) {
             let creditsToAward = 5;
             let creditReason = 'Started a new trial';
 
             // Check for referral
-            if (userData.referredBy) {
-                const referrerQuery = await adminDb.collection('users').where('referralCode', '==', userData.referredBy).limit(1).get();
+            if (userDoc?.referredBy) {
+                const referrerQuery = await adminDb.collection('users').where('referralCode', '==', userDoc.referredBy).limit(1).get();
                 if (!referrerQuery.empty) {
                     const referrerRef = referrerQuery.docs[0].ref;
                     // Award 5 credits to the referrer
-                    await addCredits(adminDb, referrerRef, 5, `Referral bonus for ${userData.displayName || 'a new user'}`);
+                    await addCredits(adminDb, referrerRef, 5, `Referral bonus for ${userDoc?.displayName || 'a new user'}`);
                     console.log(`Awarded 5 referral credits to referrer ${referrerRef.id}.`);
 
                     // New user gets 10 credits total (5 for trial + 5 for referral)
@@ -105,12 +105,12 @@ export async function handlePlanChange(formData: FormData): Promise<{
             await addCredits(adminDb, userRef, creditsToAward, creditReason);
             // Mark that trial credits have been given
             await userRef.update({ trialCreditsAwarded: true });
-            console.log(`Awarded ${creditsToAward} initial credits to new user ${firebaseUid}.`);
+            console.log(`Awarded ${creditsToAward} initial credits to new user ${user.uid}.`);
         }
 
         const sessionParams: Stripe.Checkout.SessionCreateParams = {
             customer: stripeCustomerId,
-            client_reference_id: firebaseUid,
+            client_reference_id: user.uid,
             success_url: successUrl,
             cancel_url: cancelUrl,
             mode: 'subscription',
@@ -219,7 +219,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
     if (subscriptionStatus === 'canceled' || subscriptionStatus === 'unpaid' || subscriptionStatus === 'past_due') {
         const sessionParams: Stripe.Checkout.SessionCreateParams = {
             customer: stripeCustomerId,
-            client_reference_id: firebaseUid,
+            client_reference_id: user.uid,
             success_url: successUrl,
             cancel_url: cancelUrl,
             mode: 'subscription',
@@ -251,7 +251,6 @@ export async function handlePlanChange(formData: FormData): Promise<{
 }
 
 export async function createCustomerPortalSession(): Promise<{ url?: string; error?: string }> {
-  const { getCurrentUser } = await import('@/lib/firebase/server-auth');
   const currentUser = await getCurrentUser();
   if (!currentUser) {
     return { error: 'User not authenticated. Please log in again.' };
@@ -362,7 +361,6 @@ export async function validateCouponAction(formData: FormData): Promise<{
 
 
 const creditPurchaseSchema = z.object({
-    userId: z.string().min(1, 'User ID is required.'),
     priceId: z.string().startsWith('price_'),
 });
 
@@ -373,31 +371,31 @@ const creditPackages: Record<string, { amount: number; credits: number }> = {
 };
 
 export async function chargeCardForCredits(formData: FormData): Promise<{ success: boolean; error?: string; message?: string }> {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
+    return { success: false, error: 'User not authenticated. Please log in again.' };
+  }
+  const { user, userDoc } = currentUser;
+
   const validatedFields = creditPurchaseSchema.safeParse({
     priceId: formData.get('priceId'),
-    userId: formData.get('userId'),
   });
 
   if (!validatedFields.success) {
-    return { success: false, error: 'Invalid credit package or user ID.' };
+    return { success: false, error: 'Invalid credit package selected.' };
   }
 
-  const { priceId, userId } = validatedFields.data;
+  const { priceId } = validatedFields.data;
   const creditPackage = creditPackages[priceId];
 
   if (!creditPackage) {
     return { success: false, error: 'Selected credit package not found.' };
   }
   
-  const userRef = adminDb.collection('users').doc(userId);
+  const userRef = adminDb.collection('users').doc(user.uid);
   
   try {
-    const userDoc = await userRef.get();
-    if (!userDoc.exists) {
-        return { success: false, error: 'User not found.' };
-    }
-    
-    const stripeCustomerId = userDoc.data()?.stripeCustomerId;
+    const stripeCustomerId = userDoc?.stripeCustomerId;
     if (!stripeCustomerId) {
         return { success: false, error: 'User does not have a Stripe customer ID.' };
     }
@@ -425,7 +423,7 @@ export async function chargeCardForCredits(formData: FormData): Promise<{ succes
       description: `Purchase of ${creditPackage.credits} credits for Proposal Up`,
        metadata: {
           purchase_type: 'credits',
-          firebase_uid: userId,
+          firebase_uid: user.uid,
           price_id: priceId
         },
     });

@@ -1,11 +1,11 @@
 
-"use server";
+'use server';
 
-import { adminAuth, adminDb } from "@/lib/firebase/admin";
-import { revalidatePath } from "next/cache";
-import { z } from "zod";
-import { stripe } from "@/lib/stripe/config";
-import { addCredits } from "@/lib/stripe-actions";
+import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { revalidatePath } from 'next/cache';
+import { z } from 'zod';
+import { stripe } from '@/lib/stripe/config';
+import { addCredits } from '@/lib/stripe-actions';
 
 export interface AppUser {
   id: string;
@@ -42,7 +42,7 @@ export async function getUsers(): Promise<AppUser[]> {
       }
 
       // Convert timestamp to ISO string for safe serialization
-      const createdAt = userData?.createdAt?.toDate()?.toISOString() || null;
+      const createdAt = userData?.createdAt?.toDate()?.toISOString() || user.metadata.creationTime;
       return {
         id: user.uid,
         name: userData?.displayName || user.displayName, // Prioritize Firestore displayName
@@ -66,7 +66,7 @@ export async function getUsers(): Promise<AppUser[]> {
         proposalCount: 0,
         proposalCredits: 0,
         subscriptionInterval: null,
-        createdAt: null,
+        createdAt: user.metadata.creationTime,
         stripeCustomerId: null,
         country: null,
         referralCode: null,

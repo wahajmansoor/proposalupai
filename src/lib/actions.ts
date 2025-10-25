@@ -6,7 +6,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { headers } from 'next/headers';
 import { getCurrentUser, incrementProposalCount, decrementProposalCredits } from '@/lib/firebase/server-auth';
 import { revalidatePath } from 'next/cache';
-import { adminDb } from '@/lib/firebase/admin';
+import { adminAuth, adminDb } from '@/lib/firebase/admin';
 
 import type { PortfolioLink } from './types';
 import { getCountryFromIp } from '@/app/lib/location';
@@ -353,7 +353,7 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
     return { error: 'User not authenticated.' };
   }
   if (!currentUser.userDoc?.stripeCustomerId) {
-    return { error: 'Stripe customer ID not found.' };
+    return { invoices: [] }; // Return empty array if no customer ID, not an error
   }
 
   const { stripeCustomerId } = currentUser.userDoc;

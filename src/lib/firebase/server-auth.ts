@@ -5,6 +5,7 @@ import { cookies } from 'next/headers';
 import type { UserRecord } from 'firebase-admin/auth';
 import type { DocumentData } from 'firebase-admin/firestore';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { FieldValue } from 'firebase-admin/firestore';
 
 export async function getCurrentUser(): Promise<{
   user: UserRecord;
@@ -29,8 +30,7 @@ export async function getCurrentUser(): Promise<{
 
   } catch (error) {
     // Session cookie is invalid or expired.
-    // It's a normal flow, so we don't need to log an error.
-    // The user is simply not authenticated.
+    // This is an expected path for unauthenticated users, so we don't need to log an error.
     return null;
   }
 }
