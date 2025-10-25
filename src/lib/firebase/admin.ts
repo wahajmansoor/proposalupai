@@ -4,21 +4,12 @@ import { getAuth, Auth } from 'firebase-admin/auth';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 
 const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-if (!serviceAccountString || serviceAccountString === 'your_firebase_service_account_key_here') {
-  throw new Error('Missing or placeholder FIREBASE_SERVICE_ACCOUNT_KEY environment variable. Please add your service account key to the .env file.');
-}
 
 let app: App;
 
 if (!getApps().length) {
   try {
-    const serviceAccount = JSON.parse(serviceAccountString);
-    
-    // Vercel might escape newlines, so we need to replace them back.
-    if (serviceAccount.private_key) {
-      serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
-    }
-    
+    const serviceAccount = JSON.parse(serviceAccountString!);
     app = initializeApp({
       credential: cert(serviceAccount),
     });
