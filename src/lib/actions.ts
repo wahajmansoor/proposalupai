@@ -52,7 +52,6 @@ import type {
 } from '@/ai/flows/suggest-word-limit';
 import { suggestWordLimit } from '@/ai/flows/suggest-word-limit';
 import { stripe } from '@/lib/stripe/config';
-import { getFirebaseAdmin } from './firebase/admin';
 
 
 export interface InvoiceDetails {
@@ -309,13 +308,12 @@ const updateDisplayNameSchema = z.object({
 });
 
 async function updateUserInFirestore(uid: string, data: { displayName: string }) {
-  const { adminDb } = getFirebaseAdmin();
   const userRef = adminDb.collection('users').doc(uid);
   await userRef.update(data);
 }
 
 async function updateUserDisplayName(uid: string, displayName: string) {
-  const { adminAuth } = getFirebaseAdmin();
+  const { adminAuth } = await import('@/lib/firebase/admin');
   if (!uid) throw new Error('You must be logged in to update your profile.');
 
   try {
@@ -393,7 +391,6 @@ export async function getCreditHistory(): Promise<{ history?: CreditHistoryItem[
     }
     
     try {
-        const { adminDb } = getFirebaseAdmin();
         const historyRef = adminDb.collection('users').doc(currentUser.user.uid).collection('creditHistory');
         const querySnapshot = await historyRef.orderBy('createdAt', 'desc').get();
         
