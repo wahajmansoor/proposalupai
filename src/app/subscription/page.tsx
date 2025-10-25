@@ -10,7 +10,7 @@ import { Loader2, CreditCard, ExternalLink, Star, Copy, Check, Info } from 'luci
 import { useToast } from '@/hooks/use-toast';
 import { createCustomerPortalSession, chargeCardForCredits } from '@/lib/stripe-actions';
 import { format, formatDistanceToNow } from 'date-fns';
-import { getBillingHistory, getCreditHistory, type InvoiceDetails, type CreditHistoryItem } from '@/app/lib/actions';
+import { getBillingHistory, getCreditHistory, type InvoiceDetails, type CreditHistoryItem } from '@/lib/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Skeleton } from '@/components/ui/skeleton';
 import Link from 'next/link';
@@ -201,7 +201,7 @@ function BuyCredits() {
                            ) : (
                             <>
                                 <img src="/coin-anim.gif" alt="Credits" className="h-6 w-6" />
-                                <span>Buy</span>
+                                <span>Buy Now</span>
                                 <span className="flex items-center justify-center h-5 w-5 rounded-full bg-white text-xs">
                                   {pkg.credits}
                                 </span>
