@@ -9,39 +9,42 @@ let adminAuth: Auth;
 let adminDb: Firestore;
 
 export function getFirebaseAdmin() {
-  if (app) {
+  if (getApps().length > 0) {
+    app = getApps()[0];
+    adminAuth = getAuth(app);
+    adminDb = getFirestore(app);
     return { app, adminAuth, adminDb };
   }
   
-  const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-  if (!serviceAccountString || serviceAccountString === 'your_firebase_service_account_key_here') {
-    throw new Error('Missing or placeholder FIREBASE_SERVICE_ACCOUNT_KEY environment variable. Please add your service account key to the .env file.');
-  }
-  
-  if (!getApps().length) {
-    try {
-      const serviceAccount = JSON.parse(serviceAccountString);
-      
-      if (serviceAccount.private_key) {
-        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
-      }
-      
-      app = initializeApp({
-        credential: cert(serviceAccount),
-      });
+  const projectId = process.env.FIREBASE_PROJECT_ID;
+  const clientEmail = process.env.FIREBASE_CLIENT_EMAIL;
+  const privateKey = process.env.FIREBASE_PRIVATE_KEY;
 
-    } catch (error: any) {
-      console.error('Firebase Admin SDK initialization failed:', error);
-      throw new Error(
-        'Could not initialize Firebase Admin SDK. Verify the FIREBASE_SERVICE_ACCOUNT_KEY.'
-      );
-    }
-  } else {
-    app = getApps()[0];
+  if (!projectId || !clientEmail || !privateKey) {
+    throw new Error('Missing one or more required Firebase Admin SDK environment variables (FIREBASE_PROJECT_ID, FIREBASE_CLIENT_EMAIL, FIREBASE_PRIVATE_KEY).');
   }
-  
-  adminAuth = getAuth(app);
-  adminDb = getFirestore(app);
+
+  // Vercel might escape newlines, so we need to replace them back.
+  const formattedPrivateKey = privateKey.replace(/\\n/g, '\n');
+
+  try {
+    app = initializeApp({
+      credential: cert({
+        projectId,
+        clientEmail,
+        privateKey: formattedPrivateKey,
+      }),
+    });
+    
+    adminAuth = getAuth(app);
+    adminDb = getFirestore(app);
+
+  } catch (error: any) {
+    console.error('Firebase Admin SDK initialization failed:', error);
+    throw new Error(
+      'Could not initialize Firebase Admin SDK. Verify the Firebase environment variables.'
+    );
+  }
 
   return { app, adminAuth, adminDb };
 }
