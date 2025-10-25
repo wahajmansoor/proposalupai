@@ -72,6 +72,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       if (user) {
+        setIsLoggingOut(false); // User is logged in, ensure logout screen is hidden
         const userRef = doc(db, 'users', user.uid);
         const unsubscribeSnapshot = onSnapshot(userRef, (docSnap) => {
           if (docSnap.exists()) {
@@ -112,18 +113,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       } else {
         setUserProfile(null);
         setLoading(false);
+        if (!isLoggingOut) { // If user is not logged in and not in the process of logging out
+            setIsLoggingOut(false);
+        }
         previousCreditsRef.current = undefined;
       }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [isLoggingOut]);
 
   const handleLogout = async () => {
-    setIsLoggingOut(true);
     try {
         await signOut(auth); // Sign out from Firebase Auth
         await fetch('/api/auth/session', { method: 'DELETE' }); // Clear server session cookie
+        setUser(null);
+        setUserProfile(null);
+        setIsLoggingOut(true);
     } catch (error) {
         console.error("Error during logout:", error);
     }
