@@ -56,7 +56,9 @@ function BuyCredits() {
         });
     };
 
-    if (userProfile?.subscriptionStatus === 'trialing') {
+    const shouldShowPurchaseBlock = userProfile?.subscriptionStatus === 'trialing' || !userProfile?.subscriptionStatus || userProfile.subscriptionStatus === 'N/A';
+
+    if (shouldShowPurchaseBlock) {
         return (
              <Card>
                 <CardHeader>
@@ -87,7 +89,7 @@ function BuyCredits() {
                             <img src="/coin-anim.gif" alt="Credits" className="h-10 w-10" />
                             <div>
                                 <p className="font-semibold">{pkg.name}</p>
-                                <p className="text-muted-foreground">${pkg.price}</p>
+                                <p className="text-sm text-muted-foreground">${pkg.price}</p>
                             </div>
                         </div>
                         <Button

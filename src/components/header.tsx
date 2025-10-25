@@ -13,6 +13,8 @@ import { CreditsButton } from './credits-button';
 export function Header() {
   const { user, userProfile, loading } = useAuth();
 
+  const canSeeCredits = user && userProfile?.subscriptionStatus && userProfile.subscriptionStatus !== 'N/A' && userProfile.subscriptionStatus !== null;
+
   return (
     <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur-sm sm:px-6">
        <SidebarTrigger />
@@ -21,7 +23,7 @@ export function Header() {
         </div>
 
         <div className="flex items-center justify-end gap-2 sm:gap-4">
-           {user && <CreditsButton />}
+           {canSeeCredits && <CreditsButton />}
           {user && userProfile?.subscriptionStatus === 'trialing' && (
             <Button asChild size="sm" className="hidden sm:flex">
               <Link href="/pricing">
