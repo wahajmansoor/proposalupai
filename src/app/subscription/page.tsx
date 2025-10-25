@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { Loader2, CreditCard, ExternalLink, Star, Copy, Check, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { createCustomerPortalSession, chargeCardForCredits, hasDefaultPaymentMethod } from '@/lib/stripe-actions';
+import { createCustomerPortalSession, chargeCardForCredits } from '@/lib/stripe-actions';
 import { format, formatDistanceToNow } from 'date-fns';
 import { getBillingHistory, getCreditHistory, type InvoiceDetails, type CreditHistoryItem } from '@/lib/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -153,18 +153,6 @@ function BuyCredits() {
     const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [selectedPriceId, setSelectedPriceId] = useState<string | null>(null);
-    const [paymentMethodExists, setPaymentMethodExists] = useState<boolean | null>(null);
-
-    useEffect(() => {
-        if (userProfile?.stripeCustomerId) {
-            hasDefaultPaymentMethod().then(result => {
-                setPaymentMethodExists(result.hasDefaultPaymentMethod);
-            });
-        } else {
-            setPaymentMethodExists(false);
-        }
-    }, [userProfile?.stripeCustomerId]);
-
 
     const handlePurchase = (priceId: string) => {
         if (!user) {
@@ -183,7 +171,7 @@ function BuyCredits() {
                 toast({ title: "Error", description: result.error, variant: "destructive" });
             } else if (result.success) {
                 toast({ title: "Purchase Successful!", description: result.message });
-                router.refresh(); // Refresh the page to show new credit balance
+                router.refresh();
             }
             setSelectedPriceId(null);
         });
@@ -196,11 +184,6 @@ function BuyCredits() {
                 <CardDescription>Need more improvements? Purchase a credit pack below.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                 {paymentMethodExists === false && (
-                    <div className="text-sm text-center text-muted-foreground p-3 bg-muted rounded-lg">
-                        No payment method on file. Please <Link href="/subscription" className="underline font-semibold text-primary">add a payment method</Link> in your billing settings.
-                    </div>
-                 )}
                 {creditPackages.map((pkg) => (
                     <div key={pkg.priceId} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
                         <div>
@@ -209,7 +192,7 @@ function BuyCredits() {
                         </div>
                         <Button
                             onClick={() => handlePurchase(pkg.priceId)}
-                            disabled={isPending || paymentMethodExists === null || paymentMethodExists === false}
+                            disabled={isPending}
                             variant="outline"
                             className="relative h-9 px-3 bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 font-semibold gap-2 rounded-full"
                           >
