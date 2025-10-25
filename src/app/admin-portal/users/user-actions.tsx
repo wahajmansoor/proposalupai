@@ -103,7 +103,7 @@ export function UserActions({ user }: { user: AppUser }) {
 
     const result = await sendPasswordResetLink(formData);
     if (result.success) {
-      toast({ title: 'Email Sent', description: `A password reset email has been sent to ${user.email}.` });
+      toast({ title: 'Email Action Simulated', description: `In a real app, a password reset email would be sent to ${user.email}.` });
     } else {
       toast({ title: 'Error', description: result.error, variant: 'destructive' });
     }
@@ -226,7 +226,7 @@ export function UserActions({ user }: { user: AppUser }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Send Password Reset?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will send a password reset link to <span className="font-semibold">{user.email}</span>. Are you sure you want to continue?
+              This will simulate sending a password reset link to <span className="font-semibold">{user.email}</span>. Are you sure you want to continue?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

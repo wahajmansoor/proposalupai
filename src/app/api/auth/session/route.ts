@@ -12,7 +12,7 @@ export async function POST(req: NextRequest) {
     // Set session expiration to 5 days.
     const expiresIn = 60 * 60 * 24 * 5 * 1000;
     const sessionCookie = await adminAuth.createSessionCookie(idToken, { expiresIn });
-    const options = { name: '__session', value: sessionCookie, maxAge: expiresIn, httpOnly: true, secure: process.env.NODE_ENV === 'production' };
+    const options = { name: '__session', value: sessionCookie, maxAge: expiresIn, httpOnly: true, secure: process.env.NODE_ENV === 'production', path: '/' };
 
     const response = NextResponse.json({ status: 'success' });
     response.cookies.set(options);
@@ -26,6 +26,6 @@ export async function POST(req: NextRequest) {
 
 export async function DELETE(req: NextRequest) {
   const response = NextResponse.json({ status: 'success' });
-  response.cookies.set('__session', '', { maxAge: -1 });
+  response.cookies.set('__session', '', { maxAge: -1, path: '/' });
   return response;
 }

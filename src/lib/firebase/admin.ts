@@ -5,33 +5,35 @@ import { getFirestore, Firestore } from 'firebase-admin/firestore';
 
 const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
-if (!serviceAccountString || serviceAccountString === 'your_firebase_service_account_key_here') {
+if (!serviceAccountString || serviceAccountString.includes('your_firebase_service_account_key_here')) {
   throw new Error('Missing or placeholder FIREBASE_SERVICE_ACCOUNT_KEY environment variable. Please add your service account key to the .env file.');
 }
 
-let app: App;
-
-if (!getApps().length) {
+// Function to parse the service account key, handling potential Vercel escaping issues
+function getServiceAccount(): ServiceAccount {
   try {
-    const serviceAccount: ServiceAccount = JSON.parse(serviceAccountString);
-
-    // Vercel might escape newlines, so we need to replace them back.
+    const serviceAccount = JSON.parse(serviceAccountString);
     if (serviceAccount.private_key) {
       serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
     }
-
-    app = initializeApp({
-      credential: cert(serviceAccount),
-    });
+    return serviceAccount;
   } catch (error: any) {
-    console.error('Firebase Admin SDK initialization failed:', error);
-    throw new Error('Could not initialize Firebase Admin SDK. Verify the FIREBASE_SERVICE_ACCOUNT_KEY.');
+    console.error('Failed to parse Firebase service account key JSON:', error);
+    throw new Error('The FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not valid JSON.');
   }
-} else {
-  app = getApps()[0];
 }
 
-const adminAuth: Auth = getAuth(app);
-const adminDb: Firestore = getFirestore(app);
+// Singleton pattern to ensure Firebase Admin is initialized only once
+let adminApp: App;
+if (!getApps().length) {
+  adminApp = initializeApp({
+    credential: cert(getServiceAccount()),
+  });
+} else {
+  adminApp = getApps()[0];
+}
+
+const adminAuth: Auth = getAuth(adminApp);
+const adminDb: Firestore = getFirestore(adminApp);
 
 export { adminAuth, adminDb };

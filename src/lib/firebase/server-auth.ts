@@ -26,8 +26,8 @@ export async function getCurrentUser(): Promise<{
     return { user, userDoc: userDocSnap.exists ? userDocSnap.data()! : null };
 
   } catch (error) {
-    console.error('Error verifying session cookie:', error);
-    // If the cookie is invalid, clear it and return null.
+    // console.error('Error verifying session cookie:', error);
+    // If the cookie is invalid (e.g., expired), clear it and return null.
     cookies().set('__session', '', { maxAge: 0 });
     return null;
   }

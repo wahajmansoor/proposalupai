@@ -233,18 +233,16 @@ export async function sendPasswordResetLink(formData: FormData): Promise<{ succe
     const { email } = validatedFields.data;
 
     try {
-        await adminAuth.getUserByEmail(email); // First check if user exists.
-        
-        console.log(`(Simulated) Password reset email sent to ${email}.`);
-        
+        await adminAuth.generatePasswordResetLink(email);
+        console.log(`(Simulated) Password reset link generation successful for ${email}. In a real app, you would now send this link via email.`);
         return { success: true };
-
     } catch (error: any) {
         if (error.code === 'auth/user-not-found') {
+            // It's often better not to reveal if an email exists in the system
             console.log(`Password reset attempted for non-existent user: ${email}`);
-            return { success: true };
+            return { success: true }; // Still return success to prevent user enumeration
         }
-        console.error("Failed to send password reset email:", error);
+        console.error("Failed to generate password reset link:", error);
         return { success: false, error: error.message };
     }
 }
