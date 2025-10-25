@@ -177,6 +177,24 @@ function BuyCredits() {
         });
     };
 
+    if (userProfile?.subscriptionStatus === 'trialing') {
+      return (
+        <Card>
+          <CardHeader>
+              <CardTitle>Buy More Credits</CardTitle>
+              <CardDescription>Need more improvements? Purchase a credit pack below.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex flex-col items-center justify-center text-center p-4 bg-muted/50 rounded-lg">
+                <Info className="h-6 w-6 text-muted-foreground mb-2" />
+                <p className="text-sm font-medium text-muted-foreground">Credit purchases are available after your trial ends.</p>
+                <p className="text-xs text-muted-foreground">Upgrade to a Pro plan to buy credits.</p>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
     return (
         <Card>
             <CardHeader>
@@ -193,18 +211,13 @@ function BuyCredits() {
                         <Button
                             onClick={() => handlePurchase(pkg.priceId)}
                             disabled={isPending}
-                            variant="outline"
-                            className="relative h-9 px-3 bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 font-semibold gap-2 rounded-full"
-                          >
+                        >
                            {isPending && selectedPriceId === pkg.priceId ? (
-                               <Loader2 className="h-4 w-4 animate-spin"/>
+                               <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
                            ) : (
                             <>
-                                <img src="/coin-anim.gif" alt="Credits" className="h-6 w-6" />
+                                <Star className="mr-2 h-4 w-4" />
                                 <span>Buy Now</span>
-                                <span className="flex items-center justify-center h-5 w-5 rounded-full bg-white text-xs">
-                                  {pkg.credits}
-                                </span>
                             </>
                            )}
                         </Button>
