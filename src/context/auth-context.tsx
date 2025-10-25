@@ -4,7 +4,7 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
 import { onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
-import { doc, onSnapshot, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot } from 'firebase/firestore';
 import { ProposalUpLogos } from '@/components/icons';
 import { useRouter } from 'next/navigation';
 
@@ -110,15 +110,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-        await signOut(auth); // Sign out from Firebase Auth
-        await fetch('/api/auth/session', { method: 'DELETE' }); // Clear server session cookie
+        await signOut(auth); // Sign out from client-side Firebase
+        await fetch('/api/auth/session', { method: 'DELETE' }); // Clear server-side session cookie
     } catch (error) {
         console.error("Error during logout:", error);
     } finally {
+        // After operations, show the logout screen and then redirect
         setTimeout(() => {
             router.push('/login');
-            setIsLoggingOut(false);
-        }, 2500);
+            // A brief delay before resetting the logging out state, in case of component re-renders
+            setTimeout(() => setIsLoggingOut(false), 100);
+        }, 2500); 
     }
   };
   

@@ -312,9 +312,6 @@ export async function updateUserDisplayNameAction(formData: FormData) {
     if (!currentUser) {
         return { error: 'You must be logged in to update your profile.' };
     }
-    const { adminAuth } = await import('@/lib/firebase/admin');
-
-
     const validatedFields = updateDisplayNameSchema.safeParse({
         displayName: formData.get('displayName'),
     });
@@ -324,7 +321,9 @@ export async function updateUserDisplayNameAction(formData: FormData) {
     }
 
     try {
+        const { adminAuth } = await import('@/lib/firebase/admin');
         await adminAuth.updateUser(currentUser.user.uid, { displayName: validatedFields.data.displayName });
+        
         const userRef = adminDb.collection('users').doc(currentUser.user.uid);
         await userRef.update({ displayName: validatedFields.data.displayName });
         
@@ -345,6 +344,10 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
     try {
         const historyRef = adminDb.collection('users').doc(currentUser.user.uid).collection('billingHistory');
         const querySnapshot = await historyRef.orderBy('date', 'desc').limit(20).get();
+
+        if (querySnapshot.empty) {
+            return { invoices: [] };
+        }
 
         const invoices: InvoiceDetails[] = querySnapshot.docs.map(doc => {
             const data = doc.data();
