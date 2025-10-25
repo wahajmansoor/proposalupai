@@ -1,10 +1,10 @@
 // src/app/subscription/layout.tsx
-import { DashboardClientLayout } from '@/app/dashboard/client-layout';
+import DashboardLayout from "@/app/dashboard/layout";
 
 export default function SubscriptionLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <DashboardClientLayout>{children}</DashboardClientLayout>;
+  return <DashboardLayout>{children}</DashboardLayout>;
 }
