@@ -6,7 +6,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { headers } from 'next/headers';
 import { getCurrentUser, incrementProposalCount, decrementProposalCredits } from '@/lib/firebase/server-auth';
 import { revalidatePath } from 'next/cache';
-import { adminDb, adminAuth } from '@/lib/firebase/admin';
+import { adminDb } from '@/lib/firebase/admin';
 
 import type { PortfolioLink } from './types';
 import { getCountryFromIp } from '@/app/lib/location';
@@ -312,6 +312,8 @@ export async function updateUserDisplayNameAction(formData: FormData) {
     if (!currentUser) {
         return { error: 'You must be logged in to update your profile.' };
     }
+    const { adminAuth } = await import('@/lib/firebase/admin');
+
 
     const validatedFields = updateDisplayNameSchema.safeParse({
         displayName: formData.get('displayName'),
@@ -336,16 +338,16 @@ export async function updateUserDisplayNameAction(formData: FormData) {
 
 export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]; error?: string }> {
   const currentUser = await getCurrentUser();
-  if (!currentUser || !currentUser.userDoc) {
+  if (!currentUser) {
     return { error: 'User not authenticated.' };
   }
   
-  const { stripeCustomerId } = currentUser.userDoc;
+  const { userDoc } = currentUser;
+  const stripeCustomerId = userDoc?.stripeCustomerId;
   
   if (!stripeCustomerId) {
     return { invoices: [] }; // Return empty array if no customer ID, not an error
   }
-
 
   try {
     const invoices = await stripe.invoices.list({

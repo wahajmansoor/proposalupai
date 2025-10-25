@@ -7,43 +7,40 @@ import { getFirestore, Firestore } from 'firebase-admin/firestore';
 
 const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
 
-if (!serviceAccountString || serviceAccountString.includes('your_firebase_service_account_key_here')) {
-  console.error('Missing or placeholder FIREBASE_SERVICE_ACCOUNT_KEY environment variable. The application will not function correctly without it.');
-  // In a real application, you might want to throw an error here to prevent startup.
-  // For this environment, we will log the error and let it proceed,
-  // though Firebase Admin features will fail.
-}
+let adminApp: App;
+let adminAuth: Auth;
+let adminDb: Firestore;
 
-
-function getAdminApp(): App {
-    if (getApps().length > 0) {
-        return getApps()[0];
-    }
-    
-    if (!serviceAccountString) {
-      throw new Error('Firebase Admin SDK not configured. Please add your service account key to the .env file.');
-    }
-
+if (!getApps().length) {
+  if (!serviceAccountString) {
+    console.error("CRITICAL: FIREBASE_SERVICE_ACCOUNT_KEY is not set. Firebase Admin SDK cannot be initialized.");
+  } else {
     try {
-        const serviceAccount: ServiceAccount = JSON.parse(serviceAccountString);
-        
-        // Vercel escapes newlines, so we need to replace them back.
-        if (serviceAccount.private_key) {
-            serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
-        }
+      const serviceAccount: ServiceAccount = JSON.parse(serviceAccountString);
 
-        return initializeApp({
-            credential: cert(serviceAccount),
-        });
+      // Vercel escapes newlines, so we need to replace them back.
+      if (serviceAccount.private_key) {
+        serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
+      }
+      
+      adminApp = initializeApp({
+        credential: cert(serviceAccount),
+      });
+      
+      adminAuth = getAuth(adminApp);
+      adminDb = getFirestore(adminApp);
 
-    } catch (error: any) {
-        console.error('Failed to parse or initialize Firebase Admin SDK:', error);
-        throw new Error('The FIREBASE_SERVICE_ACCOUNT_KEY environment variable is not valid or could not be processed.');
+    } catch (e: any) {
+      console.error("CRITICAL: Failed to initialize Firebase Admin SDK. Error: ", e.message);
+      console.error("Ensure FIREBASE_SERVICE_ACCOUNT_KEY is a valid JSON string.");
     }
+  }
+} else {
+    adminApp = getApps()[0];
+    adminAuth = getAuth(adminApp);
+    adminDb = getFirestore(adminApp);
 }
 
-const adminApp: App = getAdminApp();
-const adminAuth: Auth = getAuth(adminApp);
-const adminDb: Firestore = getFirestore(adminApp);
 
+// @ts-ignore - These will be initialized by the logic above.
 export { adminAuth, adminDb };
