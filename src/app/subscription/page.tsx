@@ -142,9 +142,9 @@ function CreditHistory() {
 }
 
 const creditPackages = [
-    { name: "10 Credits", price: 5, priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_10_PRICE_ID! },
-    { name: "25 Credits", price: 10, priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_25_PRICE_ID! },
-    { name: "50 Credits", price: 18, priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_50_PRICE_ID! }
+    { name: "10 Credits", price: 5, credits: 10, priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_10_PRICE_ID! },
+    { name: "25 Credits", price: 10, credits: 25, priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_25_PRICE_ID! },
+    { name: "50 Credits", price: 18, credits: 50, priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_50_PRICE_ID! }
 ];
 
 function BuyCredits() {
@@ -183,9 +183,23 @@ function BuyCredits() {
                             <p className="font-semibold">{pkg.name}</p>
                             <p className="text-muted-foreground">${pkg.price}</p>
                         </div>
-                        <Button onClick={() => handlePurchase(pkg.priceId)} disabled={isPending}>
-                           {isPending && selectedPriceId === pkg.priceId ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : null}
-                           Buy Now
+                        <Button
+                            onClick={() => handlePurchase(pkg.priceId)}
+                            disabled={isPending}
+                            variant="outline"
+                            className="relative h-9 px-3 bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 font-semibold gap-2 rounded-full"
+                          >
+                           {isPending && selectedPriceId === pkg.priceId ? (
+                               <Loader2 className="h-4 w-4 animate-spin"/>
+                           ) : (
+                            <>
+                                <img src="/coin-anim.gif" alt="Credits" className="h-6 w-6" />
+                                <span>Buy</span>
+                                <span className="flex items-center justify-center h-5 w-5 rounded-full bg-white text-xs">
+                                  {pkg.credits}
+                                </span>
+                            </>
+                           )}
                         </Button>
                     </div>
                 ))}
