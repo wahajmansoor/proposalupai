@@ -405,9 +405,13 @@ export async function chargeCardForCredits(formData: FormData): Promise<{ succes
         return { success: false, error: 'User does not have a Stripe customer ID.' };
     }
 
-    // Retrieve the customer to get their default payment method
-    const customer = await stripe.customers.retrieve(stripeCustomerId) as Stripe.Customer;
-    const paymentMethodId = customer.invoice_settings?.default_payment_method as string | undefined;
+    // List payment methods for the customer
+    const paymentMethods = await stripe.paymentMethods.list({
+      customer: stripeCustomerId,
+      type: 'card',
+    });
+    
+    const paymentMethodId = paymentMethods.data[0]?.id;
 
     if (!paymentMethodId) {
       return { success: false, error: 'No payment method on file. Please add a payment method in your billing settings.' };
