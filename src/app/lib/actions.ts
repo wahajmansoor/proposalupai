@@ -60,6 +60,7 @@ export interface InvoiceDetails {
   total: string;
   status: string;
   invoiceUrl: string | null;
+  description: string;
 }
 
 export interface CreditHistoryItem {
@@ -307,34 +308,11 @@ const updateDisplayNameSchema = z.object({
     displayName: z.string().min(1, 'Display name cannot be empty.'),
 });
 
-async function updateUserInFirestore(uid: string, data: { displayName: string }) {
-  const userRef = adminDb.collection('users').doc(uid);
-  await userRef.update(data);
-}
-
-async function updateUserDisplayName(uid: string, displayName: string) {
-  const { adminAuth } = await import('@/lib/firebase/admin');
-  if (!uid) throw new Error('You must be logged in to update your profile.');
-
-  try {
-    // Update Firebase Auth profile (server-side)
-    await adminAuth.updateUser(uid, { displayName });
-
-    // Update Firestore user document
-    await updateUserInFirestore(uid, { displayName });
-
-  } catch (error) {
-     console.error("Error updating display name:", error);
-     throw new Error("Failed to update display name on the server.");
-  }
-}
-
 export async function updateUserDisplayNameAction(formData: FormData) {
     const currentUser = await getCurrentUser();
     if (!currentUser) {
         return { error: 'You must be logged in to update your profile.' };
     }
-
     const validatedFields = updateDisplayNameSchema.safeParse({
         displayName: formData.get('displayName'),
     });
@@ -344,45 +322,82 @@ export async function updateUserDisplayNameAction(formData: FormData) {
     }
 
     try {
-        await updateUserDisplayName(currentUser.user.uid, validatedFields.data.displayName);
+        const { adminAuth } = await import('@/lib/firebase/admin');
+        await adminAuth.updateUser(currentUser.user.uid, { displayName: validatedFields.data.displayName });
+        
+        const userRef = adminDb.collection('users').doc(currentUser.user.uid);
+        await userRef.update({ displayName: validatedFields.data.displayName });
+        
         revalidatePath('/profile');
         return { success: 'Display name updated successfully.' };
     } catch (error: any) {
+        console.error("Error updating display name:", error);
         return { error: error.message || 'Failed to update display name.' };
     }
 }
 
 export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]; error?: string }> {
-  const currentUser = await getCurrentUser();
-  if (!currentUser) {
-    return { error: 'User not authenticated.' };
-  }
-  if (!currentUser.userDoc?.stripeCustomerId) {
-    return { error: 'Stripe customer ID not found.' };
-  }
+    const currentUser = await getCurrentUser();
+    if (!currentUser) {
+        return { error: 'User not authenticated.' };
+    }
 
-  const { stripeCustomerId } = currentUser.userDoc;
+    // Strategy 1: Fetch from Firestore first
+    try {
+        const historyRef = adminDb.collection('users').doc(currentUser.user.uid).collection('billingHistory');
+        const querySnapshot = await historyRef.orderBy('date', 'desc').limit(20).get();
 
-  try {
-    const invoices = await stripe.invoices.list({
-      customer: stripeCustomerId,
-      limit: 20, // Get the last 20 invoices
-    });
+        if (!querySnapshot.empty) {
+            const invoices: InvoiceDetails[] = querySnapshot.docs.map(doc => {
+                const data = doc.data();
+                return {
+                    id: doc.id,
+                    date: data.date.toDate().toLocaleDateString(),
+                    total: `$${(data.total / 100).toFixed(2)}`,
+                    status: data.status || 'unknown',
+                    invoiceUrl: data.invoiceUrl,
+                    description: data.description || 'Payment'
+                };
+            });
+            return { invoices };
+        }
+    } catch (error: any) {
+        console.warn('Could not fetch billing history from Firestore, falling back to Stripe:', error.message);
+        // If Firestore fails or is empty, we fall through to the Stripe API call.
+    }
 
-    const invoiceDetails: InvoiceDetails[] = invoices.data.map(invoice => ({
-      id: invoice.id,
-      date: new Date(invoice.created * 1000).toLocaleDateString(),
-      total: `$${(invoice.total / 100).toFixed(2)}`,
-      status: invoice.status || 'unknown',
-      invoiceUrl: invoice.hosted_invoice_url,
-    }));
+    // Strategy 2: Fallback to Stripe API for invoices (if Firestore is empty)
+    if (currentUser.userDoc?.stripeCustomerId) {
+        const { stripeCustomerId } = currentUser.userDoc;
+        try {
+            const invoices = await stripe.invoices.list({
+                customer: stripeCustomerId,
+                limit: 20,
+            });
 
-    return { invoices: invoiceDetails };
-  } catch (error: any) {
-    console.error('Error fetching billing history from Stripe:', error);
-    return { error: 'Could not retrieve billing history.' };
-  }
+            const invoiceDetails: InvoiceDetails[] = invoices.data.map(invoice => ({
+                id: invoice.id,
+                date: new Date(invoice.created * 1000).toLocaleDateString(),
+                total: `$${(invoice.total / 100).toFixed(2)}`,
+                status: invoice.status || 'unknown',
+                invoiceUrl: invoice.hosted_invoice_url,
+                description: invoice.lines.data[0]?.description || 'Subscription Payment',
+            }));
+
+            // Return Stripe data if found
+            if (invoiceDetails.length > 0) {
+              return { invoices: invoiceDetails };
+            }
+        } catch (error: any) {
+            console.error('Error fetching billing history from Stripe:', error);
+            // Don't return an error here, just fall through to the empty state
+        }
+    }
+    
+    // If both Firestore and Stripe are empty or fail, return empty
+    return { invoices: [] };
 }
+
 
 export async function getCreditHistory(): Promise<{ history?: CreditHistoryItem[]; error?: string }> {
     const currentUser = await getCurrentUser();

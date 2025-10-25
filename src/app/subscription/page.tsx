@@ -6,7 +6,7 @@ import { useAuth } from '@/context/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Loader2, CreditCard, ExternalLink, Star, Copy, Check, Info } from 'lucide-react';
+import { Loader2, CreditCard, ExternalLink, Star, Copy, Check, Info, ShoppingBag } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { createCustomerPortalSession, chargeCardForCredits } from '@/lib/stripe-actions';
 import { format, formatDistanceToNow } from 'date-fns';
@@ -241,7 +241,7 @@ export default function SubscriptionPage() {
   const [historyError, setHistoryError] = useState<string | null>(null);
 
   const fetchHistory = useCallback(async () => {
-    if (!userProfile?.stripeCustomerId) {
+    if (!userProfile) {
       setIsLoadingHistory(false);
       return
     };
@@ -255,7 +255,7 @@ export default function SubscriptionPage() {
         setInvoices(result.invoices);
     }
     setIsLoadingHistory(false);
-  }, [userProfile?.stripeCustomerId]);
+  }, [userProfile]);
 
   useEffect(() => {
     if (!loading) {
@@ -379,8 +379,8 @@ export default function SubscriptionPage() {
                   <TableHeader>
                     <TableRow>
                       <TableHead>Date</TableHead>
+                      <TableHead>Description</TableHead>
                       <TableHead>Amount</TableHead>
-                      <TableHead>Status</TableHead>
                       <TableHead className="text-right">Invoice</TableHead>
                     </TableRow>
                   </TableHeader>
@@ -388,12 +388,13 @@ export default function SubscriptionPage() {
                     {invoices.map((invoice) => (
                       <TableRow key={invoice.id}>
                         <TableCell>{invoice.date}</TableCell>
-                        <TableCell className="font-medium">{invoice.total}</TableCell>
-                        <TableCell>
-                           <Badge variant={invoice.status === 'paid' ? 'default' : 'secondary'} className={cn(invoice.status === 'paid' && 'bg-green-100 text-green-800 border-green-200')}>
-                              {invoice.status}
-                          </Badge>
+                        <TableCell className="font-medium capitalize">
+                           <div className="flex items-center gap-2">
+                            {invoice.description.toLowerCase().includes('credit') ? <ShoppingBag className="h-4 w-4 text-muted-foreground" /> : <CreditCard className="h-4 w-4 text-muted-foreground" />}
+                            <span>{invoice.description}</span>
+                           </div>
                         </TableCell>
+                        <TableCell className="font-semibold">{invoice.total}</TableCell>
                         <TableCell className="text-right">
                           {invoice.invoiceUrl ? (
                             <Button asChild variant="outline" size="sm">
