@@ -7,7 +7,7 @@ import type Stripe from 'stripe';
 import { NextResponse } from 'next/server';
 import { revalidatePath } from 'next/cache';
 import { FieldValue, type Firestore, type DocumentReference } from 'firebase-admin/firestore';
-import { adminDb } from '@/lib/firebase/admin';
+import { getFirebaseAdmin } from '@/lib/firebase/admin';
 import { addCredits } from '@/lib/stripe-actions';
 
 const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
@@ -33,6 +33,7 @@ const creditProducts: Record<string, number> = {
 };
 
 export async function POST(req: Request) {
+    const { adminDb } = getFirebaseAdmin();
     const body = await req.text();
     const sig = headers().get('stripe-signature');
 

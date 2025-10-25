@@ -2,13 +2,14 @@
 'use server';
 import { NextRequest, NextResponse } from 'next/server';
 import { OAuth2Client } from 'google-auth-library';
-import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { getFirebaseAdmin } from '@/lib/firebase/admin';
 import { headers } from 'next/headers';
 import type { UserRecord } from 'firebase-admin/auth';
 import { stripe } from '@/lib/stripe/config';
 import { getCountryFromIp } from '@/app/lib/location';
 
 export async function GET(req: NextRequest) {
+  const { adminAuth, adminDb } = getFirebaseAdmin();
   const headersList = headers();
   const protocol = headersList.get('x-forwarded-proto') || 'http';
   const host = headersList.get('host');

@@ -6,6 +6,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { headers } from 'next/headers';
 import { getCurrentUser, incrementProposalCount, decrementProposalCredits } from '@/lib/firebase/server-auth';
 import { revalidatePath } from 'next/cache';
+import { getFirebaseAdmin } from '@/lib/firebase/admin';
 
 import type { PortfolioLink } from './types';
 import { getCountryFromIp } from '@/app/lib/location';
@@ -307,13 +308,13 @@ const updateDisplayNameSchema = z.object({
 });
 
 async function updateUserInFirestore(uid: string, data: { displayName: string }) {
-  const { adminDb } = await import('@/lib/firebase/admin');
+  const { adminDb } = getFirebaseAdmin();
   const userRef = adminDb.collection('users').doc(uid);
   await userRef.update(data);
 }
 
 async function updateUserDisplayName(uid: string, displayName: string) {
-  const { adminAuth } = await import('@/lib/firebase/admin');
+  const { adminAuth } = getFirebaseAdmin();
   if (!uid) throw new Error('You must be logged in to update your profile.');
 
   try {
@@ -391,7 +392,7 @@ export async function getCreditHistory(): Promise<{ history?: CreditHistoryItem[
     }
     
     try {
-        const { adminDb } = await import('@/lib/firebase/admin');
+        const { adminDb } = getFirebaseAdmin();
         const historyRef = adminDb.collection('users').doc(currentUser.user.uid).collection('creditHistory');
         const querySnapshot = await historyRef.orderBy('createdAt', 'desc').get();
         
