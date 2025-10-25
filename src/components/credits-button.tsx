@@ -35,7 +35,7 @@ function CreditPopAnimation({ amount }: { amount: number }) {
 const creditPackages = [
     { name: "10 Credits", price: 5, credits: 10, priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_10_PRICE_ID! },
     { name: "25 Credits", price: 10, credits: 25, priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_25_PRICE_ID! },
-    { name: "50 Credits", price: 18, credits: 50, priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_50_PRICE_ID! }
+    { name: "50 Credits", price: 25, credits: 50, priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_50_PRICE_ID! }
 ];
 
 export function CreditsButton() {
@@ -172,7 +172,7 @@ export function CreditsButton() {
                                         </>
                                     )}
                                 </Button>
-                                <span className="text-xs text-muted-foreground">{pkg.credits} credits for ${pkg.price}</span>
+                                <span className="text-sm text-muted-foreground">{pkg.credits} credits for ${pkg.price}</span>
                             </div>
                         ))}
                     </div>
