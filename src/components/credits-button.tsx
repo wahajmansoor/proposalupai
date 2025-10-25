@@ -145,7 +145,7 @@ export function CreditsButton() {
           
         </DialogHeader>
 
-        <div className="border-t pt-4 mt-2">
+        <div className="mt-2">
             {userProfile?.subscriptionStatus === 'trialing' ? (
                 <div className="flex flex-col items-center justify-center text-center p-4 bg-muted/50 rounded-lg">
                     <Info className="h-6 w-6 text-muted-foreground mb-2" />
@@ -154,29 +154,42 @@ export function CreditsButton() {
             ) : (
                 <div className="space-y-3">
                     <h3 className="text-base font-semibold leading-none tracking-tight text-center">Buy More Credits</h3>
-                    <div className="flex justify-center gap-2">
+                     <div className="flex justify-center gap-2">
                         {creditPackages.map((pkg) => (
-                             <Button
-                                key={pkg.priceId}
-                                onClick={() => handlePurchase(pkg.priceId)}
-                                disabled={isPending}
-                                variant="outline"
-                                className="relative h-9 px-3 bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 font-semibold gap-2 rounded-full"
-                            >
-                                {isPending && selectedPriceId === pkg.priceId ? (
-                                    <Loader2 className="h-4 w-4 animate-spin"/>
-                                ) : (
-                                    <span>Buy +{pkg.credits}</span>
-                                )}
-                            </Button>
+                             <div key={pkg.priceId} className="flex flex-col items-center gap-1">
+                                <Button
+                                    onClick={() => handlePurchase(pkg.priceId)}
+                                    disabled={isPending}
+                                    variant="outline"
+                                    className="relative h-9 px-4 bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 font-semibold gap-2 rounded-full"
+                                >
+                                    {isPending && selectedPriceId === pkg.priceId ? (
+                                        <Loader2 className="h-4 w-4 animate-spin"/>
+                                    ) : (
+                                        <>
+                                            <img src="/coin-anim.gif" alt="Credits" className="h-6 w-6" />
+                                            <span>Buy Now</span>
+                                        </>
+                                    )}
+                                </Button>
+                                <span className="text-xs text-muted-foreground">{pkg.credits} credits for ${pkg.price}</span>
+                            </div>
                         ))}
                     </div>
                 </div>
             )}
         </div>
 
+        <div className="relative my-4">
+            <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-background px-2 text-muted-foreground">Or</span>
+            </div>
+        </div>
 
-        <div className="border-t pt-4 mt-2 text-center">
+        <div className="text-center">
             <DialogTitle>Refer a Friend, Get Credits</DialogTitle>
             <DialogDescription className="text-base text-center mt-2">
                 Invite a friend using your referral link. When they sign up and start their trial, you both get 5 free credits to improve your proposals!
