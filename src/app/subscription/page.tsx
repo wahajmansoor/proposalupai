@@ -204,21 +204,23 @@ function BuyCredits() {
             <CardContent className="space-y-4">
                 {creditPackages.map((pkg) => (
                     <div key={pkg.priceId} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                        <div>
+                        <div className="flex items-center gap-3">
+                           <img src="/coin-anim.gif" alt="Credits" className="h-8 w-8" />
+                           <div>
                             <p className="font-semibold">{pkg.name}</p>
                             <p className="text-muted-foreground">${pkg.price}</p>
+                           </div>
                         </div>
                         <Button
                             onClick={() => handlePurchase(pkg.priceId)}
                             disabled={isPending}
+                            variant="outline"
+                            className="relative h-9 px-4 bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 font-semibold gap-2 rounded-full"
                         >
                            {isPending && selectedPriceId === pkg.priceId ? (
-                               <Loader2 className="mr-2 h-4 w-4 animate-spin"/>
+                               <Loader2 className="h-4 w-4 animate-spin"/>
                            ) : (
-                            <>
-                                <Star className="mr-2 h-4 w-4" />
                                 <span>Buy Now</span>
-                            </>
                            )}
                         </Button>
                     </div>
