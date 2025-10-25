@@ -307,11 +307,6 @@ const updateDisplayNameSchema = z.object({
     displayName: z.string().min(1, 'Display name cannot be empty.'),
 });
 
-async function updateUserInFirestore(uid: string, data: { displayName: string }) {
-  const userRef = adminDb.collection('users').doc(uid);
-  await userRef.update(data);
-}
-
 async function updateUserDisplayName(uid: string, displayName: string) {
   const { adminAuth } = await import('@/lib/firebase/admin');
   if (!uid) throw new Error('You must be logged in to update your profile.');
@@ -321,7 +316,8 @@ async function updateUserDisplayName(uid: string, displayName: string) {
     await adminAuth.updateUser(uid, { displayName });
 
     // Update Firestore user document
-    await updateUserInFirestore(uid, { displayName });
+    const userRef = adminDb.collection('users').doc(uid);
+    await userRef.update({ displayName });
 
   } catch (error) {
      console.error("Error updating display name:", error);
