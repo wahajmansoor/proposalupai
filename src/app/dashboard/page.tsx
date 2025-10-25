@@ -144,6 +144,7 @@ function DashboardContent() {
   const [isOriginalProposalSaved, setIsOriginalProposalSaved] = useState(false);
 
   const summaryTextareaRef = useRef<HTMLTextAreaElement>(null);
+  const improvementCardRef = useRef<HTMLDivElement>(null);
 
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
   const [planInterval, setPlanInterval] = useState<'monthly' | 'yearly' | null>(null);
@@ -583,6 +584,13 @@ function DashboardContent() {
   };
   
   
+  useEffect(() => {
+    if (improvements.length > 0) {
+      improvementCardRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }, [improvements.length]);
+
+
   const handleSaveProposal = async (proposalContent: string, isOriginal: boolean, index: number = -1) => {
     if (!user || !projectDetails.projectTitle.trim() || !proposalContent) {
       toast({ title: 'Missing Information', description: 'Please provide a project title and ensure there is content to save.', variant: 'destructive' });
@@ -1111,7 +1119,7 @@ function DashboardContent() {
           </Card>
            
            {improvements.length > 0 && (
-                <Card>
+                <Card ref={improvementCardRef}>
                     <CardHeader className="flex flex-row items-center justify-between">
                         <div className="flex items-center gap-3">
                             <CardTitle>Improved Version</CardTitle>
@@ -1122,7 +1130,7 @@ function DashboardContent() {
                                 <ArrowLeft className="h-4 w-4" />
                             </Button>
                             <Button variant="ghost" size="icon" onClick={() => setCurrentImprovementIndex(p => p + 1)} disabled={currentImprovementIndex === improvements.length - 1}>
-                                <ArrowRight className="h-4 w-4" />
+                                <ArrowRight className="ml-2 h-4 w-4" />
                             </Button>
                             <Button variant="outline" size="sm" onClick={() => handleSaveProposal(currentImprovement, false, currentImprovementIndex)} disabled={!currentImprovement || isSavingImprovement[currentImprovementIndex] || savedImprovements[currentImprovementIndex]}>
                                 {isSavingImprovement[currentImprovementIndex] ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Save className="mr-2 h-4 w-4" />}
@@ -1318,4 +1326,5 @@ export default function DashboardPage() {
     
 
     
+
 
