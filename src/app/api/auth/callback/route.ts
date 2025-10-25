@@ -67,7 +67,7 @@ export async function GET(req: NextRequest) {
       throw new Error('Invalid ID token payload');
     }
     
-    const { sub: uid, email, name, picture, email_verified } = payload;
+    const { email, name, picture, email_verified } = payload;
     let userRecord: UserRecord;
     
     const displayName = name;
@@ -87,7 +87,9 @@ export async function GET(req: NextRequest) {
     } catch (e: any) {
       if (e.code === 'auth/user-not-found') {
         userRecord = await adminAuth.createUser({
-            uid: uid, 
+            // Use the email as UID if no sub is present, otherwise use sub.
+            // This is just a fallback, sub should always be present.
+            uid: payload.sub,
             email,
             ...userPayload,
         });

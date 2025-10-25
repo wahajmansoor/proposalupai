@@ -308,7 +308,6 @@ const updateDisplayNameSchema = z.object({
 });
 
 async function updateUserDisplayName(uid: string, displayName: string) {
-  const { adminAuth } = await import('@/lib/firebase/admin');
   if (!uid) throw new Error('You must be logged in to update your profile.');
 
   try {

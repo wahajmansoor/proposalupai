@@ -1,4 +1,5 @@
 
+'use server';
 import { NextRequest, NextResponse } from 'next/server';
 import { adminAuth } from '@/lib/firebase/admin';
 
@@ -25,7 +26,13 @@ export async function POST(req: NextRequest) {
 }
 
 export async function DELETE(req: NextRequest) {
-  const response = NextResponse.json({ status: 'success' });
-  response.cookies.set('__session', '', { maxAge: -1, path: '/' });
-  return response;
+  try {
+    // Instructs the browser to clear the cookie
+    const response = NextResponse.json({ status: 'success' });
+    response.cookies.set('__session', '', { maxAge: -1, path: '/' });
+    return response;
+  } catch (error) {
+    console.error('Error deleting session cookie:', error);
+    return NextResponse.json({ error: 'Failed to delete session' }, { status: 500 });
+  }
 }

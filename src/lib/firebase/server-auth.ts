@@ -3,7 +3,7 @@
 
 import { cookies } from 'next/headers';
 import type { UserRecord } from 'firebase-admin/auth';
-import { FieldValue, type DocumentData } from 'firebase-admin/firestore';
+import type { DocumentData } from 'firebase-admin/firestore';
 import { adminAuth, adminDb } from '@/lib/firebase/admin';
 
 export async function getCurrentUser(): Promise<{
@@ -23,12 +23,14 @@ export async function getCurrentUser(): Promise<{
     const userDocRef = adminDb.collection('users').doc(user.uid);
     const userDocSnap = await userDocRef.get();
     
-    return { user, userDoc: userDocSnap.exists ? userDocSnap.data()! : null };
+    const userDoc = userDocSnap.exists ? userDocSnap.data()! : null;
+
+    return { user, userDoc };
 
   } catch (error) {
-    // console.error('Error verifying session cookie:', error);
-    // If the cookie is invalid (e.g., expired), clear it and return null.
-    cookies().set('__session', '', { maxAge: 0 });
+    // Session cookie is invalid or expired.
+    // It's a normal flow, so we don't need to log an error.
+    // The user is simply not authenticated.
     return null;
   }
 }
