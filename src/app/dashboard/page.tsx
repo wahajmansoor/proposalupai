@@ -510,7 +510,7 @@ function DashboardContent() {
       projectTitle: projectDetails.projectTitle,
       summary: projectDetails.summary,
       profileSummary: profileSummary,
-      userName: user?.displayName || 'The User',
+      userName: userProfile?.displayName || 'The User',
       relevantSkills: skillsAndExpertise,
       pastSuccesses: relevantExperience,
       profileLinks: profileLinks,
@@ -1318,3 +1318,4 @@ export default function DashboardPage() {
     
 
     
+
