@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useTransition } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { Button } from './ui/button';
 import {
@@ -15,9 +15,11 @@ import {
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Copy, Check, Star } from 'lucide-react';
+import { Copy, Check, Star, Info, Loader2 } from 'lucide-react';
 import { ShareIcons } from './icons';
 import Link from 'next/link';
+import { chargeCardForCredits } from '@/lib/stripe-actions';
+import { useRouter } from 'next/navigation';
 
 
 function CreditPopAnimation({ amount }: { amount: number }) {
@@ -30,16 +32,49 @@ function CreditPopAnimation({ amount }: { amount: number }) {
     );
 }
 
+const creditPackages = [
+    { name: "10 Credits", price: 5, credits: 10, priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_10_PRICE_ID! },
+    { name: "25 Credits", price: 10, credits: 25, priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_25_PRICE_ID! },
+    { name: "50 Credits", price: 18, credits: 50, priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_50_PRICE_ID! }
+];
+
 export function CreditsButton() {
-  const { userProfile, creditChange } = useAuth();
+  const { user, userProfile, creditChange } = useAuth();
+  const { toast } = useToast();
+  const router = useRouter();
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [pops, setPops] = useState<number[]>([]);
-  const { toast } = useToast();
   const [hasCopied, setHasCopied] = useState(false);
   const [referralLink, setReferralLink] = useState('');
   
+  const [isPending, startTransition] = useTransition();
+  const [selectedPriceId, setSelectedPriceId] = useState<string | null>(null);
+
   const credits = userProfile?.proposalCredits ?? 0;
   const referralCode = userProfile?.referralCode;
+
+  const handlePurchase = (priceId: string) => {
+    if (!user) {
+        toast({ title: "Authentication Error", description: "You must be logged in to purchase credits.", variant: "destructive"});
+        return;
+    }
+    setSelectedPriceId(priceId);
+    startTransition(async () => {
+        const formData = new FormData();
+        formData.append('priceId', priceId);
+        formData.append('userId', user.uid);
+
+        const result = await chargeCardForCredits(formData);
+
+        if (result.error) {
+            toast({ title: "Error", description: result.error, variant: "destructive" });
+        } else if (result.success) {
+            toast({ title: "Purchase Successful!", description: result.message });
+            // The onSnapshot in AuthProvider will update the credits, no need to refresh page
+        }
+        setSelectedPriceId(null);
+    });
+  };
 
   useEffect(() => {
     if (creditChange > 0) {
@@ -113,7 +148,7 @@ export function CreditsButton() {
             Invite a friend using your referral link. When they sign up and start their trial, you both get 5 free credits to improve your proposals!
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4 pt-4">
+        <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="referral-link" className="text-center w-full block">Your Referral Link</Label>
             <div className="flex items-center gap-2">
@@ -137,6 +172,43 @@ export function CreditsButton() {
               <ShareIcons.WhatsApp className="h-6 w-6 cursor-pointer dark:fill-white" />
             </Link>
           </div>
+        </div>
+
+        <div className="border-t pt-4 mt-4">
+            <h3 className="text-lg font-semibold leading-none tracking-tight text-center mb-4">Buy More Credits</h3>
+            {userProfile?.subscriptionStatus === 'trialing' ? (
+                <div className="flex flex-col items-center justify-center text-center p-4 bg-muted/50 rounded-lg">
+                    <Info className="h-6 w-6 text-muted-foreground mb-2" />
+                    <p className="text-sm font-medium text-muted-foreground">Credit purchases are available after your trial ends.</p>
+                    <p className="text-xs text-muted-foreground">Upgrade to a Pro plan to buy credits.</p>
+                </div>
+            ) : (
+                <div className="space-y-4">
+                    {creditPackages.map((pkg) => (
+                        <div key={pkg.priceId} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+                            <div className="flex items-center gap-3">
+                            <img src="/coin-anim.gif" alt="Credits" className="h-8 w-8" />
+                            <div>
+                                <p className="font-semibold">{pkg.name}</p>
+                                <p className="text-muted-foreground">${pkg.price}</p>
+                            </div>
+                            </div>
+                            <Button
+                                onClick={() => handlePurchase(pkg.priceId)}
+                                disabled={isPending}
+                                variant="outline"
+                                className="relative h-9 px-4 bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 font-semibold gap-2 rounded-full"
+                            >
+                            {isPending && selectedPriceId === pkg.priceId ? (
+                                <Loader2 className="h-4 w-4 animate-spin"/>
+                            ) : (
+                                <span>Buy Now</span>
+                            )}
+                            </Button>
+                        </div>
+                    ))}
+                </div>
+            )}
         </div>
       </DialogContent>
     </Dialog>

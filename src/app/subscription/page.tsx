@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { Loader2, CreditCard, ExternalLink, Star, Copy, Check, Info } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { createCustomerPortalSession, chargeCardForCredits } from '@/lib/stripe-actions';
+import { createCustomerPortalSession } from '@/lib/stripe-actions';
 import { format, formatDistanceToNow } from 'date-fns';
 import { getBillingHistory, getCreditHistory, type InvoiceDetails, type CreditHistoryItem } from '@/lib/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -141,94 +141,6 @@ function CreditHistory() {
   );
 }
 
-const creditPackages = [
-    { name: "10 Credits", price: 5, credits: 10, priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_10_PRICE_ID! },
-    { name: "25 Credits", price: 10, credits: 25, priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_25_PRICE_ID! },
-    { name: "50 Credits", price: 18, credits: 50, priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_50_PRICE_ID! }
-];
-
-function BuyCredits() {
-    const { user, userProfile } = useAuth();
-    const { toast } = useToast();
-    const router = useRouter();
-    const [isPending, startTransition] = useTransition();
-    const [selectedPriceId, setSelectedPriceId] = useState<string | null>(null);
-
-    const handlePurchase = (priceId: string) => {
-        if (!user) {
-            toast({ title: "Authentication Error", description: "You must be logged in to purchase credits.", variant: "destructive"});
-            return;
-        }
-        setSelectedPriceId(priceId);
-        startTransition(async () => {
-            const formData = new FormData();
-            formData.append('priceId', priceId);
-            formData.append('userId', user.uid);
-
-            const result = await chargeCardForCredits(formData);
-
-            if (result.error) {
-                toast({ title: "Error", description: result.error, variant: "destructive" });
-            } else if (result.success) {
-                toast({ title: "Purchase Successful!", description: result.message });
-                router.refresh();
-            }
-            setSelectedPriceId(null);
-        });
-    };
-
-    if (userProfile?.subscriptionStatus === 'trialing') {
-      return (
-        <Card>
-          <CardHeader>
-              <CardTitle>Buy More Credits</CardTitle>
-              <CardDescription>Need more improvements? Purchase a credit pack below.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="flex flex-col items-center justify-center text-center p-4 bg-muted/50 rounded-lg">
-                <Info className="h-6 w-6 text-muted-foreground mb-2" />
-                <p className="text-sm font-medium text-muted-foreground">Credit purchases are available after your trial ends.</p>
-                <p className="text-xs text-muted-foreground">Upgrade to a Pro plan to buy credits.</p>
-            </div>
-          </CardContent>
-        </Card>
-      );
-    }
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle>Buy More Credits</CardTitle>
-                <CardDescription>Need more improvements? Purchase a credit pack below.</CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-                {creditPackages.map((pkg) => (
-                    <div key={pkg.priceId} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                           <img src="/coin-anim.gif" alt="Credits" className="h-8 w-8" />
-                           <div>
-                            <p className="font-semibold">{pkg.name}</p>
-                            <p className="text-muted-foreground">${pkg.price}</p>
-                           </div>
-                        </div>
-                        <Button
-                            onClick={() => handlePurchase(pkg.priceId)}
-                            disabled={isPending}
-                            variant="outline"
-                            className="relative h-9 px-4 bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 font-semibold gap-2 rounded-full"
-                        >
-                           {isPending && selectedPriceId === pkg.priceId ? (
-                               <Loader2 className="h-4 w-4 animate-spin"/>
-                           ) : (
-                                <span>Buy Now</span>
-                           )}
-                        </Button>
-                    </div>
-                ))}
-            </CardContent>
-        </Card>
-    );
-}
 
 export default function SubscriptionPage() {
   const { userProfile, loading } = useAuth();
@@ -352,7 +264,6 @@ export default function SubscriptionPage() {
               )}
             </CardContent>
           </Card>
-          <BuyCredits />
         </div>
         <div className="lg:col-span-3 space-y-8">
            <CreditHistory />
