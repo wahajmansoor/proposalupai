@@ -4,7 +4,7 @@
 import { cookies } from 'next/headers';
 import type { UserRecord } from 'firebase-admin/auth';
 import { FieldValue, type DocumentData } from 'firebase-admin/firestore';
-import { getFirebaseAdmin } from '@/lib/firebase/admin';
+import { adminAuth, adminDb } from '@/lib/firebase/admin';
 
 export async function getCurrentUser(): Promise<{
   user: UserRecord;
@@ -15,8 +15,6 @@ export async function getCurrentUser(): Promise<{
   if (!sessionCookie) {
     return null;
   }
-  
-  const { adminAuth, adminDb } = getFirebaseAdmin();
 
   try {
     const decodedIdToken = await adminAuth.verifySessionCookie(sessionCookie, true);
@@ -45,7 +43,6 @@ export async function incrementProposalCount(userId: string): Promise<void> {
     throw new Error('User ID is required to increment proposal count.');
   }
 
-  const { adminDb } = getFirebaseAdmin();
   const userRef = adminDb.collection('users').doc(userId);
 
   try {
@@ -80,7 +77,6 @@ export async function decrementProposalCredits(userId: string): Promise<void> {
       throw new Error('User ID is required to decrement proposal credits.');
     }
   
-    const { adminDb } = getFirebaseAdmin();
     const userRef = adminDb.collection('users').doc(userId);
   
     try {

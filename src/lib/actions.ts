@@ -6,7 +6,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { headers } from 'next/headers';
 import { getCurrentUser, incrementProposalCount, decrementProposalCredits } from '@/lib/firebase/server-auth';
 import { revalidatePath } from 'next/cache';
-import { getFirebaseAdmin } from '@/lib/firebase/admin';
+import { adminDb } from '@/lib/firebase/admin';
 
 import type { PortfolioLink } from './types';
 import { getCountryFromIp } from '@/app/lib/location';
@@ -52,6 +52,7 @@ import type {
 } from '@/ai/flows/suggest-word-limit';
 import { suggestWordLimit } from '@/ai/flows/suggest-word-limit';
 import { stripe } from '@/lib/stripe/config';
+import { getFirebaseAdmin } from './firebase/admin';
 
 
 export interface InvoiceDetails {

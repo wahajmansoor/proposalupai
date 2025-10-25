@@ -1,7 +1,7 @@
 
 "use server";
 
-import { getFirebaseAdmin } from "@/lib/firebase/admin";
+import { adminAuth, adminDb } from "@/lib/firebase/admin";
 import { revalidatePath } from "next/cache";
 import { z } from "zod";
 import { stripe } from "@/lib/stripe/config";
@@ -22,7 +22,6 @@ export interface AppUser {
 }
 
 export async function getUsers(): Promise<AppUser[]> {
-  const { adminAuth, adminDb } = getFirebaseAdmin();
   const listUsersResult = await adminAuth.listUsers(1000); // max 1000 per request
   const authUsers = listUsersResult.users;
 
@@ -85,7 +84,6 @@ const userUpdateSchema = z.object({
 });
 
 export async function updateUser(formData: FormData): Promise<{ success: boolean, error?: string }> {
-  const { adminAuth, adminDb } = getFirebaseAdmin();
   const validatedFields = userUpdateSchema.safeParse({
     id: formData.get('id'),
     name: formData.get('name'),
@@ -122,7 +120,6 @@ const updateUserCreditsSchema = z.object({
 });
 
 export async function updateUserCredits(formData: FormData): Promise<{ success: boolean; error?: string }> {
-    const { adminDb } = getFirebaseAdmin();
     const validatedFields = updateUserCreditsSchema.safeParse({
         userId: formData.get('userId'),
         newCreditAmount: formData.get('credits'),
@@ -157,7 +154,6 @@ export async function updateUserCredits(formData: FormData): Promise<{ success: 
 
 
 export async function deleteUser(userId: string): Promise<{ success: boolean, error?: string }> {
-  const { adminAuth, adminDb } = getFirebaseAdmin();
   try {
     // Delete from Firebase Auth
     await adminAuth.deleteUser(userId);
@@ -227,7 +223,6 @@ const sendPasswordResetSchema = z.object({
 });
 
 export async function sendPasswordResetLink(formData: FormData): Promise<{ success: boolean; error?: string }> {
-    const { adminAuth } = getFirebaseAdmin();
     const validatedFields = sendPasswordResetSchema.safeParse({
         email: formData.get('email'),
     });
