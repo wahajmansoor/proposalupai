@@ -341,7 +341,7 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
     if (!currentUser) {
         return { error: 'User not authenticated.' };
     }
-
+    
     try {
         const historyRef = adminDb.collection('users').doc(currentUser.user.uid).collection('billingHistory');
         const querySnapshot = await historyRef.orderBy('date', 'desc').limit(20).get();

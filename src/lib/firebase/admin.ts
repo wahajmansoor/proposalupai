@@ -11,10 +11,10 @@ let adminApp: App;
 let adminAuth: Auth;
 let adminDb: Firestore;
 
-if (!getApps().length) {
-  if (!serviceAccountString) {
-    console.error("CRITICAL: FIREBASE_SERVICE_ACCOUNT_KEY is not set. Firebase Admin SDK cannot be initialized.");
-  } else {
+if (!serviceAccountString) {
+  console.error("CRITICAL: FIREBASE_SERVICE_ACCOUNT_KEY is not set. Firebase Admin SDK cannot be initialized.");
+} else {
+  if (!getApps().length) {
     try {
       const serviceAccount: ServiceAccount = JSON.parse(serviceAccountString);
 
@@ -34,11 +34,11 @@ if (!getApps().length) {
       console.error("CRITICAL: Failed to initialize Firebase Admin SDK. Error: ", e.message);
       console.error("Ensure FIREBASE_SERVICE_ACCOUNT_KEY is a valid JSON string.");
     }
+  } else {
+      adminApp = getApps()[0];
+      adminAuth = getAuth(adminApp);
+      adminDb = getFirestore(adminApp);
   }
-} else {
-    adminApp = getApps()[0];
-    adminAuth = getAuth(adminApp);
-    adminDb = getFirestore(adminApp);
 }
 
 
