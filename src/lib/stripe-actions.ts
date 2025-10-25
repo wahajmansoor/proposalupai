@@ -445,4 +445,21 @@ export async function chargeCardForCredits(formData: FormData): Promise<{ succes
   }
 }
 
-    
+export async function hasDefaultPaymentMethod(): Promise<{ hasDefaultPaymentMethod: boolean }> {
+  const { getCurrentUser } = await import('@/lib/firebase/server-auth');
+  const currentUser = await getCurrentUser();
+  if (!currentUser?.userDoc?.stripeCustomerId) {
+    return { hasDefaultPaymentMethod: false };
+  }
+
+  const { stripeCustomerId } = currentUser.userDoc;
+  try {
+    const customer = await stripe.customers.retrieve(stripeCustomerId) as Stripe.Customer;
+    return {
+      hasDefaultPaymentMethod: !!customer.invoice_settings?.default_payment_method
+    };
+  } catch (error) {
+    console.error('Error checking for default payment method:', error);
+    return { hasDefaultPaymentMethod: false };
+  }
+}
