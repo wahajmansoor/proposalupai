@@ -336,35 +336,60 @@ export async function updateUserDisplayNameAction(formData: FormData) {
 }
 
 export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]; error?: string }> {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) {
-        return { error: 'User not authenticated.' };
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
+    return { error: 'User not authenticated.' };
+  }
+
+  // Strategy 1: Fetch from Firestore first
+  try {
+    const historyRef = adminDb.collection('users').doc(currentUser.user.uid).collection('billingHistory');
+    const querySnapshot = await historyRef.orderBy('date', 'desc').limit(20).get();
+
+    if (!querySnapshot.empty) {
+      const invoices: InvoiceDetails[] = querySnapshot.docs.map(doc => {
+        const data = doc.data();
+        return {
+          id: doc.id,
+          date: data.date.toDate().toLocaleDateString(),
+          total: `$${(data.total / 100).toFixed(2)}`,
+          status: data.status || 'unknown',
+          invoiceUrl: data.invoiceUrl,
+        };
+      });
+      return { invoices };
     }
-    
-    try {
-        const historyRef = adminDb.collection('users').doc(currentUser.user.uid).collection('billingHistory');
-        const querySnapshot = await historyRef.orderBy('date', 'desc').limit(20).get();
+  } catch (error: any) {
+    console.warn('Could not fetch billing history from Firestore, falling back to Stripe:', error.message);
+    // If Firestore fails or is empty, we fall through to the Stripe API call.
+  }
 
-        if (querySnapshot.empty) {
-            return { invoices: [] };
-        }
+  // Strategy 2: Fallback to Stripe API
+  if (!currentUser.userDoc?.stripeCustomerId) {
+    return { invoices: [] }; // No Stripe customer ID, so no invoices to fetch.
+  }
+  
+  const { stripeCustomerId } = currentUser.userDoc;
 
-        const invoices: InvoiceDetails[] = querySnapshot.docs.map(doc => {
-            const data = doc.data();
-            return {
-                id: doc.id,
-                date: data.date.toDate().toLocaleDateString(),
-                total: `$${(data.total / 100).toFixed(2)}`,
-                status: data.status || 'unknown',
-                invoiceUrl: data.invoiceUrl,
-            };
-        });
+  try {
+    const invoices = await stripe.invoices.list({
+      customer: stripeCustomerId,
+      limit: 20,
+    });
 
-        return { invoices };
-    } catch (error: any) {
-        console.error('Error fetching billing history from Firestore:', error);
-        return { error: 'Could not retrieve billing history.' };
-    }
+    const invoiceDetails: InvoiceDetails[] = invoices.data.map(invoice => ({
+      id: invoice.id,
+      date: new Date(invoice.created * 1000).toLocaleDateString(),
+      total: `$${(invoice.total / 100).toFixed(2)}`,
+      status: invoice.status || 'unknown',
+      invoiceUrl: invoice.hosted_invoice_url,
+    }));
+
+    return { invoices: invoiceDetails };
+  } catch (error: any) {
+    console.error('Error fetching billing history from Stripe:', error);
+    return { error: 'Could not retrieve billing history from payment provider.' };
+  }
 }
 
 export async function getCreditHistory(): Promise<{ history?: CreditHistoryItem[]; error?: string }> {
