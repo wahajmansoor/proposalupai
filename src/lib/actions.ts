@@ -6,7 +6,7 @@ import { OAuth2Client } from 'google-auth-library';
 import { headers } from 'next/headers';
 import { getCurrentUser, incrementProposalCount, decrementProposalCredits } from '@/lib/firebase/server-auth';
 import { revalidatePath } from 'next/cache';
-import { adminAuth, adminDb } from '@/lib/firebase/admin';
+import { adminDb, adminAuth } from '@/lib/firebase/admin';
 
 import type { PortfolioLink } from './types';
 import { getCountryFromIp } from '@/app/lib/location';
@@ -307,23 +307,6 @@ const updateDisplayNameSchema = z.object({
     displayName: z.string().min(1, 'Display name cannot be empty.'),
 });
 
-async function updateUserDisplayName(uid: string, displayName: string) {
-  if (!uid) throw new Error('You must be logged in to update your profile.');
-
-  try {
-    // Update Firebase Auth profile (server-side)
-    await adminAuth.updateUser(uid, { displayName });
-
-    // Update Firestore user document
-    const userRef = adminDb.collection('users').doc(uid);
-    await userRef.update({ displayName });
-
-  } catch (error) {
-     console.error("Error updating display name:", error);
-     throw new Error("Failed to update display name on the server.");
-  }
-}
-
 export async function updateUserDisplayNameAction(formData: FormData) {
     const currentUser = await getCurrentUser();
     if (!currentUser) {
@@ -339,24 +322,30 @@ export async function updateUserDisplayNameAction(formData: FormData) {
     }
 
     try {
-        await updateUserDisplayName(currentUser.user.uid, validatedFields.data.displayName);
+        await adminAuth.updateUser(currentUser.user.uid, { displayName: validatedFields.data.displayName });
+        const userRef = adminDb.collection('users').doc(currentUser.user.uid);
+        await userRef.update({ displayName: validatedFields.data.displayName });
+        
         revalidatePath('/profile');
         return { success: 'Display name updated successfully.' };
     } catch (error: any) {
+        console.error("Error updating display name:", error);
         return { error: error.message || 'Failed to update display name.' };
     }
 }
 
 export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]; error?: string }> {
   const currentUser = await getCurrentUser();
-  if (!currentUser) {
+  if (!currentUser || !currentUser.userDoc) {
     return { error: 'User not authenticated.' };
   }
-  if (!currentUser.userDoc?.stripeCustomerId) {
+  
+  const { stripeCustomerId } = currentUser.userDoc;
+  
+  if (!stripeCustomerId) {
     return { invoices: [] }; // Return empty array if no customer ID, not an error
   }
 
-  const { stripeCustomerId } = currentUser.userDoc;
 
   try {
     const invoices = await stripe.invoices.list({
