@@ -90,9 +90,18 @@ export default function LoginPage() {
     }
     setIsLoading(true);
     try {
-      // Client-side sign-in is sufficient. The onAuthStateChanged listener
-      // in the AuthProvider will handle the user state.
-      await signInWithEmailAndPassword(auth, email, password);
+      // Step 1: Sign in on the client
+      const userCredential = await signInWithEmailAndPassword(auth, email, password);
+      
+      // Step 2: Get the ID token from the signed-in user
+      const idToken = await userCredential.user.getIdToken();
+
+      // Step 3: Send the ID token to the server to create a session cookie
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
       
       toast({ title: 'Login Successful', description: 'Welcome back!' });
       router.push('/dashboard');
