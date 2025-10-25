@@ -93,7 +93,8 @@ export async function POST(req: Request) {
                         
                         if (userId && creditsToAdd) {
                            const userRef = adminDb.collection('users').doc(userId);
-                           await addCredits(adminDb, userRef, creditsToAdd, `Purchased ${creditsToAdd} credits`);
+                           const { adminDb: db } = getFirebaseAdmin();
+                           await addCredits(db, userRef, creditsToAdd, `Purchased ${creditsToAdd} credits`);
                            console.log(`Added ${creditsToAdd} credits to user ${userId}`);
                         }
                     }
@@ -153,24 +154,25 @@ export async function POST(req: Request) {
                 if (userRef_invoice && invoice.subscription) {
                     const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
                     const interval = subscription.items.data[0]?.price.recurring?.interval;
+                    const { adminDb: db } = getFirebaseAdmin();
                     
                      // Award initial credits if this is the first payment after a trial
                     if (invoice.billing_reason === 'subscription_create') {
                         if (interval === 'month') {
-                            await addCredits(adminDb, userRef_invoice, 10, 'Monthly plan activation bonus');
+                            await addCredits(db, userRef_invoice, 10, 'Monthly plan activation bonus');
                             console.log(`Added 10 initial monthly credits to user ${userRef_invoice.id}`);
                         } else if (interval === 'year') {
-                            await addCredits(adminDb, userRef_invoice, 100, 'Yearly plan activation bonus');
+                            await addCredits(db, userRef_invoice, 100, 'Yearly plan activation bonus');
                             console.log(`Added 100 initial yearly credits to user ${userRef_invoice.id}`);
                         }
                     }
                     // Award renewal credits
                     else if (invoice.billing_reason === 'subscription_cycle') {
                         if (interval === 'month') {
-                            await addCredits(adminDb, userRef_invoice, 10, 'Monthly subscription credits');
+                            await addCredits(db, userRef_invoice, 10, 'Monthly subscription credits');
                             console.log(`Added 10 monthly credits to user ${userRef_invoice.id}`);
                         } else if (interval === 'year') {
-                            await addCredits(adminDb, userRef_invoice, 100, 'Yearly subscription credits');
+                            await addCredits(db, userRef_invoice, 100, 'Yearly subscription credits');
                              console.log(`Added 100 yearly credits to user ${userRef_invoice.id}`);
                         }
                     }
@@ -196,3 +198,5 @@ export async function POST(req: Request) {
 
     return new NextResponse(JSON.stringify({ received: true }), { status: 200 });
 }
+
+    

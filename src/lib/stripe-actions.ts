@@ -7,7 +7,7 @@ import { revalidatePath } from 'next/cache';
 import type Stripe from 'stripe';
 import { FieldValue, type Firestore, type DocumentReference } from 'firebase-admin/firestore';
 import { z } from 'zod';
-import { adminDb } from '@/lib/firebase/admin';
+import { getFirebaseAdmin } from '@/lib/firebase/admin';
 
 // --- Credit Handling Logic ---
 export async function addCredits(db: Firestore, userRef: DocumentReference, amount: number, reason: string) {
@@ -70,6 +70,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
   const cancelUrl = `${origin}/pricing`;
 
   try {
+    const { adminDb } = getFirebaseAdmin();
     const userRef = adminDb.collection('users').doc(firebaseUid);
     const userDoc = await userRef.get();
     
@@ -208,6 +209,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
       });
       
       // Award the difference in credits for upgrading
+      const { adminDb } = getFirebaseAdmin();
       await addCredits(adminDb, userRef, 90, 'Yearly plan upgrade bonus');
 
       revalidatePath('/pricing');
@@ -251,6 +253,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
 }
 
 export async function createCustomerPortalSession(): Promise<{ url?: string; error?: string }> {
+  const { getCurrentUser } = await import('@/lib/firebase/server-auth');
   const currentUser = await getCurrentUser();
   if (!currentUser) {
     return { error: 'User not authenticated. Please log in again.' };
@@ -387,7 +390,8 @@ export async function chargeCardForCredits(formData: FormData): Promise<{ succes
   if (!creditPackage) {
     return { success: false, error: 'Selected credit package not found.' };
   }
-
+  
+  const { adminDb } = getFirebaseAdmin();
   const userRef = adminDb.collection('users').doc(userId);
   
   try {
