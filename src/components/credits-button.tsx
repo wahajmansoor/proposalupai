@@ -62,8 +62,7 @@ export function CreditsButton() {
     startTransition(async () => {
         const formData = new FormData();
         formData.append('priceId', priceId);
-        formData.append('userId', user.uid);
-
+        
         const result = await chargeCardForCredits(formData);
 
         if (result.error) {
@@ -143,11 +142,46 @@ export function CreditsButton() {
                     </div>
                 </div>
             </div>
-          <DialogTitle className="text-center">Refer a Friend, Get Credits</DialogTitle>
-           <DialogDescription className="text-base text-center">
-            Invite a friend using your referral link. When they sign up and start their trial, you both get 5 free credits to improve your proposals!
-          </DialogDescription>
+          
         </DialogHeader>
+
+        <div className="border-t pt-4 mt-2">
+            {userProfile?.subscriptionStatus === 'trialing' ? (
+                <div className="flex flex-col items-center justify-center text-center p-4 bg-muted/50 rounded-lg">
+                    <Info className="h-6 w-6 text-muted-foreground mb-2" />
+                    <p className="text-sm font-medium text-muted-foreground">Credit purchases are available after your trial ends.</p>
+                </div>
+            ) : (
+                <div className="space-y-3">
+                    <h3 className="text-base font-semibold leading-none tracking-tight text-center">Buy More Credits</h3>
+                    <div className="flex justify-center gap-2">
+                        {creditPackages.map((pkg) => (
+                             <Button
+                                key={pkg.priceId}
+                                onClick={() => handlePurchase(pkg.priceId)}
+                                disabled={isPending}
+                                variant="outline"
+                                className="relative h-9 px-3 bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 font-semibold gap-2 rounded-full"
+                            >
+                                {isPending && selectedPriceId === pkg.priceId ? (
+                                    <Loader2 className="h-4 w-4 animate-spin"/>
+                                ) : (
+                                    <span>Buy +{pkg.credits}</span>
+                                )}
+                            </Button>
+                        ))}
+                    </div>
+                </div>
+            )}
+        </div>
+
+
+        <div className="border-t pt-4 mt-2 text-center">
+            <DialogTitle>Refer a Friend, Get Credits</DialogTitle>
+            <DialogDescription className="text-base text-center mt-2">
+                Invite a friend using your referral link. When they sign up and start their trial, you both get 5 free credits to improve your proposals!
+            </DialogDescription>
+        </div>
         <div className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="referral-link" className="text-center w-full block">Your Referral Link</Label>
@@ -172,43 +206,6 @@ export function CreditsButton() {
               <ShareIcons.WhatsApp className="h-6 w-6 cursor-pointer dark:fill-white" />
             </Link>
           </div>
-        </div>
-
-        <div className="border-t pt-4 mt-4">
-            <h3 className="text-lg font-semibold leading-none tracking-tight text-center mb-4">Buy More Credits</h3>
-            {userProfile?.subscriptionStatus === 'trialing' ? (
-                <div className="flex flex-col items-center justify-center text-center p-4 bg-muted/50 rounded-lg">
-                    <Info className="h-6 w-6 text-muted-foreground mb-2" />
-                    <p className="text-sm font-medium text-muted-foreground">Credit purchases are available after your trial ends.</p>
-                    <p className="text-xs text-muted-foreground">Upgrade to a Pro plan to buy credits.</p>
-                </div>
-            ) : (
-                <div className="space-y-4">
-                    {creditPackages.map((pkg) => (
-                        <div key={pkg.priceId} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                            <div className="flex items-center gap-3">
-                            <img src="/coin-anim.gif" alt="Credits" className="h-8 w-8" />
-                            <div>
-                                <p className="font-semibold">{pkg.name}</p>
-                                <p className="text-muted-foreground">${pkg.price}</p>
-                            </div>
-                            </div>
-                            <Button
-                                onClick={() => handlePurchase(pkg.priceId)}
-                                disabled={isPending}
-                                variant="outline"
-                                className="relative h-9 px-4 bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 font-semibold gap-2 rounded-full"
-                            >
-                            {isPending && selectedPriceId === pkg.priceId ? (
-                                <Loader2 className="h-4 w-4 animate-spin"/>
-                            ) : (
-                                <span>Buy Now</span>
-                            )}
-                            </Button>
-                        </div>
-                    ))}
-                </div>
-            )}
         </div>
       </DialogContent>
     </Dialog>
