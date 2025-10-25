@@ -39,16 +39,6 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({ user: null, userProfile: null, loading: true, handleLogout: () => {}, creditChange: 0 });
 
 function LogoutScreen() {
-    const router = useRouter();
-
-    useEffect(() => {
-        const timer = setTimeout(() => {
-            router.push('/login');
-        }, 2500); // 2.5 second delay before redirecting
-
-        return () => clearTimeout(timer);
-    }, [router]);
-    
     return (
         <div className="flex flex-col items-center justify-center min-h-screen bg-background text-center">
             <ProposalUpLogos className="h-24 w-24 mb-6 text-primary" />
@@ -64,6 +54,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const router = useRouter();
   
   const [creditChange, setCreditChange] = useState(0);
   const previousCreditsRef = useRef<number | undefined>(undefined);
@@ -72,7 +63,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       if (user) {
-        setIsLoggingOut(false); // User is logged in, ensure logout screen is hidden
         const userRef = doc(db, 'users', user.uid);
         const unsubscribeSnapshot = onSnapshot(userRef, (docSnap) => {
           if (docSnap.exists()) {
@@ -96,10 +86,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
             setUserProfile(profile);
           } else {
-             // User is authenticated, but no profile doc exists yet.
-             // This happens briefly during signup. The signup flow is now
-             // responsible for creating the doc. We set the profile to null
-             // and loading to false to allow redirects to /pricing etc.
              setUserProfile(null);
           }
           setLoading(false);
@@ -111,27 +97,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         
         return () => unsubscribeSnapshot();
       } else {
+        setUser(null);
         setUserProfile(null);
         setLoading(false);
-        if (!isLoggingOut) { // If user is not logged in and not in the process of logging out
-            setIsLoggingOut(false);
-        }
         previousCreditsRef.current = undefined;
       }
     });
 
     return () => unsubscribe();
-  }, [isLoggingOut]);
+  }, []);
 
   const handleLogout = async () => {
+    setIsLoggingOut(true);
     try {
         await signOut(auth); // Sign out from Firebase Auth
         await fetch('/api/auth/session', { method: 'DELETE' }); // Clear server session cookie
-        setUser(null);
-        setUserProfile(null);
-        setIsLoggingOut(true);
     } catch (error) {
         console.error("Error during logout:", error);
+    } finally {
+        setTimeout(() => {
+            setIsLoggingOut(false);
+            router.push('/login');
+        }, 2500);
     }
   };
   
