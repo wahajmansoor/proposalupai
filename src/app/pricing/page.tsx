@@ -89,7 +89,7 @@ export default function PricingPage() {
     }
   }, [isYearlyActive]);
 
-  const canShowCoupon = userProfile !== null;
+  const canShowCoupon = userProfile?.subscriptionStatus === 'trialing' || userProfile?.subscriptionStatus === 'active';
 
 
   const handleCouponValidation = async () => {

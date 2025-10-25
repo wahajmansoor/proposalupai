@@ -43,7 +43,7 @@ function LogoutScreen() {
         <div className="flex flex-col items-center justify-center min-h-screen bg-background text-center">
             <ProposalUpLogos className="h-24 w-24 mb-6 text-primary" />
             <h1 className="text-3xl font-bold">You’ve been logged out.</h1>
-            <p className="text-muted-foreground mt-2 text-lg">See you soon & keep winning projects!</p>
+            <p className="text-muted-foreground mt-2 mb-2 text-lg">See you soon & keep winning projects!</p>
             <p className="text-sm text-muted-foreground mt-12 animate-pulse">Redirecting to login...</p>
         </div>
     );
