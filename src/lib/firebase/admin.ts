@@ -1,27 +1,26 @@
-
 'server-only';
 import { initializeApp, getApps, cert, App } from 'firebase-admin/app';
 import { getAuth, Auth } from 'firebase-admin/auth';
 import { getFirestore, Firestore } from 'firebase-admin/firestore';
 
 const serviceAccountString = process.env.FIREBASE_SERVICE_ACCOUNT_KEY;
-
-if (!serviceAccountString) {
-  throw new Error('Missing FIREBASE_SERVICE_ACCOUNT_KEY environment variable.');
+if (!serviceAccountString || serviceAccountString === 'your_firebase_service_account_key_here') {
+  throw new Error('Missing or placeholder FIREBASE_SERVICE_ACCOUNT_KEY environment variable. Please add your service account key to the .env file.');
 }
 
 let app: App;
 
 if (!getApps().length) {
   try {
-    // Vercel escapes newlines, so we need to parse and then un-escape.
-    const serviceAccountJson = JSON.parse(serviceAccountString);
-    if (serviceAccountJson.private_key) {
-      serviceAccountJson.private_key = serviceAccountJson.private_key.replace(/\\n/g, '\n');
+    const serviceAccount = JSON.parse(serviceAccountString);
+    
+    // Vercel might escape newlines, so we need to replace them back.
+    if (serviceAccount.private_key) {
+      serviceAccount.private_key = serviceAccount.private_key.replace(/\\n/g, '\n');
     }
-
+    
     app = initializeApp({
-      credential: cert(serviceAccountJson),
+      credential: cert(serviceAccount),
     });
   } catch (error: any) {
     console.error('Firebase Admin SDK initialization failed:', error);
