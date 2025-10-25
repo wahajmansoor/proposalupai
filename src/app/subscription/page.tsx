@@ -198,7 +198,7 @@ function BuyCredits() {
             <CardContent className="space-y-4">
                  {paymentMethodExists === false && (
                     <div className="text-sm text-center text-muted-foreground p-3 bg-muted rounded-lg">
-                        No payment method on file. Please <Link href="/subscription" className="underline font-semibold text-primary">add a payment method</Link> in your billing settings to purchase credits.
+                        No payment method on file. Please <Link href="/subscription" className="underline font-semibold text-primary">add a payment method</Link> in your billing settings.
                     </div>
                  )}
                 {creditPackages.map((pkg) => (
