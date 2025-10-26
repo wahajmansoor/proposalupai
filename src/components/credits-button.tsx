@@ -116,23 +116,23 @@ function CreditsDialogContent() {
                         <h3 className="text-base font-semibold leading-none tracking-tight text-center">Buy More Credits</h3>
                          <div className="flex justify-center gap-2">
                             {creditPackages.map((pkg) => (
-                                <div key={pkg.priceId} className="flex flex-col items-center gap-2 p-3 border rounded-lg flex-1">
-                                    <span className="font-semibold text-muted-foreground">{pkg.name}</span>
-                                    <span className="text-2xl font-bold">${pkg.price}</span>
+                                <div key={pkg.priceId} className="flex flex-col items-center gap-1 sm:gap-2 p-2 sm:p-3 border rounded-lg flex-1">
+                                    <span className="text-xl sm:text-2xl font-bold">${pkg.price}</span>
+                                    <span className="font-semibold text-muted-foreground text-xs sm:text-sm">{pkg.name}</span>
                                     <Button
                                         onClick={() => handlePurchase(pkg.priceId)}
                                         disabled={isPending}
                                         size="sm"
                                         className="relative h-8 w-full bg-yellow-400 text-yellow-900 hover:bg-yellow-500 font-semibold gap-2 rounded-full mt-1"
                                     >
-                                        {isPending && selectedPriceId === pkg.priceId ? (
-                                            <Loader2 className="h-4 w-4 animate-spin"/>
-                                        ) : (
-                                            <>
-                                                <ShoppingBag className="h-4 w-4" />
-                                                <span>Buy Now</span>
-                                            </>
-                                        )}
+                                    {isPending && selectedPriceId === pkg.priceId ? (
+                                        <Loader2 className="h-4 w-4 animate-spin"/>
+                                    ) : (
+                                        <>
+                                            <ShoppingBag className="h-4 w-4" />
+                                            <span>Buy Now</span>
+                                        </>
+                                    )}
                                     </Button>
                                 </div>
                             ))}
@@ -211,7 +211,7 @@ export function CreditsButton() {
         variant="outline"
         className="relative h-9 px-3 bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 font-semibold gap-2 rounded-full"
       >
-        <img src="/coin-anim.gif" alt="Credits" className="h-6 w-6" />
+        <ShoppingBag className="h-5 w-5" />
         <span>Credits</span>
         <span className="flex items-center justify-center h-5 w-5 rounded-full bg-white text-xs">
           {credits}
