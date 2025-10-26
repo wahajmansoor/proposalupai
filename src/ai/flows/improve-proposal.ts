@@ -52,7 +52,7 @@ ${input.instruction}
 3.  If the original text contains a placeholder like "[ENTER URL]", you MUST preserve it exactly as is.
 4.  Output ONLY the rewritten text — no commentary, markdown, or explanations.
 5.  If the instruction is to delete or remove the text, you MUST output ONLY the token <<DELETED>>.
-6.  Do not significantly change the overall length (±10%) unless the instruction is explicitly about shortening or expanding.
+6.  Do not significantly change the overall length (±10%) unless the instruction is about shortening or expanding.
 7.  Do not use em-dashes (—).
 8.  Maintain the tone and language style of the original proposal.
 `;
