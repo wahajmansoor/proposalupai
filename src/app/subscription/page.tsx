@@ -85,8 +85,8 @@ function BuyCredits() {
                 <div className="grid grid-cols-3 gap-2">
                     {creditPackages.map((pkg) => (
                         <div key={pkg.priceId} className="flex flex-col items-center gap-1 p-2 border rounded-lg flex-1">
-                            <span className="text-xl sm:text-2xl font-bold">${pkg.price}</span>
-                            <span className="font-semibold text-muted-foreground text-xs sm:text-sm">{pkg.name}</span>
+                             <span className="text-xl sm:text-2xl font-bold">${pkg.price}</span>
+                             <span className="font-semibold text-muted-foreground text-xs sm:text-sm">{pkg.name}</span>
                             <Button
                                 onClick={() => handlePurchase(pkg.priceId)}
                                 disabled={isPending}

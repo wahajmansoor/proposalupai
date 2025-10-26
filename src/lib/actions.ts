@@ -342,6 +342,7 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
         return { error: 'User not authenticated.' };
     }
 
+    // Strategy 1: Fetch from Firestore first
     try {
         const historyRef = adminDb.collection('users').doc(currentUser.user.uid).collection('billingHistory');
         const querySnapshot = await historyRef.orderBy('date', 'desc').limit(20).get();
@@ -362,34 +363,10 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
         }
     } catch (error: any) {
         console.warn('Could not fetch billing history from Firestore, falling back to Stripe:', error.message);
-    }
-
-    // Fallback to Stripe API if Firestore is empty or fails
-    if (currentUser.userDoc?.stripeCustomerId) {
-        try {
-            const stripeInvoices = await stripe.invoices.list({
-                customer: currentUser.userDoc.stripeCustomerId,
-                limit: 20,
-            });
-
-            if (stripeInvoices.data.length > 0) {
-                const invoiceDetails: InvoiceDetails[] = stripeInvoices.data.map(invoice => ({
-                    id: invoice.id,
-                    date: new Date(invoice.created * 1000).toLocaleDateString(),
-                    total: `$${(invoice.total / 100).toFixed(2)}`,
-                    status: invoice.status || 'unknown',
-                    invoiceUrl: invoice.hosted_invoice_url,
-                    description: invoice.lines.data[0]?.description || 'Subscription Payment',
-                }));
-                return { invoices: invoiceDetails };
-            }
-        } catch (error: any) {
-            console.error('Error fetching billing history from Stripe:', error);
-            // Don't return an error, just fall through to the empty state
-        }
+        // If Firestore fails or is empty, we fall through to the Stripe API call.
     }
     
-    // If both Firestore and Stripe are empty or fail, return empty
+    // If Firestore is empty, return empty
     return { invoices: [] };
 }
 
