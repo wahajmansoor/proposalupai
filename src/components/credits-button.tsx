@@ -156,12 +156,14 @@ export function CreditsButton() {
                     <h3 className="text-base font-semibold leading-none tracking-tight text-center">Buy More Credits</h3>
                      <div className="flex justify-center gap-2">
                         {creditPackages.map((pkg) => (
-                             <div key={pkg.priceId} className="flex flex-col items-center gap-1">
+                             <div key={pkg.priceId} className="flex flex-col items-center gap-2 p-2 border rounded-lg flex-1">
+                                <span className="text-sm text-muted-foreground">{pkg.name}</span>
+                                <span className="text-2xl font-bold">${pkg.price}</span>
                                 <Button
                                     onClick={() => handlePurchase(pkg.priceId)}
                                     disabled={isPending}
                                     variant="outline"
-                                    className="relative h-9 px-4 bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 font-semibold gap-2 rounded-full"
+                                    className="relative h-9 w-full bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 font-semibold gap-2 rounded-full"
                                 >
                                     {isPending && selectedPriceId === pkg.priceId ? (
                                         <Loader2 className="h-4 w-4 animate-spin"/>
@@ -172,7 +174,6 @@ export function CreditsButton() {
                                         </>
                                     )}
                                 </Button>
-                                <span className="text-sm text-muted-foreground">{pkg.credits} credits for ${pkg.price}</span>
                             </div>
                         ))}
                     </div>
