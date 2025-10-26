@@ -43,7 +43,6 @@ function BuyCredits() {
         startTransition(async () => {
             const formData = new FormData();
             formData.append('priceId', priceId);
-            formData.append('userId', user.uid);
             
             const result = await chargeCardForCredits(formData);
 
@@ -83,28 +82,29 @@ function BuyCredits() {
                 <CardDescription>Need more proposal improvements? Top up your balance.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-                {creditPackages.map((pkg) => (
-                    <div key={pkg.priceId} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
-                        <div className="flex items-center gap-3">
-                            <img src="/coin-anim.gif" alt="Credits" className="h-10 w-10" />
-                            <div>
-                                <p className="font-semibold">{pkg.name}</p>
-                                <p className="text-sm text-muted-foreground">${pkg.price}</p>
-                            </div>
+                <div className="flex justify-center gap-2">
+                    {creditPackages.map((pkg) => (
+                        <div key={pkg.priceId} className="flex flex-col items-center gap-1 p-2 border rounded-lg flex-1">
+                            <span className="text-md text-muted-foreground font-semibold">{pkg.name}</span>
+                            <span className="text-2xl font-bold">${pkg.price}</span>
+                            <Button
+                                onClick={() => handlePurchase(pkg.priceId)}
+                                disabled={isPending}
+                                variant="outline"
+                                className="relative h-9 w-full bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 font-semibold gap-2 rounded-full mt-1"
+                            >
+                            {isPending && selectedPriceId === pkg.priceId ? (
+                                <Loader2 className="h-4 w-4 animate-spin"/>
+                            ) : (
+                                <>
+                                    <img src="/coin-anim.gif" alt="Credits" className="h-6 w-6" />
+                                    <span>Buy Now</span>
+                                </>
+                            )}
+                            </Button>
                         </div>
-                        <Button
-                            onClick={() => handlePurchase(pkg.priceId)}
-                            disabled={isPending}
-                            className="relative h-9 px-4 bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 font-semibold gap-2 rounded-full"
-                        >
-                        {isPending && selectedPriceId === pkg.priceId ? (
-                            <Loader2 className="h-4 w-4 animate-spin"/>
-                        ) : (
-                            <span>Buy Now</span>
-                        )}
-                        </Button>
-                    </div>
-                ))}
+                    ))}
+                </div>
             </CardContent>
         </Card>
     )
