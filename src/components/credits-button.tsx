@@ -157,8 +157,8 @@ export function CreditsButton() {
                      <div className="flex justify-center gap-2">
                         {creditPackages.map((pkg) => (
                              <div key={pkg.priceId} className="flex flex-col items-center gap-1 p-2 border rounded-lg flex-1">
-                                <span className="text-md text-muted-foreground font-semibold">{pkg.name}</span>
                                 <span className="text-2xl font-bold">${pkg.price}</span>
+                                <span className="text-sm text-muted-foreground font-semibold">{pkg.name}</span>
                                 <Button
                                     onClick={() => handlePurchase(pkg.priceId)}
                                     disabled={isPending}
