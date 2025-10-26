@@ -15,7 +15,7 @@ import {
 import { Input } from './ui/input';
 import { Label } from './ui/label';
 import { useToast } from '@/hooks/use-toast';
-import { Copy, Check, Star, Info, Loader2 } from 'lucide-react';
+import { Copy, Check, Star, Info, Loader2, ShoppingBag } from 'lucide-react';
 import { ShareIcons } from './icons';
 import Link from 'next/link';
 import { chargeCardForCredits } from '@/lib/stripe-actions';
@@ -156,20 +156,20 @@ export function CreditsButton() {
                     <h3 className="text-base font-semibold leading-none tracking-tight text-center">Buy More Credits</h3>
                      <div className="flex justify-center gap-2">
                         {creditPackages.map((pkg) => (
-                             <div key={pkg.priceId} className="flex flex-col items-center gap-1 p-2 border rounded-lg flex-1">
-                                <span className="text-2xl font-bold">${pkg.price}</span>
+                            <div key={pkg.priceId} className="flex flex-col items-center gap-2 p-3 border rounded-lg flex-1">
+                                <span className="text-lg font-bold">${pkg.price}</span>
                                 <span className="text-sm text-muted-foreground font-semibold">{pkg.name}</span>
                                 <Button
                                     onClick={() => handlePurchase(pkg.priceId)}
                                     disabled={isPending}
                                     variant="outline"
-                                    className="relative h-9 w-full bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 font-semibold gap-2 rounded-full mt-1"
+                                    className="relative h-9 w-full bg-primary hover:bg-primary/90 text-primary-foreground font-semibold gap-2 rounded-md mt-1"
                                 >
                                     {isPending && selectedPriceId === pkg.priceId ? (
                                         <Loader2 className="h-4 w-4 animate-spin"/>
                                     ) : (
                                         <>
-                                            <img src="/coin-anim.gif" alt="Credits" className="h-6 w-6" />
+                                            <ShoppingBag className="h-4 w-4" />
                                             <span>Buy Now</span>
                                         </>
                                     )}
