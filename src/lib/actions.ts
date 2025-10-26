@@ -342,13 +342,15 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
         return { error: 'User not authenticated.' };
     }
 
-    // Strategy 1: Fetch from Firestore first
+    let allHistory: InvoiceDetails[] = [];
+
+    // Strategy 1: Fetch from Firestore first (for credit purchases etc.)
     try {
         const historyRef = adminDb.collection('users').doc(currentUser.user.uid).collection('billingHistory');
         const querySnapshot = await historyRef.orderBy('date', 'desc').limit(20).get();
 
         if (!querySnapshot.empty) {
-            const invoices: InvoiceDetails[] = querySnapshot.docs.map(doc => {
+            const firestoreHistory: InvoiceDetails[] = querySnapshot.docs.map(doc => {
                 const data = doc.data();
                 return {
                     id: doc.id,
@@ -359,15 +361,49 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
                     description: data.description || 'Payment'
                 };
             });
-            return { invoices };
+            allHistory = allHistory.concat(firestoreHistory);
         }
     } catch (error: any) {
         console.warn('Could not fetch billing history from Firestore, falling back to Stripe:', error.message);
-        // If Firestore fails or is empty, we fall through to the Stripe API call.
+        // If Firestore fails, we can still try to get Stripe data.
+    }
+
+    // Strategy 2: Fetch subscription invoices from Stripe API
+    if (currentUser.userDoc?.stripeCustomerId) {
+        const { stripeCustomerId } = currentUser.userDoc;
+        try {
+            const invoices = await stripe.invoices.list({
+                customer: stripeCustomerId,
+                limit: 20,
+            });
+
+            if (invoices.data.length > 0) {
+              const stripeInvoices: InvoiceDetails[] = invoices.data.map(invoice => ({
+                  id: invoice.id,
+                  date: new Date(invoice.created * 1000).toLocaleDateString(),
+                  total: `$${(invoice.total / 100).toFixed(2)}`,
+                  status: invoice.status || 'unknown',
+                  invoiceUrl: invoice.hosted_invoice_url,
+                  description: invoice.lines.data[0]?.description || 'Subscription Payment',
+              }));
+              allHistory = allHistory.concat(stripeInvoices);
+            }
+        } catch (error: any) {
+            console.error('Error fetching billing history from Stripe:', error);
+            // If both sources fail and there's no history, return an error.
+            if (allHistory.length === 0) {
+              return { error: "Could not fetch billing history from Stripe." };
+            }
+        }
     }
     
-    // If Firestore is empty, return empty
-    return { invoices: [] };
+    // Sort combined history by date
+    allHistory.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    // Deduplicate based on ID (in case of overlap, unlikely but possible)
+    const uniqueHistory = Array.from(new Map(allHistory.map(item => [item.id, item])).values());
+    
+    return { invoices: uniqueHistory };
 }
 
 
