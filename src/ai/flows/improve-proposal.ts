@@ -77,7 +77,7 @@ ${input.instruction}
   }
 
   if (improvedProposal === null) {
-    return { improvedProposal: '' };
+    return { improvedProposal: textToImprove }; // Return original text if improvement fails
   }
 
   // Trim whitespace and remove potential markdown fences
