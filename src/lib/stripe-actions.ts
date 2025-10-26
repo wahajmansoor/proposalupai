@@ -392,50 +392,56 @@ export async function chargeCardForCredits(formData: FormData): Promise<{ succes
     return { success: false, error: 'Selected credit package not found.' };
   }
   
-  const userRef = adminDb.collection('users').doc(user.uid);
-  
   try {
     const stripeCustomerId = userDoc?.stripeCustomerId;
     if (!stripeCustomerId) {
         return { success: false, error: 'User does not have a Stripe customer ID.' };
     }
 
-    // List payment methods for the customer
+    // List payment methods for the customer to find the default
     const paymentMethods = await stripe.paymentMethods.list({
       customer: stripeCustomerId,
       type: 'card',
     });
     
-    const paymentMethodId = paymentMethods.data[0]?.id;
+    const customer = await stripe.customers.retrieve(stripeCustomerId);
+    const defaultPaymentMethodId = customer.invoice_settings?.default_payment_method as string | null;
 
-    if (!paymentMethodId) {
-      return { success: false, error: 'No payment method on file. Please add a payment method in your billing settings.' };
+    if (!defaultPaymentMethodId) {
+      return { success: false, error: 'No default payment method on file. Please add a payment method in your billing settings.' };
     }
 
-    // Create and confirm a PaymentIntent to charge the card
-    const paymentIntent = await stripe.paymentIntents.create({
-      amount: creditPackage.amount,
-      currency: 'usd',
-      customer: stripeCustomerId,
-      payment_method: paymentMethodId,
-      off_session: true, // Charge immediately without user interaction
-      confirm: true,
-      description: `Purchase of ${creditPackage.credits} credits for Proposal Up`,
-       metadata: {
-          purchase_type: 'credits',
-          firebase_uid: user.uid,
-          price_id: priceId
-        },
+    // Step 1: Create an Invoice Item for the credit purchase
+    await stripe.invoiceItems.create({
+        customer: stripeCustomerId,
+        amount: creditPackage.amount,
+        currency: 'usd',
+        description: `Purchase of ${creditPackage.credits} credits`,
+        metadata: {
+            purchase_type: 'credits',
+            firebase_uid: user.uid,
+            credits: creditPackage.credits,
+        }
     });
 
-    if (paymentIntent.status === 'succeeded') {
-      // Payment was successful, now add credits
-      await addCredits(adminDb, userRef, creditPackage.credits, `Purchased ${creditPackage.credits} credits`);
-      revalidatePath('/subscription');
+    // Step 2: Create an Invoice for the Invoice Item
+    const invoice = await stripe.invoices.create({
+        customer: stripeCustomerId,
+        auto_advance: true, // Automatically progresses through the payment lifecycle
+        collection_method: 'charge_automatically',
+        default_payment_method: defaultPaymentMethodId,
+    });
+    
+    // Step 3: Finalize and pay the invoice
+    // Stripe will automatically attempt to pay this invoice using the default payment method
+    // The result will be handled by the `invoice.payment_succeeded` webhook
+    const finalizedInvoice = await stripe.invoices.finalizeInvoice(invoice.id, { auto_advance: true });
+    
+    if (finalizedInvoice.status === 'paid') {
       return { success: true, message: `${creditPackage.credits} credits have been added to your account!` };
     } else {
-      // Payment failed for some reason (e.g., insufficient funds, card declined)
-      return { success: false, error: 'Payment failed. Please check your card details or try a different card.' };
+      // The payment might be processing or have failed. The webhook will handle the final state.
+      return { success: true, message: 'Your credit purchase is being processed.' };
     }
 
   } catch (error: any) {
