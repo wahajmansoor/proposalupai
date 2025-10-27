@@ -97,16 +97,16 @@ function PlanDetailsCard({
                 <p className="text-muted-foreground mt-2 min-h-[40px]">Access all AI-powered features with no limits and craft winning proposals in seconds.</p>
             </div>
             <div className="px-6 pb-6">
-                <ul className="space-y-3 my-6">
+                <div className="grid grid-cols-2 gap-x-4 gap-y-3 my-6">
                     {sharedFeatures.map((feature, index) => (
-                        <li key={index} className="flex items-center gap-3">
+                        <div key={index} className="flex items-center gap-3">
                             <div className="bg-green-100 dark:bg-green-900/50 p-1 rounded-full">
                                 <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
                             </div>
                             <span className="text-sm">{feature}</span>
-                        </li>
+                        </div>
                     ))}
-                </ul>
+                </div>
                 <Button 
                     size="lg" 
                     className="w-full text-base font-medium"
