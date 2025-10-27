@@ -251,7 +251,7 @@ export function CreditsButton() {
       </DialogTrigger>
        <DialogContent className="sm:max-w-md p-0">
          <DialogHeader className="items-center text-center pt-6">
-            <div className="flex justify-center pb-4">
+            <div className="flex justify-center">
                 <div 
                     className="flex items-center justify-center h-32 w-32 rounded-full"
                     style={{ backgroundColor: '#facc15' }}
