@@ -129,7 +129,7 @@ function PlanDetailsCard({
                     <span>
                         {plan.interval === 'monthly'
                         ? <><span className="font-bold">10 Free Credits</span> for proposal improvements.</>
-                        : <><span className="font-bold">100 Free Credits</span> annually for proposal improvements.</>}
+                        : <><span className="font-bold">100 Free Credits</span> for proposal improvements.</>}
                     </span>
                 </div>
                 <Button 
