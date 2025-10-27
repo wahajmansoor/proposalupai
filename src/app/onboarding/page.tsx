@@ -8,7 +8,7 @@ import { handlePlanChange } from '@/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { ProposalUpLogos, CoinIcon } from '@/components/icons';
+import { ProposalUpLogos, CoinIcon, ProposalUpLogoLight } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -128,7 +128,7 @@ function PlanDetailsCard({
                     <img src="/coin-anim.gif" alt="coin" className="h-6 w-6" />
                     <span>
                         {plan.interval === 'monthly'
-                        ? <><span className="font-bold">10 Free Credits</span> per month for proposal improvements.</>
+                        ? <><span className="font-bold">10 Free Credits</span> for proposal improvements.</>
                         : <><span className="font-bold">100 Free Credits</span> annually for proposal improvements.</>}
                     </span>
                 </div>
@@ -168,7 +168,7 @@ export default function OnboardingPage() {
     const result = await handlePlanChange(formData);
 
     if (result?.error) {
-      toast({ title: 'An error occurred', description: result.error, variant: 'destructive' });
+      toast({ title: 'An error occurred', description: result.error, variant: "destructive" });
       setIsSubmitting(false);
     } else if (result?.redirectUrl) {
       router.push(result.redirectUrl);
