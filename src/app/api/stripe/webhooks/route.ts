@@ -139,6 +139,15 @@ export async function POST(req: Request) {
                     // Save all paid invoices to billing history, except for $0 invoices which are usually for trials.
                     if (invoice.total > 0) {
                         const billingHistoryRef = userRef_invoice.collection('billingHistory').doc(invoice.id);
+                        
+                        let description = invoice.lines.data[0]?.description || 'Payment';
+                        
+                        // Check if this invoice is for an upgrade from monthly to yearly
+                        const isUpgrade = invoice.lines.data.some(line => line.proration && line.description?.toLowerCase().includes('unused time'));
+                        if (isUpgrade) {
+                            description = `Upgrade to Yearly Plan`;
+                        }
+
                         await billingHistoryRef.set({
                             id: invoice.id,
                             createdAt: FieldValue.serverTimestamp(),
@@ -146,7 +155,7 @@ export async function POST(req: Request) {
                             total: invoice.total,
                             status: invoice.status,
                             invoiceUrl: invoice.hosted_invoice_url,
-                            description: invoice.lines.data[0]?.description || 'Payment',
+                            description: description,
                         });
                     }
 
@@ -179,7 +188,7 @@ export async function POST(req: Request) {
             }
 
             case 'charge.succeeded': {
-                // This handler is now exclusively for one-time credit purchases
+                // This handler is now exclusively for one-time credit purchases initiated via Payment Intents
                 const charge = event.data.object as Stripe.Charge;
                 const purchaseType = charge.metadata.purchase_type;
                 
