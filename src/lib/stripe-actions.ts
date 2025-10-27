@@ -364,6 +364,12 @@ const creditPurchaseSchema = z.object({
     priceId: z.string().startsWith('price_'),
 });
 
+const creditPackages: Record<string, { amount: number; description: string }> = {
+    [process.env.NEXT_PUBLIC_STRIPE_CREDITS_10_PRICE_ID!]: { amount: 500, description: "10 Credits" },
+    [process.env.NEXT_PUBLIC_STRIPE_CREDITS_25_PRICE_ID!]: { amount: 1000, description: "25 Credits" },
+    [process.env.NEXT_PUBLIC_STRIPE_CREDITS_50_PRICE_ID!]: { amount: 2500, description: "50 Credits" }
+};
+
 export async function chargeCardForCredits(formData: FormData): Promise<{ success: boolean; error?: string; message?: string }> {
   const currentUser = await getCurrentUser();
   if (!currentUser) {
@@ -380,46 +386,62 @@ export async function chargeCardForCredits(formData: FormData): Promise<{ succes
   }
 
   const { priceId } = validatedFields.data;
+  const creditPackage = creditPackages[priceId];
+  if (!creditPackage) {
+      return { success: false, error: 'Invalid credit package selected.' };
+  }
   
   try {
     const stripeCustomerId = userDoc?.stripeCustomerId;
     if (!stripeCustomerId) {
         return { success: false, error: 'User does not have a Stripe customer ID.' };
     }
-
-    const headersList = headers();
-    const protocol = headersList.get('x-forwarded-proto') || 'http';
-    const host = headersList.get('host');
-    const origin = `${protocol}://${host}`;
-    const successUrl = `${origin}/subscription?credits_purchased=true`;
-    const cancelUrl = `${origin}/subscription`;
-
-
-    const session = await stripe.checkout.sessions.create({
-      customer: stripeCustomerId,
-      mode: 'payment',
-      line_items: [{
-        price: priceId,
-        quantity: 1,
-      }],
-      payment_intent_data: {
-        metadata: {
-            purchase_type: 'credits',
-            firebase_uid: user.uid,
-            price_id: priceId,
-        }
-      },
-      success_url: successUrl,
-      cancel_url: cancelUrl,
+    
+    // Find a payment method for the customer
+    const customer = await stripe.customers.retrieve(stripeCustomerId, {
+        expand: ['invoice_settings.default_payment_method']
     });
     
-    return { success: true, redirectUrl: session.url! };
+    let paymentMethodId: string | null = null;
+    if (customer.invoice_settings?.default_payment_method) {
+        paymentMethodId = typeof customer.invoice_settings.default_payment_method === 'string' 
+            ? customer.invoice_settings.default_payment_method
+            : customer.invoice_settings.default_payment_method.id;
+    } else {
+        // Fallback: get the most recent payment method
+        const paymentMethods = await stripe.paymentMethods.list({
+            customer: stripeCustomerId,
+            type: 'card',
+        });
+        if (paymentMethods.data.length > 0) {
+            paymentMethodId = paymentMethods.data[0].id;
+        }
+    }
+
+    if (!paymentMethodId) {
+        return { success: false, error: 'No default payment method on file. Please add a payment method in your billing settings.'};
+    }
+
+    // Create a direct charge
+    await stripe.charges.create({
+      amount: creditPackage.amount,
+      currency: 'usd',
+      customer: stripeCustomerId,
+      source: paymentMethodId,
+      description: `Credit Purchase: ${creditPackage.description}`,
+      metadata: {
+        purchase_type: 'credits',
+        firebase_uid: user.uid,
+        price_id: priceId,
+      },
+    });
+
+    revalidatePath('/subscription');
+    
+    return { success: true, message: 'Credit purchase successful!' };
+
   } catch (error: any) {
-    console.error('Error creating checkout session for credits:', error);
+    console.error('Error charging card for credits:', error);
     return { success: false, error: error.message || 'An unexpected error occurred during payment.' };
   }
 }
-
-    
-
-    
