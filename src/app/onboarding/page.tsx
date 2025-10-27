@@ -192,8 +192,7 @@ export default function OnboardingPage() {
       </div>
       <div className="relative z-10 mx-auto max-w-7xl w-full">
          <div className="text-center mb-12">
-            <ProposalUpLogos className="mx-auto h-24 w-24 text-slate-800 dark:hidden" />
-            <ProposalUpLogoLight className="mx-auto h-24 w-24 hidden dark:block" />
+            <ProposalUpLogos className="mx-auto h-24 w-24 text-slate-800 dark:text-white" />
             <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
                 Welcome to Proposal Up!
             </h1>
@@ -228,3 +227,4 @@ export default function OnboardingPage() {
     </div>
   );
 }
+
