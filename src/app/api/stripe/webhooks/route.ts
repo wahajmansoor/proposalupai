@@ -136,8 +136,8 @@ export async function POST(req: Request) {
                 const userRef_invoice = await findUserByStripeCustomerId(adminDb, stripeCustomerId_invoice);
 
                 if (userRef_invoice) {
-                    // Save only paid, non-zero invoices to billing history
-                    if (invoice.total > 0 && invoice.paid) {
+                    // Save all paid invoices to billing history, including $0 invoices
+                    if (invoice.paid) {
                         const billingHistoryRef = userRef_invoice.collection('billingHistory').doc(invoice.id);
                         
                         let description = invoice.lines.data[0]?.description || 'Payment';
@@ -239,5 +239,3 @@ export async function POST(req: Request) {
 
     return new NextResponse(JSON.stringify({ received: true }), { status: 200 });
 }
-
-    
