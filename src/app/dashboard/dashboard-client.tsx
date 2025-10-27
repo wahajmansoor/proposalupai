@@ -1,4 +1,3 @@
-
 // src/app/dashboard/dashboard-client.tsx
 "use client";
 
@@ -26,6 +25,11 @@ export function DashboardClient({
     }
     if (!user) {
       router.replace("/login");
+      return;
+    }
+    
+    if (userProfile?.onboardingComplete === false && pathname !== '/onboarding') {
+      router.replace('/onboarding');
       return;
     }
 
