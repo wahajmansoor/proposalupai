@@ -97,7 +97,7 @@ export async function generateProposal(
     3.  Follow this with a paragraph break (a single \\n).
     4.  Write a SHORT, natural-sounding paragraph (2-3 sentences) based on this idea, intelligently replacing placeholders like [SKILLSET] with information from the job summary and user profile: "Your project sounds exciting, and I understand how tough it can be to find the right [SKILLSET] specialist, someone reliable, motivated, and ready to get the job done right from the start."
     5.  Write another SHORT, punchy paragraph based on this idea: "Unlike others who juggle too many clients and go quiet for days, I focus on a smaller, select group of clients. This allows me to work closely with you, ensuring we achieve the results you want without unnecessary stress."
-    6.  **FINAL CTA (CRITICAL):** For the final paragraph, you MUST rewrite the following idea into a natural-sounding sentence: "${input.closingCta}". DO NOT just copy the text. For example, if the idea is "Let's schedule a quick call", you could write "Would you be open to a quick call next week to discuss this further?".
+    6.  **FINAL CTA (CRITICAL):** For the final paragraph, you MUST rewrite the following idea into a natural-sounding sentence: "${input.closingCta}". DO NOT just copy and paste the user's selected text.
     7.  **SIGNATURE (CRITICAL):** After the final CTA paragraph, add a SINGLE line break (\\n). If the user provided a sign-off phrase ("${input.closingCta2}"), write it on its own line. Then, on the VERY NEXT LINE, write the user's name: "${input.userName}".
 `;
   }
@@ -123,7 +123,7 @@ export async function generateProposal(
           prompt += `${formatLinks(input.manualLinks)}\\n`;
       }
     }
-    prompt += `    - **FINAL CTA (CRITICAL):** For the final paragraph, you MUST rewrite the following idea into a natural-sounding sentence: "${input.closingCta}". DO NOT just copy the text. For example, if the idea is "Let's schedule a quick call", you could write "Would you be open to a quick call next week to discuss this further?".
+    prompt += `    - **FINAL CTA (CRITICAL):** For the final paragraph, you MUST rewrite the following idea into a natural-sounding sentence: "${input.closingCta}". DO NOT just copy and paste the user's selected text.
     - **SIGNATURE (CRITICAL):** After the final CTA paragraph, add a SINGLE line break (\\n). If the user provided a sign-off phrase ("${input.closingCta2}"), write it on its own line. Then, on the VERY NEXT LINE, write the user's name: "${input.userName}".
 `;
   }
