@@ -141,7 +141,7 @@ function PlanDetailsCard({
                             className="relative h-9 px-3 bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 font-semibold gap-2 rounded-full"
                         >
                             <img src="/coin-anim.gif" alt="coin" className="h-6 w-6" />
-                            <span className="font-bold">Free Credits {plan.interval === 'monthly' ? '10' : '100'}</span>
+                            <span className="font-bold">{plan.interval === 'monthly' ? '10' : '100'} Free Credits</span>
                         </Button>
                     </div>
                 </div>
