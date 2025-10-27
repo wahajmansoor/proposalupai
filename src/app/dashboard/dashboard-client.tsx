@@ -21,41 +21,41 @@ export function DashboardClient({
 
   useEffect(() => {
     if (authLoading) {
-      return; // Wait for auth state to load
+      return; // 1. Wait for auth state to load
     }
 
-    // 1. If not logged in, redirect to login
     if (!user) {
-      router.replace("/login");
+      router.replace("/login"); // 2. If not logged in, redirect to login
       return;
     }
 
-    // 2. If user exists but profile is still loading, wait.
     if (!userProfile) {
-      return;
+      return; // 3. If user exists but profile is still loading, wait.
     }
 
-    // 3. If user has NOT completed onboarding, they must be on the onboarding page.
+    // 4. If user HAS NOT completed onboarding, they must be on the onboarding page.
     if (userProfile.onboardingComplete === false) {
       if (pathname !== '/onboarding') {
         router.replace('/onboarding');
         return; // Redirect and stop further checks
       }
-      // If they are on the onboarding page, they are authorized.
       setIsAuthorized(true);
       return;
     }
 
-    // 4. For users who HAVE completed onboarding, check subscription status for other pages.
-    const isSubscribed = userProfile.subscriptionStatus === 'active' || userProfile.subscriptionStatus === 'trialing';
+    // At this point, user has completed onboarding.
     
-    // The main dashboard requires a subscription.
-    if (pathname === '/dashboard' && !isSubscribed) {
+    // 5. For onboarded users, check subscription status.
+    const isSubscribed = userProfile.subscriptionStatus === 'active' || userProfile.subscriptionStatus === 'trialing';
+    const isPricingPage = pathname === '/dashboard/pricing';
+
+    // If user is not subscribed and is trying to access a page other than the pricing page, redirect them.
+    if (!isSubscribed && !isPricingPage) {
       router.replace('/dashboard/pricing');
       return;
     }
-
-    // If all checks pass, authorize the user to see the page.
+    
+    // 6. If all checks pass, authorize the user to see the page.
     setIsAuthorized(true);
     
   }, [user, userProfile, authLoading, router, pathname]);
