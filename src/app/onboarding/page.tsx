@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -81,7 +82,7 @@ function PlanDetailsCard({
     onSubmit: () => void;
 }) {
     return (
-        <div className="bg-card text-card-foreground rounded-xl shadow-2xl border w-full" style={{ backgroundColor: '#fffcfc' }}>
+        <div className="bg-white/80 dark:bg-slate-900/80 text-card-foreground rounded-xl shadow-2xl border w-full">
             <div className="p-6">
                 <div className="flex justify-between items-start">
                     <h3 className="text-2xl font-bold">{plan.name}</h3>
@@ -96,16 +97,16 @@ function PlanDetailsCard({
                 <p className="text-muted-foreground mt-2 min-h-[40px]">Access all AI-powered features with no limits and craft winning proposals in seconds.</p>
             </div>
             <div className="px-6 pb-6">
-                <div className="grid grid-cols-2 gap-x-4 gap-y-3 my-6">
+                <ul className="grid grid-cols-2 gap-x-4 gap-y-3 my-6">
                     {sharedFeatures.map((feature, index) => (
-                        <div key={index} className="flex items-center gap-3">
+                        <li key={index} className="flex items-center gap-3">
                             <div className="bg-green-100 dark:bg-green-900/50 p-1 rounded-full">
                                 <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
                             </div>
                             <span className="text-sm">{feature}</span>
-                        </div>
+                        </li>
                     ))}
-                </div>
+                </ul>
                 <Button 
                     size="lg" 
                     className="w-full text-base font-medium"
