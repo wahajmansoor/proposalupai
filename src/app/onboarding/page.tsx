@@ -59,43 +59,10 @@ export default function OnboardingPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
   
-  const [showCouponInput, setShowCouponInput] = useState(false);
-  const [couponCode, setCouponCode] = useState('');
-  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
   const [appliedCoupon, setAppliedCoupon] = useState<ValidCoupon | null>(null);
-  const [couponError, setCouponError] = useState<string | null>(null);
 
   const currentPlan = plans[billingInterval];
 
-  const handleCouponValidation = async () => {
-    if (!couponCode.trim()) return;
-
-    setIsValidatingCoupon(true);
-    setCouponError(null);
-    setAppliedCoupon(null);
-
-    const formData = new FormData();
-    formData.append('code', couponCode.trim());
-    formData.append('plan', billingInterval);
-
-    const result = await validateCouponAction(formData);
-    
-    if (result.success && result.coupon) {
-        setAppliedCoupon(result.coupon);
-        toast({ title: 'Coupon Applied!', description: `The coupon "${result.coupon.name}" has been successfully applied.`});
-    } else {
-        setCouponError(result.error || 'An unexpected error occurred.');
-    }
-
-    setIsValidatingCoupon(false);
-  };
-
-  const removeCoupon = () => {
-    setAppliedCoupon(null);
-    setCouponCode('');
-    setCouponError(null);
-    setShowCouponInput(false);
-  };
 
   const handleFormSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -199,40 +166,6 @@ export default function OnboardingPage() {
                       <input type="hidden" name="interval" value={billingInterval} />
                       {appliedCoupon && <input type="hidden" name="coupon" value={appliedCoupon.id} />}
                       
-                        <div className="my-4 space-y-2">
-                          {!showCouponInput && !appliedCoupon ? (
-                            <Button variant="link" size="sm" className="p-0 h-auto" onClick={() => setShowCouponInput(true)}>
-                              Have a promotion code?
-                            </Button>
-                          ) : appliedCoupon ? (
-                            <div className="flex items-center justify-between text-sm p-2 bg-green-50 text-green-800 border border-green-200 rounded-md">
-                              <div className="flex items-center gap-2">
-                                <Tag className="h-4 w-4" />
-                                <span className="font-medium">Coupon Applied: {appliedCoupon.name}</span>
-                              </div>
-                              <Button variant="ghost" size="icon" className="h-6 w-6 text-green-800 hover:bg-green-100" onClick={removeCoupon}>
-                                <X className="h-4 w-4" />
-                              </Button>
-                            </div>
-                          ) : (
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <Input 
-                                  placeholder="Enter coupon code"
-                                  value={couponCode}
-                                  onChange={(e) => setCouponCode(e.target.value)}
-                                  disabled={isValidatingCoupon}
-                                  className="h-9"
-                                />
-                                <Button onClick={handleCouponValidation} disabled={isValidatingCoupon || !couponCode.trim()} size="sm" type="button">
-                                  {isValidatingCoupon ? <Loader2 className="h-4 w-4 animate-spin"/> : 'Apply'}
-                                </Button>
-                              </div>
-                              {couponError && <p className="text-xs text-destructive mt-1">{couponError}</p>}
-                            </div>
-                          )}
-                        </div>
-                      
                          <Button 
                               type="submit"
                               size="lg" 
@@ -272,5 +205,3 @@ export default function OnboardingPage() {
     </div>
   );
 }
-
-    
