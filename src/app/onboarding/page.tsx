@@ -10,20 +10,22 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { ProposalUpLogo } from '@/components/icons';
 import { BgPattern } from '@/components/bg-pattern';
+import { cn } from '@/lib/utils';
 
 const plans = {
   monthly: {
     name: "Pro Monthly",
-    priceId: process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID!,
     price: 20,
     priceDescription: "/month",
+    description: "Access all AI-powered features with no limits.",
+    interval: 'monthly' as 'monthly' | 'yearly',
   },
   yearly: {
     name: "Pro Yearly",
-    priceId: process.env.NEXT_PUBLIC_STRIPE_YEARLY_PRICE_ID!,
     price: 16.67,
-    priceDescription: "/month",
-    description: "Billed as $200/year"
+    priceDescription: "/month, billed as $200/year",
+    description: "The best value for long-term growth.",
+    interval: 'yearly' as 'monthly' | 'yearly',
   }
 };
 
@@ -37,38 +39,83 @@ const sharedFeatures = [
 
 function PlanRow({
     plan,
-    isFeatured,
+    isSelected,
     onSelect,
-    isSubmitting
 }: {
     plan: typeof plans.monthly | typeof plans.yearly;
-    isFeatured: boolean;
+    isSelected: boolean;
     onSelect: () => void;
-    isSubmitting: boolean;
 }) {
+    const isFeatured = plan.interval === 'yearly';
     return (
         <div 
             onClick={onSelect}
-            className={`cursor-pointer rounded-lg p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all duration-300 transform hover:scale-[1.02] ${isFeatured ? 'bg-slate-800 text-white featured-plan-pattern shadow-2xl' : 'bg-white/80 text-slate-900 shadow-lg'}`}
+            className={cn(
+                'cursor-pointer rounded-lg p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all duration-300 transform hover:scale-[1.02] shadow-lg',
+                isSelected ? 'ring-2 ring-offset-2 ring-primary ring-offset-background' : '',
+                isFeatured ? 'bg-slate-800 text-white featured-plan-pattern' : 'bg-white/80 text-slate-900'
+            )}
         >
             <div>
                 <h3 className="text-xl font-bold tracking-tight">{plan.name}</h3>
-                <p className={`mt-1 text-sm ${isFeatured ? 'text-slate-300' : 'text-slate-600'}`}>
-                    {plan.description || `The standard plan.`}
+                <p className={cn("mt-1 text-sm", isFeatured ? 'text-slate-300' : 'text-slate-600')}>
+                    {plan.description}
                 </p>
             </div>
             <div className="text-left sm:text-right shrink-0">
                 <p className="text-4xl font-bold tracking-tight">
-                    ${plan.price.toFixed(2)}<span className="text-base font-medium text-muted-foreground">{plan.priceDescription}</span>
+                    ${plan.price.toFixed(2)}
+                    <span className="text-base font-medium text-muted-foreground">{plan.priceDescription}</span>
                 </p>
-                {isSubmitting && (
-                    <div className="flex justify-start sm:justify-end mt-2">
-                        <Loader2 className="h-5 w-5 animate-spin" />
-                    </div>
-                )}
             </div>
         </div>
     )
+}
+
+function PlanDetailsCard({ 
+    plan, 
+    isSubmitting, 
+    onSubmit
+}: { 
+    plan: typeof plans.monthly | typeof plans.yearly;
+    isSubmitting: boolean;
+    onSubmit: () => void;
+}) {
+    return (
+        <div className="bg-card text-card-foreground rounded-xl shadow-2xl border w-full">
+            <div className="p-6">
+                <div className="flex justify-between items-start">
+                    <h3 className="text-2xl font-bold">{plan.name}</h3>
+                    <div className="text-right">
+                        <p className="text-4xl font-bold">${plan.price.toFixed(2)}</p>
+                        <p className="text-sm text-muted-foreground -mt-1">{plan.priceDescription}</p>
+                    </div>
+                </div>
+                <p className="text-muted-foreground mt-2 min-h-[40px]">{plan.description}</p>
+            </div>
+            <div className="px-6 pb-6">
+                <ul className="space-y-3 my-6">
+                    {sharedFeatures.map((feature, index) => (
+                        <li key={index} className="flex items-center gap-3">
+                            <div className="bg-green-100 dark:bg-green-900/50 p-1 rounded-full">
+                                <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                            </div>
+                            <span className="text-sm">{feature}</span>
+                        </li>
+                    ))}
+                </ul>
+                <Button 
+                    size="lg" 
+                    className="w-full text-base font-medium"
+                    onClick={onSubmit}
+                    disabled={isSubmitting}
+                >
+                    {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
+                    Start a 2-Day Free Trial
+                </Button>
+            </div>
+        </div>
+    );
 }
 
 export default function OnboardingPage() {
@@ -76,10 +123,9 @@ export default function OnboardingPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedPlan, setSelectedPlan] = useState<'monthly' | 'yearly' | null>(null);
+  const [selectedInterval, setSelectedInterval] = useState<'monthly' | 'yearly'>('yearly');
 
-  const handleSelectPlan = async (interval: 'monthly' | 'yearly') => {
-    setSelectedPlan(interval);
+  const handleSelectPlan = async () => {
     if (!user || !userProfile) {
         toast({ title: "Not Authenticated", description: "Please log in to subscribe.", variant: "destructive" });
         router.push('/login');
@@ -89,51 +135,60 @@ export default function OnboardingPage() {
     setIsSubmitting(true);
     
     const formData = new FormData();
-    formData.append('interval', interval);
+    formData.append('interval', selectedInterval);
     
     const result = await handlePlanChange(formData);
 
     if (result?.error) {
       toast({ title: 'An error occurred', description: result.error, variant: 'destructive' });
       setIsSubmitting(false);
-      setSelectedPlan(null);
     } else if (result?.redirectUrl) {
       router.push(result.redirectUrl);
     } else if (result?.success) {
         toast({ title: 'Success!', description: result.message || 'Your plan has been updated.' });
         setTimeout(() => router.refresh(), 3000); 
         setIsSubmitting(false);
-        setSelectedPlan(null);
     }
   };
 
+  const selectedPlanDetails = plans[selectedInterval];
 
   return (
-    <div className="relative isolate flex min-h-screen flex-col items-center justify-center bg-background onboarding-gradient overflow-hidden p-4 sm:p-6">
+    <div className="relative isolate flex min-h-screen flex-col items-center justify-center bg-background onboarding-gradient overflow-hidden p-4 sm:p-6 lg:p-8">
         <BgPattern className="opacity-30" />
-      <div className="relative z-10 mx-auto max-w-4xl text-center">
-        <ProposalUpLogo className="mx-auto h-24 w-24 text-slate-800 dark:text-white" />
-        <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
-            Welcome to Proposal Up!
-        </h1>
-        <p className="mt-4 text-lg leading-8 text-slate-700 dark:text-slate-300">
-            Start your 2-Day Free Trial and explore how Proposal Up can help you win more projects.
-        </p>
-      </div>
+      <div className="relative z-10 mx-auto max-w-7xl w-full">
+         <div className="text-center mb-12">
+            <ProposalUpLogo className="mx-auto h-24 w-24 text-slate-800 dark:text-white" />
+            <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
+                Welcome to Proposal Up!
+            </h1>
+            <p className="mt-4 text-lg leading-8 text-slate-700 dark:text-slate-300">
+                Start your 2-Day Free Trial and explore how Proposal Up can help you win more projects.
+            </p>
+        </div>
 
-      <div className="relative z-10 w-full max-w-2xl mt-12 space-y-4">
-        <PlanRow 
-            plan={plans.monthly}
-            isFeatured={false}
-            onSelect={() => handleSelectPlan('monthly')}
-            isSubmitting={isSubmitting && selectedPlan === 'monthly'}
-        />
-        <PlanRow 
-            plan={plans.yearly}
-            isFeatured={true}
-            onSelect={() => handleSelectPlan('yearly')}
-            isSubmitting={isSubmitting && selectedPlan === 'yearly'}
-        />
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+            <div className="space-y-4">
+                <PlanRow 
+                    plan={plans.monthly}
+                    isSelected={selectedInterval === 'monthly'}
+                    onSelect={() => setSelectedInterval('monthly')}
+                />
+                <PlanRow 
+                    plan={plans.yearly}
+                    isSelected={selectedInterval === 'yearly'}
+                    onSelect={() => setSelectedInterval('yearly')}
+                />
+            </div>
+
+            <div className="flex justify-center">
+                <PlanDetailsCard
+                    plan={selectedPlanDetails}
+                    isSubmitting={isSubmitting}
+                    onSubmit={handleSelectPlan}
+                />
+            </div>
+        </div>
       </div>
     </div>
   );
