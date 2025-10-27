@@ -90,7 +90,7 @@ function PlanDetailsCard({
 }) {
     return (
         <div className="bg-white/80 dark:bg-slate-900/80 text-card-foreground rounded-xl shadow-2xl border w-full">
-            <div className="p-6">
+            <div className="p-6 pb-0">
                 <div className="flex justify-between items-center">
                     <div>
                         <div className="flex items-center gap-2">
