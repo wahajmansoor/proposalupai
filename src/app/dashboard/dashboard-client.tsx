@@ -23,28 +23,39 @@ export function DashboardClient({
     if (authLoading) {
       return; // Wait for auth state to load
     }
+
+    // If user is not logged in, redirect to login page.
     if (!user) {
       router.replace("/login");
       return;
     }
-    
-    if (userProfile?.onboardingComplete === false && pathname !== '/onboarding') {
-      router.replace('/onboarding');
+
+    // If user has not completed onboarding, they should only be on the onboarding page.
+    if (userProfile?.onboardingComplete === false) {
+      if (pathname !== '/onboarding') {
+        router.replace('/onboarding');
+      } else {
+        // If they are on the onboarding page, authorize them to see it.
+        setIsAuthorized(true);
+      }
       return;
     }
-
+    
+    // For users who have completed onboarding, check subscription status.
     const isSubscribed = userProfile?.subscriptionStatus === 'active' || userProfile?.subscriptionStatus === 'trialing';
     
-    // Non-protected dashboard pages that are still part of the dashboard layout
-    const nonProtectedPaths = ['/dashboard/skill-profiles', '/dashboard/proposals', '/profile', '/subscription', '/pricing'];
-
-    const isAccessingNonProtectedPath = nonProtectedPaths.some(path => pathname === path || pathname.startsWith(path + '/'));
-
-    if (!isSubscribed && !isAccessingNonProtectedPath) {
+    // Define pages accessible to non-subscribed but onboarded users
+    const nonSubscribedAllowedPaths = ['/pricing', '/subscription', '/profile', '/dashboard/skill-profiles', '/dashboard/proposals'];
+    const isAccessingAllowedPath = nonSubscribedAllowedPaths.some(path => pathname.startsWith(path));
+    
+    if (!isSubscribed && !isAccessingAllowedPath) {
+        // If not subscribed and not on an allowed page, redirect to pricing.
         router.replace('/pricing');
-    } else {
-        setIsAuthorized(true);
+        return;
     }
+
+    // If all checks pass, authorize the user.
+    setIsAuthorized(true);
     
   }, [user, userProfile, authLoading, router, pathname]);
   
