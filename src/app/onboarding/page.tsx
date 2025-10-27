@@ -35,7 +35,7 @@ const sharedFeatures = [
     "Email & Community Support",
 ];
 
-function PlanCard({
+function PlanRow({
     plan,
     isFeatured,
     onSelect,
@@ -47,31 +47,26 @@ function PlanCard({
     isSubmitting: boolean;
 }) {
     return (
-        <div className={`rounded-lg p-8 ${isFeatured ? 'bg-slate-800 text-white' : 'bg-white text-slate-900'}`}>
-            <h3 className="text-sm font-semibold uppercase tracking-wide">{plan.name}</h3>
-            <p className="mt-4">
-                <span className="text-4xl font-bold tracking-tight">${plan.price.toFixed(2)}</span>
-                <span className="text-sm font-semibold text-muted-foreground">{plan.priceDescription}</span>
-            </p>
-            {plan.description && <p className="mt-1 text-sm text-muted-foreground">{plan.description}</p>}
-            
-            <ul role="list" className="mt-8 space-y-4">
-                {sharedFeatures.map(feature => (
-                    <li key={feature} className="flex items-center gap-3">
-                        <Check className={`h-5 w-5 ${isFeatured ? 'text-primary' : 'text-green-500'}`} />
-                        <span className={isFeatured ? 'text-slate-300' : 'text-slate-700'}>{feature}</span>
-                    </li>
-                ))}
-            </ul>
-            
-            <Button
-                onClick={onSelect}
-                disabled={isSubmitting}
-                className={`mt-8 w-full ${isFeatured ? 'bg-primary text-primary-foreground hover:bg-primary/90' : 'bg-slate-900 text-white hover:bg-slate-800'}`}
-            >
-                {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
-                Start 2-Day Free Trial
-            </Button>
+        <div 
+            onClick={onSelect}
+            className={`cursor-pointer rounded-lg p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all duration-300 transform hover:scale-[1.02] ${isFeatured ? 'bg-slate-800 text-white featured-plan-pattern shadow-2xl' : 'bg-white/80 text-slate-900 shadow-lg'}`}
+        >
+            <div>
+                <h3 className="text-xl font-bold tracking-tight">{plan.name}</h3>
+                <p className={`mt-1 text-sm ${isFeatured ? 'text-slate-300' : 'text-slate-600'}`}>
+                    {plan.description || `The standard plan.`}
+                </p>
+            </div>
+            <div className="text-left sm:text-right shrink-0">
+                <p className="text-4xl font-bold tracking-tight">
+                    ${plan.price.toFixed(2)}<span className="text-base font-medium text-muted-foreground">{plan.priceDescription}</span>
+                </p>
+                {isSubmitting && (
+                    <div className="flex justify-start sm:justify-end mt-2">
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                    </div>
+                )}
+            </div>
         </div>
     )
 }
@@ -114,7 +109,7 @@ export default function OnboardingPage() {
 
 
   return (
-    <div className="relative isolate flex min-h-screen flex-col items-center justify-center bg-background onboarding-gradient overflow-hidden">
+    <div className="relative isolate flex min-h-screen flex-col items-center justify-center bg-background onboarding-gradient overflow-hidden p-4 sm:p-6">
         <BgPattern className="opacity-30" />
       <div className="relative z-10 mx-auto max-w-4xl text-center">
         <ProposalUpLogo className="mx-auto h-24 w-24 text-slate-800 dark:text-white" />
@@ -126,14 +121,14 @@ export default function OnboardingPage() {
         </p>
       </div>
 
-      <div className="relative z-10 mx-auto mt-16 grid max-w-lg grid-cols-1 gap-8 lg:max-w-4xl lg:grid-cols-2">
-        <PlanCard 
+      <div className="relative z-10 w-full max-w-2xl mt-12 space-y-4">
+        <PlanRow 
             plan={plans.monthly}
             isFeatured={false}
             onSelect={() => handleSelectPlan('monthly')}
             isSubmitting={isSubmitting && selectedPlan === 'monthly'}
         />
-        <PlanCard 
+        <PlanRow 
             plan={plans.yearly}
             isFeatured={true}
             onSelect={() => handleSelectPlan('yearly')}

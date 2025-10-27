@@ -95,4 +95,10 @@
     color: #fafaf9; /* A light text color for contrast */
 }
 
+.featured-plan-pattern {
+    background-image:
+        linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 1.5rem 1.5rem;
+}
     
