@@ -17,14 +17,12 @@ const plans = {
     name: "Pro Monthly",
     price: 20,
     priceDescription: "/month",
-    description: "Access all AI-powered features with no limits.",
     interval: 'monthly' as 'monthly' | 'yearly',
   },
   yearly: {
     name: "Pro Yearly",
     price: 200,
     priceDescription: "/year",
-    description: "The best value for long-term growth.",
     interval: 'yearly' as 'monthly' | 'yearly',
   }
 };
@@ -63,10 +61,11 @@ function PlanRow({
                 </p>
             </div>
             <div className="text-left sm:text-right shrink-0">
-                <p className="text-4xl font-bold tracking-tight">
-                    ${plan.price.toFixed(plan.interval === 'monthly' ? 2 : 0)}
-                    <span className="text-base font-medium text-muted-foreground">{plan.priceDescription}</span>
+                 <p className="text-4xl font-bold tracking-tight">
+                    ${plan.interval === 'monthly' ? plan.price.toFixed(0) : '16.67'}
+                    <span className="text-base font-medium text-muted-foreground">/month</span>
                 </p>
+                {isFeatured && <p className="text-xs text-slate-400 -mt-1">Billed as ${plan.price}/year</p>}
             </div>
         </div>
     )
@@ -87,11 +86,14 @@ function PlanDetailsCard({
                 <div className="flex justify-between items-start">
                     <h3 className="text-2xl font-bold">{plan.name}</h3>
                     <div className="text-right">
-                        <p className="text-4xl font-bold">${plan.price.toFixed(plan.interval === 'monthly' ? 2 : 0)}</p>
+                         <div className="flex items-baseline justify-end">
+                          <span className="text-5xl font-bold tracking-tight">${plan.price}</span>
+                          <span className="text-lg font-medium text-muted-foreground ml-1">USD</span>
+                        </div>
                         <p className="text-sm text-muted-foreground -mt-1">{plan.priceDescription}</p>
                     </div>
                 </div>
-                <p className="text-muted-foreground mt-2 min-h-[40px]">{plan.description}</p>
+                <p className="text-muted-foreground mt-2 min-h-[40px]">Access all AI-powered features with no limits and craft winning proposals in seconds.</p>
             </div>
             <div className="px-6 pb-6">
                 <ul className="space-y-3 my-6">
@@ -193,3 +195,4 @@ export default function OnboardingPage() {
     </div>
   );
 }
+
