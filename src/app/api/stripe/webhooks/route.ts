@@ -137,27 +137,25 @@ export async function POST(req: Request) {
 
                 if (userRef_invoice) {
                     // Save all paid invoices to billing history, including $0 invoices
-                    if (invoice.paid) {
-                        const billingHistoryRef = userRef_invoice.collection('billingHistory').doc(invoice.id);
-                        
-                        let description = invoice.lines.data[0]?.description || 'Payment';
-                        
-                        // Check if this invoice is for an upgrade from monthly to yearly
-                        const isUpgrade = invoice.lines.data.some(line => line.proration && line.description?.toLowerCase().includes('unused time'));
-                        if (isUpgrade) {
-                            description = `Upgrade to Yearly Plan`;
-                        }
-
-                        await billingHistoryRef.set({
-                            id: invoice.id,
-                            createdAt: FieldValue.serverTimestamp(),
-                            date: new Date(invoice.created * 1000),
-                            total: invoice.total,
-                            status: invoice.status,
-                            invoiceUrl: invoice.hosted_invoice_url,
-                            description: description,
-                        });
+                    const billingHistoryRef = userRef_invoice.collection('billingHistory').doc(invoice.id);
+                    
+                    let description = invoice.lines.data[0]?.description || 'Payment';
+                    
+                    // Check if this invoice is for an upgrade from monthly to yearly
+                    const isUpgrade = invoice.lines.data.some(line => line.proration && line.description?.toLowerCase().includes('unused time'));
+                    if (isUpgrade) {
+                        description = `Upgrade to Yearly Plan`;
                     }
+
+                    await billingHistoryRef.set({
+                        id: invoice.id,
+                        createdAt: FieldValue.serverTimestamp(),
+                        date: new Date(invoice.created * 1000),
+                        total: invoice.total,
+                        status: invoice.status,
+                        invoiceUrl: invoice.hosted_invoice_url,
+                        description: description,
+                    });
 
                     // Award credits on subscription creation or renewal
                     if (invoice.subscription) {
