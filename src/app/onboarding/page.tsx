@@ -18,12 +18,14 @@ const plans = {
     price: 20,
     priceDescription: "/month",
     interval: 'monthly' as 'monthly' | 'yearly',
+    description: "Ideal for short-term projects.",
   },
   yearly: {
     name: "Pro Yearly",
     price: 200,
     priceDescription: "/year",
     interval: 'yearly' as 'monthly' | 'yearly',
+    description: "Best value for ongoing work.",
   }
 };
 
@@ -62,10 +64,9 @@ function PlanRow({
             </div>
             <div className="text-left sm:text-right shrink-0">
                  <p className="text-4xl font-bold tracking-tight">
-                    ${plan.interval === 'monthly' ? plan.price.toFixed(0) : '16.67'}
-                    <span className="text-base font-medium text-muted-foreground">/month</span>
+                    ${plan.price}
+                    <span className="text-base font-medium text-muted-foreground">{plan.priceDescription}</span>
                 </p>
-                {isFeatured && <p className="text-xs text-slate-400 -mt-1">Billed as ${plan.price}/year</p>}
             </div>
         </div>
     )
@@ -86,9 +87,9 @@ function PlanDetailsCard({
                 <div className="flex justify-between items-start">
                     <h3 className="text-2xl font-bold">{plan.name}</h3>
                     <div className="text-right">
-                         <div className="flex items-baseline justify-end">
-                          <span className="text-5xl font-bold tracking-tight">${plan.price}</span>
-                          <span className="text-lg font-medium text-muted-foreground ml-1">USD</span>
+                        <div className="flex items-baseline justify-end">
+                            <span className="text-5xl font-bold tracking-tight">${plan.price}</span>
+                            <span className="text-lg font-medium text-muted-foreground ml-1">USD</span>
                         </div>
                         <p className="text-sm text-muted-foreground -mt-1">{plan.priceDescription}</p>
                     </div>
@@ -195,4 +196,3 @@ export default function OnboardingPage() {
     </div>
   );
 }
-
