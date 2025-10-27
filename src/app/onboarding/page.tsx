@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -18,7 +17,7 @@ const plans = {
     price: 20,
     priceDescription: "/monthly",
     interval: 'monthly' as 'monthly' | 'yearly',
-    description: "Access all AI-powered features with no limits and craft proposals in seconds.",
+    description: "Unlock all AI features with unlimited access.",
   },
   yearly: {
     name: "Pro Yearly",
@@ -63,7 +62,7 @@ function PlanRow({
                         <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">+2 months free</Badge>
                     )}
                 </div>
-                <p className={cn("mt-1 text-sm", isFeatured ? 'text-slate-300' : 'text-slate-600 dark:text-slate-400')}>
+                 <p className={cn("mt-1 text-sm", isFeatured ? 'text-slate-300' : 'text-slate-600 dark:text-slate-400')}>
                     {plan.description}
                 </p>
             </div>
@@ -87,7 +86,7 @@ function PlanDetailsCard({
     onSubmit: () => void;
 }) {
     return (
-        <div className="bg-white/80 dark:bg-slate-900/80 text-card-foreground rounded-xl shadow-2xl border w-full">
+        <div className="bg-white/80 dark:bg-slate-900/80 text-card-foreground rounded-xl shadow-2xl border w-full" style={{background: '#fffc'}}>
             <div className="p-6">
                 <div className="flex justify-between items-center">
                     <div>
