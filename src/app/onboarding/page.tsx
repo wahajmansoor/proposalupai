@@ -82,7 +82,7 @@ function PlanDetailsCard({
     onSubmit: () => void;
 }) {
     return (
-        <div className="bg-card text-card-foreground rounded-xl shadow-2xl border w-full">
+        <div className="bg-card text-card-foreground rounded-xl shadow-2xl border w-full" style={{ backgroundColor: '#fffcfc' }}>
             <div className="p-6">
                 <div className="flex justify-between items-start">
                     <h3 className="text-2xl font-bold">{plan.name}</h3>
