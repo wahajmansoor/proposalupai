@@ -10,7 +10,7 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { ProposalUpLogo } from '@/components/icons';
 import { cn } from '@/lib/utils';
-import { BgPattern } from '@/components/bg-pattern';
+import { Badge } from '@/components/ui/badge';
 
 const plans = {
   monthly: {
@@ -25,7 +25,7 @@ const plans = {
     price: 200,
     priceDescription: "/annually",
     interval: 'yearly' as 'monthly' | 'yearly',
-    description: "Best value for ongoing work.",
+    description: "The best value for long-term growth with AI-powered features to generate winning proposals in seconds.",
   }
 };
 
@@ -57,7 +57,12 @@ function PlanRow({
             )}
         >
             <div>
-                <h3 className="text-xl font-bold tracking-tight">{plan.name}</h3>
+                <div className="flex items-center gap-2">
+                    <h3 className="text-xl font-bold tracking-tight">{plan.name}</h3>
+                    {isFeatured && (
+                        <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">+2 months free</Badge>
+                    )}
+                </div>
                 <p className={cn("mt-1 text-sm", isFeatured ? 'text-slate-300' : 'text-slate-600 dark:text-slate-400')}>
                     {plan.description}
                 </p>
@@ -85,7 +90,12 @@ function PlanDetailsCard({
         <div className="bg-white/80 dark:bg-slate-900/80 text-card-foreground rounded-xl shadow-2xl border w-full">
             <div className="p-6">
                 <div className="flex justify-between items-start">
-                    <h3 className="text-2xl font-bold">{plan.name}</h3>
+                    <div className="flex items-center gap-2">
+                        <h3 className="text-2xl font-bold">{plan.name}</h3>
+                        {plan.interval === 'yearly' && (
+                           <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">+2 months free</Badge>
+                        )}
+                    </div>
                     <div className="text-right">
                         <div className="flex items-baseline justify-end">
                             <span className="text-5xl font-bold tracking-tight">${plan.price}</span>
@@ -94,7 +104,7 @@ function PlanDetailsCard({
                         <p className="text-sm text-muted-foreground -mt-1">{plan.priceDescription}</p>
                     </div>
                 </div>
-                <p className="text-muted-foreground mt-2 min-h-[40px]">Access all AI-powered features with no limits and craft winning proposals in seconds.</p>
+                <p className="text-muted-foreground mt-2 min-h-[40px]">{plan.description}</p>
             </div>
             <div className="px-6 pb-6">
                 <ul className="grid grid-cols-2 gap-x-4 gap-y-3 my-6">
