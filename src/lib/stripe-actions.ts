@@ -364,10 +364,10 @@ const creditPurchaseSchema = z.object({
     priceId: z.string().startsWith('price_'),
 });
 
-const creditPackages: Record<string, { amount: number; description: string }> = {
-    [process.env.NEXT_PUBLIC_STRIPE_CREDITS_10_PRICE_ID!]: { amount: 500, description: "10 Credits" },
-    [process.env.NEXT_PUBLIC_STRIPE_CREDITS_25_PRICE_ID!]: { amount: 1000, description: "25 Credits" },
-    [process.env.NEXT_PUBLIC_STRIPE_CREDITS_50_PRICE_ID!]: { amount: 2500, description: "50 Credits" }
+const creditPackages: Record<string, { amount: number; credits: number, description: string }> = {
+    [process.env.NEXT_PUBLIC_STRIPE_CREDITS_10_PRICE_ID!]: { amount: 500, credits: 10, description: "10 Credits" },
+    [process.env.NEXT_PUBLIC_STRIPE_CREDITS_25_PRICE_ID!]: { amount: 1000, credits: 25, description: "25 Credits" },
+    [process.env.NEXT_PUBLIC_STRIPE_CREDITS_50_PRICE_ID!]: { amount: 2500, credits: 50, description: "50 Credits" }
 };
 
 export async function chargeCardForCredits(formData: FormData) {
@@ -438,6 +438,23 @@ export async function chargeCardForCredits(formData: FormData) {
     });
     
     if (paymentIntent.status === 'succeeded') {
+        const userRef = adminDb.collection('users').doc(user.uid);
+        const creditsToAdd = creditPackage.credits;
+        const reason = `Purchased ${creditsToAdd} credits`;
+        
+        await addCredits(adminDb, userRef, creditsToAdd, reason);
+
+        const billingHistoryRef = userRef.collection('billingHistory');
+        await billingHistoryRef.add({
+            id: paymentIntent.id,
+            createdAt: FieldValue.serverTimestamp(),
+            date: new Date(paymentIntent.created * 1000),
+            total: paymentIntent.amount,
+            status: 'succeeded',
+            invoiceUrl: null, // Direct charges don't have a hosted invoice URL
+            description: `Credit Purchase: ${creditsToAdd} credits`,
+        });
+
         revalidatePath('/subscription');
         return { success: true, message: 'Credit purchase successful!' };
     } else {
