@@ -1,7 +1,5 @@
 
-import { AuthProvider } from "@/context/auth-context";
-import { ThemeProvider } from "@/components/theme-provider";
-import { Toaster } from "@/components/ui/toaster";
+import { Providers } from "@/components/providers";
 
 export default function OnboardingLayout({
   children,
@@ -9,18 +7,8 @@ export default function OnboardingLayout({
   children: React.ReactNode;
 }) {
   return (
-    <ThemeProvider
-      attribute="class"
-      defaultTheme="system"
-      enableSystem
-      disableTransitionOnChange
-    >
-        <AuthProvider>
-            {children}
-            <Toaster />
-        </AuthProvider>
-    </ThemeProvider>
+    <Providers>
+        {children}
+    </Providers>
   );
 }
-
-    
