@@ -124,17 +124,20 @@ function PlanDetailsCard({
                         </li>
                     ))}
                 </ul>
-                 <div className="text-left my-4 flex items-center justify-start gap-2">
-                    <img src="/coin-anim.gif" alt="coin" className="h-6 w-6" />
-                    <span>
-                        {plan.interval === 'monthly'
-                        ? <><span className="font-bold">10 Free Credits</span> for proposal improvements.</>
-                        : <><span className="font-bold">100 Free Credits</span> for proposal improvements.</>}
-                    </span>
+                 <div className="flex justify-between items-center my-4">
+                    <div>
+                        <p className="text-sm font-medium">Proposal Improvements</p>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <img src="/coin-anim.gif" alt="coin" className="h-6 w-6" />
+                        <span className="font-bold text-lg">
+                           Free Credits {plan.interval === 'monthly' ? '10' : '100'}
+                        </span>
+                    </div>
                 </div>
                 <Button 
                     size="lg" 
-                    className="text-base font-medium"
+                    className="w-full text-base font-medium"
                     onClick={onSubmit}
                     disabled={isSubmitting}
                 >
@@ -188,7 +191,8 @@ export default function OnboardingPage() {
       </div>
       <div className="relative z-10 mx-auto max-w-7xl w-full">
          <div className="text-center mb-12">
-            <ProposalUpLogos className="mx-auto h-24 w-24 text-slate-800 dark:text-white" />
+            <ProposalUpLogos className="mx-auto h-24 w-24 text-slate-800 dark:hidden" />
+            <ProposalUpLogoLight className="mx-auto h-24 w-24 hidden dark:block" />
             <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
                 Welcome to Proposal Up!
             </h1>
