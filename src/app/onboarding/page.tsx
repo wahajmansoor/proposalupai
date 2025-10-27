@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState } from 'react';
@@ -58,8 +59,10 @@ function PlanRow({
             <div>
                 <div className="flex items-center gap-2">
                     <h3 className="text-xl font-bold tracking-tight">{plan.name}</h3>
-                    {isFeatured && (
+                    {isFeatured ? (
                         <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">+2 months free</Badge>
+                    ) : (
+                        <Badge variant="outline">Pay as you go</Badge>
                     )}
                 </div>
                  <p className={cn("mt-1 text-sm", isFeatured ? 'text-slate-300' : 'text-slate-600 dark:text-slate-400')}>
@@ -92,8 +95,10 @@ function PlanDetailsCard({
                     <div>
                         <div className="flex items-center gap-2">
                             <h3 className="text-2xl font-bold">{plan.name}</h3>
-                            {plan.interval === 'yearly' && (
+                            {plan.interval === 'yearly' ? (
                                <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">+2 months free</Badge>
+                            ) : (
+                                <Badge variant="outline">Pay as you go</Badge>
                             )}
                         </div>
                          <p className="text-muted-foreground mt-1">Unlock all AI features with unlimited access.</p>
@@ -169,7 +174,7 @@ export default function OnboardingPage() {
 
   return (
     <div className="relative isolate flex min-h-screen flex-col items-center justify-center bg-background onboarding-gradient overflow-hidden p-4 sm:p-6 lg:p-8">
-      <div className="relative z-10 mx-auto max-w-7xl w-full">
+      <div className="relative z-10 mx-auto max-w-5xl w-full">
          <div className="text-center mb-12">
             <ProposalUpLogo className="mx-auto h-24 w-24 text-slate-800 dark:text-white" />
             <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
