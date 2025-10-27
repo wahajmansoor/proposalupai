@@ -1,19 +1,16 @@
-
 "use client";
 
-import { useEffect, Suspense, useState } from 'react';
+import { useEffect, Suspense } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { signInWithCustomToken } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase/config';
-import { WelcomeScreen } from '@/components/welcome-screen';
-import { doc, getDoc, updateDoc } from 'firebase/firestore';
+import { auth } from '@/lib/firebase/config';
+import { ProposalUpLogos } from '@/components/icons';
 
 function AuthCallback() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const [welcomeMessage, setWelcomeMessage] = useState("Signing you in and getting things ready...");
 
   useEffect(() => {
     const customToken = searchParams.get('token');
@@ -29,30 +26,9 @@ function AuthCallback() {
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ idToken }),
           });
-          
-          // Check if the user is new
-          const userDocRef = doc(db, 'users', userCredential.user.uid);
-          const userDoc = await getDoc(userDocRef);
-          
-          let redirectPath = '/dashboard';
-          if (userDoc.exists() && userDoc.data().isNewUser) {
-            setWelcomeMessage("Start your 2 Days Free Trial and Explore Proposal Up!");
-            redirectPath = '/pricing';
-            // Mark the new user flag as false so they don't see this again
-            await updateDoc(userDocRef, { isNewUser: false });
-          } else {
-            setWelcomeMessage("Stop drafting from scratch, Proposal Up creates tailored proposals and cover letters that win attention fast.");
-          }
 
-          // Redirect after a delay
-          setTimeout(() => {
-            if (window.opener) {
-              window.opener.postMessage({ type: 'auth-success', redirectPath }, window.location.origin);
-              window.close();
-            } else {
-               router.push(redirectPath);
-            }
-          }, 3000); 
+          // Redirect to dashboard immediately
+          router.push('/dashboard');
 
         })
         .catch((error) => {
@@ -87,12 +63,20 @@ function AuthCallback() {
     }
   }, [router, searchParams, toast]);
   
-  return <WelcomeScreen description={welcomeMessage} />;
+  return (
+    <div className="flex items-center justify-center min-h-screen">
+      <ProposalUpLogos className="h-24 w-24 animate-pulse text-primary" />
+    </div>
+  );
 }
 
 export default function AuthCallbackClientPage() {
     return (
-        <Suspense fallback={<WelcomeScreen description="Loading..." />}>
+        <Suspense fallback={
+          <div className="flex items-center justify-center min-h-screen">
+            <ProposalUpLogos className="h-24 w-24 animate-pulse text-primary" />
+          </div>
+        }>
             <AuthCallback />
         </Suspense>
     )
