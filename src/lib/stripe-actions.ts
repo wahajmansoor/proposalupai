@@ -408,7 +408,6 @@ export async function chargeCardForCredits(formData: FormData): Promise<{ succes
             ? customer.invoice_settings.default_payment_method
             : customer.invoice_settings.default_payment_method.id;
     } else {
-        // Fallback: get the most recent payment method
         const paymentMethods = await stripe.paymentMethods.list({
             customer: stripeCustomerId,
             type: 'card',
@@ -422,12 +421,14 @@ export async function chargeCardForCredits(formData: FormData): Promise<{ succes
         return { success: false, error: 'No default payment method on file. Please add a payment method in your billing settings.'};
     }
 
-    // Create a direct charge
-    await stripe.charges.create({
+    // Create and confirm a PaymentIntent to charge the user immediately
+    await stripe.paymentIntents.create({
       amount: creditPackage.amount,
       currency: 'usd',
       customer: stripeCustomerId,
-      source: paymentMethodId,
+      payment_method: paymentMethodId,
+      off_session: true,
+      confirm: true,
       description: `Credit Purchase: ${creditPackage.description}`,
       metadata: {
         purchase_type: 'credits',
