@@ -8,7 +8,7 @@ import { handlePlanChange } from '@/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { ProposalUpLogos, CoinIcon, ProposalUpLogoLight } from '@/components/icons';
+import { ProposalUpLogos } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/theme-toggle';
