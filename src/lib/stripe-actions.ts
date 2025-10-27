@@ -370,7 +370,7 @@ const creditPackages: Record<string, { amount: number; credits: number, descript
     [process.env.NEXT_PUBLIC_STRIPE_CREDITS_50_PRICE_ID!]: { amount: 2500, credits: 50, description: "50 Credits" }
 };
 
-export async function chargeCardForCredits(formData: FormData) {
+export async function chargeCardForCredits(formData: FormData): Promise<{ success: boolean; error?: string; message?: string }> {
   const currentUser = await getCurrentUser();
   if (!currentUser) {
     return { success: false, error: 'User not authenticated. Please log in again.' };
