@@ -169,7 +169,7 @@ export default function OnboardingPage() {
             </p>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16 items-center">
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-16">
             <div className="space-y-4">
                 <PlanRow 
                     plan={plans.monthly}
