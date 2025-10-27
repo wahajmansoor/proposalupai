@@ -142,7 +142,7 @@ export default function OnboardingPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [selectedInterval, setSelectedInterval] = useState<'monthly' | 'yearly'>('yearly');
+  const [selectedInterval, setSelectedInterval] = useState<'monthly' | 'yearly'>('monthly');
 
   const handleSelectPlan = async () => {
     if (!user || !userProfile) {
