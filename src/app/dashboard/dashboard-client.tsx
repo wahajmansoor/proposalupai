@@ -32,30 +32,44 @@ export function DashboardClient({
     if (!userProfile) {
       return; // 3. If user exists but profile is still loading, wait.
     }
-
-    // 4. If user HAS NOT completed onboarding, they must be on the onboarding page.
-    if (userProfile.onboardingComplete === false) {
-      if (pathname !== '/onboarding') {
-        router.replace('/onboarding');
-        return; // Redirect and stop further checks
-      }
-      setIsAuthorized(true);
-      return;
-    }
-
-    // At this point, user has completed onboarding.
     
-    // 5. For onboarded users, check subscription status.
-    const isSubscribed = userProfile.subscriptionStatus === 'active' || userProfile.subscriptionStatus === 'trialing';
-    const isPricingPage = pathname === '/dashboard/pricing';
+    const status = userProfile.subscriptionStatus;
+    const isAllowedOnboarding = pathname === '/onboarding';
+    const isAllowedPricing = pathname === '/dashboard/pricing';
 
-    // If user is not subscribed and is trying to access a page other than the pricing page, redirect them.
-    if (!isSubscribed && !isPricingPage) {
-      router.replace('/dashboard/pricing');
-      return;
+    // 4. New user who has not selected a plan yet.
+    // Their status will be null or undefined. Force them to the onboarding page.
+    if (!status) {
+        if (!isAllowedOnboarding) {
+            router.replace('/onboarding');
+            return;
+        }
+        setIsAuthorized(true);
+        return;
     }
     
-    // 6. If all checks pass, authorize the user to see the page.
+    // 5. User has a status. Check if they are subscribed.
+    const isSubscribed = status === 'active' || status === 'trialing';
+
+    if (isSubscribed) {
+        // If they are subscribed but somehow on the onboarding or pricing page, move them to the main dashboard.
+        if (isAllowedOnboarding || isAllowedPricing) {
+            router.replace('/dashboard');
+            return;
+        }
+        // Otherwise, they are authorized to see any other dashboard page.
+        setIsAuthorized(true);
+        return;
+    }
+    
+    // 6. User is not subscribed (e.g., status is 'canceled', 'past_due', etc.)
+    // They should only be able to access the pricing page.
+    if (!isAllowedPricing) {
+        router.replace('/dashboard/pricing');
+        return;
+    }
+    
+    // If they are on the pricing page, they are authorized.
     setIsAuthorized(true);
     
   }, [user, userProfile, authLoading, router, pathname]);
