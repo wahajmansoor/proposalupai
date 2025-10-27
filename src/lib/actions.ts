@@ -342,16 +342,16 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
         return { error: 'User not authenticated.' };
     }
 
-    let allHistory: InvoiceDetails[] = [];
-
     // Strategy 1: Fetch from Firestore first (for credit purchases etc.)
     try {
         const historyRef = adminDb.collection('users').doc(currentUser.user.uid).collection('billingHistory');
         const querySnapshot = await historyRef.orderBy('date', 'desc').limit(20).get();
 
         if (!querySnapshot.empty) {
-            const firestoreHistory: InvoiceDetails[] = querySnapshot.docs.map(doc => {
+            const invoices: InvoiceDetails[] = querySnapshot.docs.map(doc => {
                 const data = doc.data();
+                // Filter out proration adjustments (negative amounts) and zero-dollar invoices
+                if (data.total <= 0) return null;
                 return {
                     id: doc.id,
                     date: data.date.toDate().toLocaleDateString(),
@@ -360,50 +360,16 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
                     invoiceUrl: data.invoiceUrl,
                     description: data.description || 'Payment'
                 };
-            });
-            allHistory = allHistory.concat(firestoreHistory);
+            }).filter((invoice): invoice is InvoiceDetails => invoice !== null);
+            return { invoices };
         }
     } catch (error: any) {
         console.warn('Could not fetch billing history from Firestore, falling back to Stripe:', error.message);
-        // If Firestore fails, we can still try to get Stripe data.
-    }
-
-    // Strategy 2: Fetch subscription invoices from Stripe API
-    if (currentUser.userDoc?.stripeCustomerId) {
-        const { stripeCustomerId } = currentUser.userDoc;
-        try {
-            const invoices = await stripe.invoices.list({
-                customer: stripeCustomerId,
-                limit: 20,
-            });
-
-            if (invoices.data.length > 0) {
-              const stripeInvoices: InvoiceDetails[] = invoices.data.map(invoice => ({
-                  id: invoice.id,
-                  date: new Date(invoice.created * 1000).toLocaleDateString(),
-                  total: `$${(invoice.total / 100).toFixed(2)}`,
-                  status: invoice.status || 'unknown',
-                  invoiceUrl: invoice.hosted_invoice_url,
-                  description: invoice.lines.data[0]?.description || 'Subscription Payment',
-              }));
-              allHistory = allHistory.concat(stripeInvoices);
-            }
-        } catch (error: any) {
-            console.error('Error fetching billing history from Stripe:', error);
-            // If both sources fail and there's no history, return an error.
-            if (allHistory.length === 0) {
-              return { error: "Could not fetch billing history from Stripe." };
-            }
-        }
+        // Fall through to Stripe API if Firestore fails
     }
     
-    // Sort combined history by date
-    allHistory.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    
-    // Deduplicate based on ID (in case of overlap, unlikely but possible)
-    const uniqueHistory = Array.from(new Map(allHistory.map(item => [item.id, item])).values());
-    
-    return { invoices: uniqueHistory };
+    // If Firestore is empty or fails, just return empty. The webhook should be the source of truth.
+    return { invoices: [] };
 }
 
 

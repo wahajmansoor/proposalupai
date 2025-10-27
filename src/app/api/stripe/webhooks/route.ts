@@ -81,7 +81,7 @@ export async function POST(req: Request) {
                         console.log(`Successfully synced new subscription for user ${userRef.id}`);
                     }
                 } else if (session.mode === 'payment') {
-                    // One-time credit purchases are now handled by the 'charge.succeeded' webhook
+                    // This is handled by charge.succeeded now to catch all one-time payments
                 } else if (session.mode === 'setup') {
                     // This is a trial activation. The actual credit award is handled in `customer.subscription.created`.
                 }
@@ -136,9 +136,8 @@ export async function POST(req: Request) {
                 const userRef_invoice = await findUserByStripeCustomerId(adminDb, stripeCustomerId_invoice);
 
                 if (userRef_invoice) {
-                    // Only handle subscription-related invoices here. Credit purchases are handled via charge.succeeded.
-                    if (invoice.subscription) {
-                        // Save billing history for all successful invoices
+                    // Save all paid invoices to billing history, except for $0 invoices which are usually for trials.
+                    if (invoice.total > 0) {
                         const billingHistoryRef = userRef_invoice.collection('billingHistory').doc(invoice.id);
                         await billingHistoryRef.set({
                             id: invoice.id,
@@ -147,9 +146,12 @@ export async function POST(req: Request) {
                             total: invoice.total,
                             status: invoice.status,
                             invoiceUrl: invoice.hosted_invoice_url,
-                            description: invoice.lines.data[0]?.description || 'Subscription Payment',
+                            description: invoice.lines.data[0]?.description || 'Payment',
                         });
+                    }
 
+                    // Award credits on subscription creation or renewal
+                    if (invoice.subscription) {
                         const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
                         const interval = subscription.items.data[0]?.price.recurring?.interval;
                         
