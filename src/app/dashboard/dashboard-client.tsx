@@ -31,29 +31,35 @@ export function DashboardClient({
       return;
     }
 
-    // 2. If the user is on the onboarding page, they are allowed to be there.
-    if (pathname === '/onboarding') {
-        setIsAuthorized(true);
+    // 2. If user has not completed onboarding, check if they are on the onboarding page
+    if (userProfile && userProfile.onboardingComplete === false) {
+      if (pathname !== '/onboarding') {
+        // If not on the onboarding page, redirect them there.
+        router.replace('/onboarding');
         return;
-    }
-    
-    // 3. If user has not completed onboarding, and is NOT on the onboarding page, redirect them.
-    if (userProfile?.onboardingComplete === false) {
-      router.replace('/onboarding');
+      }
+      // If they are on the onboarding page, they are authorized.
+      setIsAuthorized(true);
       return;
     }
-    
-    // 4. For users who HAVE completed onboarding, check subscription status.
+
+    // 3. For users who HAVE completed onboarding, check subscription status for other pages.
     const isSubscribed = userProfile?.subscriptionStatus === 'active' || userProfile?.subscriptionStatus === 'trialing';
     
     // Define pages accessible to non-subscribed but onboarded users
-    const nonSubscribedAllowedPaths = ['/pricing', '/subscription', '/profile', '/dashboard/skill-profiles', '/dashboard/proposals'];
+    const nonSubscribedAllowedPaths = ['/dashboard/pricing', '/subscription', '/profile', '/dashboard/skill-profiles', '/dashboard/proposals'];
     const isAccessingAllowedPath = nonSubscribedAllowedPaths.some(path => pathname.startsWith(path));
     
-    if (!isSubscribed && !isAccessingAllowedPath) {
-        // If not subscribed and not on an allowed page, redirect to pricing.
-        router.replace('/pricing');
+    if (!isSubscribed && !isAccessingAllowedPath && pathname !== '/dashboard') {
+        // If not subscribed and not on an allowed page (and not the main dashboard which is handled next), redirect to pricing.
+        router.replace('/dashboard/pricing');
         return;
+    }
+
+    // Special handling for the main dashboard page
+    if (pathname === '/dashboard' && !isSubscribed) {
+      router.replace('/dashboard/pricing');
+      return;
     }
 
     // If all checks pass, authorize the user to see the page.
@@ -84,3 +90,4 @@ export function DashboardClient({
     </div>
   );
 }
+
