@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState } from 'react';
@@ -33,7 +32,7 @@ const sharedFeatures = [
     "Unlimited Proposal Generation",
     "AI-Powered Suggestions",
     "Save & Edit Proposals",
-    "Portfolio Collections",
+    "Skill Profiles",
     "Email & Community Support",
 ];
 
