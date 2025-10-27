@@ -18,7 +18,7 @@ const plans = {
     price: 20,
     priceDescription: "/monthly",
     interval: 'monthly' as 'monthly' | 'yearly',
-    description: "Ideal for short-term projects.",
+    description: "Access all AI-powered features with no limits and craft proposals in seconds.",
   },
   yearly: {
     name: "Pro Yearly",
