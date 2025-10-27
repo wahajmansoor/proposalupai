@@ -148,8 +148,10 @@ export async function POST(req: Request) {
                         description: invoice.lines.data[0]?.description || 'Subscription Payment',
                     });
 
-                    // Award credits on subscription creation or renewal
-                    if (invoice.subscription) {
+                    // Check if it's a subscription event first.
+                    const isSubscriptionEvent = invoice.billing_reason === 'subscription_create' || invoice.billing_reason === 'subscription_cycle';
+
+                    if (isSubscriptionEvent && invoice.subscription) {
                         const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
                         const interval = subscription.items.data[0]?.price.recurring?.interval;
                         
@@ -175,7 +177,7 @@ export async function POST(req: Request) {
                         // This is a one-time charge invoice, e.g., for credits
                         const lineItem = invoice.lines.data.find(li => li.metadata?.purchase_type === 'credits');
                         
-                        if (lineItem) {
+                        if (lineItem && lineItem.metadata?.credits) {
                             const creditsToAdd = Number(lineItem.metadata.credits);
                             if (creditsToAdd > 0) {
                                 await addCredits(adminDb, userRef_invoice, creditsToAdd, `Purchased ${creditsToAdd} credits`);
