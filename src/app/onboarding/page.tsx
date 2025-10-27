@@ -133,7 +133,7 @@ function PlanDetailsCard({
                         disabled={isSubmitting}
                     >
                         {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
-                        Start Your Subscription
+                        Start a 2-Day Free Trial
                     </Button>
                     <div className="text-left">
                         <p className="text-sm font-medium text-left">Proposal Improvements</p>
