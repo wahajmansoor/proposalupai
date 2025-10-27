@@ -66,7 +66,7 @@ function PlanRow({
                         <Badge variant="outline">Pay as you go</Badge>
                     )}
                 </div>
-                 <p className={cn("mt-1 text-sm", isFeatured ? 'text-slate-300' : 'text-slate-600 dark:text-slate-400')}>
+                 <p className={cn("mt-1 text-sm", isFeatured ? 'text-slate-300' : 'text-slate-400')}>
                     {plan.description}
                 </p>
             </div>
@@ -113,7 +113,7 @@ function PlanDetailsCard({
                     </div>
                 </div>
             </div>
-            <div className="px-6 pb-6">
+            <div className="px-6 pb-6 text-left">
                 <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 my-6">
                     {sharedFeatures.map((feature, index) => (
                         <li key={index} className="flex items-center gap-3">
