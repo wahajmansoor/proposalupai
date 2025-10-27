@@ -1,3 +1,4 @@
+
 // src/app/dashboard/dashboard-client.tsx
 "use client";
 
@@ -24,24 +25,25 @@ export function DashboardClient({
       return; // Wait for auth state to load
     }
 
-    // If user is not logged in, redirect to login page.
+    // 1. If not logged in, redirect to login
     if (!user) {
       router.replace("/login");
       return;
     }
 
-    // If user has not completed onboarding, they should only be on the onboarding page.
-    if (userProfile?.onboardingComplete === false) {
-      if (pathname !== '/onboarding') {
-        router.replace('/onboarding');
-      } else {
-        // If they are on the onboarding page, authorize them to see it.
+    // 2. If the user is on the onboarding page, they are allowed to be there.
+    if (pathname === '/onboarding') {
         setIsAuthorized(true);
-      }
+        return;
+    }
+    
+    // 3. If user has not completed onboarding, and is NOT on the onboarding page, redirect them.
+    if (userProfile?.onboardingComplete === false) {
+      router.replace('/onboarding');
       return;
     }
     
-    // For users who have completed onboarding, check subscription status.
+    // 4. For users who HAVE completed onboarding, check subscription status.
     const isSubscribed = userProfile?.subscriptionStatus === 'active' || userProfile?.subscriptionStatus === 'trialing';
     
     // Define pages accessible to non-subscribed but onboarded users
@@ -54,7 +56,7 @@ export function DashboardClient({
         return;
     }
 
-    // If all checks pass, authorize the user.
+    // If all checks pass, authorize the user to see the page.
     setIsAuthorized(true);
     
   }, [user, userProfile, authLoading, router, pathname]);

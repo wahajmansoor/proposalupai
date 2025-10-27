@@ -1,10 +1,10 @@
 // src/app/pricing/layout.tsx
-import DashboardLayout from '../dashboard/layout';
+import { DashboardClient } from '../dashboard/dashboard-client';
 
 export default function PricingLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  return <DashboardLayout>{children}</DashboardLayout>;
+  return <DashboardClient>{children}</DashboardClient>;
 }
