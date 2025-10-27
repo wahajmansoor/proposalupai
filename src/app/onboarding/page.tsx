@@ -135,16 +135,13 @@ function PlanDetailsCard({
                         Start a 2-Day Free Trial
                     </Button>
                     <div className="text-left">
-                        <p className="text-sm font-medium">Proposal Improvements</p>
+                        <p className="text-sm font-medium text-left">Proposal Improvements</p>
                         <Button
                             variant="outline"
                             className="relative h-9 px-3 bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 font-semibold gap-2 rounded-full"
                         >
                             <img src="/coin-anim.gif" alt="coin" className="h-6 w-6" />
-                            <span className="font-bold">Free Credits</span>
-                             <span className="flex items-center justify-center h-5 w-5 rounded-full bg-white text-xs">
-                                {plan.interval === 'monthly' ? '10' : '100'}
-                            </span>
+                            <span className="font-bold">Free Credits {plan.interval === 'monthly' ? '10' : '100'}</span>
                         </Button>
                     </div>
                 </div>
