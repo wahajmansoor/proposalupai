@@ -7,8 +7,8 @@ export default function OnboardingLayout({
   children: React.ReactNode;
 }) {
   return (
-    <Providers>
+    <div className="min-h-screen">
         {children}
-    </Providers>
+    </div>
   );
 }
