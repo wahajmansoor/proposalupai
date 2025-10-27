@@ -8,7 +8,7 @@ import { handlePlanChange } from '@/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { ProposalUpLogo, CoinIcon } from '@/components/icons';
+import { ProposalUpLogos, CoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -188,7 +188,7 @@ export default function OnboardingPage() {
       </div>
       <div className="relative z-10 mx-auto max-w-7xl w-full">
          <div className="text-center mb-12">
-            <ProposalUpLogo className="mx-auto h-24 w-24 text-slate-800 dark:text-white" />
+            <ProposalUpLogos className="mx-auto h-24 w-24 text-slate-800 dark:text-white" />
             <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
                 Welcome to Proposal Up!
             </h1>
