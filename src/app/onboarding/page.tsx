@@ -123,7 +123,7 @@ function PlanDetailsCard({
                         </li>
                     ))}
                 </ul>
-                 <div className="text-left my-4 flex items-center justify-start gap-2 text-foreground bg-yellow-100 dark:bg-yellow-900/50 p-3 rounded-lg border border-yellow-300 dark:border-yellow-800">
+                 <div className="text-left my-4 flex items-center justify-start gap-2">
                     <img src="/coin-anim.gif" alt="coin" className="h-6 w-6" />
                     <span>
                         {plan.interval === 'monthly'
