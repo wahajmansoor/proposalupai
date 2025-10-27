@@ -9,7 +9,6 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { ProposalUpLogo } from '@/components/icons';
-import { BgPattern } from '@/components/bg-pattern';
 import { cn } from '@/lib/utils';
 
 const plans = {
@@ -63,10 +62,10 @@ function PlanRow({
                 </p>
             </div>
             <div className="text-left sm:text-right shrink-0">
-                 <p className="text-4xl font-bold tracking-tight">
-                    ${plan.price}
-                    <span className="text-base font-medium text-muted-foreground">{plan.priceDescription}</span>
-                </p>
+                 <div className="flex items-baseline justify-end">
+                    <span className="text-4xl font-bold tracking-tight">${plan.price}</span>
+                 </div>
+                 <p className="text-sm text-muted-foreground -mt-1">{plan.priceDescription}</p>
             </div>
         </div>
     )
@@ -158,7 +157,6 @@ export default function OnboardingPage() {
 
   return (
     <div className="relative isolate flex min-h-screen flex-col items-center justify-center bg-background onboarding-gradient overflow-hidden p-4 sm:p-6 lg:p-8">
-        <BgPattern className="opacity-30" />
       <div className="relative z-10 mx-auto max-w-7xl w-full">
          <div className="text-center mb-12">
             <ProposalUpLogo className="mx-auto h-24 w-24 text-slate-800 dark:text-white" />
