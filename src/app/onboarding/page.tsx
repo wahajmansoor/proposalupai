@@ -11,6 +11,7 @@ import { useRouter } from 'next/navigation';
 import { ProposalUpLogo, CoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
+import { ThemeToggle } from '@/components/theme-toggle';
 
 const plans = {
   monthly: {
@@ -182,6 +183,9 @@ export default function OnboardingPage() {
 
   return (
     <div className="relative isolate flex min-h-screen flex-col items-center justify-center bg-background onboarding-gradient overflow-hidden p-4 sm:p-6 lg:p-8">
+      <div className="absolute top-4 right-4 z-10">
+        <ThemeToggle />
+      </div>
       <div className="relative z-10 mx-auto max-w-7xl w-full">
          <div className="text-center mb-12">
             <ProposalUpLogo className="mx-auto h-24 w-24 text-slate-800 dark:text-white" />
