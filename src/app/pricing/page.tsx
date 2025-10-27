@@ -89,7 +89,7 @@ export default function PricingPage() {
     }
   }, [isYearlyActive]);
 
-  const canShowCoupon = userProfile?.subscriptionStatus === 'trialing' || userProfile?.subscriptionStatus === 'active';
+  const canShowCoupon = !isSubscribedAndActive;
 
 
   const handleCouponValidation = async () => {
@@ -203,10 +203,10 @@ export default function PricingPage() {
     <div className="flex flex-col items-center justify-center p-4 md:p-8">
         <div className="text-center mb-8">
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
-                {showPlanManagement ? 'Manage Your Plan' : 'Plans & Pricing'}
+                Manage Your Plan
             </h1>
             <p className="text-lg text-muted-foreground mt-2">
-                {showPlanManagement ? 'You have access to all Pro features.' : "Choose the plan that's right for you."}
+                You have access to all Pro features.
             </p>
         </div>
 
@@ -360,7 +360,7 @@ export default function PricingPage() {
                         )}
                          {isTrialing && (
                             <p className="text-xs text-center text-muted-foreground mt-2">
-                              This will end your trial and charge the card on file. To change your payment method, please visit your <Link href="/profile" className="underline">profile page</Link>.
+                              To change your payment method, please visit your <Link href="/subscription" className="underline">subscription page</Link>.
                             </p>
                         )}
                     </form>
@@ -404,3 +404,5 @@ export default function PricingPage() {
     </div>
   );
 }
+
+    
