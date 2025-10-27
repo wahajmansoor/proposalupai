@@ -8,7 +8,7 @@ import { handlePlanChange } from '@/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
-import { ProposalUpLogo } from '@/components/icons';
+import { ProposalUpLogo, CoinIcon } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 
@@ -123,6 +123,14 @@ function PlanDetailsCard({
                         </li>
                     ))}
                 </ul>
+                 <div className="text-center my-4 flex items-center justify-center gap-2 font-semibold text-foreground">
+                    <CoinIcon className="h-5 w-5" />
+                    <span>
+                        {plan.interval === 'monthly'
+                        ? '10 Free Credits per month for proposal improvements.'
+                        : '100 Free Credits annually for proposal improvements.'}
+                    </span>
+                </div>
                 <Button 
                     size="lg" 
                     className="text-base font-medium"
