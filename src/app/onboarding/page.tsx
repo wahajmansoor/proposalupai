@@ -36,6 +36,7 @@ const sharedFeatures = [
     "Save & Edit Proposals",
     "Skill Profiles",
     "Email & Community Support",
+    "Tailored Opening Strategies",
 ];
 
 function PlanRow({
@@ -132,7 +133,7 @@ function PlanDetailsCard({
                         disabled={isSubmitting}
                     >
                         {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
-                        Start a 2-Day Free Trial
+                        Start Your Subscription
                     </Button>
                     <div className="text-left">
                         <p className="text-sm font-medium text-left">Proposal Improvements</p>
@@ -141,7 +142,7 @@ function PlanDetailsCard({
                             className="relative h-9 px-3 bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 font-semibold gap-2 rounded-full"
                         >
                             <img src="/coin-anim.gif" alt="coin" className="h-6 w-6" />
-                            <span className="font-bold">{plan.interval === 'monthly' ? '10' : '100'} Free Credits</span>
+                            <span className="font-bold">{plan.interval === 'monthly' ? '10 Free Credits' : '100 Free Credits'}</span>
                         </Button>
                     </div>
                 </div>
@@ -197,7 +198,7 @@ export default function OnboardingPage() {
                 Welcome to Proposal Up!
             </h1>
             <p className="mt-4 text-lg leading-8 text-slate-700 dark:text-slate-300">
-                Start your 2-Day Free Trial and explore how Proposal Up can help you win more projects.
+                Choose a plan to get started and explore how Proposal Up can help you win more projects.
             </p>
         </div>
 
@@ -227,4 +228,3 @@ export default function OnboardingPage() {
     </div>
   );
 }
-
