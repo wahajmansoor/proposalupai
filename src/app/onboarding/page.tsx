@@ -89,7 +89,7 @@ function PlanDetailsCard({
     return (
         <div className="bg-white/80 dark:bg-slate-900/80 text-card-foreground rounded-xl shadow-2xl border w-full">
             <div className="p-6">
-                <div className="flex justify-between items-start">
+                <div className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
                         <h3 className="text-2xl font-bold">{plan.name}</h3>
                         {plan.interval === 'yearly' && (
@@ -107,7 +107,7 @@ function PlanDetailsCard({
                 <p className="text-muted-foreground mt-2 min-h-[40px]">{plan.description}</p>
             </div>
             <div className="px-6 pb-6">
-                <ul className="grid grid-cols-2 gap-x-4 gap-y-3 my-6">
+                <ul className="grid grid-cols-1 sm:grid-cols-2 gap-x-4 gap-y-3 my-6">
                     {sharedFeatures.map((feature, index) => (
                         <li key={index} className="flex items-center gap-3">
                             <div className="bg-green-100 dark:bg-green-900/50 p-1 rounded-full">
