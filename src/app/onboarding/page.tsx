@@ -16,7 +16,7 @@ const plans = {
   monthly: {
     name: "Pro Monthly",
     price: 20,
-    priceDescription: "/month",
+    priceDescription: "/monthly",
     interval: 'monthly' as 'monthly' | 'yearly',
     description: "Ideal for short-term projects.",
   },
