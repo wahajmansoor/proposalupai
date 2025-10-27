@@ -125,7 +125,7 @@ function PlanDetailsCard({
                 </ul>
                 <Button 
                     size="lg" 
-                    className="w-full text-base font-medium"
+                    className="text-base font-medium"
                     onClick={onSubmit}
                     disabled={isSubmitting}
                 >
