@@ -136,7 +136,7 @@ export async function POST(req: Request) {
                 const userRef_invoice = await findUserByStripeCustomerId(adminDb, stripeCustomerId_invoice);
 
                 if (userRef_invoice) {
-                    // Save billing history to subcollection
+                    // Save billing history to subcollection for all successful payments
                     const billingHistoryRef = userRef_invoice.collection('billingHistory').doc(invoice.id);
                     await billingHistoryRef.set({
                         id: invoice.id,
@@ -148,7 +148,7 @@ export async function POST(req: Request) {
                         description: invoice.lines.data[0]?.description || 'Subscription Payment',
                     });
 
-                    // Check if it's a subscription event first.
+                    // Only award credits for subscription-related invoices
                     const isSubscriptionEvent = invoice.billing_reason === 'subscription_create' || invoice.billing_reason === 'subscription_cycle';
 
                     if (isSubscriptionEvent && invoice.subscription) {
@@ -173,29 +173,18 @@ export async function POST(req: Request) {
                                  console.log(`Added 100 yearly credits to user ${userRef_invoice.id}`);
                             }
                         }
-                    } else {
-                        // This is a one-time charge invoice, e.g., for credits
-                        const lineItem = invoice.lines.data.find(li => li.metadata?.purchase_type === 'credits');
-                        
-                        if (lineItem && lineItem.metadata?.credits) {
-                            const creditsToAdd = Number(lineItem.metadata.credits);
-                            if (creditsToAdd > 0) {
-                                await addCredits(adminDb, userRef_invoice, creditsToAdd, `Purchased ${creditsToAdd} credits`);
-                                console.log(`Added ${creditsToAdd} credits to user ${userRef_invoice.id} from one-time invoice.`);
-                            }
-                        }
                     }
                 }
                 break;
             }
 
             case 'charge.succeeded': {
-                // This is now just a fallback. The main logic is in `invoice.payment_succeeded`.
                 const charge = event.data.object as Stripe.Charge;
                 const purchaseType = charge.metadata.purchase_type;
                 
-                // Only process charges that are for credits AND are not associated with an invoice,
-                // to prevent double-processing.
+                // This logic is specifically for one-time credit purchases
+                // We check that it's a credit purchase AND that it's not tied to a subscription invoice
+                // to avoid double-counting credits.
                 if (purchaseType === 'credits' && !charge.invoice) {
                     const userId = charge.metadata.firebase_uid;
                     const priceId = charge.metadata.price_id;
@@ -203,20 +192,22 @@ export async function POST(req: Request) {
 
                     if (userId && creditsToAdd) {
                        const userRef = adminDb.collection('users').doc(userId);
+                       // Add credits
                        await addCredits(adminDb, userRef, creditsToAdd, `Purchased ${creditsToAdd} credits`);
-                       console.log(`Added ${creditsToAdd} credits to user ${userId} via direct charge.`);
+                       console.log(`Added ${creditsToAdd} credits to user ${userId}`);
 
-                       const billingHistoryRef = userRef.collection('billingHistory').doc(charge.id);
-                       await billingHistoryRef.set({
-                           id: charge.id,
-                           createdAt: FieldValue.serverTimestamp(),
-                           date: new Date(charge.created * 1000),
-                           total: charge.amount,
-                           status: 'paid',
-                           invoiceUrl: null,
-                           description: `Credit Purchase: ${creditsToAdd} credits`,
-                       });
-                       console.log(`Saved direct charge to billing history for user ${userId}`);
+                       // Save to billing history
+                        const billingHistoryRef = userRef.collection('billingHistory').doc(charge.id);
+                        await billingHistoryRef.set({
+                            id: charge.id,
+                            createdAt: FieldValue.serverTimestamp(),
+                            date: new Date(charge.created * 1000),
+                            total: charge.amount,
+                            status: 'paid',
+                            invoiceUrl: null, // No direct invoice for charges from checkout sessions
+                            description: `Credit Purchase: ${creditsToAdd} credits`,
+                        });
+                        console.log(`Saved credit purchase to billing history for user ${userId}`);
                     }
                 }
                 break;
@@ -240,3 +231,5 @@ export async function POST(req: Request) {
 
     return new NextResponse(JSON.stringify({ received: true }), { status: 200 });
 }
+
+    

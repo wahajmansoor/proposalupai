@@ -30,6 +30,7 @@ const creditPackages = [
 
 function BuyCredits() {
     const { user, userProfile } = useAuth();
+    const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [selectedPriceId, setSelectedPriceId] = useState<string | null>(null);
     const { toast } = useToast();
@@ -48,8 +49,8 @@ function BuyCredits() {
 
             if (result.error) {
                 toast({ title: "Error", description: result.error, variant: "destructive" });
-            } else if (result.success) {
-                toast({ title: "Purchase Successful!", description: result.message });
+            } else if (result.redirectUrl) {
+                router.push(result.redirectUrl);
             }
             setSelectedPriceId(null);
         });
@@ -418,3 +419,5 @@ export default function SubscriptionPage() {
     </div>
   );
 }
+
+    

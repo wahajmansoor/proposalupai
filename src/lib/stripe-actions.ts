@@ -364,12 +364,6 @@ const creditPurchaseSchema = z.object({
     priceId: z.string().startsWith('price_'),
 });
 
-const creditPackages: Record<string, { amount: number; credits: number }> = {
-    [process.env.NEXT_PUBLIC_STRIPE_CREDITS_10_PRICE_ID!]: { amount: 500, credits: 10 },
-    [process.env.NEXT_PUBLIC_STRIPE_CREDITS_25_PRICE_ID!]: { amount: 1000, credits: 25 },
-    [process.env.NEXT_PUBLIC_STRIPE_CREDITS_50_PRICE_ID!]: { amount: 2500, credits: 50 },
-};
-
 export async function chargeCardForCredits(formData: FormData): Promise<{ success: boolean; error?: string; message?: string }> {
   const currentUser = await getCurrentUser();
   if (!currentUser) {
@@ -386,11 +380,6 @@ export async function chargeCardForCredits(formData: FormData): Promise<{ succes
   }
 
   const { priceId } = validatedFields.data;
-  const creditPackage = creditPackages[priceId];
-
-  if (!creditPackage) {
-    return { success: false, error: 'Selected credit package not found.' };
-  }
   
   try {
     const stripeCustomerId = userDoc?.stripeCustomerId;
@@ -398,64 +387,39 @@ export async function chargeCardForCredits(formData: FormData): Promise<{ succes
         return { success: false, error: 'User does not have a Stripe customer ID.' };
     }
 
-    let paymentMethodId: string | null;
+    const headersList = headers();
+    const protocol = headersList.get('x-forwarded-proto') || 'http';
+    const host = headersList.get('host');
+    const origin = `${protocol}://${host}`;
+    const successUrl = `${origin}/subscription?credits_purchased=true`;
+    const cancelUrl = `${origin}/subscription`;
 
-    // Get the default payment method for invoices first
-    const customer = await stripe.customers.retrieve(stripeCustomerId, { expand: ['invoice_settings.default_payment_method'] });
-    const defaultPaymentMethod = customer.invoice_settings?.default_payment_method;
 
-    if (defaultPaymentMethod) {
-        paymentMethodId = typeof defaultPaymentMethod === 'string' ? defaultPaymentMethod : defaultPaymentMethod.id;
-    } else {
-        // If no default, get the most recent valid payment method
-        const paymentMethods = await stripe.paymentMethods.list({
-            customer: stripeCustomerId,
-            type: 'card',
-            limit: 1,
-        });
-        if (paymentMethods.data.length === 0) {
-            return { success: false, error: 'No default payment method on file. Please add a payment method in your billing settings.' };
-        }
-        paymentMethodId = paymentMethods.data[0].id;
-    }
-
-    // Step 1: Create an Invoice Item for the credit purchase
-    await stripe.invoiceItems.create({
-        customer: stripeCustomerId,
-        amount: creditPackage.amount,
-        currency: 'usd',
-        description: `Purchase of ${creditPackage.credits} credits`,
+    const session = await stripe.checkout.sessions.create({
+      customer: stripeCustomerId,
+      mode: 'payment',
+      line_items: [{
+        price: priceId,
+        quantity: 1,
+      }],
+      payment_intent_data: {
         metadata: {
             purchase_type: 'credits',
             firebase_uid: user.uid,
-            credits: creditPackage.credits,
+            price_id: priceId,
         }
-    });
-
-    // Step 2: Create an Invoice for the Invoice Item
-    const invoice = await stripe.invoices.create({
-        customer: stripeCustomerId,
-        auto_advance: true, // Automatically progresses through the payment lifecycle
-        collection_method: 'charge_automatically',
-        default_payment_method: paymentMethodId,
+      },
+      success_url: successUrl,
+      cancel_url: cancelUrl,
     });
     
-    // Step 3: Finalize and pay the invoice
-    // Stripe will automatically attempt to pay this invoice using the default payment method
-    // The result will be handled by the `invoice.payment_succeeded` webhook
-    const finalizedInvoice = await stripe.invoices.finalizeInvoice(invoice.id, { auto_advance: true });
-    
-    if (finalizedInvoice.status === 'paid') {
-      return { success: true, message: `${creditPackage.credits} credits have been added to your account!` };
-    } else {
-      // The payment might be processing or have failed. The webhook will handle the final state.
-      return { success: true, message: 'Your credit purchase is being processed.' };
-    }
-
+    return { success: true, redirectUrl: session.url! };
   } catch (error: any) {
-    console.error('Error charging card for credits:', error);
+    console.error('Error creating checkout session for credits:', error);
     return { success: false, error: error.message || 'An unexpected error occurred during payment.' };
   }
 }
+
+    
 
     
