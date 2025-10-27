@@ -175,6 +175,7 @@ function SignupForm() {
         proposalCount: 0,
         subscriptionStatus: null,
         referralCode: newUser.uid.substring(0, 8),
+        onboardingComplete: false, // Flag for new user onboarding
       };
 
       if (storedReferralCode) {
@@ -192,7 +193,7 @@ function SignupForm() {
       
       localStorage.removeItem('referralCode');
       toast({ title: 'Success!', description: "Account created. Let's get you set up." });
-      router.push('/pricing'); // Redirect to pricing to choose a plan
+      router.push('/onboarding'); // Redirect to onboarding page
 
     } catch (error: any) {
       let errorMessage = 'An unexpected error occurred.';
