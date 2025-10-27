@@ -10,6 +10,7 @@ import { useAuth } from '@/context/auth-context';
 import { useRouter } from 'next/navigation';
 import { ProposalUpLogo } from '@/components/icons';
 import { cn } from '@/lib/utils';
+import { BgPattern } from '@/components/bg-pattern';
 
 const plans = {
   monthly: {
@@ -157,7 +158,7 @@ export default function OnboardingPage() {
 
   return (
     <div className="relative isolate flex min-h-screen flex-col items-center justify-center bg-background onboarding-gradient overflow-hidden p-4 sm:p-6 lg:p-8">
-      <div className="relative z-10 mx-auto max-w-7xl w-full">
+      <div className="relative z-10 mx-auto max-w-5xl w-full">
          <div className="text-center mb-12">
             <ProposalUpLogo className="mx-auto h-24 w-24 text-slate-800 dark:text-white" />
             <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
