@@ -158,7 +158,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
             if (planInterval === 'month') {
                 await addCredits(adminDb, userRef, 10, 'Monthly plan activation bonus');
             } else if (planInterval === 'year') {
-                await addCredits(adminDb, userRef, 100, 'Yearly plan activation bonus');
+                await addCredits(adminDb, userRef, 100, 'Yearly plan upgrade bonus');
             }
 
             revalidatePath('/pricing');
@@ -398,17 +398,25 @@ export async function chargeCardForCredits(formData: FormData): Promise<{ succes
         return { success: false, error: 'User does not have a Stripe customer ID.' };
     }
 
-    // List payment methods for the customer to find the default
-    const paymentMethods = await stripe.paymentMethods.list({
-      customer: stripeCustomerId,
-      type: 'card',
-    });
-    
-    const customer = await stripe.customers.retrieve(stripeCustomerId);
-    const defaultPaymentMethodId = customer.invoice_settings?.default_payment_method as string | null;
+    let paymentMethodId: string | null;
 
-    if (!defaultPaymentMethodId) {
-      return { success: false, error: 'No default payment method on file. Please add a payment method in your billing settings.' };
+    // Get the default payment method for invoices first
+    const customer = await stripe.customers.retrieve(stripeCustomerId, { expand: ['invoice_settings.default_payment_method'] });
+    const defaultPaymentMethod = customer.invoice_settings?.default_payment_method;
+
+    if (defaultPaymentMethod) {
+        paymentMethodId = typeof defaultPaymentMethod === 'string' ? defaultPaymentMethod : defaultPaymentMethod.id;
+    } else {
+        // If no default, get the most recent valid payment method
+        const paymentMethods = await stripe.paymentMethods.list({
+            customer: stripeCustomerId,
+            type: 'card',
+            limit: 1,
+        });
+        if (paymentMethods.data.length === 0) {
+            return { success: false, error: 'No default payment method on file. Please add a payment method in your billing settings.' };
+        }
+        paymentMethodId = paymentMethods.data[0].id;
     }
 
     // Step 1: Create an Invoice Item for the credit purchase
@@ -429,7 +437,7 @@ export async function chargeCardForCredits(formData: FormData): Promise<{ succes
         customer: stripeCustomerId,
         auto_advance: true, // Automatically progresses through the payment lifecycle
         collection_method: 'charge_automatically',
-        default_payment_method: defaultPaymentMethodId,
+        default_payment_method: paymentMethodId,
     });
     
     // Step 3: Finalize and pay the invoice
@@ -449,3 +457,5 @@ export async function chargeCardForCredits(formData: FormData): Promise<{ succes
     return { success: false, error: error.message || 'An unexpected error occurred during payment.' };
   }
 }
+
+    
