@@ -172,11 +172,10 @@ export async function POST(req: Request) {
                             }
                         }
                     } else {
-                        // This is likely a one-time charge invoice, e.g., for credits
-                        const lineItem = invoice.lines.data[0];
-                        const purchaseType = lineItem?.metadata?.purchase_type;
+                        // This is a one-time charge invoice, e.g., for credits
+                        const lineItem = invoice.lines.data.find(li => li.metadata?.purchase_type === 'credits');
                         
-                        if (purchaseType === 'credits') {
+                        if (lineItem) {
                             const creditsToAdd = Number(lineItem.metadata.credits);
                             if (creditsToAdd > 0) {
                                 await addCredits(adminDb, userRef_invoice, creditsToAdd, `Purchased ${creditsToAdd} credits`);
@@ -189,12 +188,13 @@ export async function POST(req: Request) {
             }
 
             case 'charge.succeeded': {
-                // This is now a fallback / for other types of direct charges if any.
-                // Credit purchases are now handled by `invoice.payment_succeeded`.
+                // This is now just a fallback. The main logic is in `invoice.payment_succeeded`.
                 const charge = event.data.object as Stripe.Charge;
                 const purchaseType = charge.metadata.purchase_type;
                 
-                if (purchaseType === 'credits' && !charge.invoice) { // Only handle if not associated with an invoice
+                // Only process charges that are for credits AND are not associated with an invoice,
+                // to prevent double-processing.
+                if (purchaseType === 'credits' && !charge.invoice) {
                     const userId = charge.metadata.firebase_uid;
                     const priceId = charge.metadata.price_id;
                     const creditsToAdd = creditProducts[priceId];
