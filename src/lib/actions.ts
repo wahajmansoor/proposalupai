@@ -342,7 +342,7 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
         return { error: 'User not authenticated.' };
     }
 
-    // Strategy 1: Fetch from Firestore first (for credit purchases etc.)
+    // Strategy 1: Fetch from Firestore first
     try {
         const historyRef = adminDb.collection('users').doc(currentUser.user.uid).collection('billingHistory');
         const querySnapshot = await historyRef.orderBy('date', 'desc').limit(20).get();
@@ -350,8 +350,6 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
         if (!querySnapshot.empty) {
             const invoices: InvoiceDetails[] = querySnapshot.docs.map(doc => {
                 const data = doc.data();
-                // Filter out proration adjustments (negative amounts) and zero-dollar invoices
-                if (data.total <= 0) return null;
                 return {
                     id: doc.id,
                     date: data.date.toDate().toLocaleDateString(),
@@ -360,15 +358,45 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
                     invoiceUrl: data.invoiceUrl,
                     description: data.description || 'Payment'
                 };
-            }).filter((invoice): invoice is InvoiceDetails => invoice !== null);
+            });
             return { invoices };
         }
     } catch (error: any) {
         console.warn('Could not fetch billing history from Firestore, falling back to Stripe:', error.message);
-        // Fall through to Stripe API if Firestore fails
+        // If Firestore fails or is empty, we fall through to the Stripe API call.
+    }
+
+    // Strategy 2: Fallback to Stripe API for invoices (if Firestore is empty)
+    if (currentUser.userDoc?.stripeCustomerId) {
+        const { stripeCustomerId } = currentUser.userDoc;
+        try {
+            const invoices = await stripe.invoices.list({
+                customer: stripeCustomerId,
+                limit: 20,
+            });
+
+            const invoiceDetails: InvoiceDetails[] = invoices.data
+              .filter(invoice => invoice.total > 0) // Filter out zero-dollar invoices
+              .map(invoice => ({
+                id: invoice.id,
+                date: new Date(invoice.created * 1000).toLocaleDateString(),
+                total: `$${(invoice.total / 100).toFixed(2)}`,
+                status: invoice.status || 'unknown',
+                invoiceUrl: invoice.hosted_invoice_url,
+                description: invoice.lines.data[0]?.description || 'Subscription Payment',
+            }));
+
+            // Return Stripe data if found
+            if (invoiceDetails.length > 0) {
+              return { invoices: invoiceDetails };
+            }
+        } catch (error: any) {
+            console.error('Error fetching billing history from Stripe:', error);
+            // Don't return an error here, just fall through to the empty state
+        }
     }
     
-    // If Firestore is empty or fails, just return empty. The webhook should be the source of truth.
+    // If both Firestore and Stripe are empty or fail, return empty
     return { invoices: [] };
 }
 
@@ -404,3 +432,5 @@ export async function getCreditHistory(): Promise<{ history?: CreditHistoryItem[
         return { error: 'Could not retrieve credit history.' };
     }
 }
+
+    
