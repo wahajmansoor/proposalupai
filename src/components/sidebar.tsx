@@ -24,7 +24,7 @@ const navItems = [
   { href: "/dashboard", label: "Create Proposal", icon: FileEditIcon },
   { href: "/dashboard/proposals", label: "Saved Proposals", icon: BookmarkIcon },
   { href: "/dashboard/skill-profiles", label: "Skill Profiles", icon: Profile02Icon },
-  { href: "/pricing", label: "Plans & Pricing", icon: CreditCardIcon },
+  { href: "/dashboard/pricing", label: "Plans & Pricing", icon: CreditCardIcon },
 ];
 
 function SidebarNav() {
@@ -114,3 +114,5 @@ export function Sidebar({ collapsible, ...props }: { collapsible?: "icon" | "off
     </SidebarPrimitive>
   );
 }
+
+    
