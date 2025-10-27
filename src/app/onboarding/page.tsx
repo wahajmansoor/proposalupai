@@ -23,7 +23,7 @@ const plans = {
   yearly: {
     name: "Pro Yearly",
     price: 200,
-    priceDescription: "/year",
+    priceDescription: "/annually",
     interval: 'yearly' as 'monthly' | 'yearly',
     description: "Best value for ongoing work.",
   }
