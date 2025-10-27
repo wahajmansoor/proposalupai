@@ -7,15 +7,14 @@ import { useToast } from '@/hooks/use-toast';
 import { signInWithCustomToken } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
 import { WelcomeScreen } from '@/components/welcome-screen';
-import { doc, getDoc } from 'firebase/firestore';
+import { doc, getDoc, updateDoc } from 'firebase/firestore';
 
 function AuthCallback() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const [isLoading, setIsLoading] = useState(true);
-  const [welcomeMessage, setWelcomeMessage] = useState('');
-  const [showWelcome, setShowWelcome] = useState(false);
+  const [welcomeMessage, setWelcomeMessage] = useState("Signing you in and getting things ready...");
+  const [showWelcome, setShowWelcome] = useState(true); // Always show welcome screen initially
 
   useEffect(() => {
     const customToken = searchParams.get('token');
@@ -33,18 +32,16 @@ function AuthCallback() {
           
           const userDocRef = doc(db, 'users', userCredential.user.uid);
           const userDoc = await getDoc(userDocRef);
-          const isNewUser = userDoc.exists() && userDoc.data().isNewUser;
           
           let redirectPath = '/dashboard';
-          if (isNewUser) {
+          if (userDoc.exists() && userDoc.data().isNewUser) {
             setWelcomeMessage("Start your 2 Days Free Trial and Explore Proposal Up!");
             redirectPath = '/pricing';
+            // Mark the new user flag as false so they don't see this again
+            await updateDoc(userDocRef, { isNewUser: false });
           } else {
             setWelcomeMessage("Stop drafting from scratch, Proposal Up creates tailored proposals and cover letters that win attention fast.");
           }
-
-          setShowWelcome(true);
-          setIsLoading(false);
 
           setTimeout(() => {
             if (window.opener) {
@@ -89,10 +86,9 @@ function AuthCallback() {
   if (showWelcome) {
     return <WelcomeScreen description={welcomeMessage} />;
   }
-
-  return (
-    <WelcomeScreen description={isLoading ? "Signing you in and getting things ready..." : welcomeMessage} />
-  );
+  
+  // This part will likely not be seen, but is a good fallback
+  return <WelcomeScreen description="Redirecting..." />;
 }
 
 export default function AuthCallbackClientPage() {

@@ -135,11 +135,6 @@ export async function GET(req: NextRequest) {
             userData.photoURL = picture;
         }
         await userRef.set(userData, { merge: true });
-    } else {
-        // If user exists, make sure the isNewUser flag is set to false for subsequent logins
-        if (userDoc.data()?.isNewUser) {
-            await userRef.update({ isNewUser: false });
-        }
     }
 
     const customToken = await adminAuth.createCustomToken(userRecord.uid);
