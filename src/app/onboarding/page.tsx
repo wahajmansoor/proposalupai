@@ -22,8 +22,8 @@ const plans = {
   },
   yearly: {
     name: "Pro Yearly",
-    price: 16.67,
-    priceDescription: "/month, billed as $200/year",
+    price: 200,
+    priceDescription: "/year",
     description: "The best value for long-term growth.",
     interval: 'yearly' as 'monthly' | 'yearly',
   }
@@ -64,7 +64,7 @@ function PlanRow({
             </div>
             <div className="text-left sm:text-right shrink-0">
                 <p className="text-4xl font-bold tracking-tight">
-                    ${plan.price.toFixed(2)}
+                    ${plan.price.toFixed(plan.interval === 'monthly' ? 2 : 0)}
                     <span className="text-base font-medium text-muted-foreground">{plan.priceDescription}</span>
                 </p>
             </div>
@@ -87,7 +87,7 @@ function PlanDetailsCard({
                 <div className="flex justify-between items-start">
                     <h3 className="text-2xl font-bold">{plan.name}</h3>
                     <div className="text-right">
-                        <p className="text-4xl font-bold">${plan.price.toFixed(2)}</p>
+                        <p className="text-4xl font-bold">${plan.price.toFixed(plan.interval === 'monthly' ? 2 : 0)}</p>
                         <p className="text-sm text-muted-foreground -mt-1">{plan.priceDescription}</p>
                     </div>
                 </div>
