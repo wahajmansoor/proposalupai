@@ -66,7 +66,7 @@ function PlanRow({
                         <Badge variant="outline">Pay as you go</Badge>
                     )}
                 </div>
-                 <p className={cn("mt-1 text-sm", isFeatured ? 'text-slate-300' : 'text-slate-400')}>
+                 <p className={cn("mt-1 text-sm", isFeatured ? 'text-slate-300' : 'text-muted-foreground')}>
                     {plan.description}
                 </p>
             </div>
@@ -134,7 +134,7 @@ function PlanDetailsCard({
                         {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
                         Start a 2-Day Free Trial
                     </Button>
-                    <div className="text-right">
+                    <div className="text-left">
                         <p className="text-sm font-medium">Proposal Improvements</p>
                         <Button
                             variant="outline"
