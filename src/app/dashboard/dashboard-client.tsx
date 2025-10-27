@@ -31,32 +31,26 @@ export function DashboardClient({
       return;
     }
 
-    // 2. If user has not completed onboarding, check if they are on the onboarding page
-    if (userProfile && userProfile.onboardingComplete === false) {
+    // 2. If user exists but profile is still loading, wait.
+    if (!userProfile) {
+      return;
+    }
+
+    // 3. If user has NOT completed onboarding, they must be on the onboarding page.
+    if (userProfile.onboardingComplete === false) {
       if (pathname !== '/onboarding') {
-        // If not on the onboarding page, redirect them there.
         router.replace('/onboarding');
-        return;
+        return; // Redirect and stop further checks
       }
       // If they are on the onboarding page, they are authorized.
       setIsAuthorized(true);
       return;
     }
 
-    // 3. For users who HAVE completed onboarding, check subscription status for other pages.
-    const isSubscribed = userProfile?.subscriptionStatus === 'active' || userProfile?.subscriptionStatus === 'trialing';
+    // 4. For users who HAVE completed onboarding, check subscription status for other pages.
+    const isSubscribed = userProfile.subscriptionStatus === 'active' || userProfile.subscriptionStatus === 'trialing';
     
-    // Define pages accessible to non-subscribed but onboarded users
-    const nonSubscribedAllowedPaths = ['/dashboard/pricing', '/subscription', '/profile', '/dashboard/skill-profiles', '/dashboard/proposals'];
-    const isAccessingAllowedPath = nonSubscribedAllowedPaths.some(path => pathname.startsWith(path));
-    
-    if (!isSubscribed && !isAccessingAllowedPath && pathname !== '/dashboard') {
-        // If not subscribed and not on an allowed page (and not the main dashboard which is handled next), redirect to pricing.
-        router.replace('/dashboard/pricing');
-        return;
-    }
-
-    // Special handling for the main dashboard page
+    // The main dashboard requires a subscription.
     if (pathname === '/dashboard' && !isSubscribed) {
       router.replace('/dashboard/pricing');
       return;
@@ -76,6 +70,11 @@ export function DashboardClient({
     );
   }
   
+  // A special case for the onboarding page - it doesn't need the full dashboard layout.
+  if (pathname === '/onboarding') {
+    return <main>{children}</main>;
+  }
+
   return (
      <div className="min-h-screen flex bg-main-background">
       <Sidebar collapsible="icon" />
@@ -90,4 +89,3 @@ export function DashboardClient({
     </div>
   );
 }
-
