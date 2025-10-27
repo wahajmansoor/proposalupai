@@ -53,12 +53,12 @@ function PlanRow({
             className={cn(
                 'cursor-pointer rounded-lg p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all duration-300 transform hover:scale-[1.02] shadow-lg',
                 isSelected ? 'ring-2 ring-offset-2 ring-primary ring-offset-background' : '',
-                isFeatured ? 'bg-slate-800 text-white featured-plan-pattern' : 'bg-white/80 text-slate-900'
+                isFeatured ? 'bg-slate-800 text-white featured-plan-pattern' : 'bg-white/80 dark:bg-slate-900/80 text-slate-900 dark:text-white'
             )}
         >
             <div>
                 <h3 className="text-xl font-bold tracking-tight">{plan.name}</h3>
-                <p className={cn("mt-1 text-sm", isFeatured ? 'text-slate-300' : 'text-slate-600')}>
+                <p className={cn("mt-1 text-sm", isFeatured ? 'text-slate-300' : 'text-slate-600 dark:text-slate-400')}>
                     {plan.description}
                 </p>
             </div>
@@ -66,7 +66,7 @@ function PlanRow({
                  <div className="flex items-baseline justify-end">
                     <span className="text-4xl font-bold tracking-tight">${plan.price}</span>
                  </div>
-                 <p className="text-sm text-muted-foreground -mt-1">{plan.priceDescription}</p>
+                 <p className={cn("text-sm -mt-1", isFeatured ? 'text-slate-400' : 'text-muted-foreground')}>{plan.priceDescription}</p>
             </div>
         </div>
     )
@@ -158,7 +158,7 @@ export default function OnboardingPage() {
 
   return (
     <div className="relative isolate flex min-h-screen flex-col items-center justify-center bg-background onboarding-gradient overflow-hidden p-4 sm:p-6 lg:p-8">
-      <div className="relative z-10 mx-auto max-w-5xl w-full">
+      <div className="relative z-10 mx-auto max-w-7xl w-full">
          <div className="text-center mb-12">
             <ProposalUpLogo className="mx-auto h-24 w-24 text-slate-800 dark:text-white" />
             <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
