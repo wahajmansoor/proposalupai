@@ -14,7 +14,6 @@ function AuthCallback() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
   const [welcomeMessage, setWelcomeMessage] = useState("Signing you in and getting things ready...");
-  const [showWelcome, setShowWelcome] = useState(true); // Always show welcome screen initially
 
   useEffect(() => {
     const customToken = searchParams.get('token');
@@ -24,12 +23,14 @@ function AuthCallback() {
         .then(async (userCredential) => {
           const idToken = await userCredential.user.getIdToken();
           
+          // Create the server session
           await fetch('/api/auth/session', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ idToken }),
           });
           
+          // Check if the user is new
           const userDocRef = doc(db, 'users', userCredential.user.uid);
           const userDoc = await getDoc(userDocRef);
           
@@ -43,6 +44,7 @@ function AuthCallback() {
             setWelcomeMessage("Stop drafting from scratch, Proposal Up creates tailored proposals and cover letters that win attention fast.");
           }
 
+          // Redirect after a delay
           setTimeout(() => {
             if (window.opener) {
               window.opener.postMessage({ type: 'auth-success', redirectPath }, window.location.origin);
@@ -50,7 +52,8 @@ function AuthCallback() {
             } else {
                router.push(redirectPath);
             }
-          }, 3000); // Show welcome screen for 3 seconds
+          }, 3000); 
+
         })
         .catch((error) => {
           console.error("Firebase custom sign-in error:", error);
@@ -67,6 +70,7 @@ function AuthCallback() {
            }
         });
     } else {
+      // Handle errors passed in URL params from the server
       const error = searchParams.get('error') || 'unknown-error';
       const details = searchParams.get('details') || 'An unknown error occurred.';
       if (window.opener) {
@@ -83,17 +87,12 @@ function AuthCallback() {
     }
   }, [router, searchParams, toast]);
   
-  if (showWelcome) {
-    return <WelcomeScreen description={welcomeMessage} />;
-  }
-  
-  // This part will likely not be seen, but is a good fallback
-  return <WelcomeScreen description="Redirecting..." />;
+  return <WelcomeScreen description={welcomeMessage} />;
 }
 
 export default function AuthCallbackClientPage() {
     return (
-        <Suspense>
+        <Suspense fallback={<WelcomeScreen description="Loading..." />}>
             <AuthCallback />
         </Suspense>
     )

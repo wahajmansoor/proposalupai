@@ -87,8 +87,6 @@ export async function GET(req: NextRequest) {
     } catch (e: any) {
       if (e.code === 'auth/user-not-found') {
         userRecord = await adminAuth.createUser({
-            // Use the email as UID if no sub is present, otherwise use sub.
-            // This is just a fallback, sub should always be present.
             uid: payload.sub,
             email,
             ...userPayload,
@@ -110,7 +108,6 @@ export async function GET(req: NextRequest) {
             },
         });
         
-        // Get country from IP
         const ip = headersList.get('x-forwarded-for') || req.ip;
         const country = await getCountryFromIp(ip);
 
@@ -123,7 +120,7 @@ export async function GET(req: NextRequest) {
             proposalCount: 0,
             subscriptionStatus: null,
             country: country,
-            referralCode: userRecord.uid.substring(0, 8), // Generate and store referral code
+            referralCode: userRecord.uid.substring(0, 8),
             isNewUser: true, // Flag for new users
         };
         
