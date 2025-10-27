@@ -466,5 +466,3 @@ export async function chargeCardForCredits(formData: FormData) {
     return { success: false, error: error.message || 'An unexpected error occurred during payment.' };
   }
 }
-
-    
