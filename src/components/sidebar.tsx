@@ -1,4 +1,3 @@
-
 // src/components/sidebar.tsx
 "use client";
 
@@ -114,5 +113,3 @@ export function Sidebar({ collapsible, ...props }: { collapsible?: "icon" | "off
     </SidebarPrimitive>
   );
 }
-
-    
