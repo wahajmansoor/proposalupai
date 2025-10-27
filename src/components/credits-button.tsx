@@ -103,8 +103,8 @@ function CreditsDialogContent() {
     };
 
     return (
-         <div className="p-4">
-            <div className="mt-2">
+         <div className="p-0">
+            <div>
                 {userProfile?.subscriptionStatus === 'trialing' ? (
                     <div className="flex flex-col items-center justify-center text-center p-4 bg-muted/50 rounded-lg">
                         <Info className="h-6 w-6 text-muted-foreground mb-2" />
@@ -249,8 +249,8 @@ export function CreditsButton() {
       <DialogTrigger asChild>
          {DialogTriggerButton}
       </DialogTrigger>
-       <DialogContent className="sm:max-w-md p-0">
-         <DialogHeader className="items-center text-center pt-6">
+       <DialogContent className="sm:max-w-lg p-7">
+         <DialogHeader className="items-center text-center">
             <div className="flex justify-center">
                 <div 
                     className="flex items-center justify-center h-32 w-32 rounded-full"
