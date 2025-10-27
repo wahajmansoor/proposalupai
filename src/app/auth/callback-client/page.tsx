@@ -1,10 +1,12 @@
+
 "use client";
 
-import { useEffect, Suspense } from 'react';
+import { useEffect, Suspense, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { signInWithCustomToken } from 'firebase/auth';
-import { auth } from '@/lib/firebase/config';
+import { auth, db } from '@/lib/firebase/config';
+import { doc, getDoc } from 'firebase/firestore';
 import { ProposalUpLogos } from '@/components/icons';
 
 function AuthCallback() {
@@ -12,39 +14,54 @@ function AuthCallback() {
   const searchParams = useSearchParams();
   const { toast } = useToast();
 
+  const handleAuth = useCallback(async (customToken: string) => {
+    try {
+      // Step 1: Sign in on the client
+      const userCredential = await signInWithCustomToken(auth, customToken);
+      const user = userCredential.user;
+      const idToken = await user.getIdToken();
+
+      // Step 2: Create the server session
+      await fetch('/api/auth/session', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ idToken }),
+      });
+      
+      // Step 3: Check onboarding status
+      const userDocRef = doc(db, 'users', user.uid);
+      const userDocSnap = await getDoc(userDocRef);
+
+      if (userDocSnap.exists() && userDocSnap.data()?.onboardingComplete === false) {
+         // New user, redirect to onboarding
+        router.push('/onboarding');
+      } else {
+        // Returning user, redirect to dashboard
+        router.push('/dashboard');
+      }
+
+    } catch (error: any) {
+      console.error("Firebase custom sign-in error:", error);
+      if (window.opener) {
+        window.opener.postMessage({ type: 'auth-error', error: 'firebase-signin-failed', details: error.message }, window.location.origin);
+        window.close();
+      } else {
+        toast({
+          title: 'Authentication Error',
+          description: 'Failed to sign you in. Please try again.',
+          variant: 'destructive',
+        });
+        router.push('/login');
+      }
+    }
+  }, [router, toast]);
+
+
   useEffect(() => {
     const customToken = searchParams.get('token');
     
     if (customToken) {
-      signInWithCustomToken(auth, customToken)
-        .then(async (userCredential) => {
-          const idToken = await userCredential.user.getIdToken();
-          
-          // Create the server session
-          await fetch('/api/auth/session', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ idToken }),
-          });
-
-          // Redirect to dashboard immediately
-          router.push('/dashboard');
-
-        })
-        .catch((error) => {
-          console.error("Firebase custom sign-in error:", error);
-           if (window.opener) {
-              window.opener.postMessage({ type: 'auth-error', error: 'firebase-signin-failed', details: error.message }, window.location.origin);
-              window.close();
-           } else {
-              toast({
-                  title: 'Authentication Error',
-                  description: 'Failed to sign you in. Please try again.',
-                  variant: 'destructive',
-              });
-              router.push('/login');
-           }
-        });
+      handleAuth(customToken);
     } else {
       // Handle errors passed in URL params from the server
       const error = searchParams.get('error') || 'unknown-error';
@@ -61,7 +78,7 @@ function AuthCallback() {
         router.push('/login');
       }
     }
-  }, [router, searchParams, toast]);
+  }, [searchParams, toast, router, handleAuth]);
   
   return (
     <div className="flex items-center justify-center min-h-screen">

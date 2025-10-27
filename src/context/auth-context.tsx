@@ -26,6 +26,7 @@ interface UserProfile {
   lastPrice?: number;
   upgradeBonusGiven?: boolean;
   trialCreditsAwarded?: boolean;
+  onboardingComplete?: boolean;
 }
 
 interface AuthContextType {

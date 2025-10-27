@@ -121,6 +121,7 @@ export async function GET(req: NextRequest) {
             subscriptionStatus: null,
             country: country,
             referralCode: userRecord.uid.substring(0, 8),
+            onboardingComplete: false, // Flag for new user onboarding
         };
         
         if (referralCode) {

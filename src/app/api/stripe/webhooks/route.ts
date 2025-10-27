@@ -75,6 +75,7 @@ export async function POST(req: Request) {
                             subscriptionCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
                             lastPrice: price?.unit_amount ? price.unit_amount / 100 : null,
                             updatedAt: FieldValue.serverTimestamp(),
+                            onboardingComplete: true, // Mark onboarding as complete
                         };
 
                         await userRef.update(subscriptionData);
@@ -83,7 +84,12 @@ export async function POST(req: Request) {
                 } else if (session.mode === 'payment') {
                     // This is handled by charge.succeeded now to catch all one-time payments
                 } else if (session.mode === 'setup') {
-                    // This is a trial activation. The actual credit award is handled in `customer.subscription.created`.
+                     const stripeCustomerId = session.customer as string;
+                     const userRef = await findUserByStripeCustomerId(adminDb, stripeCustomerId);
+                     if (userRef) {
+                        await userRef.update({ onboardingComplete: true });
+                        console.log(`User ${userRef.id} completed onboarding via setup intent.`);
+                     }
                 }
                 break;
 
@@ -109,6 +115,10 @@ export async function POST(req: Request) {
                         lastPrice: price?.unit_amount ? price.unit_amount / 100 : null,
                         updatedAt: FieldValue.serverTimestamp(),
                     };
+                    
+                    if(newStatus === 'active' || newStatus === 'trialing') {
+                        subscriptionData.onboardingComplete = true;
+                    }
 
                     await userRef.update(subscriptionData);
                     console.log(`Successfully synced subscription for user ${userRef.id}. New status: ${newStatus}`);
