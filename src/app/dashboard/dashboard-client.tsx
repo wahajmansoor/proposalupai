@@ -37,18 +37,7 @@ export function DashboardClient({
     const isAllowedOnboarding = pathname === '/onboarding';
     const isAllowedPricing = pathname === '/dashboard/pricing';
 
-    // 4. New user who has not selected a plan yet.
-    // Their status will be null or undefined. Force them to the onboarding page.
-    if (!status) {
-        if (!isAllowedOnboarding) {
-            router.replace('/onboarding');
-            return;
-        }
-        setIsAuthorized(true);
-        return;
-    }
-    
-    // 5. User has a status. Check if they are subscribed.
+    // 4. User has an active or trial subscription.
     const isSubscribed = status === 'active' || status === 'trialing';
 
     if (isSubscribed) {
@@ -62,7 +51,18 @@ export function DashboardClient({
         return;
     }
     
-    // 6. User is not subscribed (e.g., status is 'canceled', 'past_due', etc.)
+    // 5. New user who has not selected a plan yet (status is null/undefined).
+    // Force them to the onboarding page.
+    if (!status) {
+        if (!isAllowedOnboarding) {
+            router.replace('/onboarding');
+            return;
+        }
+        setIsAuthorized(true);
+        return;
+    }
+    
+    // 6. User has a non-active status (e.g., 'canceled', 'past_due').
     // They should only be able to access the pricing page.
     if (!isAllowedPricing) {
         router.replace('/dashboard/pricing');
