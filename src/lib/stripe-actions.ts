@@ -370,7 +370,7 @@ const creditPackages: Record<string, { amount: number; description: string }> = 
     [process.env.NEXT_PUBLIC_STRIPE_CREDITS_50_PRICE_ID!]: { amount: 2500, description: "50 Credits" }
 };
 
-export async function chargeCardForCredits(formData: FormData): Promise<{ success: boolean; error?: string; message?: string }> {
+export async function chargeCardForCredits(formData: FormData) {
   const currentUser = await getCurrentUser();
   if (!currentUser) {
     return { success: false, error: 'User not authenticated. Please log in again.' };
@@ -421,8 +421,8 @@ export async function chargeCardForCredits(formData: FormData): Promise<{ succes
         return { success: false, error: 'No default payment method on file. Please add a payment method in your billing settings.'};
     }
 
-    // Create and confirm a PaymentIntent to charge the user immediately
-    await stripe.paymentIntents.create({
+    // Create and confirm a PaymentIntent
+    const paymentIntent = await stripe.paymentIntents.create({
       amount: creditPackage.amount,
       currency: 'usd',
       customer: stripeCustomerId,
@@ -436,10 +436,13 @@ export async function chargeCardForCredits(formData: FormData): Promise<{ succes
         price_id: priceId,
       },
     });
-
-    revalidatePath('/subscription');
     
-    return { success: true, message: 'Credit purchase successful!' };
+    if (paymentIntent.status === 'succeeded') {
+        revalidatePath('/subscription');
+        return { success: true, message: 'Credit purchase successful!' };
+    } else {
+        return { success: false, error: 'Payment failed. Please try again or check your payment method.' };
+    }
 
   } catch (error: any) {
     console.error('Error charging card for credits:', error);

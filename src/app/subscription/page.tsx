@@ -19,7 +19,6 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { ShareIcons } from '@/components/icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useRouter } from 'next/navigation';
 
 
 const creditPackages = [
@@ -30,7 +29,6 @@ const creditPackages = [
 
 function BuyCredits() {
     const { user, userProfile } = useAuth();
-    const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [selectedPriceId, setSelectedPriceId] = useState<string | null>(null);
     const { toast } = useToast();
@@ -49,8 +47,8 @@ function BuyCredits() {
 
             if (result.error) {
                 toast({ title: "Error", description: result.error, variant: "destructive" });
-            } else if (result.redirectUrl) {
-                router.push(result.redirectUrl);
+            } else if (result.success) {
+                toast({ title: "Purchase Successful!", description: result.message });
             }
             setSelectedPriceId(null);
         });
@@ -234,7 +232,6 @@ function CreditHistory() {
 export default function SubscriptionPage() {
   const { userProfile, loading } = useAuth();
   const { toast } = useToast();
-  const router = useRouter();
   const [isManagingBilling, setIsManagingBilling] = useState(false);
   
   const [invoices, setInvoices] = useState<InvoiceDetails[]>([]);

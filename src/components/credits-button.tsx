@@ -29,7 +29,6 @@ import { Copy, Check, Star, Info, Loader2, ShoppingBag } from 'lucide-react';
 import { ShareIcons } from './icons';
 import Link from 'next/link';
 import { chargeCardForCredits } from '@/lib/stripe-actions';
-import { useRouter } from 'next/navigation';
 import { useIsMobile } from '@/hooks/use-mobile';
 
 
@@ -114,9 +113,9 @@ function CreditsDialogContent() {
                 ) : (
                     <div className="space-y-3">
                         <h3 className="text-base font-semibold leading-none tracking-tight text-center">Buy More Credits</h3>
-                         <div className="flex justify-center gap-2">
+                         <div className="grid grid-cols-3 gap-2">
                             {creditPackages.map((pkg) => (
-                                <div key={pkg.priceId} className="flex flex-col items-center gap-1 sm:gap-2 p-2 sm:p-3 border rounded-lg flex-1">
+                                <div key={pkg.priceId} className="flex flex-col items-center gap-1 p-2 border rounded-lg flex-1">
                                     <span className="text-xl sm:text-2xl font-bold">${pkg.price}</span>
                                     <span className="font-semibold text-muted-foreground text-xs sm:text-sm">{pkg.name}</span>
                                     <Button
