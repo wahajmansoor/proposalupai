@@ -72,10 +72,10 @@
     -moz-osx-font-smoothing: grayscale;
   }
   .onboarding-gradient {
-    background: linear-gradient(135deg, hsl(100, 50%, 85%), hsl(140, 60%, 75%));
+    background-image: radial-gradient(at center center, #1FCD293B 0%, hsl(var(--background)) 67%);
   }
   .dark .onboarding-gradient {
-    background: linear-gradient(135deg, hsl(114, 70%, 15%), hsl(140, 40%, 10%));
+    background-image: radial-gradient(at center center, #1FCD293B 0%, hsl(var(--background)) 67%);
   }
 }
 
