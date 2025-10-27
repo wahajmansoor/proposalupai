@@ -1,17 +1,21 @@
 
 "use client";
 
-import { useEffect, Suspense } from 'react';
+import { useEffect, Suspense, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
-import { ProposalUpLogos } from '@/components/icons';
 import { signInWithCustomToken } from 'firebase/auth';
-import { auth } from '@/lib/firebase/config';
+import { auth, db } from '@/lib/firebase/config';
+import { WelcomeScreen } from '@/components/welcome-screen';
+import { doc, getDoc } from 'firebase/firestore';
 
 function AuthCallback() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
+  const [welcomeMessage, setWelcomeMessage] = useState('');
+  const [showWelcome, setShowWelcome] = useState(false);
 
   useEffect(() => {
     const customToken = searchParams.get('token');
@@ -27,14 +31,29 @@ function AuthCallback() {
             body: JSON.stringify({ idToken }),
           });
           
-          const redirectPath = '/dashboard';
-
-          if (window.opener) {
-            window.opener.postMessage({ type: 'auth-success', redirectPath }, window.location.origin);
-            window.close();
+          const userDocRef = doc(db, 'users', userCredential.user.uid);
+          const userDoc = await getDoc(userDocRef);
+          const isNewUser = userDoc.exists() && userDoc.data().isNewUser;
+          
+          let redirectPath = '/dashboard';
+          if (isNewUser) {
+            setWelcomeMessage("Start your 2 Days Free Trial and Explore Proposal Up!");
+            redirectPath = '/pricing';
           } else {
-             router.push(redirectPath);
+            setWelcomeMessage("Stop drafting from scratch, Proposal Up creates tailored proposals and cover letters that win attention fast.");
           }
+
+          setShowWelcome(true);
+          setIsLoading(false);
+
+          setTimeout(() => {
+            if (window.opener) {
+              window.opener.postMessage({ type: 'auth-success', redirectPath }, window.location.origin);
+              window.close();
+            } else {
+               router.push(redirectPath);
+            }
+          }, 3000); // Show welcome screen for 3 seconds
         })
         .catch((error) => {
           console.error("Firebase custom sign-in error:", error);
@@ -66,13 +85,13 @@ function AuthCallback() {
       }
     }
   }, [router, searchParams, toast]);
+  
+  if (showWelcome) {
+    return <WelcomeScreen description={welcomeMessage} />;
+  }
 
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen bg-background">
-      <ProposalUpLogos className="h-24 w-24 animate-pulse text-primary" />
-      <h1 className="mt-6 text-2xl font-semibold">Welcome Back!</h1>
-      <p className="text-muted-foreground mt-2">Signing you in and getting things ready...</p>
-    </div>
+    <WelcomeScreen description={isLoading ? "Signing you in and getting things ready..." : welcomeMessage} />
   );
 }
 
