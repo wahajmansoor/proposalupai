@@ -165,7 +165,9 @@ export async function POST(req: Request) {
                     // Check if this invoice is for an upgrade from monthly to yearly
                     const isUpgrade = invoice.lines.data.some(line => line.proration && line.description?.toLowerCase().includes('unused time'));
                     if (isUpgrade) {
-                        description = `Upgrade to Yearly Plan`;
+                        const couponLine = invoice.lines.data.find(line => line.type === 'invoiceitem' && line.amount < 0);
+                        const discountAmount = couponLine ? (couponLine.amount / -100).toFixed(2) : '0.00';
+                        description = `Credit for unused days on your Monthly Proposal Up Pro plan, applied toward your Yearly upgrade ($${discountAmount} discount included).`;
                     }
 
                     await billingHistoryRef.set({
