@@ -345,7 +345,7 @@ export default function SubscriptionPage() {
                 </form>
               ) : (
                 <Button asChild className="w-full">
-                    <Link href="/pricing">Upgrade to Pro</Link>
+                    <Link href="/dashboard/pricing">Upgrade to Pro</Link>
                 </Button>
               )}
             </CardContent>
@@ -416,5 +416,3 @@ export default function SubscriptionPage() {
     </div>
   );
 }
-
-    

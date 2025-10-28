@@ -86,21 +86,17 @@ export async function handlePlanChange(formData: FormData): Promise<{
         if (!userDoc?.trialCreditsAwarded) {
             await addCredits(adminDb, userRef, 5, 'Started a new trial');
             
-            // Check for referral
             if (userDoc?.referredBy) {
                 const referrerQuery = await adminDb.collection('users').where('referralCode', '==', userDoc.referredBy).limit(1).get();
                 if (!referrerQuery.empty) {
                     const referrerRef = referrerQuery.docs[0].ref;
-                    // Award 5 credits to the referrer
                     await addCredits(adminDb, referrerRef, 5, `Referral bonus for ${userDoc?.displayName || 'a new user'}`);
                     console.log(`Awarded 5 referral credits to referrer ${referrerRef.id}.`);
 
-                    // Award 5 credits to the new user for being referred
                     await addCredits(adminDb, userRef, 5, 'Referral sign-up bonus');
                 }
             }
             
-            // Mark that trial credits have been given
             await userRef.update({ trialCreditsAwarded: true });
             console.log(`Awarded initial credits to new user ${user.uid}.`);
         }
@@ -441,9 +437,8 @@ export async function chargeCardForCredits(formData: FormData): Promise<{ succes
         
         await addCredits(adminDb, userRef, creditsToAdd, reason);
 
-        const billingHistoryRef = userRef.collection('billingHistory');
-        // Use .add() to create a new document with a unique ID
-        await billingHistoryRef.add({
+        const billingHistoryRef = userRef.collection('creditBillingHistory');
+        await billingHistoryRef.doc(paymentIntent.id).set({
             id: paymentIntent.id,
             createdAt: FieldValue.serverTimestamp(),
             date: new Date(paymentIntent.created * 1000),
