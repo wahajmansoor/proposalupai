@@ -192,7 +192,7 @@ function SignupForm() {
       });
       
       localStorage.removeItem('referralCode');
-      toast({ title: 'Success!', description: "Account created. Let's get you set up." });
+      toast({ title: 'Account created successfully!', description: "Start your 2-day free trial & explore all Proposal Up features." });
       router.push('/onboarding'); // Redirect to onboarding page
 
     } catch (error: any) {
