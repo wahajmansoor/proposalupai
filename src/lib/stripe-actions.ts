@@ -445,6 +445,7 @@ export async function chargeCardForCredits(formData: FormData): Promise<{ succes
         await addCredits(adminDb, userRef, creditsToAdd, reason);
 
         const billingHistoryRef = userRef.collection('billingHistory');
+        // Use .add() to create a new document with a unique ID
         await billingHistoryRef.add({
             id: paymentIntent.id,
             createdAt: FieldValue.serverTimestamp(),
