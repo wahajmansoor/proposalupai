@@ -11,7 +11,7 @@ export async function GET(req: NextRequest) {
     const origin = req.nextUrl.origin;
 
     if (!sessionId) {
-        return NextResponse.redirect(`${origin}/pricing?error=session_id_missing`);
+        return NextResponse.redirect(`${origin}/dashboard/pricing?error=session_id_missing`);
     }
 
     try {
@@ -20,7 +20,7 @@ export async function GET(req: NextRequest) {
         });
 
         if (session.status !== 'complete') {
-            return NextResponse.redirect(`${origin}/pricing?error=setup_incomplete`);
+            return NextResponse.redirect(`${origin}/dashboard/pricing?error=setup_incomplete`);
         }
 
         const setupIntent = session.setup_intent as Stripe.SetupIntent;
@@ -68,6 +68,6 @@ export async function GET(req: NextRequest) {
 
     } catch (error: any) {
         console.error("Error activating trial:", error);
-        return NextResponse.redirect(`${origin}/pricing?error=${encodeURIComponent(error.message)}`);
+        return NextResponse.redirect(`${origin}/dashboard/pricing?error=${encodeURIComponent(error.message)}`);
     }
 }

@@ -74,7 +74,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
   const host = headersList.get('host');
   const origin = `${protocol}://${host}`;
   const successUrl = `${origin}/dashboard?subscribed=true&interval=${interval}`;
-  const cancelUrl = `${origin}/pricing`;
+  const cancelUrl = `${origin}/onboarding`;
 
   try {
     const userRef = adminDb.collection('users').doc(user.uid);
