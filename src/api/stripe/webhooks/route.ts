@@ -165,9 +165,7 @@ export async function POST(req: Request) {
                     // Check if this invoice is for an upgrade from monthly to yearly
                     const isUpgrade = invoice.lines.data.some(line => line.proration && line.description?.toLowerCase().includes('unused time'));
                     if (isUpgrade) {
-                        const couponLine = invoice.lines.data.find(line => line.type === 'invoiceitem' && line.amount < 0);
-                        const discountAmount = couponLine ? (couponLine.amount / -100).toFixed(2) : '0.00';
-                        description = `Credit for unused days on your Monthly Proposal Up Pro plan, applied toward your Yearly upgrade ($${discountAmount} discount included).`;
+                        description = `Upgrade to Yearly Plan`;
                     }
 
                     await billingHistoryRef.set({
@@ -216,9 +214,9 @@ export async function POST(req: Request) {
             }
 
             case 'charge.succeeded': {
-                const charge = event.data.object as Stripe.Charge;
                 // This handler is now only for one-time purchases made NOT through an invoice/checkout session, e.g., via a direct API call for credits.
                 // We check for `charge.invoice` to avoid duplication with `invoice.payment_succeeded`.
+                const charge = event.data.object as Stripe.Charge;
                 if (charge.metadata.purchase_type === 'credits' && !charge.invoice) {
                     const userId = charge.metadata.firebase_uid;
                     const priceId = charge.metadata.price_id;

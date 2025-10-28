@@ -58,7 +58,7 @@ export async function GET(req: NextRequest) {
                 id: subscription.items.data[0].id,
                 price: priceId,
             }],
-            proration_behavior: 'create_prorations',
+            proration_behavior: 'none', // Changed from create_prorations
             coupon: couponId || undefined,
         });
 
