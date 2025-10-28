@@ -1,8 +1,9 @@
+
 "use client";
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Check, Loader2, LogOut } from 'lucide-react';
+import { Check, Loader2 } from 'lucide-react';
 import { handlePlanChange } from '@/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -190,16 +191,7 @@ export default function OnboardingPage() {
   return (
     <div className="relative isolate flex min-h-screen flex-col items-center justify-center bg-background onboarding-gradient overflow-hidden p-4 sm:p-6 lg:p-8">
       <div className="absolute top-4 left-4 z-10">
-        <TooltipProvider>
-            <Tooltip>
-                <TooltipTrigger asChild>
-                    <ThemeToggle />
-                </TooltipTrigger>
-                <TooltipContent>
-                    <p>Toggle theme</p>
-                </TooltipContent>
-            </Tooltip>
-        </TooltipProvider>
+        <ThemeToggle />
       </div>
       <div className="absolute top-4 right-4 z-10">
         <TooltipProvider>
@@ -221,7 +213,7 @@ export default function OnboardingPage() {
         </TooltipProvider>
       </div>
       <div className="relative z-10 mx-auto max-w-7xl w-full">
-         <div className="text-center mb-12">
+         <div className="text-center mb-12 pt-16 sm:pt-0">
             <ProposalUpLogos className="mx-auto h-24 w-24 text-slate-800 dark:text-white" />
             <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
                 Welcome to Proposal Up!
