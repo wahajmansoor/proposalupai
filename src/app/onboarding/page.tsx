@@ -3,7 +3,7 @@
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { Check, Loader2 } from 'lucide-react';
+import { Check, Loader2, LogOut } from 'lucide-react';
 import { handlePlanChange } from '@/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -152,7 +152,7 @@ function PlanDetailsCard({
 }
 
 export default function OnboardingPage() {
-  const { user, userProfile } = useAuth();
+  const { user, userProfile, handleLogout } = useAuth();
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -188,8 +188,12 @@ export default function OnboardingPage() {
 
   return (
     <div className="relative isolate flex min-h-screen flex-col items-center justify-center bg-background onboarding-gradient overflow-hidden p-4 sm:p-6 lg:p-8">
-      <div className="absolute top-4 right-4 z-10">
+      <div className="absolute top-4 left-4 right-4 z-10 flex justify-between items-center">
         <ThemeToggle />
+        <Button variant="ghost" size="icon" onClick={handleLogout} className="rounded-full">
+            <LogOut className="h-5 w-5" />
+            <span className="sr-only">Logout</span>
+        </Button>
       </div>
       <div className="relative z-10 mx-auto max-w-7xl w-full">
          <div className="text-center mb-12">
