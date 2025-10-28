@@ -216,7 +216,7 @@ export default function OnboardingPage() {
          <div className="text-center mb-12">
             <ProposalUpLogos className="mx-auto h-24 w-24 text-slate-800 dark:text-white" />
             <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
-                Welcome to Proposal Up!
+                Welcome to <br className="sm:hidden" /> Proposal Up!
             </h1>
             <p className="mt-4 text-lg leading-8 text-slate-700 dark:text-slate-300">
                 Choose a plan to get started and explore how Proposal Up can help you win more projects.
