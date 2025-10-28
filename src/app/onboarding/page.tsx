@@ -189,7 +189,7 @@ export default function OnboardingPage() {
 
   return (
     <div className="relative isolate flex min-h-screen flex-col items-center justify-center bg-background onboarding-gradient overflow-hidden p-4 sm:p-6 lg:p-8">
-      <div className="absolute top-4 right-4 z-10 flex items-center gap-2">
+      <div className="absolute top-4 left-4 z-10">
         <TooltipProvider>
             <Tooltip>
                 <TooltipTrigger asChild>
@@ -199,6 +199,10 @@ export default function OnboardingPage() {
                     <p>Toggle theme</p>
                 </TooltipContent>
             </Tooltip>
+        </TooltipProvider>
+      </div>
+      <div className="absolute top-4 right-4 z-10">
+        <TooltipProvider>
             <Tooltip>
                 <TooltipTrigger asChild>
                     <Button
