@@ -82,7 +82,7 @@ export async function POST(req: Request) {
                         console.log(`Successfully synced new subscription for user ${userRef.id}`);
                     }
                 } else if (session.mode === 'payment') {
-                    // One-time payments are handled by invoice.payment_succeeded to capture all payment types.
+                    // This is handled by invoice.payment_succeeded to capture all payment types.
                 } else if (session.mode === 'setup') {
                      const stripeCustomerId = session.customer as string;
                      const userRef = await findUserByStripeCustomerId(adminDb, stripeCustomerId);
@@ -227,9 +227,10 @@ export async function POST(req: Request) {
                        await addCredits(adminDb, userRef, creditsToAdd, `Purchased ${creditsToAdd} credits`);
                        console.log(`Added ${creditsToAdd} credits to user ${userId} via direct charge.`);
 
-                       const billingHistoryRef = userRef.collection('billingHistory').doc(charge.id);
-                        await billingHistoryRef.set({
-                            id: charge.id,
+                       // Use .add() to create a new document with a unique ID for the billing history
+                       const billingHistoryRef = userRef.collection('billingHistory');
+                       await billingHistoryRef.add({
+                            id: charge.id, // Still store the charge ID for reference
                             createdAt: FieldValue.serverTimestamp(),
                             date: new Date(charge.created * 1000),
                             total: charge.amount,
