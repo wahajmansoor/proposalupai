@@ -156,9 +156,9 @@ export async function POST(req: Request) {
                     }
 
                     // Check if this invoice is for a one-time credit purchase.
-                    const isCreditPurchase = lineItem?.price?.lookup_key && Object.keys(creditProducts).includes(lineItem.price.id);
-                    if (isCreditPurchase && lineItem.price?.lookup_key) {
-                        const credits = creditProducts[lineItem.price.id];
+                    const isCreditPurchase = lineItem?.price?.id && Object.keys(creditProducts).includes(lineItem.price.id);
+                    if (isCreditPurchase) {
+                        const credits = creditProducts[lineItem.price!.id];
                         description = `Credit Purchase: ${credits} credits`;
                     }
                     
