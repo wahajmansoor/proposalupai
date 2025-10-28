@@ -190,8 +190,8 @@ export default function OnboardingPage() {
     <div className="relative isolate flex min-h-screen flex-col items-center justify-center bg-background onboarding-gradient overflow-hidden p-4 sm:p-6 lg:p-8">
       <div className="absolute top-4 left-4 right-4 z-10 flex justify-between items-center">
         <ThemeToggle />
-        <Button variant="destructive" size="lg" onClick={handleLogout} className="rounded-full">
-           <LogOut className="mr-2 h-6 w-6"/>
+        <Button variant="destructive" size="sm" onClick={handleLogout} className="rounded-full">
+           <LogOut className="mr-2 h-4 w-4"/>
             Logout
         </Button>
       </div>
