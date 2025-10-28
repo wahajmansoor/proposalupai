@@ -3,30 +3,21 @@
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/auth-context';
+import { Button } from '@/components/ui/button';
 import { ProposalUpLogos } from '@/components/icons';
+import { WelcomeScreen } from '@/components/welcome-screen';
 
 export default function Home() {
-  const { user, loading } = useAuth();
-  const router = useRouter();
+    const router = useRouter();
 
-  useEffect(() => {
-    // Wait until the authentication state is fully loaded
-    if (!loading) {
-      if (user) {
-        // If user is logged in, redirect to the dashboard
-        router.replace('/dashboard');
-      } else {
-        // If user is not logged in, redirect to the login page
+    useEffect(() => {
+        // This page is just a landing page. The actual app logic starts at /login or /dashboard.
+        // For simplicity in this environment, we'll just redirect to login.
+        // In a real app, this could be a marketing landing page.
         router.replace('/login');
-      }
-    }
-  }, [user, loading, router]);
+    }, [router]);
 
-  // Show a loading indicator while the auth state is being determined
   return (
-    <div className="flex items-center justify-center min-h-screen">
-      <ProposalUpLogos className="h-24 w-24 animate-pulse text-primary" />
-    </div>
+    <WelcomeScreen description="You are being redirected..." />
   );
 }
