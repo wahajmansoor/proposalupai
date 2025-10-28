@@ -150,9 +150,8 @@ export async function POST(req: Request) {
                     const isCreditPurchase = firstLineItem?.price?.id && creditProducts[firstLineItem.price.id];
 
                     if (isCreditPurchase) {
+                        // This path handles credit pack purchases made via a Checkout Session (one-time invoice)
                         const creditsToAdd = creditProducts[firstLineItem.price!.id];
-                        // This logic path is for one-time purchases of credits via a Checkout Session.
-                        // We will add the credits and save a record to the credit billing history.
                         await addCredits(adminDb, userRef_invoice, creditsToAdd, `Purchased ${creditsToAdd} credits`);
                         
                         const creditBillingHistoryRef = userRef_invoice.collection('creditBillingHistory').doc(invoice.id);
@@ -167,8 +166,7 @@ export async function POST(req: Request) {
                         });
 
                     } else {
-                        // This logic path is for all other invoices, which should be subscription-related.
-                        // It's a subscription-related invoice, save to planBillingHistory
+                        // This path handles all subscription-related invoices.
                         const planBillingHistoryRef = userRef_invoice.collection('planBillingHistory').doc(invoice.id);
                         
                         let description = firstLineItem?.description || 'Payment';
@@ -187,7 +185,7 @@ export async function POST(req: Request) {
                             description: description,
                         });
 
-                        // Award credits on subscription creation or renewal
+                        // Award credits only on subscription creation or renewal
                         if (invoice.subscription) {
                             const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
                             const interval = subscription.items.data[0]?.price.recurring?.interval;
