@@ -84,9 +84,8 @@ export async function handlePlanChange(formData: FormData): Promise<{
        
         // Prevent awarding trial credits multiple times
         if (!userDoc?.trialCreditsAwarded) {
-            let creditsToAward = 5;
-            let creditReason = 'Started a new trial';
-
+            await addCredits(adminDb, userRef, 5, 'Started a new trial');
+            
             // Check for referral
             if (userDoc?.referredBy) {
                 const referrerQuery = await adminDb.collection('users').where('referralCode', '==', userDoc.referredBy).limit(1).get();
@@ -96,16 +95,14 @@ export async function handlePlanChange(formData: FormData): Promise<{
                     await addCredits(adminDb, referrerRef, 5, `Referral bonus for ${userDoc?.displayName || 'a new user'}`);
                     console.log(`Awarded 5 referral credits to referrer ${referrerRef.id}.`);
 
-                    // New user gets 10 credits total (5 for trial + 5 for referral)
-                    creditsToAward = 10;
-                    creditReason = 'Started trial with referral bonus';
+                    // Award 5 credits to the new user for being referred
+                    await addCredits(adminDb, userRef, 5, 'Referral sign-up bonus');
                 }
             }
             
-            await addCredits(adminDb, userRef, creditsToAward, creditReason);
             // Mark that trial credits have been given
             await userRef.update({ trialCreditsAwarded: true });
-            console.log(`Awarded ${creditsToAward} initial credits to new user ${user.uid}.`);
+            console.log(`Awarded initial credits to new user ${user.uid}.`);
         }
 
         const sessionParams: Stripe.Checkout.SessionCreateParams = {
@@ -161,7 +158,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
                 await addCredits(adminDb, userRef, 100, 'Yearly plan upgrade bonus');
             }
 
-            revalidatePath('/pricing');
+            revalidatePath('/dashboard/pricing');
             revalidatePath('/subscription');
             return { success: true, message: `Your trial has ended and your ${interval} plan is now active!` };
         } catch (error: any) {
@@ -210,7 +207,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
       // Award the difference in credits for upgrading
       await addCredits(adminDb, userRef, 90, 'Yearly plan upgrade bonus');
 
-      revalidatePath('/pricing');
+      revalidatePath('/dashboard/pricing');
       revalidatePath('/subscription');
       return { success: true, message: 'Your plan has been successfully switched to Yearly!' };
     }

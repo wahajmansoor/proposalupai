@@ -412,7 +412,7 @@ export async function getCreditHistory(): Promise<{ history?: CreditHistoryItem[
         if (querySnapshot.empty) {
             return { history: [] };
         }
-
+        
         const history: CreditHistoryItem[] = querySnapshot.docs.map(doc => {
             const data = doc.data();
             const createdAtTimestamp = data.createdAt;
