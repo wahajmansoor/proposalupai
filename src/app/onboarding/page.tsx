@@ -213,7 +213,7 @@ export default function OnboardingPage() {
         </TooltipProvider>
       </div>
       <div className="relative z-10 mx-auto max-w-7xl w-full">
-         <div className="text-center mb-12 pt-16 sm:pt-0">
+         <div className="text-center mb-12 mt-[50px]">
             <ProposalUpLogos className="mx-auto h-24 w-24 text-slate-800 dark:text-white" />
             <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
                 Welcome to Proposal Up!
