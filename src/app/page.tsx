@@ -1,11 +1,8 @@
-
 "use client";
 
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
-import { Button } from '@/components/ui/button';
 import { ProposalUpLogos } from '@/components/icons';
-import { WelcomeScreen } from '@/components/welcome-screen';
 
 export default function Home() {
     const router = useRouter();
@@ -18,6 +15,8 @@ export default function Home() {
     }, [router]);
 
   return (
-    <WelcomeScreen description="You are being redirected..." />
+    <div className="flex items-center justify-center min-h-screen">
+      <ProposalUpLogos className="h-24 w-24 animate-pulse text-primary" />
+    </div>
   );
 }
