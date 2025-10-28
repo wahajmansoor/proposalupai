@@ -381,7 +381,6 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
             });
         });
         
-        // Sort the merged history by creation date descending
         allHistory.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
         
         return { invoices: allHistory };
