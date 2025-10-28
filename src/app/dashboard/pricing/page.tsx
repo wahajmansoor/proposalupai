@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -359,7 +360,7 @@ export default function PricingPage() {
                         )}
                          {isTrialing && (
                             <p className="text-xs text-center text-muted-foreground mt-2">
-                              To change your payment method, please visit your <Link href="/subscription" className="underline">subscription page</Link>.
+                              Your trial ends once you activate a plan and the payment is charged to your attached card. To update your payment method, visit your <Link href="/subscription" className="underline">Subscription page</Link>.
                             </p>
                         )}
                     </form>
@@ -403,3 +404,5 @@ export default function PricingPage() {
     </div>
   );
 }
+
+    
