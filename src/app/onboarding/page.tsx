@@ -128,15 +128,6 @@ function PlanDetailsCard({
                     ))}
                 </ul>
                  <div className="flex flex-col-reverse sm:flex-row justify-between items-center sm:items-end my-4 gap-4">
-                    <Button 
-                        size="lg" 
-                        className="text-base font-medium w-full sm:w-auto"
-                        onClick={onSubmit}
-                        disabled={isSubmitting}
-                    >
-                        {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
-                        Start a 2-Day Free Trial
-                    </Button>
                     <div className="text-left w-full sm:w-auto">
                         <p className="text-sm font-medium">Proposal Improvements</p>
                         <Button
@@ -147,6 +138,15 @@ function PlanDetailsCard({
                             <span className="font-bold">{plan.interval === 'monthly' ? '10 Free Credits' : '100 Free Credits'}</span>
                         </Button>
                     </div>
+                    <Button 
+                        size="lg" 
+                        className="text-base font-medium w-full sm:w-auto"
+                        onClick={onSubmit}
+                        disabled={isSubmitting}
+                    >
+                        {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
+                        Start a 2-Day Free Trial
+                    </Button>
                 </div>
             </div>
         </div>
@@ -214,7 +214,7 @@ export default function OnboardingPage() {
             </Tooltip>
         </TooltipProvider>
       </div>
-      <div className="relative z-10 mx-auto max-w-7xl w-full mt-8 sm:mt-4">
+      <div className="relative z-10 mx-auto max-w-7xl w-full mt-10 sm:mt-4">
          <div className="text-center mb-12">
             <ProposalUpLogos className="mx-auto h-24 w-24 text-slate-800 dark:text-white" />
             <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
@@ -251,7 +251,3 @@ export default function OnboardingPage() {
     </div>
   );
 }
-
-    
-
-    
