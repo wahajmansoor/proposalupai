@@ -26,7 +26,7 @@ export function Header() {
            {canSeeCredits && <CreditsButton />}
           {user && userProfile?.subscriptionStatus === 'trialing' && (
             <Button asChild size="sm" className="hidden sm:flex">
-              <Link href="/pricing">
+              <Link href="/dashboard/pricing">
                 <Sparkles className="mr-2 h-4 w-4" />
                 Activate Pro Plan
               </Link>
@@ -38,5 +38,3 @@ export function Header() {
       </header>
   );
 }
-
-    
