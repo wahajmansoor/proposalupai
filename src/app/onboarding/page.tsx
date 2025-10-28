@@ -95,7 +95,7 @@ function PlanDetailsCard({
     return (
         <div className="bg-white/80 dark:bg-slate-900/80 text-card-foreground rounded-xl shadow-2xl border w-full">
             <div className="p-6">
-                <div className="flex justify-between items-center">
+                <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>
                         <div className="flex items-center gap-2">
                             <h3 className="text-2xl font-bold">{plan.name}</h3>
@@ -107,8 +107,8 @@ function PlanDetailsCard({
                         </div>
                          <p className="text-muted-foreground mt-1">Unlock all AI features with unlimited access.</p>
                     </div>
-                    <div className="text-right">
-                        <div className="flex items-baseline justify-end">
+                    <div className="text-left sm:text-right shrink-0">
+                        <div className="flex items-baseline justify-start sm:justify-end">
                             <span className="text-5xl font-bold tracking-tight">${plan.price}</span>
                             <span className="text-lg font-medium text-muted-foreground ml-1">USD</span>
                         </div>
@@ -191,7 +191,9 @@ export default function OnboardingPage() {
   return (
     <div className="relative isolate flex min-h-screen flex-col items-center justify-center bg-background onboarding-gradient overflow-hidden p-4 sm:p-6 lg:p-8">
       <div className="absolute top-4 left-4 z-10">
-        <ThemeToggle />
+        <TooltipProvider>
+            <ThemeToggle />
+        </TooltipProvider>
       </div>
       <div className="absolute top-4 right-4 z-10">
         <TooltipProvider>
