@@ -1,6 +1,7 @@
-import { initializeApp, getApps, getApp } from 'firebase/app';
-import { getAuth } from 'firebase/auth';
-import { getFirestore } from 'firebase/firestore';
+
+import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
+import { getAuth, type Auth } from 'firebase/auth';
+import { getFirestore, type Firestore } from 'firebase/firestore';
 
 // Your web app's Firebase configuration using environment variables
 const firebaseConfig = {
@@ -12,25 +13,32 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-let app;
-let db;
-let auth;
+let app: FirebaseApp;
+let auth: Auth;
+let db: Firestore;
 
-// Check if all Firebase config values are provided
 const isFirebaseConfigured = Object.values(firebaseConfig).every(
   (value) => value && !value.includes('your_')
 );
 
-if (isFirebaseConfigured) {
-  // Initialize Firebase for SSR
-  app = !getApps().length ? initializeApp(firebaseConfig) : getApp();
-  db = getFirestore(app);
-  auth = getAuth(app);
+if (!getApps().length) {
+    if (isFirebaseConfigured) {
+        app = initializeApp(firebaseConfig);
+    } else {
+        // Initialize with dummy values if not configured, 
+        // to prevent the app from crashing on import.
+        // Client-side checks will handle functionality.
+        app = initializeApp({ apiKey: "dummy", authDomain: "dummy.firebaseapp.com", projectId: "dummy" });
+        console.error(
+            'Firebase is not fully configured. Please add your NEXT_PUBLIC_FIREBASE_* variables to your .env file. The app will run without Firebase functionality on the client.'
+        );
+    }
 } else {
-  console.error(
-    'Firebase is not fully configured. Please add your NEXT_PUBLIC_FIREBASE_* variables to your .env file. The app will run without Firebase functionality on the client.'
-  );
+    app = getApp();
 }
 
+auth = getAuth(app);
+db = getFirestore(app);
 
-export { app, db, auth };
+
+export { app, db, auth, isFirebaseConfigured };

@@ -3,7 +3,7 @@
 
 import { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
 import { onAuthStateChanged, User, signOut } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase/config';
+import { auth, db, isFirebaseConfigured } from '@/lib/firebase/config';
 import { doc, onSnapshot } from 'firebase/firestore';
 import { ProposalUpLogos } from '@/components/icons';
 import { useRouter } from 'next/navigation';
@@ -61,6 +61,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const previousCreditsRef = useRef<number | undefined>(undefined);
 
   useEffect(() => {
+    if (!isFirebaseConfigured) {
+        setLoading(false);
+        return;
+    }
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       if (user) {
@@ -111,7 +115,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const handleLogout = async () => {
     setIsLoggingOut(true);
     try {
-        await signOut(auth); // Sign out from client-side Firebase
+        if(isFirebaseConfigured) {
+            await signOut(auth); // Sign out from client-side Firebase
+        }
         await fetch('/api/auth/session', { method: 'DELETE' }); // Clear server-side session cookie
     } catch (error) {
         console.error("Error during logout:", error);
