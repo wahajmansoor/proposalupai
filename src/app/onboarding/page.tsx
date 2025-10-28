@@ -214,7 +214,7 @@ export default function OnboardingPage() {
             </Tooltip>
         </TooltipProvider>
       </div>
-      <div className="relative z-10 mx-auto max-w-7xl w-full mt-4">
+      <div className="relative z-10 mx-auto max-w-7xl w-full mt-8 sm:mt-4">
          <div className="text-center mb-12">
             <ProposalUpLogos className="mx-auto h-24 w-24 text-slate-800 dark:text-white" />
             <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-900 dark:text-white sm:text-5xl">
