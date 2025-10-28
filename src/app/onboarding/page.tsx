@@ -127,18 +127,18 @@ function PlanDetailsCard({
                         </li>
                     ))}
                 </ul>
-                 <div className="flex justify-between items-end my-4">
+                 <div className="flex flex-col sm:flex-row justify-between items-center sm:items-end my-4 gap-4">
                     <Button 
                         size="lg" 
-                        className="text-base font-medium"
+                        className="text-base font-medium w-full sm:w-auto"
                         onClick={onSubmit}
                         disabled={isSubmitting}
                     >
                         {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
                         Start a 2-Day Free Trial
                     </Button>
-                    <div className="text-left">
-                        <p className="text-sm font-medium text-left">Proposal Improvements</p>
+                    <div className="text-center sm:text-left">
+                        <p className="text-sm font-medium">Proposal Improvements</p>
                         <Button
                             variant="outline"
                             className="relative h-9 px-3 bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 font-semibold gap-2 rounded-full"
@@ -251,3 +251,5 @@ export default function OnboardingPage() {
     </div>
   );
 }
+
+    
