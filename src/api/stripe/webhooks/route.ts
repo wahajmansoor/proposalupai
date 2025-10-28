@@ -151,6 +151,8 @@ export async function POST(req: Request) {
 
                     if (isCreditPurchase) {
                         const creditsToAdd = creditProducts[firstLineItem.price!.id];
+                        // This logic path is for one-time purchases of credits via a Checkout Session.
+                        // We will add the credits and save a record to the credit billing history.
                         await addCredits(adminDb, userRef_invoice, creditsToAdd, `Purchased ${creditsToAdd} credits`);
                         
                         const creditBillingHistoryRef = userRef_invoice.collection('creditBillingHistory').doc(invoice.id);
@@ -165,6 +167,7 @@ export async function POST(req: Request) {
                         });
 
                     } else {
+                        // This logic path is for all other invoices, which should be subscription-related.
                         // It's a subscription-related invoice, save to planBillingHistory
                         const planBillingHistoryRef = userRef_invoice.collection('planBillingHistory').doc(invoice.id);
                         
