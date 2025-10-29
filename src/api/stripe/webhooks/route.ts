@@ -81,8 +81,6 @@ export async function POST(req: Request) {
                         await userRef.update(subscriptionData);
                         console.log(`Successfully synced new subscription for user ${userRef.id}`);
                     }
-                } else if (session.mode === 'payment') {
-                    // This is handled by invoice.paid or charge.succeeded now
                 } else if (session.mode === 'setup') {
                      const stripeCustomerId = session.customer as string;
                      const userRef = await findUserByStripeCustomerId(adminDb, stripeCustomerId);
@@ -146,8 +144,7 @@ export async function POST(req: Request) {
                 const userRef_invoice = await findUserByStripeCustomerId(adminDb, stripeCustomerId_invoice);
 
                 if (userRef_invoice) {
-                    const firstLineItem = invoice.lines.data[0];
-                    let description = firstLineItem?.description || 'Payment';
+                    let description = invoice.lines.data[0]?.description || 'Payment';
                      if (invoice.billing_reason === 'subscription_create') {
                         description = 'Subscription Started';
                     } else if (invoice.billing_reason === 'subscription_cycle') {
@@ -165,30 +162,24 @@ export async function POST(req: Request) {
                         description: description,
                     });
                     console.log(`Saved invoice to billing history for user ${userRef_invoice.id}`);
-                }
-                break;
-            }
-                
-            case 'invoice.payment_succeeded': {
-                const invoice = event.data.object as Stripe.Invoice;
-                const stripeCustomerId_invoice = invoice.customer as string;
-                const userRef_invoice = await findUserByStripeCustomerId(adminDb, stripeCustomerId_invoice);
-
-                if (userRef_invoice && invoice.subscription) {
-                    const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
-                    const interval = subscription.items.data[0]?.price.recurring?.interval;
                     
-                    if (invoice.billing_reason === 'subscription_create') {
-                        if (interval === 'month') {
-                            await addCredits(adminDb, userRef_invoice, 10, 'Monthly plan activation bonus');
-                        } else if (interval === 'year') {
-                            await addCredits(adminDb, userRef_invoice, 100, 'Yearly plan activation bonus');
-                        }
-                    } else if (invoice.billing_reason === 'subscription_cycle') {
-                        if (interval === 'month') {
-                            await addCredits(adminDb, userRef_invoice, 10, 'Monthly subscription credits');
-                        } else if (interval === 'year') {
-                            await addCredits(adminDb, userRef_invoice, 100, 'Yearly subscription credits');
+                    // Award credits for subscription payments
+                    if (invoice.subscription) {
+                        const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
+                        const interval = subscription.items.data[0]?.price.recurring?.interval;
+                        
+                        if (invoice.billing_reason === 'subscription_create') {
+                            if (interval === 'month') {
+                                await addCredits(adminDb, userRef_invoice, 10, 'Monthly plan activation bonus');
+                            } else if (interval === 'year') {
+                                await addCredits(adminDb, userRef_invoice, 100, 'Yearly plan activation bonus');
+                            }
+                        } else if (invoice.billing_reason === 'subscription_cycle') {
+                            if (interval === 'month') {
+                                await addCredits(adminDb, userRef_invoice, 10, 'Monthly subscription credits');
+                            } else if (interval === 'year') {
+                                await addCredits(adminDb, userRef_invoice, 100, 'Yearly subscription credits');
+                            }
                         }
                     }
                 }
