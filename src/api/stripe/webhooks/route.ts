@@ -144,11 +144,19 @@ export async function POST(req: Request) {
                 const userRef_invoice = await findUserByStripeCustomerId(adminDb, stripeCustomerId_invoice);
 
                 if (userRef_invoice) {
-                    let description = invoice.lines.data[0]?.description || 'Payment';
-                     if (invoice.billing_reason === 'subscription_create') {
+                    const lineItem = invoice.lines.data[0];
+                    const priceId = lineItem?.price?.id;
+                    const isCreditPurchase = priceId && Object.keys(creditProducts).includes(priceId);
+
+                    let description = lineItem?.description || 'Payment';
+                    if (isCreditPurchase) {
+                        description = `Credit Purchase: ${creditProducts[priceId!]} credits`
+                    } else if (invoice.billing_reason === 'subscription_create') {
                         description = 'Subscription Started';
                     } else if (invoice.billing_reason === 'subscription_cycle') {
                         description = 'Subscription Renewal';
+                    } else if (invoice.lines.data.some(line => line.proration && line.description?.toLowerCase().includes('unused time'))) {
+                        description = `Upgrade to Yearly Plan`;
                     }
                     
                     const billingHistoryRef = userRef_invoice.collection('billingHistory').doc(invoice.id);
@@ -161,10 +169,10 @@ export async function POST(req: Request) {
                         invoiceUrl: invoice.hosted_invoice_url,
                         description: description,
                     });
-                    console.log(`Saved invoice to billing history for user ${userRef_invoice.id}`);
+                    console.log(`Saved invoice ${invoice.id} to billing history for user ${userRef_invoice.id}`);
                     
-                    // Award credits for subscription payments
-                    if (invoice.subscription) {
+                    // Award credits for subscription payments, but not for credit purchases
+                    if (invoice.subscription && !isCreditPurchase) {
                         const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
                         const interval = subscription.items.data[0]?.price.recurring?.interval;
                         
@@ -190,6 +198,7 @@ export async function POST(req: Request) {
                 const charge = event.data.object as Stripe.Charge;
                 const purchaseType = charge.metadata.purchase_type;
                 
+                // This handler is now a fallback for one-time credit purchases initiated via direct charges (not invoices).
                 if (purchaseType === 'credits' && !charge.invoice) {
                     const userId = charge.metadata.firebase_uid;
                     const priceId = charge.metadata.price_id;
@@ -198,7 +207,7 @@ export async function POST(req: Request) {
                     if (userId && creditsToAdd) {
                        const userRef = adminDb.collection('users').doc(userId);
                        await addCredits(adminDb, userRef, creditsToAdd, `Purchased ${creditsToAdd} credits`);
-                       console.log(`Added ${creditsToAdd} credits to user ${userId}`);
+                       console.log(`Added ${creditsToAdd} credits to user ${userId} via direct charge.`);
 
                         const billingHistoryRef = userRef.collection('billingHistory').doc(charge.id);
                         await billingHistoryRef.set({
@@ -210,7 +219,7 @@ export async function POST(req: Request) {
                             invoiceUrl: null, 
                             description: `Credit Purchase: ${creditsToAdd} credits`,
                         });
-                        console.log(`Saved credit purchase to billing history for user ${userId}`);
+                        console.log(`Saved direct charge to billing history for user ${userId}`);
                     }
                 }
                 break;
