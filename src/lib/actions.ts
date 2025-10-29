@@ -343,41 +343,21 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
     }
 
     try {
-        const userRef = adminDb.collection('users').doc(currentUser.user.uid);
-        const planHistorySnap = await userRef.collection('planBillingHistory').orderBy('date', 'desc').limit(25).get();
-        const creditHistorySnap = await userRef.collection('creditBillingHistory').orderBy('date', 'desc').limit(25).get();
-        
-        const allInvoices: InvoiceDetails[] = [];
+        const historyRef = adminDb.collection('users').doc(currentUser.user.uid).collection('billingHistory');
+        const querySnapshot = await historyRef.orderBy('date', 'desc').limit(50).get();
 
-        planHistorySnap.forEach(doc => {
+        const invoices: InvoiceDetails[] = querySnapshot.docs.map(doc => {
             const data = doc.data();
-            allInvoices.push({
+            return {
                 id: doc.id,
                 date: data.date.toDate().toLocaleDateString(),
                 total: `$${(data.total / 100).toFixed(2)}`,
                 status: data.status || 'unknown',
                 invoiceUrl: data.invoiceUrl,
-                description: data.description || 'Plan Payment'
-            });
+                description: data.description || 'Payment'
+            };
         });
-        
-        creditHistorySnap.forEach(doc => {
-            const data = doc.data();
-            allInvoices.push({
-                id: doc.id,
-                date: data.date.toDate().toLocaleDateString(),
-                total: `$${(data.total / 100).toFixed(2)}`,
-                status: data.status || 'unknown',
-                invoiceUrl: data.invoiceUrl,
-                description: data.description || 'Credit Purchase'
-            });
-        });
-        
-        // Sort all invoices by date, descending
-        allInvoices.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-
-        return { invoices: allInvoices };
-
+        return { invoices };
     } catch (error: any) {
         console.error('Could not fetch billing history from Firestore:', error.message);
         return { error: 'Failed to fetch billing history.' };

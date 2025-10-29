@@ -82,7 +82,7 @@ export async function POST(req: Request) {
                         console.log(`Successfully synced new subscription for user ${userRef.id}`);
                     }
                 } else if (session.mode === 'payment') {
-                    // This is handled by charge.succeeded now to catch all one-time payments
+                    // This is handled by invoice.paid or charge.succeeded now
                 } else if (session.mode === 'setup') {
                      const stripeCustomerId = session.customer as string;
                      const userRef = await findUserByStripeCustomerId(adminDb, stripeCustomerId);
@@ -147,46 +147,24 @@ export async function POST(req: Request) {
 
                 if (userRef_invoice) {
                     const firstLineItem = invoice.lines.data[0];
-                    const isCreditPurchase = firstLineItem?.price?.id && creditProducts[firstLineItem.price.id];
-
-                    if (isCreditPurchase) {
-                        const creditsToAdd = creditProducts[firstLineItem.price!.id];
-                        const billingHistoryRef = userRef_invoice.collection('creditBillingHistory').doc(invoice.id);
-                        await billingHistoryRef.set({
-                            id: invoice.id,
-                            createdAt: FieldValue.serverTimestamp(),
-                            date: new Date(invoice.created * 1000),
-                            total: invoice.total,
-                            status: invoice.status,
-                            invoiceUrl: invoice.hosted_invoice_url,
-                            description: `Credit Purchase: ${creditsToAdd} credits`,
-                        });
-                        console.log(`Saved credit purchase invoice to history for user ${userRef_invoice.id}`);
-                    } else if (invoice.subscription) {
-                        // This handles subscription renewals, upgrades, and trial starts with $0 invoices
-                        const billingHistoryRef = userRef_invoice.collection('planBillingHistory').doc(invoice.id);
-                        
-                        let description = firstLineItem?.description || 'Plan Payment';
-                        const isUpgrade = invoice.lines.data.some(line => line.proration && line.description?.toLowerCase().includes('unused time'));
-                        if (isUpgrade) {
-                            description = `Upgrade to Yearly Plan`;
-                        } else if (invoice.billing_reason === 'subscription_create') {
-                            description = 'Subscription Started';
-                        } else if (invoice.billing_reason === 'subscription_cycle') {
-                            description = 'Subscription Renewal';
-                        }
-                        
-                        await billingHistoryRef.set({
-                            id: invoice.id,
-                            createdAt: FieldValue.serverTimestamp(),
-                            date: new Date(invoice.created * 1000),
-                            total: invoice.total,
-                            status: invoice.status,
-                            invoiceUrl: invoice.hosted_invoice_url,
-                            description: description,
-                        });
-                        console.log(`Saved plan invoice to history for user ${userRef_invoice.id}`);
+                    let description = firstLineItem?.description || 'Payment';
+                     if (invoice.billing_reason === 'subscription_create') {
+                        description = 'Subscription Started';
+                    } else if (invoice.billing_reason === 'subscription_cycle') {
+                        description = 'Subscription Renewal';
                     }
+                    
+                    const billingHistoryRef = userRef_invoice.collection('billingHistory').doc(invoice.id);
+                    await billingHistoryRef.set({
+                        id: invoice.id,
+                        createdAt: FieldValue.serverTimestamp(),
+                        date: new Date(invoice.created * 1000),
+                        total: invoice.total,
+                        status: invoice.status,
+                        invoiceUrl: invoice.hosted_invoice_url,
+                        description: description,
+                    });
+                    console.log(`Saved invoice to billing history for user ${userRef_invoice.id}`);
                 }
                 break;
             }
@@ -197,26 +175,20 @@ export async function POST(req: Request) {
                 const userRef_invoice = await findUserByStripeCustomerId(adminDb, stripeCustomerId_invoice);
 
                 if (userRef_invoice && invoice.subscription) {
-                    const firstLineItem = invoice.lines.data[0];
-                    const isCreditPurchase = firstLineItem?.price?.id && creditProducts[firstLineItem.price.id];
-
-                    // Only award credits on subscription payments, not one-time credit purchases
-                    if (!isCreditPurchase) {
-                        const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
-                        const interval = subscription.items.data[0]?.price.recurring?.interval;
-                        
-                        if (invoice.billing_reason === 'subscription_create') {
-                            if (interval === 'month') {
-                                await addCredits(adminDb, userRef_invoice, 10, 'Monthly plan activation bonus');
-                            } else if (interval === 'year') {
-                                await addCredits(adminDb, userRef_invoice, 100, 'Yearly plan activation bonus');
-                            }
-                        } else if (invoice.billing_reason === 'subscription_cycle') {
-                            if (interval === 'month') {
-                                await addCredits(adminDb, userRef_invoice, 10, 'Monthly subscription credits');
-                            } else if (interval === 'year') {
-                                await addCredits(adminDb, userRef_invoice, 100, 'Yearly subscription credits');
-                            }
+                    const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
+                    const interval = subscription.items.data[0]?.price.recurring?.interval;
+                    
+                    if (invoice.billing_reason === 'subscription_create') {
+                        if (interval === 'month') {
+                            await addCredits(adminDb, userRef_invoice, 10, 'Monthly plan activation bonus');
+                        } else if (interval === 'year') {
+                            await addCredits(adminDb, userRef_invoice, 100, 'Yearly plan activation bonus');
+                        }
+                    } else if (invoice.billing_reason === 'subscription_cycle') {
+                        if (interval === 'month') {
+                            await addCredits(adminDb, userRef_invoice, 10, 'Monthly subscription credits');
+                        } else if (interval === 'year') {
+                            await addCredits(adminDb, userRef_invoice, 100, 'Yearly subscription credits');
                         }
                     }
                 }
@@ -224,11 +196,9 @@ export async function POST(req: Request) {
             }
 
             case 'charge.succeeded': {
-                // This handler is now exclusively for one-time credit purchases initiated via Payment Intents (e.g. from the "Buy Credits" button)
                 const charge = event.data.object as Stripe.Charge;
                 const purchaseType = charge.metadata.purchase_type;
                 
-                // Ensure it's a credit purchase and not part of a subscription invoice to prevent double-counting.
                 if (purchaseType === 'credits' && !charge.invoice) {
                     const userId = charge.metadata.firebase_uid;
                     const priceId = charge.metadata.price_id;
@@ -236,22 +206,20 @@ export async function POST(req: Request) {
 
                     if (userId && creditsToAdd) {
                        const userRef = adminDb.collection('users').doc(userId);
-                       // Add credits
                        await addCredits(adminDb, userRef, creditsToAdd, `Purchased ${creditsToAdd} credits`);
                        console.log(`Added ${creditsToAdd} credits to user ${userId}`);
 
-                       // Save to billing history
-                        const billingHistoryRef = userRef.collection('creditBillingHistory').doc(charge.id);
+                        const billingHistoryRef = userRef.collection('billingHistory').doc(charge.id);
                         await billingHistoryRef.set({
                             id: charge.id,
                             createdAt: FieldValue.serverTimestamp(),
                             date: new Date(charge.created * 1000),
                             total: charge.amount,
                             status: 'succeeded',
-                            invoiceUrl: null, // Direct charges don't have a hosted invoice URL
+                            invoiceUrl: null, 
                             description: `Credit Purchase: ${creditsToAdd} credits`,
                         });
-                        console.log(`Saved credit purchase to history for user ${userId}`);
+                        console.log(`Saved credit purchase to billing history for user ${userId}`);
                     }
                 }
                 break;
