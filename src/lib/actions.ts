@@ -61,7 +61,6 @@ export interface InvoiceDetails {
   status: string;
   invoiceUrl: string | null;
   description: string;
-  createdAt: Date; 
 }
 
 export interface CreditHistoryItem {
@@ -344,50 +343,29 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
     }
 
     try {
-        const userRef = adminDb.collection('users').doc(currentUser.user.uid);
-        const planHistoryRef = userRef.collection('planBillingHistory');
-        const creditHistoryRef = userRef.collection('creditBillingHistory');
-        
-        const [planHistorySnap, creditHistorySnap] = await Promise.all([
-            planHistoryRef.orderBy('date', 'desc').limit(20).get(),
-            creditHistoryRef.orderBy('date', 'desc').limit(20).get()
-        ]);
+        const historyRef = adminDb.collection('users').doc(currentUser.user.uid).collection('billingHistory');
+        const querySnapshot = await historyRef.orderBy('date', 'desc').limit(50).get();
 
-        const allHistory: InvoiceDetails[] = [];
+        if (querySnapshot.empty) {
+            return { invoices: [] };
+        }
 
-        planHistorySnap.forEach(doc => {
+        const invoices: InvoiceDetails[] = querySnapshot.docs.map(doc => {
             const data = doc.data();
-            allHistory.push({
+            return {
                 id: doc.id,
                 date: data.date.toDate().toLocaleDateString(),
                 total: `$${(data.total / 100).toFixed(2)}`,
                 status: data.status || 'unknown',
                 invoiceUrl: data.invoiceUrl,
-                description: data.description || 'Payment',
-                createdAt: data.createdAt.toDate(),
-            });
+                description: data.description || 'Payment'
+            };
         });
-
-        creditHistorySnap.forEach(doc => {
-            const data = doc.data();
-            allHistory.push({
-                id: doc.id,
-                date: data.date.toDate().toLocaleDateString(),
-                total: `$${(data.total / 100).toFixed(2)}`,
-                status: data.status || 'succeeded',
-                invoiceUrl: data.invoiceUrl,
-                description: data.description || 'Credit Purchase',
-                createdAt: data.createdAt.toDate(),
-            });
-        });
-        
-        allHistory.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
-        
-        return { invoices: allHistory };
+        return { invoices };
 
     } catch (error: any) {
-        console.error('Could not fetch billing history:', error.message);
-        return { invoices: [] };
+        console.error('Could not fetch billing history from Firestore:', error.message);
+        return { error: 'Failed to fetch billing history.' };
     }
 }
 
@@ -401,10 +379,6 @@ export async function getCreditHistory(): Promise<{ history?: CreditHistoryItem[
     try {
         const historyRef = adminDb.collection('users').doc(currentUser.user.uid).collection('creditHistory');
         const querySnapshot = await historyRef.orderBy('createdAt', 'desc').get();
-        
-        if (querySnapshot.empty) {
-            return { history: [] };
-        }
         
         const history: CreditHistoryItem[] = querySnapshot.docs.map(doc => {
             const data = doc.data();
