@@ -343,25 +343,40 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
     }
 
     try {
-        const historyRef = adminDb.collection('users').doc(currentUser.user.uid).collection('billingHistory');
-        const querySnapshot = await historyRef.orderBy('date', 'desc').limit(50).get();
+        const userRef = adminDb.collection('users').doc(currentUser.user.uid);
+        const planHistorySnap = await userRef.collection('planBillingHistory').orderBy('date', 'desc').limit(25).get();
+        const creditHistorySnap = await userRef.collection('creditBillingHistory').orderBy('date', 'desc').limit(25).get();
+        
+        const allInvoices: InvoiceDetails[] = [];
 
-        if (querySnapshot.empty) {
-            return { invoices: [] };
-        }
-
-        const invoices: InvoiceDetails[] = querySnapshot.docs.map(doc => {
+        planHistorySnap.forEach(doc => {
             const data = doc.data();
-            return {
+            allInvoices.push({
                 id: doc.id,
                 date: data.date.toDate().toLocaleDateString(),
                 total: `$${(data.total / 100).toFixed(2)}`,
                 status: data.status || 'unknown',
                 invoiceUrl: data.invoiceUrl,
-                description: data.description || 'Payment'
-            };
+                description: data.description || 'Plan Payment'
+            });
         });
-        return { invoices };
+        
+        creditHistorySnap.forEach(doc => {
+            const data = doc.data();
+            allInvoices.push({
+                id: doc.id,
+                date: data.date.toDate().toLocaleDateString(),
+                total: `$${(data.total / 100).toFixed(2)}`,
+                status: data.status || 'unknown',
+                invoiceUrl: data.invoiceUrl,
+                description: data.description || 'Credit Purchase'
+            });
+        });
+        
+        // Sort all invoices by date, descending
+        allInvoices.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        return { invoices: allInvoices };
 
     } catch (error: any) {
         console.error('Could not fetch billing history from Firestore:', error.message);
