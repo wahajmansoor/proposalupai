@@ -28,9 +28,8 @@ const creditPackages = [
     { name: "50 Credits", price: 25, credits: 50, priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_50_PRICE_ID! }
 ];
 
-function BuyCredits() {
+function BuyCredits({ onPurchaseSuccess }: { onPurchaseSuccess: () => void }) {
     const { user, userProfile } = useAuth();
-    const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [selectedPriceId, setSelectedPriceId] = useState<string | null>(null);
     const { toast } = useToast();
@@ -51,7 +50,7 @@ function BuyCredits() {
                 toast({ title: "Error", description: result.error, variant: "destructive" });
             } else if (result.success) {
                 toast({ title: "Purchase Successful!", description: result.message });
-                router.refresh();
+                onPurchaseSuccess(); // Trigger the data refresh
             }
             setSelectedPriceId(null);
         });
@@ -112,7 +111,7 @@ function BuyCredits() {
     )
 }
 
-function CreditHistory() {
+function CreditHistory({ onDataRefresh, historyKey }: { onDataRefresh: () => void, historyKey: number }) {
   const { userProfile } = useAuth();
   const [history, setHistory] = useState<CreditHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -138,7 +137,7 @@ function CreditHistory() {
 
   useEffect(() => {
     fetchHistory();
-  }, [fetchHistory]);
+  }, [fetchHistory, historyKey]);
   
   useEffect(() => {
     if (typeof window !== 'undefined' && referralCode) {
@@ -232,25 +231,26 @@ function CreditHistory() {
   );
 }
 
-function HistoryTable({ title, description, fetchHistory }: { title: string; description: string; fetchHistory: () => Promise<{ invoices?: InvoiceDetails[]; error?: string; }> }) {
+function HistoryTable({ title, description, fetchHistory, historyKey }: { title: string; description: string; fetchHistory: () => Promise<{ invoices?: InvoiceDetails[]; error?: string; }>; historyKey: number }) {
   const [invoices, setInvoices] = useState<InvoiceDetails[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    async function loadData() {
-      setIsLoading(true);
-      setError(null);
-      const result = await fetchHistory();
-      if (result.error) {
-        setError(result.error);
-      } else if (result.invoices) {
-        setInvoices(result.invoices);
-      }
-      setIsLoading(false);
+  const loadData = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    const result = await fetchHistory();
+    if (result.error) {
+      setError(result.error);
+    } else if (result.invoices) {
+      setInvoices(result.invoices);
     }
-    loadData();
+    setIsLoading(false);
   }, [fetchHistory]);
+
+  useEffect(() => {
+    loadData();
+  }, [loadData, historyKey]);
 
   return (
     <Card>
@@ -318,6 +318,11 @@ export default function SubscriptionPage() {
   const { userProfile, loading } = useAuth();
   const { toast } = useToast();
   const [isManagingBilling, setIsManagingBilling] = useState(false);
+  const [historyKey, setHistoryKey] = useState(0); // Add this state
+
+  const reloadData = useCallback(() => {
+    setHistoryKey(prevKey => prevKey + 1);
+  }, []);
   
   const handleBillingSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -408,19 +413,21 @@ export default function SubscriptionPage() {
               )}
             </CardContent>
           </Card>
-          <BuyCredits />
+          <BuyCredits onPurchaseSuccess={reloadData} />
         </div>
         <div className="lg:col-span-3 space-y-8">
-           <CreditHistory />
+           <CreditHistory onDataRefresh={reloadData} historyKey={historyKey} />
            <HistoryTable
               title="Subscription Billing History"
               description="Review your past subscription payments and invoices."
               fetchHistory={getBillingHistory}
+              historyKey={historyKey}
            />
            <HistoryTable
               title="Credit Purchase History"
               description="Review your one-time credit purchases."
               fetchHistory={getCreditPurchaseHistory}
+              historyKey={historyKey}
            />
         </div>
       </div>
