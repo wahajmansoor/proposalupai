@@ -19,6 +19,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { ShareIcons } from '@/components/icons';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { useRouter } from 'next/navigation';
 
 
 const creditPackages = [
@@ -29,6 +30,7 @@ const creditPackages = [
 
 function BuyCredits() {
     const { user, userProfile } = useAuth();
+    const router = useRouter();
     const [isPending, startTransition] = useTransition();
     const [selectedPriceId, setSelectedPriceId] = useState<string | null>(null);
     const { toast } = useToast();
@@ -49,6 +51,7 @@ function BuyCredits() {
                 toast({ title: "Error", description: result.error, variant: "destructive" });
             } else if (result.success) {
                 toast({ title: "Purchase Successful!", description: result.message });
+                router.refresh();
             }
             setSelectedPriceId(null);
         });
@@ -121,26 +124,27 @@ function CreditHistory() {
   
   const referralCode = userProfile?.referralCode;
 
+  const fetchHistory = useCallback(async () => {
+    setIsLoading(true);
+    setError(null);
+    const result = await getCreditHistory();
+    if (result.error) {
+      setError(result.error);
+    } else if (result.history) {
+      setHistory(result.history);
+    }
+    setIsLoading(false);
+  }, []);
+
+  useEffect(() => {
+    fetchHistory();
+  }, [fetchHistory]);
+  
   useEffect(() => {
     if (typeof window !== 'undefined' && referralCode) {
       setReferralLink(`${window.location.origin}/signup?invite=${referralCode}`);
     }
   }, [referralCode]);
-  
-  useEffect(() => {
-    async function fetchHistory() {
-      setIsLoading(true);
-      setError(null);
-      const result = await getCreditHistory();
-      if (result.error) {
-        setError(result.error);
-      } else if (result.history) {
-        setHistory(result.history);
-      }
-      setIsLoading(false);
-    }
-    fetchHistory();
-  }, []);
   
   const copyToClipboard = () => {
     if (!referralLink) return;
