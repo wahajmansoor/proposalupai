@@ -33,6 +33,7 @@ function BuyCredits({ onPurchaseSuccess }: { onPurchaseSuccess: () => void }) {
     const [isPending, startTransition] = useTransition();
     const [selectedPriceId, setSelectedPriceId] = useState<string | null>(null);
     const { toast } = useToast();
+    const router = useRouter();
 
     const handlePurchase = (priceId: string) => {
         if (!user) {
@@ -48,9 +49,11 @@ function BuyCredits({ onPurchaseSuccess }: { onPurchaseSuccess: () => void }) {
 
             if (result.error) {
                 toast({ title: "Error", description: result.error, variant: "destructive" });
+            } else if (result.redirectUrl) {
+                router.push(result.redirectUrl);
             } else if (result.success) {
                 toast({ title: "Purchase Successful!", description: result.message });
-                onPurchaseSuccess(); // Trigger the data refresh
+                onPurchaseSuccess();
             }
             setSelectedPriceId(null);
         });
@@ -318,11 +321,13 @@ export default function SubscriptionPage() {
   const { userProfile, loading } = useAuth();
   const { toast } = useToast();
   const [isManagingBilling, setIsManagingBilling] = useState(false);
-  const [historyKey, setHistoryKey] = useState(0); // Add this state
+  const [historyKey, setHistoryKey] = useState(0); 
+  const router = useRouter();
 
   const reloadData = useCallback(() => {
     setHistoryKey(prevKey => prevKey + 1);
-  }, []);
+    router.refresh();
+  }, [router]);
   
   const handleBillingSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -413,10 +418,10 @@ export default function SubscriptionPage() {
               )}
             </CardContent>
           </Card>
-          <BuyCredits onPurchaseSuccess={reloadData} />
+           <CreditHistory onDataRefresh={reloadData} historyKey={historyKey} />
+           <BuyCredits onPurchaseSuccess={reloadData} />
         </div>
         <div className="lg:col-span-3 space-y-8">
-           <CreditHistory onDataRefresh={reloadData} historyKey={historyKey} />
            <HistoryTable
               title="Subscription Billing History"
               description="Review your past subscription payments and invoices."
