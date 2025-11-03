@@ -326,8 +326,7 @@ export default function SubscriptionPage() {
 
   const reloadData = useCallback(() => {
     setHistoryKey(prevKey => prevKey + 1);
-    router.refresh();
-  }, [router]);
+  }, []);
   
   const handleBillingSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -418,8 +417,8 @@ export default function SubscriptionPage() {
               )}
             </CardContent>
           </Card>
-           <CreditHistory onDataRefresh={reloadData} historyKey={historyKey} />
            <BuyCredits onPurchaseSuccess={reloadData} />
+           <CreditHistory onDataRefresh={reloadData} historyKey={historyKey} />
         </div>
         <div className="lg:col-span-3 space-y-8">
            <HistoryTable
