@@ -51,5 +51,11 @@ service cloud.firestore {
         allow read: if request.auth != null && request.auth.uid == userId;
         allow write: if false; // Prevent client-side writes
     }
+
+    // Users can only read their own credit purchase history
+    match /users/{userId}/creditBillingHistory/{historyId} {
+        allow read: if request.auth != null && request.auth.uid == userId;
+        allow write: if false; // Prevent client-side writes
+    }
   }
 }

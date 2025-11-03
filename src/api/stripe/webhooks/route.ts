@@ -209,7 +209,7 @@ export async function POST(req: Request) {
                        await addCredits(adminDb, userRef, creditsToAdd, `Purchased ${creditsToAdd} credits`);
                        console.log(`Added ${creditsToAdd} credits to user ${userId} via direct charge.`);
 
-                        const billingHistoryRef = userRef.collection('billingHistory').doc(charge.id);
+                        const billingHistoryRef = userRef.collection('creditBillingHistory').doc(charge.id);
                         await billingHistoryRef.set({
                             id: charge.id,
                             createdAt: FieldValue.serverTimestamp(),
@@ -219,7 +219,7 @@ export async function POST(req: Request) {
                             invoiceUrl: null, 
                             description: `Credit Purchase: ${creditsToAdd} credits`,
                         });
-                        console.log(`Saved direct charge to billing history for user ${userId}`);
+                        console.log(`Saved direct charge to credit billing history for user ${userId}`);
                     }
                 }
                 break;
