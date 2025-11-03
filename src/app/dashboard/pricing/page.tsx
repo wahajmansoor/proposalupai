@@ -148,7 +148,7 @@ export default function PricingPage() {
       router.push(result.redirectUrl);
     } else if (result?.success) {
         toast({ title: 'Success!', description: result.message || 'Your plan has been updated.' });
-        setTimeout(() => router.refresh(), 3000); // Give webhook time to process
+        router.refresh();
         setIsSubmitting(false);
     }
   };
