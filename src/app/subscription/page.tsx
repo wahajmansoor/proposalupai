@@ -35,6 +35,10 @@ function BuyCredits({ onPurchaseSuccess }: { onPurchaseSuccess: () => void }) {
     const { toast } = useToast();
     const router = useRouter();
 
+    const [hasCopied, setHasCopied] = useState(false);
+    const [referralLink, setReferralLink] = useState('');
+    const referralCode = userProfile?.referralCode;
+
     const handlePurchase = (priceId: string) => {
         if (!user) {
             toast({ title: "Authentication Error", description: "You must be logged in to purchase credits.", variant: "destructive"});
@@ -59,73 +63,105 @@ function BuyCredits({ onPurchaseSuccess }: { onPurchaseSuccess: () => void }) {
         });
     };
 
-    const shouldShowPurchaseBlock = userProfile?.subscriptionStatus === 'trialing' || !userProfile?.subscriptionStatus || userProfile.subscriptionStatus === 'N/A';
+    useEffect(() => {
+        if (typeof window !== 'undefined' && referralCode) {
+          setReferralLink(`${window.location.origin}/signup?invite=${referralCode}`);
+        }
+    }, [referralCode]);
 
-    if (shouldShowPurchaseBlock) {
-        return (
-             <Card>
-                <CardHeader>
-                    <CardTitle>Buy More Credits</CardTitle>
-                    <CardDescription>Need more proposal improvements? Top up your balance.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <div className="flex flex-col items-center justify-center text-center p-4 bg-muted/50 rounded-lg">
-                        <Info className="h-8 w-8 text-muted-foreground mb-2" />
-                        <p className="text-sm font-medium">Credit purchases are available after your trial ends.</p>
-                        <p className="text-xs text-muted-foreground">Upgrade to a Pro plan to buy credits.</p>
-                    </div>
-                </CardContent>
-            </Card>
-        )
-    }
+    const copyToClipboard = () => {
+        if (!referralLink) return;
+        navigator.clipboard.writeText(referralLink);
+        setHasCopied(true);
+        toast({ title: "Copied!", description: "Referral link copied to clipboard." });
+        setTimeout(() => setHasCopied(false), 2000);
+    };
+
+    const shareText = "Check out Proposal Up! The best way to generate winning proposals.";
+    const socialShareLinks = {
+        facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(referralLink)}`,
+        twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(shareText)}`,
+        linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(referralLink)}`,
+        whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + " " + referralLink)}`,
+    };
+
+    const shouldShowPurchaseBlock = userProfile?.subscriptionStatus === 'trialing' || !userProfile?.subscriptionStatus || userProfile.subscriptionStatus === 'N/A';
 
     return (
         <Card>
             <CardHeader>
                 <CardTitle>Buy More Credits</CardTitle>
-                <CardDescription>Need more proposal improvements? Top up your balance.</CardDescription>
+                <CardDescription>Need more proposal improvements? Top up your balance or refer a friend!</CardDescription>
             </CardHeader>
-            <CardContent className="space-y-4">
-                <div className="grid grid-cols-3 gap-2">
-                    {creditPackages.map((pkg) => (
-                        <div key={pkg.priceId} className="flex flex-col items-center gap-1 p-2 border rounded-lg flex-1">
-                             <span className="text-xl sm:text-2xl font-bold">${pkg.price}</span>
-                             <span className="font-semibold text-muted-foreground text-xs sm:text-sm">{pkg.name}</span>
-                            <Button
-                                onClick={() => handlePurchase(pkg.priceId)}
-                                disabled={isPending}
-                                size="sm"
-                                className="relative h-8 w-full bg-yellow-400 text-yellow-900 hover:bg-yellow-500 font-semibold gap-2 rounded-full mt-1"
-                            >
-                            {isPending && selectedPriceId === pkg.priceId ? (
-                                <Loader2 className="h-4 w-4 animate-spin"/>
-                            ) : (
-                                <>
-                                    <ShoppingBag className="h-4 w-4" />
-                                    <span>Buy Now</span>
-                                </>
-                            )}
-                            </Button>
-                        </div>
-                    ))}
-                </div>
+            <CardContent>
+                {shouldShowPurchaseBlock ? (
+                    <div className="flex flex-col items-center justify-center text-center p-4 bg-muted/50 rounded-lg">
+                        <Info className="h-8 w-8 text-muted-foreground mb-2" />
+                        <p className="text-sm font-medium">Credit purchases are available after your trial ends.</p>
+                        <p className="text-xs text-muted-foreground">Upgrade to a Pro plan to buy credits.</p>
+                    </div>
+                ) : (
+                    <div className="grid grid-cols-3 gap-2">
+                        {creditPackages.map((pkg) => (
+                            <div key={pkg.priceId} className="flex flex-col items-center gap-1 p-2 border rounded-lg flex-1">
+                                <span className="text-xl sm:text-2xl font-bold">${pkg.price}</span>
+                                <span className="font-semibold text-muted-foreground text-xs sm:text-sm">{pkg.name}</span>
+                                <Button
+                                    onClick={() => handlePurchase(pkg.priceId)}
+                                    disabled={isPending}
+                                    size="sm"
+                                    className="relative h-8 w-full bg-yellow-400 text-yellow-900 hover:bg-yellow-500 font-semibold gap-2 rounded-full mt-1"
+                                >
+                                {isPending && selectedPriceId === pkg.priceId ? (
+                                    <Loader2 className="h-4 w-4 animate-spin"/>
+                                ) : (
+                                    <>
+                                        <ShoppingBag className="h-4 w-4" />
+                                        <span>Buy Now</span>
+                                    </>
+                                )}
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </CardContent>
+            <CardFooter className="flex-col items-start gap-4 border-t pt-4">
+                <h4 className="font-semibold">Refer a Friend, Get Credits</h4>
+                <p className="text-sm text-muted-foreground -mt-3">Invite a friend using your referral link. When they sign up and start their trial, you both get 5 free credits to improve your proposals!</p>
+                <div className="w-full space-y-2">
+                    <Label htmlFor="referral-link" className="sr-only">Your Referral Link</Label>
+                    <div className="flex items-center gap-2">
+                    <Input id="referral-link" value={referralLink} readOnly />
+                    <Button size="icon" variant="outline" onClick={copyToClipboard} disabled={!referralLink}>
+                        {hasCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
+                    </Button>
+                    </div>
+                </div>
+                <div className="flex items-center justify-start gap-8 w-full pt-2">
+                    <Link href={socialShareLinks.facebook} target="_blank" passHref>
+                    <ShareIcons.Facebook className="h-6 w-6 cursor-pointer dark:fill-white" />
+                    </Link>
+                    <Link href={socialShareLinks.twitter} target="_blank" passHref>
+                    <ShareIcons.Twitter className="h-6 w-6 cursor-pointer dark:fill-white" />
+                    </Link>
+                    <Link href={socialShareLinks.linkedin} target="_blank" passHref>
+                    <ShareIcons.LinkedIn className="h-6 w-6 cursor-pointer dark:fill-white" />
+                    </Link>
+                    <Link href={socialShareLinks.whatsapp} target="_blank" passHref>
+                    <ShareIcons.WhatsApp className="h-6 w-6 cursor-pointer dark:fill-white" />
+                    </Link>
+                </div>
+            </CardFooter>
         </Card>
     )
 }
 
 function CreditHistory({ onDataRefresh, historyKey }: { onDataRefresh: () => void, historyKey: number }) {
-  const { userProfile } = useAuth();
   const [history, setHistory] = useState<CreditHistoryItem[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const { toast } = useToast();
-
-  const [referralLink, setReferralLink] = useState('');
-  const [hasCopied, setHasCopied] = useState(false);
   
-  const referralCode = userProfile?.referralCode;
-
   const fetchHistory = useCallback(async () => {
     setIsLoading(true);
     setError(null);
@@ -142,34 +178,11 @@ function CreditHistory({ onDataRefresh, historyKey }: { onDataRefresh: () => voi
     fetchHistory();
   }, [fetchHistory, historyKey]);
   
-  useEffect(() => {
-    if (typeof window !== 'undefined' && referralCode) {
-      setReferralLink(`${window.location.origin}/signup?invite=${referralCode}`);
-    }
-  }, [referralCode]);
-  
-  const copyToClipboard = () => {
-    if (!referralLink) return;
-    navigator.clipboard.writeText(referralLink);
-    setHasCopied(true);
-    toast({ title: "Copied!", description: "Referral link copied to clipboard." });
-    setTimeout(() => setHasCopied(false), 2000);
-  };
-  
-  const shareText = "Check out Proposal Up! The best way to generate winning proposals.";
-  const socialShareLinks = {
-    facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodeURIComponent(referralLink)}`,
-    twitter: `https://twitter.com/intent/tweet?url=${encodeURIComponent(referralLink)}&text=${encodeURIComponent(shareText)}`,
-    linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodeURIComponent(referralLink)}`,
-    whatsapp: `https://api.whatsapp.com/send?text=${encodeURIComponent(shareText + " " + referralLink)}`,
-  };
-
-
   return (
     <Card>
       <CardHeader>
         <CardTitle>Credit History</CardTitle>
-        <CardDescription>A log of all the proposal improvement credits you've earned or purchased.</CardDescription>
+        <CardDescription>A log of all the proposal improvement credits you've earned.</CardDescription>
       </CardHeader>
       <CardContent>
         {isLoading ? (
@@ -203,33 +216,6 @@ function CreditHistory({ onDataRefresh, historyKey }: { onDataRefresh: () => voi
           </div>
         )}
       </CardContent>
-      <CardFooter className="flex-col items-start gap-4 border-t pt-4">
-        <h4 className="font-semibold">Refer a Friend, Get Credits</h4>
-        <p className="text-sm text-muted-foreground -mt-3">Invite a friend using your referral link. When they sign up and start their trial, you both get 5 free credits to improve your proposals!</p>
-        <div className="w-full space-y-2">
-            <Label htmlFor="referral-link" className="sr-only">Your Referral Link</Label>
-            <div className="flex items-center gap-2">
-              <Input id="referral-link" value={referralLink} readOnly />
-              <Button size="icon" variant="outline" onClick={copyToClipboard} disabled={!referralLink}>
-                {hasCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
-              </Button>
-            </div>
-          </div>
-          <div className="flex items-center justify-start gap-8 w-full pt-2">
-            <Link href={socialShareLinks.facebook} target="_blank" passHref>
-              <ShareIcons.Facebook className="h-6 w-6 cursor-pointer dark:fill-white" />
-            </Link>
-             <Link href={socialShareLinks.twitter} target="_blank" passHref>
-              <ShareIcons.Twitter className="h-6 w-6 cursor-pointer dark:fill-white" />
-            </Link>
-             <Link href={socialShareLinks.linkedin} target="_blank" passHref>
-              <ShareIcons.LinkedIn className="h-6 w-6 cursor-pointer dark:fill-white" />
-            </Link>
-             <Link href={socialShareLinks.whatsapp} target="_blank" passHref>
-              <ShareIcons.WhatsApp className="h-6 w-6 cursor-pointer dark:fill-white" />
-            </Link>
-          </div>
-      </CardFooter>
     </Card>
   );
 }
