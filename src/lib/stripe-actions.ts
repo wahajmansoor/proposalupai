@@ -85,20 +85,8 @@ export async function handlePlanChange(formData: FormData): Promise<{
         // Prevent awarding trial credits multiple times
         if (!userDoc?.trialCreditsAwarded) {
             await addCredits(adminDb, userRef, 5, 'Started a new trial');
-            
-            if (userDoc?.referredBy) {
-                const referrerQuery = await adminDb.collection('users').where('referralCode', '==', userDoc.referredBy).limit(1).get();
-                if (!referrerQuery.empty) {
-                    const referrerRef = referrerQuery.docs[0].ref;
-                    await addCredits(adminDb, referrerRef, 5, `Referral bonus for ${userDoc?.displayName || 'a new user'}`);
-                    console.log(`Awarded 5 referral credits to referrer ${referrerRef.id}.`);
-
-                    await addCredits(adminDb, userRef, 5, 'Referral sign-up bonus');
-                }
-            }
-            
             await userRef.update({ trialCreditsAwarded: true });
-            console.log(`Awarded initial credits to new user ${user.uid}.`);
+            console.log(`Awarded initial trial credits to new user ${user.uid}.`);
         }
 
         const sessionParams: Stripe.Checkout.SessionCreateParams = {
@@ -363,7 +351,7 @@ const creditPackages: Record<string, { amount: number; credits: number, descript
     [process.env.NEXT_PUBLIC_STRIPE_CREDITS_50_PRICE_ID!]: { amount: 2500, credits: 50, description: "50 Credits" }
 };
 
-export async function chargeCardForCredits(formData: FormData): Promise<{ success: boolean; error?: string; message?: string }> {
+export async function chargeCardForCredits(formData: FormData): Promise<{ success: boolean; error?: string; message?: string, redirectUrl?: string }> {
   const currentUser = await getCurrentUser();
   if (!currentUser) {
     return { success: false, error: 'User not authenticated. Please log in again.' };
@@ -409,9 +397,31 @@ export async function chargeCardForCredits(formData: FormData): Promise<{ succes
             paymentMethodId = paymentMethods.data[0].id;
         }
     }
+    
+    const headersList = headers();
+    const protocol = headersList.get('x-forwarded-proto') || 'http';
+    const host = headersList.get('host');
+    const origin = `${protocol}://${host}`;
 
     if (!paymentMethodId) {
-        return { success: false, error: 'No default payment method on file. Please add a payment method in your billing settings.'};
+        // If no card on file, redirect to checkout page to add one
+        const session = await stripe.checkout.sessions.create({
+            payment_method_types: ['card'],
+            mode: 'payment',
+            customer: stripeCustomerId,
+            line_items: [{
+                price: priceId,
+                quantity: 1,
+            }],
+            success_url: `${origin}/subscription?purchase_success=true`,
+            cancel_url: `${origin}/subscription`,
+            metadata: {
+                purchase_type: 'credits',
+                firebase_uid: user.uid,
+                price_id: priceId,
+            }
+        });
+        return { success: false, redirectUrl: session.url! };
     }
 
     // Create and confirm a PaymentIntent
