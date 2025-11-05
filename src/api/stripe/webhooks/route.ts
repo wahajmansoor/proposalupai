@@ -165,20 +165,15 @@ export async function POST(req: Request) {
                 const invoice = event.data.object as Stripe.Invoice;
                 const stripeCustomerId_invoice = invoice.customer as string;
                 const userRef_invoice = await findUserByStripeCustomerId(adminDb, stripeCustomerId_invoice);
-                const userDoc = await userRef_invoice?.get();
-                const userData = userDoc?.data();
-
+                
                 if (userRef_invoice && invoice.subscription) {
-                    // Save all paid invoices to billing history, including $0 invoices
+                    // Save all paid invoices to billing history
                     const billingHistoryRef = userRef_invoice.collection('billingHistory').doc(invoice.id);
-                    
                     let description = invoice.lines.data[0]?.description || 'Payment';
-                    
                     const isUpgrade = invoice.lines.data.some(line => line.proration && line.description?.toLowerCase().includes('unused time'));
                     if (isUpgrade) {
                         description = `Upgrade to Yearly Plan`;
                     }
-
                     await billingHistoryRef.set({
                         id: invoice.id,
                         createdAt: FieldValue.serverTimestamp(),
@@ -189,20 +184,20 @@ export async function POST(req: Request) {
                         description: description,
                     });
 
-                    // Award credits on subscription creation or renewal
+                    // Award credits on subscription events
                     const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
                     const interval = subscription.items.data[0]?.price.recurring?.interval;
                     
                     if (invoice.billing_reason === 'subscription_create') {
                         if (interval === 'month') {
                             await addCredits(adminDb, userRef_invoice, 10, 'Monthly plan activation bonus');
-                            console.log(`Added 10 initial monthly credits to user ${userRef_invoice.id}`);
                         } else if (interval === 'year') {
                             await addCredits(adminDb, userRef_invoice, 100, 'Yearly plan activation bonus');
-                            console.log(`Added 100 initial yearly credits to user ${userRef_invoice.id}`);
                         }
                         
                         // Handle referral bonus on first successful payment
+                        const userDoc = await userRef_invoice.get();
+                        const userData = userDoc.data();
                         if (userData && userData.referredBy && !userData.referralBonusAwarded) {
                             const referrerQuery = await adminDb.collection('users').where('referralCode', '==', userData.referredBy).limit(1).get();
                             if (!referrerQuery.empty) {
@@ -212,14 +207,11 @@ export async function POST(req: Request) {
                                 await userRef_invoice.update({ referralBonusAwarded: true });
                             }
                         }
-                    }
-                    else if (invoice.billing_reason === 'subscription_cycle') {
+                    } else if (invoice.billing_reason === 'subscription_cycle') {
                         if (interval === 'month') {
                             await addCredits(adminDb, userRef_invoice, 10, 'Monthly subscription credits');
-                            console.log(`Added 10 monthly credits to user ${userRef_invoice.id}`);
                         } else if (interval === 'year') {
                             await addCredits(adminDb, userRef_invoice, 100, 'Yearly subscription credits');
-                             console.log(`Added 100 yearly credits to user ${userRef_invoice.id}`);
                         }
                     }
                 }
@@ -253,5 +245,3 @@ export async function POST(req: Request) {
 
     return new NextResponse(JSON.stringify({ received: true }), { status: 200 });
 }
-
-    
