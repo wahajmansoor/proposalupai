@@ -125,7 +125,15 @@ export async function handlePlanChange(formData: FormData): Promise<{
                 coupon: coupon || undefined,
             });
 
-            // Award initial credits upon first activation for immediate user feedback
+            const updatedUserData: { [key: string]: any } = {
+                subscriptionStatus: 'active',
+                subscriptionInterval: updatedSubscription.items.data[0].price.recurring?.interval,
+                subscriptionCurrentPeriodEnd: new Date(updatedSubscription.current_period_end * 1000),
+                lastPrice: updatedSubscription.items.data[0].price.unit_amount ? updatedSubscription.items.data[0].price.unit_amount / 100 : null,
+                updatedAt: FieldValue.serverTimestamp(),
+            };
+
+            // --- Award Activation Credits ---
             const planInterval = updatedSubscription.items.data[0].price.recurring?.interval;
             if (planInterval === 'month') {
                 await addCredits(adminDb, userRef, 10, 'Monthly plan activation bonus');
@@ -133,15 +141,21 @@ export async function handlePlanChange(formData: FormData): Promise<{
                 await addCredits(adminDb, userRef, 100, 'Yearly plan activation bonus');
             }
 
-            // Immediately update the database
-            await userRef.update({
-                subscriptionStatus: 'active',
-                subscriptionInterval: updatedSubscription.items.data[0].price.recurring?.interval,
-                subscriptionCurrentPeriodEnd: new Date(updatedSubscription.current_period_end * 1000),
-                lastPrice: updatedSubscription.items.data[0].price.unit_amount ? updatedSubscription.items.data[0].price.unit_amount / 100 : null,
-                updatedAt: FieldValue.serverTimestamp(),
-            });
-
+            // --- Award Referral Bonus (if applicable) ---
+            const latestUserDoc = await userRef.get(); // Get the most recent user doc
+            const latestUserData = latestUserDoc.data();
+            if (latestUserData && latestUserData.referredBy && !latestUserData.referralBonusAwarded) {
+                const referrerQuery = await adminDb.collection('users').where('referralCode', '==', latestUserData.referredBy).limit(1).get();
+                if (!referrerQuery.empty) {
+                    const referrerRef = referrerQuery.docs[0].ref;
+                    await addCredits(adminDb, referrerRef, 5, `Referral bonus for ${latestUserData.displayName || 'a new user'}`);
+                    await addCredits(adminDb, userRef, 5, 'Referral sign-up bonus');
+                    updatedUserData.referralBonusAwarded = true; // Add flag to the update object
+                }
+            }
+            
+            await userRef.update(updatedUserData);
+            
             revalidatePath('/dashboard/pricing');
             revalidatePath('/subscription');
             return { success: true, message: `Your trial has ended and your ${interval} plan is now active!` };

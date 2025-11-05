@@ -176,7 +176,7 @@ export async function POST(req: Request) {
                         description: description,
                     });
 
-                    // Award credits only for recurring renewals
+                    // Only award credits for recurring renewals. Initial credits are handled by `handlePlanChange`.
                     if (invoice.billing_reason === 'subscription_cycle') {
                         const interval = subscription.items.data[0]?.price.recurring?.interval;
                         if (interval === 'month') {
