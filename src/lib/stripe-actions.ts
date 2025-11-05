@@ -134,7 +134,15 @@ export async function handlePlanChange(formData: FormData): Promise<{
                 updatedAt: FieldValue.serverTimestamp(),
             });
             
-            // Award initial credits upon first activation will be handled by the invoice.payment_succeeded webhook.
+            // Award initial credits upon first activation
+            const planInterval = updatedSubscription.items.data[0].price.recurring?.interval;
+            if (planInterval === 'month') {
+                await addCredits(adminDb, userRef, 10, 'Monthly plan activation bonus');
+            } else if (planInterval === 'year') {
+                // Note: The reason says 'upgrade' but this handles the direct-to-yearly case too.
+                await addCredits(adminDb, userRef, 100, 'Yearly plan activation bonus');
+            }
+
 
             revalidatePath('/dashboard/pricing');
             revalidatePath('/subscription');
@@ -463,3 +471,5 @@ export async function chargeCardForCredits(formData: FormData): Promise<{ succes
     return { success: false, error: error.message || 'An unexpected error occurred during payment.' };
   }
 }
+
+    

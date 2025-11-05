@@ -184,18 +184,18 @@ export async function POST(req: Request) {
                         description: description,
                     });
 
-                    // Award credits on subscription events
+                    // Award credits on subscription events (but not initial activation from action)
                     const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
-                    const interval = subscription.items.data[0]?.price.recurring?.interval;
                     
-                    if (invoice.billing_reason === 'subscription_create') {
+                    if (invoice.billing_reason === 'subscription_cycle') {
+                        const interval = subscription.items.data[0]?.price.recurring?.interval;
                         if (interval === 'month') {
-                            await addCredits(adminDb, userRef_invoice, 10, 'Monthly plan activation bonus');
+                            await addCredits(adminDb, userRef_invoice, 10, 'Monthly subscription credits');
                         } else if (interval === 'year') {
-                            await addCredits(adminDb, userRef_invoice, 100, 'Yearly plan activation bonus');
+                            await addCredits(adminDb, userRef_invoice, 100, 'Yearly subscription credits');
                         }
-                        
-                        // Handle referral bonus on first successful payment
+                    } else if (invoice.billing_reason === 'subscription_create') {
+                         // Handle referral bonus on first successful payment from checkout, not from manual activation
                         const userDoc = await userRef_invoice.get();
                         const userData = userDoc.data();
                         if (userData && userData.referredBy && !userData.referralBonusAwarded) {
@@ -206,12 +206,6 @@ export async function POST(req: Request) {
                                 await addCredits(adminDb, userRef_invoice, 5, 'Referral sign-up bonus');
                                 await userRef_invoice.update({ referralBonusAwarded: true });
                             }
-                        }
-                    } else if (invoice.billing_reason === 'subscription_cycle') {
-                        if (interval === 'month') {
-                            await addCredits(adminDb, userRef_invoice, 10, 'Monthly subscription credits');
-                        } else if (interval === 'year') {
-                            await addCredits(adminDb, userRef_invoice, 100, 'Yearly subscription credits');
                         }
                     }
                 }
@@ -245,3 +239,5 @@ export async function POST(req: Request) {
 
     return new NextResponse(JSON.stringify({ received: true }), { status: 200 });
 }
+
+    
