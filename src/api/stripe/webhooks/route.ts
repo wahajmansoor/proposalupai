@@ -55,20 +55,19 @@ export async function POST(req: Request) {
 
     try {
         switch (event.type) {
-            case 'checkout.session.completed':
+            case 'checkout.session.completed': {
                 const session = event.data.object as Stripe.Checkout.Session;
-                
-                if (session.mode === 'subscription') {
-                    const stripeCustomerId = session.customer as string;
-                    const userRef = await findUserByStripeCustomerId(adminDb, stripeCustomerId);
-                    
-                    if (userRef) {
+                const stripeCustomerId = session.customer as string;
+                const userRef = await findUserByStripeCustomerId(adminDb, stripeCustomerId);
+
+                if (userRef) {
+                    if (session.mode === 'subscription') {
                         const subscription = await stripe.subscriptions.retrieve(session.subscription as string, {
                            expand: ['items.data.price'],
                         });
                         const price = subscription.items.data[0]?.price;
 
-                        const subscriptionData = {
+                        const subscriptionData: { [key: string]: any } = {
                             subscriptionId: subscription.id,
                             subscriptionStatus: subscription.status,
                             subscriptionInterval: price?.recurring?.interval,
@@ -77,21 +76,33 @@ export async function POST(req: Request) {
                             updatedAt: FieldValue.serverTimestamp(),
                             onboardingComplete: true, // Mark onboarding as complete
                         };
-
+                        
+                        // --- Award Referral Bonus on initial subscription ---
+                        const userDoc = await userRef.get();
+                        const userData = userDoc.data();
+                        
+                        if (userData && userData.referredBy && !userData.referralBonusAwarded) {
+                            const referrerQuery = await adminDb.collection('users').where('referralCode', '==', userData.referredBy).limit(1).get();
+                            if (!referrerQuery.empty) {
+                                const referrerRef = referrerQuery.docs[0].ref;
+                                await addCredits(adminDb, referrerRef, 5, `Referral bonus for ${userData.displayName || 'a new user'}`);
+                                await addCredits(adminDb, userRef, 5, 'Referral sign-up bonus');
+                                subscriptionData.referralBonusAwarded = true; // Add to update object
+                            }
+                        }
+                        
                         await userRef.update(subscriptionData);
-                        console.log(`Successfully synced new subscription for user ${userRef.id}`);
-                    }
-                } else if (session.mode === 'payment') {
-                    // This is handled by charge.succeeded now to catch all one-time payments
-                } else if (session.mode === 'setup') {
-                     const stripeCustomerId = session.customer as string;
-                     const userRef = await findUserByStripeCustomerId(adminDb, stripeCustomerId);
-                     if (userRef) {
+                        console.log(`Successfully synced new subscription and checked for referral bonus for user ${userRef.id}`);
+
+                    } else if (session.mode === 'payment') {
+                        // This is handled by charge.succeeded to catch all one-time payments
+                    } else if (session.mode === 'setup') {
                         await userRef.update({ onboardingComplete: true });
                         console.log(`User ${userRef.id} completed onboarding via setup intent.`);
-                     }
+                    }
                 }
                 break;
+            }
 
             case 'customer.subscription.created':
             case 'customer.subscription.updated': {
@@ -165,28 +176,8 @@ export async function POST(req: Request) {
                         description: description,
                     });
 
-                    // --- Consolidated Credit Awarding Logic ---
-                    const userDoc = await userRef_invoice.get();
-                    const userData = userDoc.data();
-
-                    if (invoice.billing_reason === 'subscription_create') {
-                        // This is the first payment after a trial.
-                        // NOTE: Activation credits are handled in the `handlePlanChange` action for immediate feedback.
-                        // This webhook only handles the referral bonus for the first payment.
-                        
-                        // 2. Award Referral Bonus (if applicable)
-                        if (userData && userData.referredBy && !userData.referralBonusAwarded) {
-                            const referrerQuery = await adminDb.collection('users').where('referralCode', '==', userData.referredBy).limit(1).get();
-                            if (!referrerQuery.empty) {
-                                const referrerRef = referrerQuery.docs[0].ref;
-                                await addCredits(adminDb, referrerRef, 5, `Referral bonus for ${userData.displayName || 'a new user'}`);
-                                await addCredits(adminDb, userRef_invoice, 5, 'Referral sign-up bonus');
-                                await userRef_invoice.update({ referralBonusAwarded: true });
-                            }
-                        }
-
-                    } else if (invoice.billing_reason === 'subscription_cycle') {
-                        // This is a recurring renewal payment.
+                    // Award credits only for recurring renewals
+                    if (invoice.billing_reason === 'subscription_cycle') {
                         const interval = subscription.items.data[0]?.price.recurring?.interval;
                         if (interval === 'month') {
                             await addCredits(adminDb, userRef_invoice, 10, 'Monthly subscription renewal');
@@ -250,9 +241,3 @@ export async function POST(req: Request) {
 
     return new NextResponse(JSON.stringify({ received: true }), { status: 200 });
 }
-
-    
-
-    
-
-    
