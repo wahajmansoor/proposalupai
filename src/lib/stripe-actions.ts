@@ -125,7 +125,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
                 coupon: coupon || undefined,
             });
 
-            // Award initial credits upon first activation
+            // Award initial credits upon first activation for immediate user feedback
             const planInterval = updatedSubscription.items.data[0].price.recurring?.interval;
             if (planInterval === 'month') {
                 await addCredits(adminDb, userRef, 10, 'Monthly plan activation bonus');
@@ -133,8 +133,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
                 await addCredits(adminDb, userRef, 100, 'Yearly plan activation bonus');
             }
 
-            // The webhook for invoice.payment_succeeded will now handle awarding credits.
-            // We just need to update the local state.
+            // Immediately update the database
             await userRef.update({
                 subscriptionStatus: 'active',
                 subscriptionInterval: updatedSubscription.items.data[0].price.recurring?.interval,
@@ -471,5 +470,7 @@ export async function chargeCardForCredits(formData: FormData): Promise<{ succes
     return { success: false, error: error.message || 'An unexpected error occurred during payment.' };
   }
 }
+
+    
 
     

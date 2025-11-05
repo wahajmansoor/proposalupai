@@ -216,7 +216,7 @@ export async function POST(req: Request) {
                        console.log(`Added ${creditsToAdd} credits to user ${userId}`);
 
                        // Save to billing history
-                        const billingHistoryRef = userRef.collection('billingHistory').doc(charge.id);
+                        const billingHistoryRef = userRef.collection('creditBillingHistory').doc(charge.id);
                         await billingHistoryRef.set({
                             id: charge.id,
                             createdAt: FieldValue.serverTimestamp(),
@@ -250,5 +250,7 @@ export async function POST(req: Request) {
 
     return new NextResponse(JSON.stringify({ received: true }), { status: 200 });
 }
+
+    
 
     
