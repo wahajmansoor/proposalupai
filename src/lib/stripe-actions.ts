@@ -82,7 +82,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
     // Scenario 1: New user starting a trial
     if (!subscriptionStatus || subscriptionStatus === 'null' || subscriptionStatus === 'undefined') {
        
-        // Prevent awarding trial credits multiple times
+        // Award trial credits, but only once.
         if (!userDoc?.trialCreditsAwarded) {
             await addCredits(adminDb, userRef, 5, 'Started a new trial');
             await userRef.update({ trialCreditsAwarded: true });
@@ -134,13 +134,7 @@ export async function handlePlanChange(formData: FormData): Promise<{
                 updatedAt: FieldValue.serverTimestamp(),
             });
             
-            // Award initial credits upon first activation
-            const planInterval = updatedSubscription.items.data[0].price.recurring?.interval;
-            if (planInterval === 'month') {
-                await addCredits(adminDb, userRef, 10, 'Monthly plan activation bonus');
-            } else if (planInterval === 'year') {
-                await addCredits(adminDb, userRef, 100, 'Yearly plan upgrade bonus');
-            }
+            // Award initial credits upon first activation will be handled by the invoice.payment_succeeded webhook.
 
             revalidatePath('/dashboard/pricing');
             revalidatePath('/subscription');
