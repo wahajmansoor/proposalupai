@@ -139,7 +139,6 @@ export async function handlePlanChange(formData: FormData): Promise<{
             if (planInterval === 'month') {
                 await addCredits(adminDb, userRef, 10, 'Monthly plan activation bonus');
             } else if (planInterval === 'year') {
-                // Note: The reason says 'upgrade' but this handles the direct-to-yearly case too.
                 await addCredits(adminDb, userRef, 100, 'Yearly plan activation bonus');
             }
 
