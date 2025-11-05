@@ -167,6 +167,8 @@ export async function POST(req: Request) {
                 const userRef_invoice = await findUserByStripeCustomerId(adminDb, stripeCustomerId_invoice);
                 
                 if (userRef_invoice && invoice.subscription) {
+                    const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
+                    
                     // Save all paid invoices to billing history
                     const billingHistoryRef = userRef_invoice.collection('billingHistory').doc(invoice.id);
                     let description = invoice.lines.data[0]?.description || 'Payment';
@@ -184,20 +186,22 @@ export async function POST(req: Request) {
                         description: description,
                     });
 
-                    // Award credits on subscription events (but not initial activation from action)
-                    const subscription = await stripe.subscriptions.retrieve(invoice.subscription as string);
-                    
-                    if (invoice.billing_reason === 'subscription_cycle') {
+                    // --- Consolidated Credit Awarding Logic ---
+                    const userDoc = await userRef_invoice.get();
+                    const userData = userDoc.data();
+
+                    if (invoice.billing_reason === 'subscription_create') {
+                        // This is the first payment after a trial.
+                        
+                        // 1. Award Activation Credits
                         const interval = subscription.items.data[0]?.price.recurring?.interval;
                         if (interval === 'month') {
-                            await addCredits(adminDb, userRef_invoice, 10, 'Monthly subscription credits');
+                            await addCredits(adminDb, userRef_invoice, 10, 'Monthly plan activation bonus');
                         } else if (interval === 'year') {
-                            await addCredits(adminDb, userRef_invoice, 100, 'Yearly subscription credits');
+                            await addCredits(adminDb, userRef_invoice, 100, 'Yearly plan activation bonus');
                         }
-                    } else if (invoice.billing_reason === 'subscription_create') {
-                         // Handle referral bonus on first successful payment from checkout, not from manual activation
-                        const userDoc = await userRef_invoice.get();
-                        const userData = userDoc.data();
+                        
+                        // 2. Award Referral Bonus (if applicable)
                         if (userData && userData.referredBy && !userData.referralBonusAwarded) {
                             const referrerQuery = await adminDb.collection('users').where('referralCode', '==', userData.referredBy).limit(1).get();
                             if (!referrerQuery.empty) {
@@ -207,13 +211,21 @@ export async function POST(req: Request) {
                                 await userRef_invoice.update({ referralBonusAwarded: true });
                             }
                         }
+
+                    } else if (invoice.billing_reason === 'subscription_cycle') {
+                        // This is a recurring renewal payment.
+                        const interval = subscription.items.data[0]?.price.recurring?.interval;
+                        if (interval === 'month') {
+                            await addCredits(adminDb, userRef_invoice, 10, 'Monthly subscription renewal');
+                        } else if (interval === 'year') {
+                            await addCredits(adminDb, userRef_invoice, 100, 'Yearly subscription renewal');
+                        }
                     }
                 }
                 break;
             }
 
             case 'charge.succeeded': {
-                // This handler is now only for logging purposes or for charges not associated with a checkout session
                 const charge = event.data.object as Stripe.Charge;
                 if (charge.metadata.purchase_type === 'credits' && !charge.invoice && !charge.checkout_session) {
                    console.log(`Manual credit charge succeeded: ${charge.id}. This should be rare.`);
@@ -239,5 +251,3 @@ export async function POST(req: Request) {
 
     return new NextResponse(JSON.stringify({ received: true }), { status: 200 });
 }
-
-    

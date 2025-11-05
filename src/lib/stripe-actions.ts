@@ -125,7 +125,8 @@ export async function handlePlanChange(formData: FormData): Promise<{
                 coupon: coupon || undefined,
             });
 
-            // Directly update Firestore to ensure status is reflected immediately
+            // The webhook for invoice.payment_succeeded will now handle awarding credits.
+            // We just need to update the local state.
             await userRef.update({
                 subscriptionStatus: 'active',
                 subscriptionInterval: updatedSubscription.items.data[0].price.recurring?.interval,
@@ -133,19 +134,11 @@ export async function handlePlanChange(formData: FormData): Promise<{
                 lastPrice: updatedSubscription.items.data[0].price.unit_amount ? updatedSubscription.items.data[0].price.unit_amount / 100 : null,
                 updatedAt: FieldValue.serverTimestamp(),
             });
-            
-            // Award initial credits upon first activation
-            const planInterval = updatedSubscription.items.data[0].price.recurring?.interval;
-            if (planInterval === 'month') {
-                await addCredits(adminDb, userRef, 10, 'Monthly plan activation bonus');
-            } else if (planInterval === 'year') {
-                await addCredits(adminDb, userRef, 100, 'Yearly plan activation bonus');
-            }
-
 
             revalidatePath('/dashboard/pricing');
             revalidatePath('/subscription');
             return { success: true, message: `Your trial has ended and your ${interval} plan is now active!` };
+
         } catch (error: any) {
             if (error.code === 'customer_without_payment_method') {
                  // The user started trial without a card, so we need to send them to a checkout page to add one.
@@ -180,6 +173,9 @@ export async function handlePlanChange(formData: FormData): Promise<{
         cancel_at_period_end: false,
       });
 
+      // Award the difference in credits for upgrading
+      await addCredits(adminDb, userRef, 90, 'Yearly plan upgrade bonus');
+
       // Immediately update the database
       await userRef.update({
           subscriptionStatus: 'active',
@@ -189,9 +185,6 @@ export async function handlePlanChange(formData: FormData): Promise<{
           updatedAt: FieldValue.serverTimestamp(),
       });
       
-      // Award the difference in credits for upgrading
-      await addCredits(adminDb, userRef, 90, 'Yearly plan upgrade bonus');
-
       revalidatePath('/dashboard/pricing');
       revalidatePath('/subscription');
       return { success: true, message: 'Your plan has been successfully switched to Yearly!' };
@@ -470,5 +463,3 @@ export async function chargeCardForCredits(formData: FormData): Promise<{ succes
     return { success: false, error: error.message || 'An unexpected error occurred during payment.' };
   }
 }
-
-    
