@@ -13,6 +13,8 @@ import {
 } from 'firebase/firestore';
 import { db } from './config';
 import type { SavedProposal } from '@/app/lib/types';
+import { errorEmitter } from './error-emitter';
+import { FirestorePermissionError } from './errors';
 
 // Path to the subcollection
 const getProposalsRef = (userId: string) =>
@@ -38,10 +40,19 @@ export async function getSavedProposals(userId: string): Promise<SavedProposal[]
 // Add a new saved proposal
 export async function addSavedProposal(userId: string, title: string, content: string) {
   const proposalsRef = getProposalsRef(userId);
-  await addDoc(proposalsRef, {
+  const proposalData = {
     title,
     content,
     createdAt: serverTimestamp(),
+  };
+
+  addDoc(proposalsRef, proposalData).catch(async (serverError) => {
+    const permissionError = new FirestorePermissionError({
+      path: proposalsRef.path,
+      operation: 'create',
+      requestResourceData: proposalData,
+    });
+    errorEmitter.emit('permission-error', permissionError);
   });
 }
 
@@ -52,12 +63,25 @@ export async function updateSavedProposal(
   data: { title: string; content: string }
 ) {
   const proposalDocRef = doc(db, 'users', userId, 'savedProposals', proposalId);
-  await updateDoc(proposalDocRef, data);
+  updateDoc(proposalDocRef, data).catch(async (serverError) => {
+    const permissionError = new FirestorePermissionError({
+      path: proposalDocRef.path,
+      operation: 'update',
+      requestResourceData: data,
+    });
+    errorEmitter.emit('permission-error', permissionError);
+  });
 }
 
 
 // Delete a saved proposal
 export async function deleteSavedProposal(userId: string, proposalId: string) {
   const proposalDocRef = doc(db, 'users', userId, 'savedProposals', proposalId);
-  await deleteDoc(proposalDocRef);
+  deleteDoc(proposalDocRef).catch(async (serverError) => {
+    const permissionError = new FirestorePermissionError({
+      path: proposalDocRef.path,
+      operation: 'delete',
+    });
+    errorEmitter.emit('permission-error', permissionError);
+  });
 }

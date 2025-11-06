@@ -13,6 +13,8 @@ import {
 } from 'firebase/firestore';
 import { db } from './config';
 import type { SkillProfile } from '@/app/lib/types';
+import { errorEmitter } from './error-emitter';
+import { FirestorePermissionError } from './errors';
 
 // Path to the subcollection
 const getProfilesRef = (userId: string) =>
@@ -42,9 +44,17 @@ export async function getSkillProfiles(userId: string): Promise<SkillProfile[]> 
 // Add a new skill profile
 export async function addSkillProfile(userId: string, profileData: Omit<SkillProfile, 'id' | 'createdAt'>) {
   const profilesRef = getProfilesRef(userId);
-  await addDoc(profilesRef, {
+  const dataWithTimestamp = {
     ...profileData,
     createdAt: serverTimestamp(),
+  };
+  addDoc(profilesRef, dataWithTimestamp).catch(async (serverError) => {
+    const permissionError = new FirestorePermissionError({
+      path: profilesRef.path,
+      operation: 'create',
+      requestResourceData: dataWithTimestamp,
+    });
+    errorEmitter.emit('permission-error', permissionError);
   });
 }
 
@@ -55,11 +65,24 @@ export async function updateSkillProfile(
   data: Partial<Omit<SkillProfile, 'id' | 'createdAt'>>
 ) {
   const profileDocRef = doc(db, 'users', userId, 'skillProfiles', profileId);
-  await updateDoc(profileDocRef, data);
+  updateDoc(profileDocRef, data).catch(async (serverError) => {
+    const permissionError = new FirestorePermissionError({
+      path: profileDocRef.path,
+      operation: 'update',
+      requestResourceData: data,
+    });
+    errorEmitter.emit('permission-error', permissionError);
+  });
 }
 
 // Delete a skill profile
 export async function deleteSkillProfile(userId: string, profileId: string) {
   const profileDocRef = doc(db, 'users', userId, 'skillProfiles', profileId);
-  await deleteDoc(profileDocRef);
+  deleteDoc(profileDocRef).catch(async (serverError) => {
+    const permissionError = new FirestorePermissionError({
+      path: profileDocRef.path,
+      operation: 'delete',
+    });
+    errorEmitter.emit('permission-error', permissionError);
+  });
 }
