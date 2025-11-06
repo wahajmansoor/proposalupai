@@ -1,5 +1,4 @@
-
-"use client";
+'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { onAuthStateChanged, User, signOut } from 'firebase/auth';
@@ -82,8 +81,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     if (!isFirebaseConfigured) {
-        setLoading(false);
-        return;
+      setLoading(false);
+      return;
     }
 
     const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
@@ -93,65 +92,76 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(firebaseUser);
         const userRef = doc(db, 'users', firebaseUser.uid);
 
-        getDoc(userRef).then(docSnap => {
-            if (!docSnap.exists() || !localStorage.getItem('sessionId')) {
-                const sessionId = uuidv4();
-                localStorage.setItem('sessionId', sessionId);
-                const updateData = {
-                    currentSession: sessionId,
-                    lastLogin: serverTimestamp(),
-                };
-                updateDoc(userRef, updateData).catch(async (serverError) => {
-                    const permissionError = new FirestorePermissionError({
-                        path: userRef.path,
-                        operation: 'update',
-                        requestResourceData: updateData,
-                    });
-                    errorEmitter.emit('permission-error', permissionError);
-                });
-            }
-
-            unsubscribeSnapshot = onSnapshot(userRef, (snap) => {
-              if (snap.exists()) {
-                const data = snap.data();
-                const localSession = localStorage.getItem('sessionId');
-                if (data.currentSession && localSession && data.currentSession !== localSession) {
-                    handleLogout();
-                    toast({
-                        title: "Logged Out",
-                        description: "Your account was used to log in from another device.",
-                        variant: "destructive"
-                    });
-                    return;
-                }
-                const profile: UserProfile = {
-                    ...data,
-                    subscriptionCurrentPeriodEnd: data.subscriptionCurrentPeriodEnd?.toDate().toISOString(),
-                } as UserProfile;
-
-                setUserProfile(profile);
-              } else {
-                setUserProfile(null);
-              }
-               setLoading(false);
-            }, (error) => {
-                console.error("Error with onSnapshot:", error);
-                setLoading(false);
+        const handleNewLogin = async () => {
+          const sessionId = uuidv4();
+          localStorage.setItem('sessionId', sessionId);
+          const updateData = {
+            currentSession: sessionId,
+            lastLogin: serverTimestamp(),
+          };
+          updateDoc(userRef, updateData).catch(async (serverError) => {
+            const permissionError = new FirestorePermissionError({
+              path: userRef.path,
+              operation: 'update',
+              requestResourceData: updateData,
             });
-        });
+            errorEmitter.emit('permission-error', permissionError);
+          });
+        };
+
+        // Check if it's a new session right away
+        if (!localStorage.getItem('sessionId')) {
+          handleNewLogin();
+        }
+
+        unsubscribeSnapshot = onSnapshot(
+          userRef,
+          (snap) => {
+            if (snap.exists()) {
+              const data = snap.data();
+              const localSession = localStorage.getItem('sessionId');
+
+              if (localSession && data.currentSession && data.currentSession !== localSession) {
+                handleLogout();
+                toast({
+                  title: "Logged Out",
+                  description: "Your account was used to log in from another device.",
+                  variant: "destructive"
+                });
+                return; // Stop processing to prevent race conditions on logout
+              }
+
+              const profile: UserProfile = {
+                ...data,
+                subscriptionCurrentPeriodEnd: data.subscriptionCurrentPeriodEnd?.toDate().toISOString(),
+              } as UserProfile;
+              setUserProfile(profile);
+            } else {
+              setUserProfile(null);
+            }
+            setLoading(false);
+          },
+          (error) => {
+            console.error("Error with onSnapshot:", error);
+            setLoading(false);
+          }
+        );
 
       } else {
+        // User is signed out
         setUser(null);
         setUserProfile(null);
         setLoading(false);
         localStorage.removeItem('sessionId');
       }
-      
+
+      // Cleanup function for the auth listener
       return () => {
         unsubscribeSnapshot();
       };
     });
 
+    // Cleanup for the component unmount
     return () => unsubscribeAuth();
   }, [handleLogout, toast]);
   
