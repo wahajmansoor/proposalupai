@@ -1,9 +1,10 @@
+
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase/config';
-import { doc, onSnapshot, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ProposalUpLogos } from '@/components/icons';
 import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
@@ -95,14 +96,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         unsubscribeSnapshot = onSnapshot(userRef, (snap) => {
             if (snap.exists()) {
                 const data = snap.data() as UserProfile;
-                const localSession = localStorage.getItem('sessionId');
+                let localSession = localStorage.getItem('sessionId');
 
                 if (!localSession) {
                     // This is a new login on this device
-                    const newSessionId = uuidv4();
-                    localStorage.setItem('sessionId', newSessionId);
+                    localSession = uuidv4();
+                    localStorage.setItem('sessionId', localSession);
                     const updateData = {
-                        currentSession: newSessionId,
+                        currentSession: localSession,
                         lastLogin: serverTimestamp(),
                     };
                     updateDoc(userRef, updateData).catch(async (serverError) => {
