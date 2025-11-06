@@ -36,19 +36,14 @@ const plans = {
   }
 };
 
-const sharedFeatures = {
-    features: [
-        "Unlimited Proposal Generation",
-        "AI-Powered Suggestions",
-        "Save & Edit Proposals",
-        "Add Skill Profiles",
-        "Email & Community Support",
-        "Tailored Opening Strategies",
-    ],
-    personaIcon: Briefcase,
-    personaTitle: "Hey Freelancers",
-    personaDescription: "Stop drafting from scratch, Proposal Up AI creates tailored proposals and cover letters that win attention fast."
-};
+const sharedFeatures = [
+    "Unlimited Proposal Generation",
+    "AI-Powered Suggestions",
+    "Save & Edit Proposals",
+    "Add Skill Profiles",
+    "Email & Community Support",
+    "Tailored Opening Strategies",
+];
 
 type ValidCoupon = {
     id: string;
@@ -303,11 +298,9 @@ export default function PricingPage() {
                       <p className="text-sm text-muted-foreground">{currentPlan.priceDescription}</p>
                     </div>
 
-                    <div className="my-6 p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/50">
+                    <div className="my-2 p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/50">
                         <div className="flex items-center gap-3">
-                            <div className="bg-yellow-400/20 p-2 rounded-full">
-                                <Sparkles className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
-                            </div>
+                             <img src="/coin-anim.gif" alt="coin" className="h-10 w-10" />
                             <div>
                                 <h4 className="font-bold text-yellow-900 dark:text-yellow-200">Free Proposal Improvement Credits</h4>
                                 <p className="text-sm text-yellow-800 dark:text-yellow-300">
@@ -389,7 +382,7 @@ export default function PricingPage() {
                     <div className="border-t my-6"></div>
 
                     <ul className="space-y-3 mb-8 text-sm">
-                        {sharedFeatures.features.map((feature, index) => (
+                        {sharedFeatures.map((feature, index) => (
                         <li key={index} className="flex items-center gap-3">
                             <div className="bg-green-100 dark:bg-green-900/50 p-1 rounded-full">
                                 <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
@@ -402,13 +395,13 @@ export default function PricingPage() {
                     <div className="mt-auto pt-6 border-t">
                          <div className="flex items-center gap-3">
                              <div className="bg-muted p-2 rounded-full">
-                                 <sharedFeatures.personaIcon className="h-5 w-5 text-muted-foreground" />
+                                 <Briefcase className="h-5 w-5 text-muted-foreground" />
                              </div>
                             <div>
-                                <p className="font-semibold">{sharedFeatures.personaTitle}</p>
+                                <p className="font-semibold">Hey Freelancers</p>
                             </div>
                         </div>
-                        <p className="text-sm text-muted-foreground mt-2">{sharedFeatures.personaDescription}</p>
+                        <p className="text-sm text-muted-foreground mt-2">Stop drafting from scratch, Proposal Up AI creates tailored proposals and cover letters that win attention fast.</p>
                     </div>
                 </CardContent>
             </Card>
@@ -427,5 +420,7 @@ export default function PricingPage() {
     </div>
   );
 }
+
+    
 
     
