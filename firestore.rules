@@ -6,19 +6,16 @@ service cloud.firestore {
 
     // --- USERS COLLECTION ---
     match /users/{userId} {
-      // A user can read their own document
-      allow get: if request.auth != null && request.auth.uid == userId;
-      // Allow list for admin purposes, can be tightened later if needed
-      allow list: if request.auth != null; 
+      // A user can read their own document and create it.
+      allow get, create: if request.auth != null && request.auth.uid == userId;
+      
+      // Allow list for admin purposes, can be tightened later if needed.
+      allow list: if request.auth != null;
 
-      // A user can create their own user document
-      allow create: if request.auth != null;
-
-      // A user can update their own document, but not restricted fields
+      // A user can update their own document, but not restricted fields.
       allow update: if request.auth != null
         && request.auth.uid == userId
         && !request.resource.data.keys().hasAny([
-          // Sensitive server-managed fields
           'subscriptionStatus',
           'subscriptionId',
           'subscriptionInterval',
@@ -32,37 +29,37 @@ service cloud.firestore {
           'trialCreditsAwarded'
         ]);
 
-      // Prevent clients from deleting user docs
+      // Prevent clients from deleting user documents.
       allow delete: if false;
     }
 
     // --- SUBCOLLECTIONS ---
-    // Users can only manage their own skill profiles
+    // Users can only manage their own skill profiles.
     match /users/{userId}/skillProfiles/{profileId} {
       allow read, write, delete: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Users can only manage their own saved proposals
+    // Users can only manage their own saved proposals.
     match /users/{userId}/savedProposals/{proposalId} {
       allow read, write, delete: if request.auth != null && request.auth.uid == userId;
     }
 
-    // Users can only read their own credit history
+    // Users can only read their own credit history.
     match /users/{userId}/creditHistory/{historyId} {
       allow read: if request.auth != null && request.auth.uid == userId;
-      allow write: if false; // Prevent client-side writes
+      allow write: if false; // Prevent client-side writes.
     }
     
-    // Users can only read their own billing history
+    // Users can only read their own billing history.
     match /users/{userId}/billingHistory/{invoiceId} {
         allow read: if request.auth != null && request.auth.uid == userId;
-        allow write: if false; // Prevent client-side writes
+        allow write: if false; // Prevent client-side writes.
     }
 
-    // Users can only read their own credit purchase history
+    // Users can only read their own credit purchase history.
     match /users/{userId}/creditBillingHistory/{historyId} {
         allow read: if request.auth != null && request.auth.uid == userId;
-        allow write: if false; // Prevent client-side writes
+        allow write: if false; // Prevent client-side writes.
     }
   }
 }
