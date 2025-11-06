@@ -2,7 +2,7 @@
 'use client';
 
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
-import { onAuthStateChanged, User, signOut } from 'firebase/auth';
+import { onIdTokenChanged, User, signOut } from 'firebase/auth';
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase/config';
 import { doc, onSnapshot, getDoc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { ProposalUpLogos } from '@/components/icons';
@@ -112,9 +112,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
 
-    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribeAuth = onIdTokenChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        setLoading(true);
+        // A user is signed in, and we have a valid token.
+        // This is the correct place to make authenticated requests.
+        setUser(firebaseUser);
         const userRef = doc(db, 'users', firebaseUser.uid);
         
         try {
@@ -146,8 +148,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             console.error("Error during login session check:", e);
             const permissionError = new FirestorePermissionError({
               path: userRef.path,
-              operation: e.name === 'FirebaseError' ? 'get' : 'update',
-              requestResourceData: e.operation === 'update' ? { currentSession: 'new-session-id' } : undefined,
+              operation: 'get', // The failing operation is the getDoc
             });
             errorEmitter.emit('permission-error', permissionError);
             handleLogout("An error occurred during login. Please try again.");
@@ -173,10 +174,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             } else {
                 setUserProfile(null);
             }
+            setLoading(false); // Set loading to false after we have profile data
+        }, (error) => {
+            console.error("Error on user snapshot:", error);
+            setLoading(false);
         });
-
-        setUser(firebaseUser);
-        setLoading(false);
 
         return () => unsubscribeSnapshot();
       } else {
