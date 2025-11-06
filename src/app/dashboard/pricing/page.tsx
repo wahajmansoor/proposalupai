@@ -5,7 +5,7 @@ import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Loader2, Briefcase, ArrowLeft, Tag, X, AlertTriangle, CreditCard } from 'lucide-react';
+import { Check, Loader2, Briefcase, ArrowLeft, Tag, X, AlertTriangle, CreditCard, Sparkles } from 'lucide-react';
 import { handlePlanChange, validateCouponAction, createCustomerPortalSession } from '@/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/context/auth-context';
@@ -22,13 +22,17 @@ const plans = {
     name: "Pro Monthly",
     price: 20,
     priceDescription: "/month",
-    description: "Access all AI-powered features with no limits and craft proposals in seconds."
+    description: "Access all AI-powered features with no limits and craft proposals in seconds.",
+    credits: 10,
+    creditsDescription: "credits/month",
   },
   yearly: {
     name: "Pro Yearly",
     price: 200,
     priceDescription: "/year",
-    description: "The best value for long-term growth with AI-powered features to generate winning proposals in seconds."
+    description: "The best value for long-term growth with AI-powered features to generate winning proposals in seconds.",
+    credits: 100,
+    creditsDescription: "credits/year",
   }
 };
 
@@ -62,9 +66,9 @@ export default function PricingPage() {
   
   const [showCouponInput, setShowCouponInput] = useState(false);
   const [couponCode, setCouponCode] = useState('');
-  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
-  const [appliedCoupon, setAppliedCoupon] = useState<ValidCoupon | null>(null);
-  const [couponError, setCouponError] = useState<string | null>(null);
+  const [isValidatingCoupon, setIsValidatingCoupon = useState(false);
+  const [appliedCoupon, setAppliedCoupon = useState<ValidCoupon | null>(null);
+  const [couponError, setCouponError = useState<string | null>(null);
 
   const subscriptionStatus = userProfile?.subscriptionStatus;
   const renewalDate = userProfile?.subscriptionCurrentPeriodEnd;
@@ -277,7 +281,7 @@ export default function PricingPage() {
                             +2 months free
                             </Badge>
                         ) : (
-                            <Badge variant="outline">Pay as you go</Badge>
+                           <Badge variant="outline">Pay as you go</Badge>
                         )}
                     </CardTitle>
                     <CardDescription className="min-h-[40px]">{currentPlan.description}</CardDescription>
@@ -297,6 +301,20 @@ export default function PricingPage() {
                         </div>
                       )}
                       <p className="text-sm text-muted-foreground">{currentPlan.priceDescription}</p>
+                    </div>
+
+                    <div className="my-6 p-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800/50">
+                        <div className="flex items-center gap-3">
+                            <div className="bg-yellow-400/20 p-2 rounded-full">
+                                <Sparkles className="h-5 w-5 text-yellow-600 dark:text-yellow-400" />
+                            </div>
+                            <div>
+                                <h4 className="font-bold text-yellow-900 dark:text-yellow-200">Free Proposal Improvement Credits</h4>
+                                <p className="text-sm text-yellow-800 dark:text-yellow-300">
+                                    <span className="font-semibold">{currentPlan.credits}</span> {currentPlan.creditsDescription} included
+                                </p>
+                            </div>
+                        </div>
                     </div>
 
                     <form onSubmit={handleFormSubmit}>
@@ -409,3 +427,5 @@ export default function PricingPage() {
     </div>
   );
 }
+
+    
