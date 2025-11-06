@@ -200,7 +200,7 @@ export default function PricingPage() {
   const isButtonDisabled = isSubmitting || (isMonthlyActive && billingInterval === 'monthly') || (isYearlyActive && billingInterval === 'yearly');
 
   return (
-    <div className="flex flex-col items-center justify-center p-4 md:p-8">
+    <div className="flex flex-col items-center justify-center md:p-8">
         <div className="text-center mb-8">
             <h1 className="text-4xl md:text-5xl font-bold tracking-tight">
                 Manage Your Plan
@@ -420,7 +420,3 @@ export default function PricingPage() {
     </div>
   );
 }
-
-    
-
-    
