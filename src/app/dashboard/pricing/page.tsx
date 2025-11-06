@@ -272,11 +272,13 @@ export default function PricingPage() {
                 <CardHeader className="pb-0 md:pb-0">
                     <CardTitle className="flex items-center gap-2 text-xl font-semibold">
                       <span>{currentPlan.name}</span>
-                      {billingInterval === 'yearly' && (
-                        <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
-                          +2 months free
-                        </Badge>
-                      )}
+                        {billingInterval === 'yearly' ? (
+                            <Badge variant="secondary" className="bg-green-100 text-green-800 border-green-200">
+                            +2 months free
+                            </Badge>
+                        ) : (
+                            <Badge variant="outline">Pay as you go</Badge>
+                        )}
                     </CardTitle>
                     <CardDescription className="min-h-[40px]">{currentPlan.description}</CardDescription>
                 </CardHeader>
