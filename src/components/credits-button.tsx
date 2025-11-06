@@ -152,7 +152,7 @@ function CreditsDialogContent() {
             <div className="text-center">
                 <DialogTitle>Refer a Friend, Get Credits</DialogTitle>
                 <p className="text-base text-center mt-2 text-muted-foreground">
-                    Invite a friend using your referral link. When they sign up and start their trial, you both get 5 free credits!
+                    Invite a friend using your referral link. When they sign up and activate their Pro plan, you both get 5 free credits!
                 </p>
             </div>
             <div className="space-y-4 mt-4">
