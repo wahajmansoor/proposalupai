@@ -361,55 +361,61 @@ export default function SkillProfilesPage() {
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start">
-        <div className="md:col-span-1">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <Skeleton className="h-6 w-24" />
-              <Skeleton className="h-8 w-20 rounded-full" />
-            </CardHeader>
-            <CardContent className="space-y-2">
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-full" />
-              <Skeleton className="h-8 w-full" />
-            </CardContent>
-          </Card>
+      <div className="space-y-8">
+        <div className="space-y-2">
+            <Skeleton className="h-8 w-1/2" />
+            <Skeleton className="h-4 w-3/4" />
         </div>
-        <div className="md:col-span-3">
-          <Card>
-            <CardHeader>
-              <div className="flex items-start justify-between">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start">
+            <div className="md:col-span-1">
+            <Card>
+                <CardHeader className="flex flex-row items-center justify-between">
+                <Skeleton className="h-6 w-24" />
+                <Skeleton className="h-8 w-20 rounded-full" />
+                </CardHeader>
+                <CardContent className="space-y-2">
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                <Skeleton className="h-8 w-full" />
+                </CardContent>
+            </Card>
+            </div>
+            <div className="md:col-span-3">
+            <Card>
+                <CardHeader>
+                <div className="flex items-start justify-between">
+                    <div className="space-y-2">
+                    <Skeleton className="h-8 w-64" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    <Skeleton className="h-10 w-10 rounded-full" />
+                    </div>
+                </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                <Skeleton className="h-5 w-full" />
+                <Skeleton className="h-5 w-5/6" />
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                    <div className="space-y-2"><Skeleton className="h-5 w-24" /><Skeleton className="h-5 w-16" /></div>
+                    <div className="space-y-2"><Skeleton className="h-5 w-24" /><Skeleton className="h-5 w-16" /></div>
+                    <div className="space-y-2"><Skeleton className="h-5 w-24" /><Skeleton className="h-5 w-16" /></div>
+                </div>
                 <div className="space-y-2">
-                  <Skeleton className="h-8 w-64" />
+                    <Skeleton className="h-5 w-24" />
+                    <div className="flex flex-wrap gap-2">
+                    <Skeleton className="h-6 w-20 rounded-full" />
+                    <Skeleton className="h-6 w-28 rounded-full" />
+                    <Skeleton className="h-6 w-24 rounded-full" />
+                    </div>
                 </div>
-                <div className="flex items-center gap-2">
-                  <Skeleton className="h-10 w-10 rounded-full" />
-                  <Skeleton className="h-10 w-10 rounded-full" />
+                <div className="space-y-2">
+                    <Skeleton className="h-5 w-24" />
+                    <Skeleton className="h-6 w-32" />
                 </div>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              <Skeleton className="h-5 w-full" />
-              <Skeleton className="h-5 w-5/6" />
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="space-y-2"><Skeleton className="h-5 w-24" /><Skeleton className="h-5 w-16" /></div>
-                <div className="space-y-2"><Skeleton className="h-5 w-24" /><Skeleton className="h-5 w-16" /></div>
-                <div className="space-y-2"><Skeleton className="h-5 w-24" /><Skeleton className="h-5 w-16" /></div>
-              </div>
-              <div className="space-y-2">
-                <Skeleton className="h-5 w-24" />
-                <div className="flex flex-wrap gap-2">
-                  <Skeleton className="h-6 w-20 rounded-full" />
-                  <Skeleton className="h-6 w-28 rounded-full" />
-                  <Skeleton className="h-6 w-24 rounded-full" />
-                </div>
-              </div>
-              <div className="space-y-2">
-                <Skeleton className="h-5 w-24" />
-                <Skeleton className="h-6 w-32" />
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+            </Card>
+            </div>
         </div>
       </div>
     );
@@ -417,130 +423,138 @@ export default function SkillProfilesPage() {
 
   return (
     <>
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start">
-        <div className="md:col-span-1">
-          <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
-              <div className='flex items-center gap-2'>
-                <CardTitle className="text-lg">Profiles</CardTitle>
-                <TooltipProvider>
-                    <Tooltip>
-                        <TooltipTrigger asChild><button><Info className="h-4 w-4 text-muted-foreground" /></button></TooltipTrigger>
-                        <TooltipContent>
-                            <p>Create different profiles for your various skills (e.g., "Web Developer", "Graphic Designer").</p>
-                        </TooltipContent>
-                    </Tooltip>
-                </TooltipProvider>
-              </div>
-              <Button size="sm" onClick={handleCreateClick} className="rounded-full"><Plus className="mr-2 h-4 w-4" />Create</Button>
-            </CardHeader>
-            <CardContent>
-              {profiles.length > 0 ? (
-                <ul className="space-y-2">
-                  {profiles.map(profile => (
-                    <li key={profile.id}>
-                      <button 
-                        className={`w-full text-left p-2 rounded-md text-sm ${selectedProfile?.id === profile.id ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted'}`}
-                        onClick={() => setSelectedProfile(profile)}
-                      >
-                        {profile.title}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-muted-foreground text-center py-4">No profiles yet. Click "Create" to start.</p>
-              )}
-            </CardContent>
-          </Card>
+      <div className="space-y-8">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Skill Profiles</h1>
+          <p className="text-muted-foreground">
+            Create and manage different profiles to tailor your proposals for specific skills and jobs.
+          </p>
         </div>
-        <div className="md:col-span-3">
-          {selectedProfile ? (
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start">
+          <div className="md:col-span-1">
             <Card>
-                <CardHeader>
-                    <div className="flex items-start justify-between">
-                        <div>
-                            <CardTitle className="text-2xl">{selectedProfile.title}</CardTitle>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Button variant="outline" size="icon" onClick={() => handleEditClick(selectedProfile)} className="rounded-full">
-                                <Edit className="h-4 w-4" />
-                            </Button>
-                            <AlertDialog>
-                                <AlertDialogTrigger asChild>
-                                    <Button variant="destructive" size="icon" className="rounded-full">
-                                        <Trash2 className="h-4 w-4" />
-                                    </Button>
-                                </AlertDialogTrigger>
-                                <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                    <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                    <AlertDialogDescription>
-                                        This will permanently delete the "{selectedProfile.title}" profile. This action cannot be undone.
-                                    </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <AlertDialogFooter>
-                                    <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                    <AlertDialogAction onClick={() => handleDeleteProfile(selectedProfile.id)} className="bg-destructive hover:bg-destructive/90">
-                                        Delete
-                                    </AlertDialogAction>
-                                    </AlertDialogFooter>
-                                </AlertDialogContent>
-                            </AlertDialog>
-                        </div>
-                    </div>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                    <p className="text-muted-foreground whitespace-pre-wrap">{selectedProfile.description}</p>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-                        <div>
-                            <p className="font-semibold">Experience</p>
-                            <p>{selectedProfile.experience} years</p>
-                        </div>
-                        <div>
-                            <p className="font-semibold">Default Length</p>
-                            <p>{selectedProfile.length}</p>
-                        </div>
-                        <div>
-                            <p className="font-semibold">Default Tone</p>
-                            <p>{selectedProfile.tone}</p>
-                        </div>
-                    </div>
-
-                    <div>
-                        <p className="font-semibold mb-2">Keywords</p>
-                        <div className="flex flex-wrap gap-2">
-                        {selectedProfile.keywords.map((keyword, index) => (
-                            <Badge key={index} variant="secondary">{keyword}</Badge>
-                        ))}
-                        </div>
-                    </div>
-                    
-                    <div>
-                        <p className="font-semibold mb-2">Websites</p>
-                        <ul className="space-y-2">
-                          {selectedProfile.links.map((link, index) => (
-                              <li key={index}>
-                                <a href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
-                                    <LinkIcon className="h-4 w-4" />
-                                    <span>{link.title || link.url}</span>
-                                </a>
-                              </li>
-                          ))}
-                        </ul>
-                    </div>
-                </CardContent>
-            </Card>
-          ) : (
-            <Card className="flex items-center justify-center h-96">
-                <div className="text-center">
-                    <p className="text-lg font-semibold text-muted-foreground">Select a profile to view its details</p>
-                    <p className="text-sm text-muted-foreground">or create a new one to get started.</p>
-                    <Button className="mt-4 rounded-full" onClick={handleCreateClick}><Plus className="mr-2 h-4 w-4" />Create Your First Profile</Button>
+              <CardHeader className="flex flex-row items-center justify-between">
+                <div className='flex items-center gap-2'>
+                  <CardTitle className="text-lg">Profiles</CardTitle>
+                  <TooltipProvider>
+                      <Tooltip>
+                          <TooltipTrigger asChild><button><Info className="h-4 w-4 text-muted-foreground" /></button></TooltipTrigger>
+                          <TooltipContent>
+                              <p>Create different profiles for your various skills (e.g., "Web Developer", "Graphic Designer").</p>
+                          </TooltipContent>
+                      </Tooltip>
+                  </TooltipProvider>
                 </div>
+                <Button size="sm" onClick={handleCreateClick} className="rounded-full"><Plus className="mr-2 h-4 w-4" />Create</Button>
+              </CardHeader>
+              <CardContent>
+                {profiles.length > 0 ? (
+                  <ul className="space-y-2">
+                    {profiles.map(profile => (
+                      <li key={profile.id}>
+                        <button 
+                          className={`w-full text-left p-2 rounded-md text-sm ${selectedProfile?.id === profile.id ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted'}`}
+                          onClick={() => setSelectedProfile(profile)}
+                        >
+                          {profile.title}
+                        </button>
+                      </li>
+                    ))}
+                  </ul>
+                ) : (
+                  <p className="text-sm text-muted-foreground text-center py-4">No profiles yet. Click "Create" to start.</p>
+                )}
+              </CardContent>
             </Card>
-          )}
+          </div>
+          <div className="md:col-span-3">
+            {selectedProfile ? (
+              <Card>
+                  <CardHeader>
+                      <div className="flex items-start justify-between">
+                          <div>
+                              <CardTitle className="text-2xl">{selectedProfile.title}</CardTitle>
+                          </div>
+                          <div className="flex items-center gap-2">
+                              <Button variant="outline" size="icon" onClick={() => handleEditClick(selectedProfile)} className="rounded-full">
+                                  <Edit className="h-4 w-4" />
+                              </Button>
+                              <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                      <Button variant="destructive" size="icon" className="rounded-full">
+                                          <Trash2 className="h-4 w-4" />
+                                      </Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                      <AlertDialogHeader>
+                                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                          This will permanently delete the "{selectedProfile.title}" profile. This action cannot be undone.
+                                      </AlertDialogDescription>
+                                      </AlertDialogHeader>
+                                      <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={() => handleDeleteProfile(selectedProfile.id)} className="bg-destructive hover:bg-destructive/90">
+                                          Delete
+                                      </AlertDialogAction>
+                                      </AlertDialogFooter>
+                                  </AlertDialogContent>
+                              </AlertDialog>
+                          </div>
+                      </div>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                      <p className="text-muted-foreground whitespace-pre-wrap">{selectedProfile.description}</p>
+                      
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                          <div>
+                              <p className="font-semibold">Experience</p>
+                              <p>{selectedProfile.experience} years</p>
+                          </div>
+                          <div>
+                              <p className="font-semibold">Default Length</p>
+                              <p>{selectedProfile.length}</p>
+                          </div>
+                          <div>
+                              <p className="font-semibold">Default Tone</p>
+                              <p>{selectedProfile.tone}</p>
+                          </div>
+                      </div>
+
+                      <div>
+                          <p className="font-semibold mb-2">Keywords</p>
+                          <div className="flex flex-wrap gap-2">
+                          {selectedProfile.keywords.map((keyword, index) => (
+                              <Badge key={index} variant="secondary">{keyword}</Badge>
+                          ))}
+                          </div>
+                      </div>
+                      
+                      <div>
+                          <p className="font-semibold mb-2">Websites</p>
+                          <ul className="space-y-2">
+                            {selectedProfile.links.map((link, index) => (
+                                <li key={index}>
+                                  <a href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
+                                      <LinkIcon className="h-4 w-4" />
+                                      <span>{link.title || link.url}</span>
+                                  </a>
+                                </li>
+                            ))}
+                          </ul>
+                      </div>
+                  </CardContent>
+              </Card>
+            ) : (
+              <Card className="flex items-center justify-center h-96">
+                  <div className="text-center">
+                      <p className="text-lg font-semibold text-muted-foreground">Select a profile to view its details</p>
+                      <p className="text-sm text-muted-foreground">or create a new one to get started.</p>
+                      <Button className="mt-4 rounded-full" onClick={handleCreateClick}><Plus className="mr-2 h-4 w-4" />Create Your First Profile</Button>
+                  </div>
+              </Card>
+            )}
+          </div>
         </div>
       </div>
       
@@ -572,3 +586,5 @@ export default function SkillProfilesPage() {
     </>
   );
 }
+
+    
