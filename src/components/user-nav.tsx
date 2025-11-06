@@ -133,7 +133,7 @@ export function UserNav() {
           )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={handleLogout}>
+        <DropdownMenuItem onClick={() => handleLogout()}>
           <HugeiconsIcon icon={Logout01Icon} size={24} className="mr-2 h-4 w-4"/>
             Log out
         </DropdownMenuItem>
