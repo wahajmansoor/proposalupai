@@ -4,9 +4,11 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
 import { onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase/config';
-import { doc, onSnapshot } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
 import { ProposalUpLogos } from '@/components/icons';
 import { useRouter } from 'next/navigation';
+import { v4 as uuidv4 } from 'uuid';
+import { useToast } from '@/hooks/use-toast';
 
 interface UserProfile {
   uid: string;
@@ -27,6 +29,7 @@ interface UserProfile {
   upgradeBonusGiven?: boolean;
   trialCreditsAwarded?: boolean;
   onboardingComplete?: boolean;
+  currentSession?: string;
 }
 
 interface AuthContextType {
@@ -56,6 +59,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
+  const { toast } = useToast();
   
   const [creditChange, setCreditChange] = useState(0);
   const previousCreditsRef = useRef<number | undefined>(undefined);
@@ -65,13 +69,42 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setLoading(false);
         return;
     }
+
+    const handleNewLogin = async (user: User) => {
+        const sessionId = uuidv4();
+        localStorage.setItem('sessionId', sessionId);
+        const userRef = doc(db, 'users', user.uid);
+        await updateDoc(userRef, {
+            currentSession: sessionId,
+            lastLogin: serverTimestamp()
+        });
+    };
+
     const unsubscribe = onAuthStateChanged(auth, (user) => {
       setUser(user);
       if (user) {
+        // Handle new login session creation
+        const localSession = localStorage.getItem('sessionId');
+        if (!localSession) {
+            handleNewLogin(user);
+        }
+
         const userRef = doc(db, 'users', user.uid);
         const unsubscribeSnapshot = onSnapshot(userRef, (docSnap) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
+
+            // Session check
+            const localSession = localStorage.getItem('sessionId');
+            if (localSession && data.currentSession && data.currentSession !== localSession) {
+                toast({
+                    title: "Logged Out",
+                    description: "Your account was logged in from another device.",
+                    variant: "destructive"
+                });
+                handleLogout();
+                return;
+            }
 
             const profile: UserProfile = {
               ...data,
@@ -83,7 +116,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 const diff = profile.proposalCredits - previousCreditsRef.current;
                 if (diff > 0) {
                     setCreditChange(diff);
-                    // Reset after a short delay to allow re-triggering for subsequent changes
                     setTimeout(() => setCreditChange(0), 100);
                 }
             }
@@ -105,27 +137,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUser(null);
         setUserProfile(null);
         setLoading(false);
+        localStorage.removeItem('sessionId');
         previousCreditsRef.current = undefined;
       }
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [router, toast]);
 
   const handleLogout = async () => {
     setIsLoggingOut(true);
+    localStorage.removeItem('sessionId');
     try {
         if(isFirebaseConfigured) {
-            await signOut(auth); // Sign out from client-side Firebase
+            await signOut(auth);
         }
-        await fetch('/api/auth/session', { method: 'DELETE' }); // Clear server-side session cookie
+        await fetch('/api/auth/session', { method: 'DELETE' });
     } catch (error) {
         console.error("Error during logout:", error);
     } finally {
-        // After operations, show the logout screen and then redirect
         setTimeout(() => {
             router.push('/login');
-            // A brief delay before resetting the logging out state, in case of component re-renders
             setTimeout(() => setIsLoggingOut(false), 100);
         }, 2500); 
     }
