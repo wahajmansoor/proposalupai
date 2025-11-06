@@ -1,7 +1,7 @@
 
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode, useRef, useCallback } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from 'react';
 import { onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase/config';
 import { doc, onSnapshot, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
@@ -9,6 +9,8 @@ import { ProposalUpLogos } from '@/components/icons';
 import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/hooks/use-toast';
+import { errorEmitter } from '@/lib/firebase/error-emitter';
+import { FirestorePermissionError } from '@/lib/firebase/errors';
 
 interface UserProfile {
   uid: string;
@@ -62,26 +64,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const { toast } = useToast();
   
   const [creditChange, setCreditChange] = useState(0);
-  const previousCreditsRef = useRef<number | undefined>(undefined);
 
   const handleLogout = useCallback(() => {
     if (isLoggingOut) return;
     setIsLoggingOut(true);
     localStorage.removeItem('sessionId');
-    try {
-        if(isFirebaseConfigured) {
-            signOut(auth);
-        }
-        fetch('/api/auth/session', { method: 'DELETE' });
-    } catch (error) {
-        console.error("Error during logout:", error);
-    } finally {
-        setTimeout(() => {
-            router.push('/login');
-            setIsLoggingOut(false);
-        }, 2500); 
+    if(isFirebaseConfigured) {
+        signOut(auth);
     }
+    fetch('/api/auth/session', { method: 'DELETE' });
+    setTimeout(() => {
+        router.push('/login');
+        setIsLoggingOut(false);
+    }, 2500); 
   }, [router, isLoggingOut]);
+  
 
   useEffect(() => {
     if (!isFirebaseConfigured) {
@@ -95,57 +92,52 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (firebaseUser) {
         setUser(firebaseUser);
         const userRef = doc(db, 'users', firebaseUser.uid);
-        
-        const localSessionId = localStorage.getItem('sessionId');
 
-        if (!localSessionId) {
-            const newSessionId = uuidv4();
-            localStorage.setItem('sessionId', newSessionId);
-            updateDoc(userRef, {
-                currentSession: newSessionId,
-                lastLogin: serverTimestamp(),
-            });
-        }
-        
-        unsubscribeSnapshot = onSnapshot(userRef, (docSnap) => {
-            if (docSnap.exists()) {
-                const data = docSnap.data();
-                
-                const remoteSession = data.currentSession;
+        getDoc(userRef).then(docSnap => {
+            if (!docSnap.exists() || !localStorage.getItem('sessionId')) {
+                const sessionId = uuidv4();
+                localStorage.setItem('sessionId', sessionId);
+                const updateData = {
+                    currentSession: sessionId,
+                    lastLogin: serverTimestamp(),
+                };
+                updateDoc(userRef, updateData).catch(async (serverError) => {
+                    const permissionError = new FirestorePermissionError({
+                        path: userRef.path,
+                        operation: 'update',
+                        requestResourceData: updateData,
+                    });
+                    errorEmitter.emit('permission-error', permissionError);
+                });
+            }
+
+            unsubscribeSnapshot = onSnapshot(userRef, (snap) => {
+              if (snap.exists()) {
+                const data = snap.data();
                 const localSession = localStorage.getItem('sessionId');
-                if (localSession && remoteSession && remoteSession !== localSession) {
+                if (data.currentSession && localSession && data.currentSession !== localSession) {
+                    handleLogout();
                     toast({
                         title: "Logged Out",
-                        description: "Your account was logged in from another device.",
+                        description: "Your account was used to log in from another device.",
                         variant: "destructive"
                     });
-                    handleLogout();
-                    return; 
+                    return;
                 }
-                
                 const profile: UserProfile = {
                     ...data,
                     subscriptionCurrentPeriodEnd: data.subscriptionCurrentPeriodEnd?.toDate().toISOString(),
                 } as UserProfile;
 
-                if (previousCreditsRef.current !== undefined && profile.proposalCredits !== undefined) {
-                    const diff = profile.proposalCredits - previousCreditsRef.current;
-                    if (diff > 0) {
-                        setCreditChange(diff);
-                        setTimeout(() => setCreditChange(0), 100);
-                    }
-                }
-                previousCreditsRef.current = profile.proposalCredits;
-
                 setUserProfile(profile);
-            } else {
+              } else {
                 setUserProfile(null);
-            }
-            setLoading(false);
-        }, (error) => {
-            console.error("Error fetching user profile:", error);
-            setUserProfile(null);
-            setLoading(false);
+              }
+               setLoading(false);
+            }, (error) => {
+                console.error("Error with onSnapshot:", error);
+                setLoading(false);
+            });
         });
 
       } else {
@@ -153,7 +145,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         setUserProfile(null);
         setLoading(false);
         localStorage.removeItem('sessionId');
-        previousCreditsRef.current = undefined;
       }
       
       return () => {
