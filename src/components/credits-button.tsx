@@ -210,7 +210,7 @@ export function CreditsButton() {
         variant="outline"
         className="relative h-9 px-3 bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 font-semibold gap-2 rounded-full"
       >
-        <ShoppingBag className="h-5 w-5" />
+        <img src="/coin-anim.gif" alt="coin" className="h-6 w-6" />
         <span>Credits</span>
         <span className="flex items-center justify-center h-5 w-5 rounded-full bg-white text-xs">
           {credits}
