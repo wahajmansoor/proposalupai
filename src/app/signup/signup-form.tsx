@@ -250,10 +250,10 @@ export function SignupForm() {
             <form onSubmit={handleSubmit}>
               <div className="grid gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="full-name">Full Name</Label>
+                  <Label htmlFor="full-name">Name <span className="text-destructive">*</span></Label>
                   <Input 
                     id="full-name" 
-                    placeholder="Wahaj Mansoor" 
+                    placeholder="Full Name" 
                     required 
                     value={fullName}
                     onChange={(e) => setFullName(e.target.value)}
@@ -261,11 +261,11 @@ export function SignupForm() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="email">Email</Label>
+                  <Label htmlFor="email">Email <span className="text-destructive">*</span></Label>
                   <Input 
                     id="email" 
                     type="email" 
-                    placeholder="info@example.com" 
+                    placeholder="name@domain.com" 
                     required 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
@@ -273,11 +273,11 @@ export function SignupForm() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="password">Password</Label>
+                  <Label htmlFor="password">Password <span className="text-destructive">*</span></Label>
                   <Input 
                     id="password" 
                     type="password" 
-                    placeholder="••••••••"
+                    placeholder="Password (at least 8 characters)"
                     required
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
