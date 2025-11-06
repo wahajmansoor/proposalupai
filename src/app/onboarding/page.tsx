@@ -127,17 +127,7 @@ function PlanDetailsCard({
                         </li>
                     ))}
                 </ul>
-                 <div className="flex flex-col-reverse sm:flex-row justify-between items-center sm:items-end my-4 gap-4">
-                    <div className="text-left w-full sm:w-auto">
-                        <p className="text-sm font-medium">Proposal Improvements</p>
-                        <Button
-                            variant="outline"
-                            className="relative h-9 px-3 bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 font-semibold gap-2 rounded-full"
-                        >
-                            <img src="/coin-anim.gif" alt="coin" className="h-6 w-6" />
-                            <span className="font-bold">{plan.interval === 'monthly' ? '10 Free Credits' : '100 Free Credits'}</span>
-                        </Button>
-                    </div>
+                 <div className="flex flex-col-reverse sm:flex-row justify-end items-center sm:items-end my-4 gap-4">
                     <Button 
                         size="lg" 
                         className="text-base font-medium w-full sm:w-auto"
