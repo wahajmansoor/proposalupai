@@ -371,7 +371,7 @@ export default function SkillProfilesPage() {
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                 <Skeleton className="h-6 w-24" />
-                <Skeleton className="h-8 w-20 rounded-md" />
+                <Skeleton className="h-8 w-20 rounded-full" />
                 </CardHeader>
                 <CardContent className="space-y-2">
                 <Skeleton className="h-8 w-full" />
@@ -439,7 +439,7 @@ export default function SkillProfilesPage() {
                   <TooltipProvider>
                       <Tooltip>
                           <TooltipTrigger asChild><button><Info className="h-4 w-4 text-muted-foreground" /></button></TooltipTrigger>
-                          <TooltipContent>
+                          <TooltipContent className="max-w-xs">
                               <p>Create different profiles for your various skills (e.g., "Web Developer", "Graphic Designer").</p>
                           </TooltipContent>
                       </Tooltip>
