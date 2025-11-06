@@ -16,9 +16,10 @@ import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
 import { createUserWithEmailAndPassword } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
-import { doc, setDoc } from 'firebase/firestore';
+import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { BgPattern } from '@/components/bg-pattern';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { v4 as uuidv4 } from 'uuid';
 
 
 const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => {
@@ -154,6 +155,7 @@ export function SignupForm() {
       const newUser = userCredential.user;
       const idToken = await newUser.getIdToken();
       const storedReferralCode = localStorage.getItem('referralCode');
+      const newSessionId = uuidv4();
 
       // Step 2: Create Stripe customer via a simple server action
       const stripeResult = await createStripeCustomer({ email, name: fullName, firebaseUID: newUser.uid });
@@ -170,12 +172,14 @@ export function SignupForm() {
         email: email,
         displayName: fullName,
         photoURL: newUser.photoURL || null,
-        createdAt: new Date(),
+        createdAt: serverTimestamp(),
         stripeCustomerId: stripeResult.customerId,
         proposalCount: 0,
         subscriptionStatus: null,
         referralCode: newUser.uid.substring(0, 8),
         onboardingComplete: false, // Flag for new user onboarding
+        currentSession: newSessionId, // Set session ID on creation
+        lastLogin: serverTimestamp(),
       };
 
       if (storedReferralCode) {
@@ -233,7 +237,7 @@ export function SignupForm() {
               <p className="text-muted-foreground mt-1">Enter your information to get started.</p>
             </div>
             
-            <Button variant="outline" className="w-full mb-6" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
+            <Button variant="outline" className="w-full mb-6 rounded-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
               {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
               Sign up with Google
             </Button>

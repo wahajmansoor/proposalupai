@@ -164,7 +164,7 @@ export async function GET(req: NextRequest) {
   } catch (err: any) {
     console.error('Failed to exchange code for token:', err);
     errorRedirectUrl.searchParams.set('error', 'token-exchange-failed');
-    errorRedirectUrl.search_params.set('details', err.message);
+    errorRedirectUrl.searchParams.set('details', err.message);
     return NextResponse.redirect(errorRedirectUrl);
   }
 }
