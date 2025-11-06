@@ -373,7 +373,9 @@ export default function PricingPage() {
                     <ul className="space-y-3 mb-8 text-sm">
                         {sharedFeatures.features.map((feature, index) => (
                         <li key={index} className="flex items-center gap-3">
-                            <Check className="h-4 w-4 text-primary" />
+                            <div className="bg-green-100 dark:bg-green-900/50 p-1 rounded-full">
+                                <Check className="h-4 w-4 text-green-600 dark:text-green-400" />
+                            </div>
                             <span>{feature}</span>
                         </li>
                         ))}
