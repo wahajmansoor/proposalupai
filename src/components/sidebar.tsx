@@ -92,7 +92,7 @@ function SidebarNav() {
             </SidebarMenuItem>
              <SidebarMenuItem>
               <SidebarMenuButton
-                  onClick={handleLogout}
+                  onClick={() => handleLogout()}
                   tooltip="Logout"
                   className="w-full"
                 >
