@@ -37,8 +37,9 @@ const sharedFeatures = {
         "Unlimited Proposal Generation",
         "AI-Powered Suggestions",
         "Save & Edit Proposals",
-        "Portfolio Collections",
+        "Skill Profiles",
         "Email & Community Support",
+        "Tailored Opening Strategies",
     ],
     personaIcon: Briefcase,
     personaTitle: "Hey Freelancers",
@@ -404,5 +405,3 @@ export default function PricingPage() {
     </div>
   );
 }
-
-    
