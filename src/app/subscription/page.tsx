@@ -369,7 +369,7 @@ export default function SubscriptionPage() {
               <CardDescription>Your current plan and billing information.</CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
-               <div className="flex items-center justify-between p-4 border rounded-lg">
+               <div className="flex items-center justify-between">
                 <div className="flex flex-col items-start gap-2">
                     <h3 className="font-semibold text-sm">Your Current Plan:</h3>
                     <div className="flex items-center gap-2">
