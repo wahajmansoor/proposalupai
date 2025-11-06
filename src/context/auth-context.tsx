@@ -11,6 +11,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/lib/firebase/error-emitter';
 import { FirestorePermissionError } from '@/lib/firebase/errors';
+import { handleUserLogout as handleUserLogoutServer } from '@/lib/actions';
 
 interface UserProfile {
   uid: string;
@@ -39,7 +40,7 @@ interface AuthContextType {
   user: User | null;
   userProfile: UserProfile | null;
   loading: boolean;
-  handleLogout: () => void;
+  handleLogout: (message?: string) => void;
   creditChange: number;
 }
 
@@ -56,13 +57,13 @@ function LogoutScreen() {
     );
 }
 
-// Check if a session is considered active (e.g., last login within 24 hours)
+// Session is considered active if last login was within the last 24 hours.
 function isSessionActive(lastLogin?: Timestamp): boolean {
     if (!lastLogin) return false;
     const now = new Date();
     const lastLoginDate = lastLogin.toDate();
     const hoursSinceLastLogin = (now.getTime() - lastLoginDate.getTime()) / (1000 * 60 * 60);
-    return hoursSinceLastLogin < 24; // Session is active if login was within the last 24 hours
+    return hoursSinceLastLogin < 24;
 }
 
 
@@ -76,7 +77,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   
   const [creditChange, setCreditChange] = useState(0);
 
-  const handleLogout = useCallback((message?: string) => {
+  const handleLogout = useCallback(async (message?: string) => {
     if (isLoggingOut) return;
     setIsLoggingOut(true);
 
@@ -88,10 +89,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
     }
 
+    // Securely clear the session on the server
+    await handleUserLogoutServer();
+    
+    // Then clear the client-side session
     if(isFirebaseConfigured) {
         signOut(auth);
     }
-    fetch('/api/auth/session', { method: 'DELETE' });
+    await fetch('/api/auth/session', { method: 'DELETE' });
     localStorage.removeItem('sessionId');
 
     setTimeout(() => {
@@ -111,44 +116,56 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (firebaseUser) {
         setLoading(true);
         const userRef = doc(db, 'users', firebaseUser.uid);
-        let localSession = localStorage.getItem('sessionId');
-
+        
         try {
             const userDoc = await getDoc(userRef);
-
             if (userDoc.exists()) {
                 const data = userDoc.data() as UserProfile;
+                const localSessionId = localStorage.getItem('sessionId');
 
-                // ** SINGLE-SESSION POLICY CHECK **
-                if (data.currentSession && data.lastLogin && isSessionActive(data.lastLogin)) {
-                    if (!localSession) {
-                        // This is a new device login attempt, but an active session exists elsewhere.
-                        handleLogout("You are already logged in on another device. Please log out from that device to continue.");
-                        return; // Stop the login process
-                    }
+                // Check for an active session on another device.
+                if (data.currentSession && data.lastLogin && isSessionActive(data.lastLogin) && data.currentSession !== localSessionId) {
+                    handleLogout("You have logged in on another device. This session has been terminated.");
+                    return;
                 }
 
-                // If we've reached here, it's either a new session or a returning user on the same device.
-                if (!localSession) {
-                    localSession = uuidv4();
-                    localStorage.setItem('sessionId', localSession);
+                // If no local session, it's a new login. Create a session.
+                if (!localSessionId) {
+                    const newSessionId = uuidv4();
+                    localStorage.setItem('sessionId', newSessionId);
                     await updateDoc(userRef, {
-                        currentSession: localSession,
+                        currentSession: newSessionId,
                         lastLogin: serverTimestamp(),
                     });
                 }
+            } else {
+                 // This case is for a user who exists in Auth but not Firestore yet.
+                 // The session will be created when the userDoc is created on first login.
             }
         } catch (e: any) {
             console.error("Error during login session check:", e);
+            const permissionError = new FirestorePermissionError({
+              path: userRef.path,
+              operation: e.name === 'FirebaseError' ? 'get' : 'update',
+              requestResourceData: e.operation === 'update' ? { currentSession: 'new-session-id' } : undefined,
+            });
+            errorEmitter.emit('permission-error', permissionError);
             handleLogout("An error occurred during login. Please try again.");
             return;
         }
 
-        // Set up the real-time listener for the user profile
         const unsubscribeSnapshot = onSnapshot(userRef, (snap) => {
             if (snap.exists()) {
                 const data = snap.data() as UserProfile;
-                 const profile: UserProfile = {
+                const localSessionId = localStorage.getItem('sessionId');
+
+                // Real-time check for multi-device logout
+                if (data.currentSession && localSessionId && data.currentSession !== localSessionId) {
+                    handleLogout("You have logged in on another device. This session has been terminated.");
+                    return;
+                }
+
+                const profile: UserProfile = {
                     ...data,
                     subscriptionCurrentPeriodEnd: data.subscriptionCurrentPeriodEnd?.toDate().toISOString(),
                 };

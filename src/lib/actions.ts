@@ -304,6 +304,29 @@ export async function getGoogleAuthUrl(referralCode: string | null) {
     return authorizeUrl;
 }
 
+export async function handleUserLogout() {
+  const currentUser = await getCurrentUser();
+  if (!currentUser) {
+    // If there's no user, there's no session to clear.
+    return { success: true };
+  }
+
+  try {
+    const userRef = adminDb.collection('users').doc(currentUser.user.uid);
+    await userRef.update({
+      currentSession: null,
+      lastLogin: null, // Clear the last login time as well
+    });
+    return { success: true };
+  } catch (error: any) {
+    console.error("Error clearing user session on logout:", error);
+    // Even if this fails, we should still let the client log out.
+    // The main risk is that the user's "slot" isn't freed up, but
+    // that's better than preventing logout.
+    return { success: false, error: "Could not clear server session." };
+  }
+}
+
 const updateDisplayNameSchema = z.object({
     displayName: z.string().min(1, 'Display name cannot be empty.'),
 });
