@@ -214,7 +214,7 @@ export default function SkillProfilesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, toast]);
+  }, [user, toast, selectedProfile?.id]);
 
   useEffect(() => {
     if (user) {
@@ -523,3 +523,5 @@ export default function SkillProfilesPage() {
     </>
   );
 }
+
+    
