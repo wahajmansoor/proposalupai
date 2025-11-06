@@ -4,15 +4,23 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Users can only read and write to their own user document.
+    // A user can read their own document.
+    // They can also update specific fields like displayName, currentSession, and lastLogin.
     match /users/{userId} {
-      allow read, update, delete: if request.auth != null && request.auth.uid == userId;
+      allow read, delete: if request.auth != null && request.auth.uid == userId;
       allow create: if request.auth != null;
+      allow update: if request.auth != null && request.auth.uid == userId &&
+        request.resource.data.keys().hasAll(['displayName', 'currentSession', 'lastLogin']);
     }
 
     // Users can only manage their own portfolio collections.
     match /users/{userId}/portfolioCollections/{collectionId} {
         allow read, write, delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+    // Skill profiles, saved proposals, and other user-specific subcollections
+    match /users/{userId}/{collection}/{docId} {
+       allow read, write, delete: if request.auth != null && request.auth.uid == userId;
     }
   }
 }
