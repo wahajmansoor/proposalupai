@@ -57,16 +57,6 @@ function LogoutScreen() {
     );
 }
 
-// Session is considered active if last login was within the last 24 hours.
-function isSessionActive(lastLogin?: Timestamp): boolean {
-    if (!lastLogin) return false;
-    const now = new Date();
-    const lastLoginDate = lastLogin.toDate();
-    const hoursSinceLastLogin = (now.getTime() - lastLoginDate.getTime()) / (1000 * 60 * 60);
-    return hoursSinceLastLogin < 24;
-}
-
-
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
@@ -89,17 +79,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       });
     }
 
-    // Securely clear the session on the server
     await handleUserLogoutServer();
     
-    // Then clear the client-side session
     if(isFirebaseConfigured) {
         await signOut(auth);
     }
     await fetch('/api/auth/session', { method: 'DELETE' });
     localStorage.removeItem('sessionId');
 
-    // This ensures we fully reset state on logout before redirecting
     setUser(null);
     setUserProfile(null);
 
@@ -117,14 +104,34 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const unsubscribeAuth = onIdTokenChanged(auth, async (firebaseUser) => {
+      setLoading(true);
       if (firebaseUser) {
         setUser(firebaseUser);
         const userRef = doc(db, 'users', firebaseUser.uid);
+        let localSessionId = localStorage.getItem('sessionId');
+
+        if (!localSessionId) {
+            localSessionId = uuidv4();
+            localStorage.setItem('sessionId', localSessionId);
+            try {
+                await updateDoc(userRef, {
+                    currentSession: localSessionId,
+                    lastLogin: serverTimestamp(),
+                });
+            } catch (e) {
+                console.error("Error updating session on initial login:", e);
+            }
+        }
         
-        // This is the real-time listener for the user profile
         const unsubscribeSnapshot = onSnapshot(userRef, (snap) => {
             if (snap.exists()) {
                 const data = snap.data() as UserProfile;
+
+                if (localSessionId && data.currentSession && data.currentSession !== localSessionId) {
+                    handleLogout("You have been logged out because a new session was started on another device.");
+                    return;
+                }
+
                 const profile: UserProfile = {
                     ...data,
                     subscriptionCurrentPeriodEnd: data.subscriptionCurrentPeriodEnd?.toDate().toISOString(),
@@ -135,17 +142,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 if (typeof oldCredits === 'number' && typeof newCredits === 'number' && newCredits > oldCredits) {
                     setCreditChange(newCredits - oldCredits);
                 }
-
+                
                 setUserProfile(profile);
+
             } else {
                 setUserProfile(null);
+                 handleLogout("Your user profile could not be found.");
             }
-            setLoading(false); // Only set loading to false after we have profile data (or know it doesn't exist)
+            setLoading(false);
         }, (error) => {
             console.error("Error on user snapshot:", error);
             const permissionError = new FirestorePermissionError({
               path: userRef.path,
-              operation: 'list', // onSnapshot is a 'list' operation in security rules terms
+              operation: 'get',
             });
             errorEmitter.emit('permission-error', permissionError);
             setLoading(false);
@@ -153,7 +162,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
         return () => unsubscribeSnapshot();
       } else {
-        // User is signed out
         setUser(null);
         setUserProfile(null);
         setLoading(false);
