@@ -363,15 +363,15 @@ export default function SkillProfilesPage() {
     return (
       <div className="space-y-8">
         <div className="space-y-2">
-            <Skeleton className="h-8 w-1/2" />
-            <Skeleton className="h-4 w-3/4" />
+            <Skeleton className="h-8 w-1/3" />
+            <Skeleton className="h-4 w-1/2" />
         </div>
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start">
             <div className="md:col-span-1">
             <Card>
                 <CardHeader className="flex flex-row items-center justify-between">
                 <Skeleton className="h-6 w-24" />
-                <Skeleton className="h-8 w-20 rounded-full" />
+                <Skeleton className="h-8 w-20 rounded-md" />
                 </CardHeader>
                 <CardContent className="space-y-2">
                 <Skeleton className="h-8 w-full" />
@@ -586,5 +586,3 @@ export default function SkillProfilesPage() {
     </>
   );
 }
-
-    
