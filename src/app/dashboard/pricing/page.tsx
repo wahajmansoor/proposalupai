@@ -66,9 +66,9 @@ export default function PricingPage() {
   
   const [showCouponInput, setShowCouponInput] = useState(false);
   const [couponCode, setCouponCode] = useState('');
-  const [isValidatingCoupon, setIsValidatingCoupon = useState(false);
-  const [appliedCoupon, setAppliedCoupon = useState<ValidCoupon | null>(null);
-  const [couponError, setCouponError = useState<string | null>(null);
+  const [isValidatingCoupon, setIsValidatingCoupon] = useState(false);
+  const [appliedCoupon, setAppliedCoupon] = useState<ValidCoupon | null>(null);
+  const [couponError, setCouponError] = useState<string | null>(null);
 
   const subscriptionStatus = userProfile?.subscriptionStatus;
   const renewalDate = userProfile?.subscriptionCurrentPeriodEnd;
