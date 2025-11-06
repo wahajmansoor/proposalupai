@@ -1,3 +1,4 @@
+
 // src/components/sidebar.tsx
 "use client";
 
@@ -22,7 +23,7 @@ import { ProposalUpLogos } from "./icons";
 const navItems = [
   { href: "/dashboard", label: "Create Proposal", icon: FileEditIcon },
   { href: "/dashboard/proposals", label: "Saved Proposals", icon: BookmarkIcon },
-  { href: "/dashboard/skill-profiles", label: "Skill Profiles", icon: Profile02Icon },
+  { href: "/dashboard/skill-profiles", label: "Add Skill Profiles", icon: Profile02Icon },
   { href: "/dashboard/pricing", label: "Plans & Pricing", icon: CreditCardIcon },
 ];
 
