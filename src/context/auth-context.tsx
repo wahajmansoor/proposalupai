@@ -89,85 +89,76 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
     }
 
-    const unsubscribe = onAuthStateChanged(auth, (user) => {
-      let unsubscribeSnapshot: () => void = () => {};
+    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        setUser(firebaseUser);
+        const userRef = doc(db, 'users', firebaseUser.uid);
 
-      if (user) {
-        setUser(user);
+        // This is a new login, so generate a session ID, save it, and write it to Firestore.
+        const sessionId = uuidv4();
+        localStorage.setItem('sessionId', sessionId);
+        await updateDoc(userRef, {
+            currentSession: sessionId,
+            lastLogin: serverTimestamp(),
+        });
         
-        const userRef = doc(db, 'users', user.uid);
-
-        const setupSessionAndListener = async () => {
-          let localSessionId = localStorage.getItem('sessionId');
-          const userDoc = await getDoc(userRef);
-
-          // If no local session ID, this is a new login. Create one.
-          if (!localSessionId) {
-            localSessionId = uuidv4();
-            localStorage.setItem('sessionId', localSessionId);
-            await updateDoc(userRef, {
-              currentSession: localSessionId,
-              lastLogin: serverTimestamp()
-            });
-          }
-
-          // Start listening for session changes from other devices.
-          unsubscribeSnapshot = onSnapshot(userRef, (docSnap) => {
+        // Now, set up the real-time listener for this user.
+        const unsubscribeSnapshot = onSnapshot(userRef, (docSnap) => {
             if (docSnap.exists()) {
-              const data = docSnap.data();
-              const dbSessionId = data.currentSession;
-              const currentLocalSessionId = localStorage.getItem('sessionId');
+                const data = docSnap.data();
+                
+                // Compare Firestore session with local session
+                const remoteSession = data.currentSession;
+                const localSession = localStorage.getItem('sessionId');
+                if (localSession && remoteSession && remoteSession !== localSession) {
+                    toast({
+                        title: "Logged Out",
+                        description: "Your account was logged in from another device.",
+                        variant: "destructive"
+                    });
+                    handleLogout();
+                    return; // Prevent further state updates for the old session
+                }
+                
+                const profile: UserProfile = {
+                    ...data,
+                    subscriptionCurrentPeriodEnd: data.subscriptionCurrentPeriodEnd?.toDate().toISOString(),
+                } as UserProfile;
 
-              if (dbSessionId && currentLocalSessionId && dbSessionId !== currentLocalSessionId) {
-                toast({
-                    title: "Logged Out",
-                    description: "Your account was logged in from another device.",
-                    variant: "destructive"
-                });
-                handleLogout();
-                return; // Stop processing to prevent setting user state on a logged-out instance
-              }
+                if (previousCreditsRef.current !== undefined && profile.proposalCredits !== undefined) {
+                    const diff = profile.proposalCredits - previousCreditsRef.current;
+                    if (diff > 0) {
+                        setCreditChange(diff);
+                        setTimeout(() => setCreditChange(0), 100);
+                    }
+                }
+                previousCreditsRef.current = profile.proposalCredits;
 
-              const profile: UserProfile = {
-                ...data,
-                subscriptionCurrentPeriodEnd: data.subscriptionCurrentPeriodEnd?.toDate().toISOString(),
-              } as UserProfile;
-              
-              if (previousCreditsRef.current !== undefined && profile.proposalCredits !== undefined) {
-                  const diff = profile.proposalCredits - previousCreditsRef.current;
-                  if (diff > 0) {
-                      setCreditChange(diff);
-                      setTimeout(() => setCreditChange(0), 100);
-                  }
-              }
-              previousCreditsRef.current = profile.proposalCredits;
-
-              setUserProfile(profile);
+                setUserProfile(profile);
             } else {
-              setUserProfile(null);
+                setUserProfile(null);
             }
             setLoading(false);
-          }, (error) => {
+        }, (error) => {
             console.error("Error fetching user profile:", error);
             setUserProfile(null);
             setLoading(false);
-          });
-        };
-        
-        setupSessionAndListener();
+        });
 
+        // Return the snapshot unsubscriber to be called on cleanup
+        return () => unsubscribeSnapshot();
       } else {
+        // User is logged out
         setUser(null);
         setUserProfile(null);
         setLoading(false);
         localStorage.removeItem('sessionId');
         previousCreditsRef.current = undefined;
       }
-      
-      return () => unsubscribeSnapshot();
     });
 
-    return () => unsubscribe();
+    // Main cleanup for the auth listener
+    return () => unsubscribeAuth();
   }, [handleLogout, toast]);
   
   if (isLoggingOut) {
