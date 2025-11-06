@@ -7,7 +7,6 @@ import { auth, db, isFirebaseConfigured } from '@/lib/firebase/config';
 import { doc, onSnapshot, getDoc, updateDoc, serverTimestamp, Timestamp } from 'firebase/firestore';
 import { ProposalUpLogos } from '@/components/icons';
 import { useRouter } from 'next/navigation';
-import { v4 as uuidv4 } from 'uuid';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/lib/firebase/error-emitter';
 import { FirestorePermissionError } from '@/lib/firebase/errors';
@@ -84,8 +83,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if(isFirebaseConfigured) {
         await signOut(auth);
     }
-    await fetch('/api/auth/session', { method: 'DELETE' });
-    localStorage.removeItem('sessionId');
 
     setUser(null);
     setUserProfile(null);
@@ -104,52 +101,43 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const unsubscribeAuth = onIdTokenChanged(auth, async (firebaseUser) => {
-      setLoading(true);
       if (firebaseUser) {
         setUser(firebaseUser);
         const userRef = doc(db, 'users', firebaseUser.uid);
-        let localSessionId = localStorage.getItem('sessionId');
-
-        if (!localSessionId) {
-            localSessionId = uuidv4();
-            localStorage.setItem('sessionId', localSessionId);
-            try {
-                await updateDoc(userRef, {
-                    currentSession: localSessionId,
-                    lastLogin: serverTimestamp(),
-                });
-            } catch (e) {
-                console.error("Error updating session on initial login:", e);
-            }
-        }
         
         const unsubscribeSnapshot = onSnapshot(userRef, (snap) => {
+            setLoading(true);
             if (snap.exists()) {
                 const data = snap.data() as UserProfile;
 
-                if (localSessionId && data.currentSession && data.currentSession !== localSessionId) {
-                    handleLogout("You have been logged out because a new session was started on another device.");
-                    return;
-                }
+                // Client-side validation to ensure this session is the active one
+                firebaseUser.getIdTokenResult().then(idTokenResult => {
+                    const tokenSessionId = idTokenResult.claims.sessionId;
+                    if (data.currentSession && tokenSessionId && data.currentSession !== tokenSessionId) {
+                        handleLogout("You have been logged out because a new session was started on another device.");
+                        return;
+                    }
 
-                const profile: UserProfile = {
-                    ...data,
-                    subscriptionCurrentPeriodEnd: data.subscriptionCurrentPeriodEnd?.toDate().toISOString(),
-                };
+                    const profile: UserProfile = {
+                        ...data,
+                        subscriptionCurrentPeriodEnd: data.subscriptionCurrentPeriodEnd?.toDate().toISOString(),
+                    };
+    
+                    const oldCredits = userProfile?.proposalCredits ?? profile.proposalCredits;
+                    const newCredits = profile.proposalCredits;
+                    if (typeof oldCredits === 'number' && typeof newCredits === 'number' && newCredits > oldCredits) {
+                        setCreditChange(newCredits - oldCredits);
+                    }
+                    
+                    setUserProfile(profile);
+                    setLoading(false);
+                });
 
-                const oldCredits = userProfile?.proposalCredits ?? profile.proposalCredits;
-                const newCredits = profile.proposalCredits;
-                if (typeof oldCredits === 'number' && typeof newCredits === 'number' && newCredits > oldCredits) {
-                    setCreditChange(newCredits - oldCredits);
-                }
-                
-                setUserProfile(profile);
 
             } else {
                 setUserProfile(null);
                  handleLogout("Your user profile could not be found.");
             }
-            setLoading(false);
         }, (error) => {
             console.error("Error on user snapshot:", error);
             const permissionError = new FirestorePermissionError({

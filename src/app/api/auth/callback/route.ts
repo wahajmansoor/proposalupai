@@ -7,6 +7,9 @@ import { headers } from 'next/headers';
 import type { UserRecord } from 'firebase-admin/auth';
 import { stripe } from '@/lib/stripe/config';
 import { getCountryFromIp } from '@/app/lib/location';
+import { v4 as uuidv4 } from 'uuid';
+import { FieldValue } from 'firebase-admin/firestore';
+
 
 export async function GET(req: NextRequest) {
   const headersList = headers();
@@ -99,6 +102,16 @@ export async function GET(req: NextRequest) {
     const userRef = adminDb.collection('users').doc(userRecord.uid);
     const userDoc = await userRef.get();
     
+    // --- SINGLE SESSION POLICY CHECK ---
+    if (userDoc.exists && userDoc.data()?.currentSession) {
+        console.warn(`Blocking new login for ${email} - active session exists.`);
+        errorRedirectUrl.searchParams.set('error', 'session-exists');
+        errorRedirectUrl.searchParams.set('details', 'An active session for this account already exists on another device. Please log out from the other device first.');
+        return NextResponse.redirect(errorRedirectUrl);
+    }
+
+    const newSessionId = uuidv4();
+    
     if (!userDoc.exists) {
         const customer = await stripe.customers.create({
             email: userRecord.email!,
@@ -115,13 +128,15 @@ export async function GET(req: NextRequest) {
             uid: userRecord.uid,
             email: userRecord.email,
             displayName: displayName,
-            createdAt: new Date(),
+            createdAt: FieldValue.serverTimestamp(),
             stripeCustomerId: customer.id,
             proposalCount: 0,
             subscriptionStatus: null,
             country: country,
             referralCode: userRecord.uid.substring(0, 8),
-            onboardingComplete: false, // Flag for new user onboarding
+            onboardingComplete: false,
+            currentSession: newSessionId, // Set session ID on creation
+            lastLogin: FieldValue.serverTimestamp(),
         };
         
         if (referralCode) {
@@ -132,9 +147,15 @@ export async function GET(req: NextRequest) {
             userData.photoURL = picture;
         }
         await userRef.set(userData, { merge: true });
+    } else {
+        // User exists, just update session info
+        await userRef.update({
+            currentSession: newSessionId,
+            lastLogin: FieldValue.serverTimestamp(),
+        });
     }
 
-    const customToken = await adminAuth.createCustomToken(userRecord.uid);
+    const customToken = await adminAuth.createCustomToken(userRecord.uid, { sessionId: newSessionId });
     const redirectUrl = new URL('/auth/callback-client', `${protocol}://${host}`);
     redirectUrl.searchParams.set('token', customToken);
 
@@ -143,7 +164,7 @@ export async function GET(req: NextRequest) {
   } catch (err: any) {
     console.error('Failed to exchange code for token:', err);
     errorRedirectUrl.searchParams.set('error', 'token-exchange-failed');
-    errorRedirectUrl.searchParams.set('details', err.message);
+    errorRedirectUrl.search_params.set('details', err.message);
     return NextResponse.redirect(errorRedirectUrl);
   }
 }
