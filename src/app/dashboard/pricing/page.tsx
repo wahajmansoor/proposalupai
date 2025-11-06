@@ -37,7 +37,7 @@ const sharedFeatures = {
         "Unlimited Proposal Generation",
         "AI-Powered Suggestions",
         "Save & Edit Proposals",
-        "Skill Profiles",
+        "Add Skill Profiles",
         "Email & Community Support",
         "Tailored Opening Strategies",
     ],
