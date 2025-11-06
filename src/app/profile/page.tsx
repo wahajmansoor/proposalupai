@@ -1,22 +1,35 @@
 
 "use client";
 
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState } from 'react';
 import { useAuth } from '@/context/auth-context';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { Loader2 } from 'lucide-react';
+import { Loader2, KeyRound } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { updateUserDisplayNameAction } from '@/app/lib/actions';
+import { sendPasswordReset } from '@/lib/firebase/auth';
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog"
 
 export default function ProfilePage() {
   const { user, userProfile } = useAuth();
   const { toast } = useToast();
   const [isSaving, setIsSaving] = useState(false);
   const [displayName, setDisplayName] = useState('');
+  const [isSendingReset, setIsSendingReset] = useState(false);
   
   useEffect(() => {
     // Prioritize userProfile which is from Firestore
@@ -53,6 +66,29 @@ export default function ProfilePage() {
     setIsSaving(false);
   };
   
+  const handlePasswordReset = async () => {
+    if (!user?.email) {
+      toast({ title: 'Error', description: 'No email address found for your account.', variant: 'destructive' });
+      return;
+    }
+    setIsSendingReset(true);
+    try {
+      await sendPasswordReset(user.email);
+      toast({
+        title: 'Password Reset Email Sent',
+        description: `An email has been sent to ${user.email} with instructions to reset your password.`,
+      });
+    } catch (error: any) {
+      toast({
+        title: 'Error Sending Email',
+        description: error.message || 'Failed to send password reset email.',
+        variant: 'destructive',
+      });
+    } finally {
+      setIsSendingReset(false);
+    }
+  };
+
   const currentName = userProfile?.displayName || user?.displayName;
 
   return (
@@ -101,6 +137,41 @@ export default function ProfilePage() {
             </CardFooter>
             </Card>
         </form>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Security</CardTitle>
+            <CardDescription>Manage your account security settings.</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="flex items-center justify-between p-4 border rounded-lg">
+                <div>
+                    <h3 className="font-medium">Password</h3>
+                    <p className="text-sm text-muted-foreground">Reset your password via email.</p>
+                </div>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button variant="outline">Reset Password</Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        This will send a password reset link to your email address: <span className="font-semibold">{user?.email}</span>.
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                      <AlertDialogAction onClick={handlePasswordReset} disabled={isSendingReset}>
+                        {isSendingReset ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
+                        Send Link
+                      </AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
+            </div>
+          </CardContent>
+        </Card>
     </div>
   );
 }
