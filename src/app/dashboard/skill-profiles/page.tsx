@@ -36,6 +36,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { useIsMobile } from '@/hooks/use-mobile';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from "@/lib/utils";
+import { Skeleton } from '@/components/ui/skeleton';
 
 const tones = ["Professional", "Friendly", "Assertive", "Persuasive", "Creative", "Concise", "Formal"];
 const lengths = ["Very Short", "Short", "Detailed", "Very Detailed"];
@@ -360,8 +361,56 @@ export default function SkillProfilesPage() {
 
   if (isLoading) {
     return (
-      <div className="flex items-center justify-center min-h-[50vh]">
-        <Loader2 className="h-10 w-10 animate-spin text-primary" />
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start">
+        <div className="md:col-span-1">
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between">
+              <Skeleton className="h-6 w-24" />
+              <Skeleton className="h-8 w-20 rounded-full" />
+            </CardHeader>
+            <CardContent className="space-y-2">
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+              <Skeleton className="h-8 w-full" />
+            </CardContent>
+          </Card>
+        </div>
+        <div className="md:col-span-3">
+          <Card>
+            <CardHeader>
+              <div className="flex items-start justify-between">
+                <div className="space-y-2">
+                  <Skeleton className="h-8 w-64" />
+                </div>
+                <div className="flex items-center gap-2">
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                  <Skeleton className="h-10 w-10 rounded-full" />
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              <Skeleton className="h-5 w-full" />
+              <Skeleton className="h-5 w-5/6" />
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div className="space-y-2"><Skeleton className="h-5 w-24" /><Skeleton className="h-5 w-16" /></div>
+                <div className="space-y-2"><Skeleton className="h-5 w-24" /><Skeleton className="h-5 w-16" /></div>
+                <div className="space-y-2"><Skeleton className="h-5 w-24" /><Skeleton className="h-5 w-16" /></div>
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-24" />
+                <div className="flex flex-wrap gap-2">
+                  <Skeleton className="h-6 w-20 rounded-full" />
+                  <Skeleton className="h-6 w-28 rounded-full" />
+                  <Skeleton className="h-6 w-24 rounded-full" />
+                </div>
+              </div>
+              <div className="space-y-2">
+                <Skeleton className="h-5 w-24" />
+                <Skeleton className="h-6 w-32" />
+              </div>
+            </CardContent>
+          </Card>
+        </div>
       </div>
     );
   }
@@ -383,7 +432,7 @@ export default function SkillProfilesPage() {
                     </Tooltip>
                 </TooltipProvider>
               </div>
-              <Button size="sm" onClick={handleCreateClick}><Plus className="mr-2 h-4 w-4" />Create</Button>
+              <Button size="sm" onClick={handleCreateClick} className="rounded-full"><Plus className="mr-2 h-4 w-4" />Create</Button>
             </CardHeader>
             <CardContent>
               {profiles.length > 0 ? (
@@ -414,12 +463,12 @@ export default function SkillProfilesPage() {
                             <CardTitle className="text-2xl">{selectedProfile.title}</CardTitle>
                         </div>
                         <div className="flex items-center gap-2">
-                            <Button variant="outline" size="icon" onClick={() => handleEditClick(selectedProfile)}>
+                            <Button variant="outline" size="icon" onClick={() => handleEditClick(selectedProfile)} className="rounded-full">
                                 <Edit className="h-4 w-4" />
                             </Button>
                             <AlertDialog>
                                 <AlertDialogTrigger asChild>
-                                    <Button variant="destructive" size="icon">
+                                    <Button variant="destructive" size="icon" className="rounded-full">
                                         <Trash2 className="h-4 w-4" />
                                     </Button>
                                 </AlertDialogTrigger>
@@ -488,7 +537,7 @@ export default function SkillProfilesPage() {
                 <div className="text-center">
                     <p className="text-lg font-semibold text-muted-foreground">Select a profile to view its details</p>
                     <p className="text-sm text-muted-foreground">or create a new one to get started.</p>
-                    <Button className="mt-4" onClick={handleCreateClick}><Plus className="mr-2 h-4 w-4" />Create Your First Profile</Button>
+                    <Button className="mt-4 rounded-full" onClick={handleCreateClick}><Plus className="mr-2 h-4 w-4" />Create Your First Profile</Button>
                 </div>
             </Card>
           )}
