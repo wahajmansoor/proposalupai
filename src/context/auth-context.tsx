@@ -94,10 +94,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     
     // Then clear the client-side session
     if(isFirebaseConfigured) {
-        signOut(auth);
+        await signOut(auth);
     }
     await fetch('/api/auth/session', { method: 'DELETE' });
     localStorage.removeItem('sessionId');
+
+    // This ensures we fully reset state on logout before redirecting
+    setUser(null);
+    setUserProfile(null);
 
     setTimeout(() => {
         router.push('/login');
@@ -114,69 +118,36 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
     const unsubscribeAuth = onIdTokenChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        // A user is signed in, and we have a valid token.
-        // This is the correct place to make authenticated requests.
         setUser(firebaseUser);
         const userRef = doc(db, 'users', firebaseUser.uid);
         
-        try {
-            const userDoc = await getDoc(userRef);
-            if (userDoc.exists()) {
-                const data = userDoc.data() as UserProfile;
-                const localSessionId = localStorage.getItem('sessionId');
-
-                // Check for an active session on another device.
-                if (data.currentSession && data.lastLogin && isSessionActive(data.lastLogin) && data.currentSession !== localSessionId) {
-                    handleLogout("You have logged in on another device. This session has been terminated.");
-                    return;
-                }
-
-                // If no local session, it's a new login. Create a session.
-                if (!localSessionId) {
-                    const newSessionId = uuidv4();
-                    localStorage.setItem('sessionId', newSessionId);
-                    await updateDoc(userRef, {
-                        currentSession: newSessionId,
-                        lastLogin: serverTimestamp(),
-                    });
-                }
-            } else {
-                 // This case is for a user who exists in Auth but not Firestore yet.
-                 // The session will be created when the userDoc is created on first login.
-            }
-        } catch (e: any) {
-            console.error("Error during login session check:", e);
-            const permissionError = new FirestorePermissionError({
-              path: userRef.path,
-              operation: 'get', // The failing operation is the getDoc
-            });
-            errorEmitter.emit('permission-error', permissionError);
-            handleLogout("An error occurred during login. Please try again.");
-            return;
-        }
-
+        // This is the real-time listener for the user profile
         const unsubscribeSnapshot = onSnapshot(userRef, (snap) => {
             if (snap.exists()) {
                 const data = snap.data() as UserProfile;
-                const localSessionId = localStorage.getItem('sessionId');
-
-                // Real-time check for multi-device logout
-                if (data.currentSession && localSessionId && data.currentSession !== localSessionId) {
-                    handleLogout("You have logged in on another device. This session has been terminated.");
-                    return;
-                }
-
                 const profile: UserProfile = {
                     ...data,
                     subscriptionCurrentPeriodEnd: data.subscriptionCurrentPeriodEnd?.toDate().toISOString(),
                 };
+
+                const oldCredits = userProfile?.proposalCredits ?? profile.proposalCredits;
+                const newCredits = profile.proposalCredits;
+                if (typeof oldCredits === 'number' && typeof newCredits === 'number' && newCredits > oldCredits) {
+                    setCreditChange(newCredits - oldCredits);
+                }
+
                 setUserProfile(profile);
             } else {
                 setUserProfile(null);
             }
-            setLoading(false); // Set loading to false after we have profile data
+            setLoading(false); // Only set loading to false after we have profile data (or know it doesn't exist)
         }, (error) => {
             console.error("Error on user snapshot:", error);
+            const permissionError = new FirestorePermissionError({
+              path: userRef.path,
+              operation: 'list', // onSnapshot is a 'list' operation in security rules terms
+            });
+            errorEmitter.emit('permission-error', permissionError);
             setLoading(false);
         });
 
@@ -190,7 +161,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribeAuth();
-  }, [handleLogout]);
+  }, [handleLogout, userProfile?.proposalCredits]);
   
   if (isLoggingOut) {
     return <LogoutScreen />;

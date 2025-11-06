@@ -1,3 +1,4 @@
+
 // src/app/dashboard/dashboard-client.tsx
 "use client";
 
@@ -21,17 +22,17 @@ export function DashboardClient({
 
   useEffect(() => {
     if (authLoading) {
-      return; // 1. Wait for auth state to load
+      return; // 1. Wait for auth state and profile to finish loading.
     }
 
-    if (!user) {
-      router.replace("/login"); // 2. If not logged in, redirect to login
+    if (!user || !userProfile) {
+      // 2. If, after loading, there's no user or profile, redirect to login.
+      // This is the critical check that waits for the Firestore fetch to complete.
+      router.replace("/login"); 
       return;
     }
     
-    if (!userProfile) {
-        return; // 3. Wait for profile to load
-    }
+    // --- From here, we know user and userProfile are loaded ---
 
     const status = userProfile.subscriptionStatus;
     const isAllowedOnboarding = pathname === '/onboarding';
@@ -43,42 +44,31 @@ export function DashboardClient({
         return;
     }
     
-    // 4. New user who has not selected a plan yet
-    if (!status) {
+    // 4. New user who has not selected a plan yet (onboarding incomplete)
+    if (userProfile.onboardingComplete === false) {
         if (!isAllowedOnboarding) {
             router.replace('/onboarding');
             return;
         }
-        setIsAuthorized(true);
-        return;
-    }
-
-    // 5. User is on trial
-    if (status === 'trialing') {
-         if (isAllowedOnboarding) {
-            router.replace('/dashboard');
-            return;
-        }
-        setIsAuthorized(true);
-        return;
-    }
-    
-    // 6. User is active
-    if (status === 'active') {
+    } else {
+        // User has completed onboarding, they should not be on the onboarding page
         if (isAllowedOnboarding) {
             router.replace('/dashboard');
             return;
         }
-        setIsAuthorized(true);
-        return;
-    }
-
-    // 7. User has a non-active status (e.g., 'canceled', 'past_due').
-    if (!isAllowedPricing) {
-        router.replace('/dashboard/pricing');
-        return;
     }
     
+    // 5. User has completed onboarding but has a non-active subscription status
+    // (e.g., 'canceled', 'past_due'). They should be on the pricing/subscription page.
+    const isActiveOrTrial = status === 'active' || status === 'trialing';
+    if (userProfile.onboardingComplete && !isActiveOrTrial) {
+        if (!isAllowedPricing && pathname !== '/subscription') {
+            router.replace('/dashboard/pricing');
+            return;
+        }
+    }
+
+    // 6. If we've passed all checks, the user is authorized to see the page.
     setIsAuthorized(true);
     
   }, [user, userProfile, authLoading, router, pathname]);
@@ -91,6 +81,7 @@ export function DashboardClient({
     );
   }
   
+  // Do not render the main layout for the onboarding page
   if (pathname === '/onboarding') {
     return <main>{children}</main>;
   }
