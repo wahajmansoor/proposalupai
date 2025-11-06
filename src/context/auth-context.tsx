@@ -64,6 +64,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [creditChange, setCreditChange] = useState(0);
   const previousCreditsRef = useRef<number | undefined>(undefined);
 
+  const handleLogout = async () => {
+    setIsLoggingOut(true);
+    localStorage.removeItem('sessionId');
+    try {
+        if(isFirebaseConfigured) {
+            await signOut(auth);
+        }
+        await fetch('/api/auth/session', { method: 'DELETE' });
+    } catch (error) {
+        console.error("Error during logout:", error);
+    } finally {
+        setTimeout(() => {
+            router.push('/login');
+            setTimeout(() => setIsLoggingOut(false), 100);
+        }, 2500); 
+    }
+  };
+
   useEffect(() => {
     if (!isFirebaseConfigured) {
         setLoading(false);
@@ -81,11 +99,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     };
 
     const unsubscribe = onAuthStateChanged(auth, (user) => {
-      setUser(user);
       if (user) {
-        // Handle new login session creation
-        const localSession = localStorage.getItem('sessionId');
-        if (!localSession) {
+        setUser(user);
+        
+        const localSessionId = localStorage.getItem('sessionId');
+        if (!localSessionId) {
             handleNewLogin(user);
         }
 
@@ -94,9 +112,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (docSnap.exists()) {
             const data = docSnap.data();
 
-            // Session check
-            const localSession = localStorage.getItem('sessionId');
-            if (localSession && data.currentSession && data.currentSession !== localSession) {
+            const currentLocalSessionId = localStorage.getItem('sessionId');
+            if (currentLocalSessionId && data.currentSession && data.currentSession !== currentLocalSessionId) {
                 toast({
                     title: "Logged Out",
                     description: "Your account was logged in from another device.",
@@ -111,7 +128,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               subscriptionCurrentPeriodEnd: data.subscriptionCurrentPeriodEnd?.toDate().toISOString(),
             } as UserProfile;
             
-            // Check for credit changes
             if (previousCreditsRef.current !== undefined && profile.proposalCredits !== undefined) {
                 const diff = profile.proposalCredits - previousCreditsRef.current;
                 if (diff > 0) {
@@ -143,25 +159,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribe();
-  }, [router, toast]);
-
-  const handleLogout = async () => {
-    setIsLoggingOut(true);
-    localStorage.removeItem('sessionId');
-    try {
-        if(isFirebaseConfigured) {
-            await signOut(auth);
-        }
-        await fetch('/api/auth/session', { method: 'DELETE' });
-    } catch (error) {
-        console.error("Error during logout:", error);
-    } finally {
-        setTimeout(() => {
-            router.push('/login');
-            setTimeout(() => setIsLoggingOut(false), 100);
-        }, 2500); 
-    }
-  };
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   
   if (isLoggingOut) {
     return <LogoutScreen />;
