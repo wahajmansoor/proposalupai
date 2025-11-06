@@ -21,7 +21,7 @@ service cloud.firestore {
       allow delete: if false;
       
       // Allow any authenticated user to list the users collection, 
-      // but the 'get' rule above prevents them from reading individual documents.
+      // but the 'get' rule above prevents them from reading individual documents they don't own.
       allow list: if request.auth != null;
     }
 
