@@ -127,7 +127,7 @@ function PlanDetailsCard({
                         </li>
                     ))}
                 </ul>
-                 <div className="flex flex-col-reverse sm:flex-row justify-end items-center sm:items-end my-4 gap-4">
+                 <div className="flex flex-col-reverse sm:flex-row justify-start items-center sm:items-end my-4 gap-4">
                     <Button 
                         size="lg" 
                         className="text-base font-medium w-full sm:w-auto"
