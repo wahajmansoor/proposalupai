@@ -23,7 +23,11 @@ service cloud.firestore {
           'subscriptionCurrentPeriodEnd',
           'proposalCredits',
           'referredBy',
-          'referralCode'
+          'referralCode',
+          'referralBonusAwarded',
+          'lastPrice',
+          'upgradeBonusGiven',
+          'trialCreditsAwarded'
         ]);
 
       // Prevent clients from deleting user docs

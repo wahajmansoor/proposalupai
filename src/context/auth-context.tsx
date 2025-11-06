@@ -67,11 +67,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const handleLogout = useCallback(() => {
     if (isLoggingOut) return;
     setIsLoggingOut(true);
-    localStorage.removeItem('sessionId');
     if(isFirebaseConfigured) {
         signOut(auth);
     }
     fetch('/api/auth/session', { method: 'DELETE' });
+    localStorage.removeItem('sessionId');
     setTimeout(() => {
         router.push('/login');
         setIsLoggingOut(false);
@@ -91,61 +91,55 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (firebaseUser) {
         setUser(firebaseUser);
         const userRef = doc(db, 'users', firebaseUser.uid);
-
-        const handleNewLogin = async () => {
-          const sessionId = uuidv4();
-          localStorage.setItem('sessionId', sessionId);
-          const updateData = {
-            currentSession: sessionId,
-            lastLogin: serverTimestamp(),
-          };
-          updateDoc(userRef, updateData).catch(async (serverError) => {
-            const permissionError = new FirestorePermissionError({
-              path: userRef.path,
-              operation: 'update',
-              requestResourceData: updateData,
-            });
-            errorEmitter.emit('permission-error', permissionError);
-          });
-        };
-
-        // Check if it's a new session right away
-        if (!localStorage.getItem('sessionId')) {
-          handleNewLogin();
-        }
-
-        unsubscribeSnapshot = onSnapshot(
-          userRef,
-          (snap) => {
+        
+        unsubscribeSnapshot = onSnapshot(userRef, (snap) => {
             if (snap.exists()) {
-              const data = snap.data();
-              const localSession = localStorage.getItem('sessionId');
+                const data = snap.data() as UserProfile;
+                const localSession = localStorage.getItem('sessionId');
 
-              if (localSession && data.currentSession && data.currentSession !== localSession) {
-                handleLogout();
-                toast({
-                  title: "Logged Out",
-                  description: "Your account was used to log in from another device.",
-                  variant: "destructive"
-                });
-                return; // Stop processing to prevent race conditions on logout
-              }
+                if (!localSession) {
+                    // This is a new login on this device
+                    const newSessionId = uuidv4();
+                    localStorage.setItem('sessionId', newSessionId);
+                    const updateData = {
+                        currentSession: newSessionId,
+                        lastLogin: serverTimestamp(),
+                    };
+                    updateDoc(userRef, updateData).catch(async (serverError) => {
+                        const permissionError = new FirestorePermissionError({
+                        path: userRef.path,
+                        operation: 'update',
+                        requestResourceData: updateData,
+                        });
+                        errorEmitter.emit('permission-error', permissionError);
+                    });
+                } else {
+                    // Existing session on this device, check if it's still valid
+                    if (data.currentSession && data.currentSession !== localSession) {
+                        toast({
+                            title: "Logged Out",
+                            description: "Your account was used to log in from another device.",
+                            variant: "destructive"
+                        });
+                        handleLogout();
+                        return;
+                    }
+                }
+                
+                const profile: UserProfile = {
+                    ...data,
+                    subscriptionCurrentPeriodEnd: data.subscriptionCurrentPeriodEnd?.toDate().toISOString(),
+                };
+                setUserProfile(profile);
 
-              const profile: UserProfile = {
-                ...data,
-                subscriptionCurrentPeriodEnd: data.subscriptionCurrentPeriodEnd?.toDate().toISOString(),
-              } as UserProfile;
-              setUserProfile(profile);
             } else {
-              setUserProfile(null);
+                setUserProfile(null);
             }
             setLoading(false);
-          },
-          (error) => {
+        }, (error) => {
             console.error("Error with onSnapshot:", error);
             setLoading(false);
-          }
-        );
+        });
 
       } else {
         // User is signed out
