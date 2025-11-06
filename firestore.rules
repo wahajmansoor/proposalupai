@@ -7,7 +7,9 @@ service cloud.firestore {
     // --- USERS COLLECTION ---
     match /users/{userId} {
       // A user can read their own document
-      allow read: if request.auth != null && request.auth.uid == userId;
+      allow get: if request.auth != null && request.auth.uid == userId;
+      // Allow list for admin purposes, can be tightened later if needed
+      allow list: if request.auth != null; 
 
       // A user can create their own user document
       allow create: if request.auth != null;
