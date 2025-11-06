@@ -7,12 +7,17 @@ service cloud.firestore {
     // --- USERS COLLECTION ---
     match /users/{userId} {
       // A user can read (get) and create their own document.
-      allow get, create: if request.auth != null && request.auth.uid == userId;
+      allow get: if request.auth != null && request.auth.uid == userId;
+
+      // Allow a user to create their own document.
+      // This rule allows the initial user profile to be set up on sign-up.
+      allow create: if request.auth != null && request.auth.uid == userId;
       
       // Allow list for admin purposes, can be tightened later if needed.
       allow list: if request.auth != null;
 
       // A user can update their own document, but not restricted fields.
+      // The server (via Admin SDK) handles updates to sensitive fields.
       allow update: if request.auth != null
         && request.auth.uid == userId
         && !request.resource.data.keys().hasAny([
@@ -26,7 +31,9 @@ service cloud.firestore {
           'referralBonusAwarded',
           'lastPrice',
           'upgradeBonusGiven',
-          'trialCreditsAwarded'
+          'trialCreditsAwarded',
+          'currentSession',
+          'lastLogin'
         ]);
 
       // Prevent clients from deleting user documents.
