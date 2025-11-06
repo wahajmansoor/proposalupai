@@ -1,10 +1,10 @@
 
 "use client";
 
-import { createContext, useContext, useEffect, useState, ReactNode, useRef } from 'react';
+import { createContext, useContext, useEffect, useState, ReactNode, useRef, useCallback } from 'react';
 import { onAuthStateChanged, User, signOut } from 'firebase/auth';
 import { auth, db, isFirebaseConfigured } from '@/lib/firebase/config';
-import { doc, onSnapshot, updateDoc, serverTimestamp } from 'firebase/firestore';
+import { doc, onSnapshot, updateDoc, serverTimestamp, getDoc } from 'firebase/firestore';
 import { ProposalUpLogos } from '@/components/icons';
 import { useRouter } from 'next/navigation';
 import { v4 as uuidv4 } from 'uuid';
@@ -64,23 +64,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [creditChange, setCreditChange] = useState(0);
   const previousCreditsRef = useRef<number | undefined>(undefined);
 
-  const handleLogout = async () => {
+  const handleLogout = useCallback(() => {
+    if (isLoggingOut) return;
     setIsLoggingOut(true);
     localStorage.removeItem('sessionId');
     try {
         if(isFirebaseConfigured) {
-            await signOut(auth);
+            signOut(auth);
         }
-        await fetch('/api/auth/session', { method: 'DELETE' });
+        fetch('/api/auth/session', { method: 'DELETE' });
     } catch (error) {
         console.error("Error during logout:", error);
     } finally {
         setTimeout(() => {
             router.push('/login');
-            setTimeout(() => setIsLoggingOut(false), 100);
+            setIsLoggingOut(false);
         }, 2500); 
     }
-  };
+  }, [router, isLoggingOut]);
 
   useEffect(() => {
     if (!isFirebaseConfigured) {
@@ -88,67 +89,73 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
     }
 
-    const handleNewLogin = async (user: User) => {
-        const sessionId = uuidv4();
-        localStorage.setItem('sessionId', sessionId);
-        const userRef = doc(db, 'users', user.uid);
-        await updateDoc(userRef, {
-            currentSession: sessionId,
-            lastLogin: serverTimestamp()
-        });
-    };
-
     const unsubscribe = onAuthStateChanged(auth, (user) => {
+      let unsubscribeSnapshot: () => void = () => {};
+
       if (user) {
         setUser(user);
         
-        const localSessionId = localStorage.getItem('sessionId');
-        if (!localSessionId) {
-            handleNewLogin(user);
-        }
-
         const userRef = doc(db, 'users', user.uid);
-        const unsubscribeSnapshot = onSnapshot(userRef, (docSnap) => {
-          if (docSnap.exists()) {
-            const data = docSnap.data();
 
-            const currentLocalSessionId = localStorage.getItem('sessionId');
-            if (currentLocalSessionId && data.currentSession && data.currentSession !== currentLocalSessionId) {
+        const setupSessionAndListener = async () => {
+          let localSessionId = localStorage.getItem('sessionId');
+          const userDoc = await getDoc(userRef);
+
+          // If no local session ID, this is a new login. Create one.
+          if (!localSessionId) {
+            localSessionId = uuidv4();
+            localStorage.setItem('sessionId', localSessionId);
+            await updateDoc(userRef, {
+              currentSession: localSessionId,
+              lastLogin: serverTimestamp()
+            });
+          }
+
+          // Start listening for session changes from other devices.
+          unsubscribeSnapshot = onSnapshot(userRef, (docSnap) => {
+            if (docSnap.exists()) {
+              const data = docSnap.data();
+              const dbSessionId = data.currentSession;
+              const currentLocalSessionId = localStorage.getItem('sessionId');
+
+              if (dbSessionId && currentLocalSessionId && dbSessionId !== currentLocalSessionId) {
                 toast({
                     title: "Logged Out",
                     description: "Your account was logged in from another device.",
                     variant: "destructive"
                 });
                 handleLogout();
-                return;
-            }
+                return; // Stop processing to prevent setting user state on a logged-out instance
+              }
 
-            const profile: UserProfile = {
-              ...data,
-              subscriptionCurrentPeriodEnd: data.subscriptionCurrentPeriodEnd?.toDate().toISOString(),
-            } as UserProfile;
-            
-            if (previousCreditsRef.current !== undefined && profile.proposalCredits !== undefined) {
-                const diff = profile.proposalCredits - previousCreditsRef.current;
-                if (diff > 0) {
-                    setCreditChange(diff);
-                    setTimeout(() => setCreditChange(0), 100);
-                }
-            }
-            previousCreditsRef.current = profile.proposalCredits;
+              const profile: UserProfile = {
+                ...data,
+                subscriptionCurrentPeriodEnd: data.subscriptionCurrentPeriodEnd?.toDate().toISOString(),
+              } as UserProfile;
+              
+              if (previousCreditsRef.current !== undefined && profile.proposalCredits !== undefined) {
+                  const diff = profile.proposalCredits - previousCreditsRef.current;
+                  if (diff > 0) {
+                      setCreditChange(diff);
+                      setTimeout(() => setCreditChange(0), 100);
+                  }
+              }
+              previousCreditsRef.current = profile.proposalCredits;
 
-            setUserProfile(profile);
-          } else {
-             setUserProfile(null);
-          }
-          setLoading(false);
-        }, (error) => {
-          console.error("Error fetching user profile:", error);
-          setUserProfile(null);
-          setLoading(false);
-        });
+              setUserProfile(profile);
+            } else {
+              setUserProfile(null);
+            }
+            setLoading(false);
+          }, (error) => {
+            console.error("Error fetching user profile:", error);
+            setUserProfile(null);
+            setLoading(false);
+          });
+        };
         
-        return () => unsubscribeSnapshot();
+        setupSessionAndListener();
+
       } else {
         setUser(null);
         setUserProfile(null);
@@ -156,11 +163,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         localStorage.removeItem('sessionId');
         previousCreditsRef.current = undefined;
       }
+      
+      return () => unsubscribeSnapshot();
     });
 
     return () => unsubscribe();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [handleLogout, toast]);
   
   if (isLoggingOut) {
     return <LogoutScreen />;
