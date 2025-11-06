@@ -89,25 +89,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return;
     }
 
-    const unsubscribeAuth = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribeAuth = onAuthStateChanged(auth, (firebaseUser) => {
+      let unsubscribeSnapshot: () => void = () => {};
+
       if (firebaseUser) {
         setUser(firebaseUser);
         const userRef = doc(db, 'users', firebaseUser.uid);
-
-        // This is a new login, so generate a session ID, save it, and write it to Firestore.
-        const sessionId = uuidv4();
-        localStorage.setItem('sessionId', sessionId);
-        await updateDoc(userRef, {
-            currentSession: sessionId,
-            lastLogin: serverTimestamp(),
-        });
         
-        // Now, set up the real-time listener for this user.
-        const unsubscribeSnapshot = onSnapshot(userRef, (docSnap) => {
+        const localSessionId = localStorage.getItem('sessionId');
+
+        if (!localSessionId) {
+            const newSessionId = uuidv4();
+            localStorage.setItem('sessionId', newSessionId);
+            updateDoc(userRef, {
+                currentSession: newSessionId,
+                lastLogin: serverTimestamp(),
+            });
+        }
+        
+        unsubscribeSnapshot = onSnapshot(userRef, (docSnap) => {
             if (docSnap.exists()) {
                 const data = docSnap.data();
                 
-                // Compare Firestore session with local session
                 const remoteSession = data.currentSession;
                 const localSession = localStorage.getItem('sessionId');
                 if (localSession && remoteSession && remoteSession !== localSession) {
@@ -117,7 +120,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                         variant: "destructive"
                     });
                     handleLogout();
-                    return; // Prevent further state updates for the old session
+                    return; 
                 }
                 
                 const profile: UserProfile = {
@@ -145,19 +148,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             setLoading(false);
         });
 
-        // Return the snapshot unsubscriber to be called on cleanup
-        return () => unsubscribeSnapshot();
       } else {
-        // User is logged out
         setUser(null);
         setUserProfile(null);
         setLoading(false);
         localStorage.removeItem('sessionId');
         previousCreditsRef.current = undefined;
       }
+      
+      return () => {
+        unsubscribeSnapshot();
+      };
     });
 
-    // Main cleanup for the auth listener
     return () => unsubscribeAuth();
   }, [handleLogout, toast]);
   
