@@ -20,8 +20,6 @@ import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { BgPattern } from '@/components/bg-pattern';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { v4 as uuidv4 } from 'uuid';
-import { adminAuth } from '@/lib/firebase/admin';
-
 
 const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => {
   return (
@@ -55,13 +53,11 @@ export function SignupForm() {
   const allRequirementsMet = Object.values(passwordValidation).every(Boolean);
 
   useEffect(() => {
-    // Capture referral code from URL and store it
     const inviteCode = searchParams.get('invite');
     if (inviteCode) {
         localStorage.setItem('referralCode', inviteCode);
         setReferralCode(inviteCode);
     } else {
-        // Also check localStorage in case the user navigates away and back
         const storedCode = localStorage.getItem('referralCode');
         if (storedCode) {
             setReferralCode(storedCode);
@@ -83,7 +79,7 @@ export function SignupForm() {
       
       const { type, error, details, redirectPath } = event.data;
       if (type === 'auth-success') {
-          localStorage.removeItem('referralCode'); // Clear code after use
+          localStorage.removeItem('referralCode');
           toast({
             title: 'Successfully signed up!',
             description: "Welcome! We're redirecting you now.",
@@ -188,7 +184,8 @@ export function SignupForm() {
       }
       
       await setDoc(userDocRef, userData);
-
+      
+      // Step 4: Get a custom token with the session ID
       const response = await fetch('/api/auth/token', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -201,11 +198,10 @@ export function SignupForm() {
 
       const { customToken } = await response.json();
 
-      await signInWithCustomToken(auth, customToken);
-      const idToken = await newUser.getIdToken();
+      // Step 5: Sign in with the custom token and create server session
+      const customTokenCredential = await signInWithCustomToken(auth, customToken);
+      const idToken = await customTokenCredential.user.getIdToken();
 
-
-      // Step 4: Create server session cookie
       await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -214,7 +210,7 @@ export function SignupForm() {
       
       localStorage.removeItem('referralCode');
       toast({ title: 'Account created successfully!', description: "Start your 2-day free trial & explore all Proposal Up features." });
-      router.push('/onboarding'); // Redirect to onboarding page
+      router.push('/onboarding');
 
     } catch (error: any) {
       let errorMessage = 'An unexpected error occurred.';
