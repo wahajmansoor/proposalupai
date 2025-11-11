@@ -19,7 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { GoogleIcon, GmailIcon } from "@/components/icons";
+import { GoogleIcon } from "@/components/icons";
 
 function getInitials(name: string | null | undefined) {
   if (!name) return "U";
@@ -183,202 +183,206 @@ export default function AdminUsersPage() {
 
   return (
     <TooltipProvider>
-    <div className="space-y-6">
-      <div className="space-y-1">
-        <h1 className="text-2xl font-bold tracking-tight">User Management</h1>
-        <p className="text-muted-foreground">View, search, and manage all users in your application.</p>
-      </div>
-      
-      <Card className="w-full">
-        <CardHeader>
-          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-              <div>
-                <CardTitle>All Users</CardTitle>
-                <CardDescription>A live list of all registered users in your application.</CardDescription>
-              </div>
-              <div className="relative w-full sm:max-w-xs">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input
-                  type="text"
-                  placeholder="Search by name or email..."
-                  value={searchTerm}
-                  onChange={(e) => {
-                    setSearchTerm(e.target.value);
-                    setCurrentPage(1);
-                  }}
-                  className="pl-10"
-                />
-              </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-            <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-2">
-                {filterOptions.map(option => (
-                    <Button 
-                        key={option.value}
-                        variant={statusFilter === option.value ? 'default' : 'outline'}
-                        size="sm"
-                        onClick={() => {
-                            setStatusFilter(option.value);
-                            setCurrentPage(1);
-                        }}
-                        className="shrink-0"
-                    >
-                        {option.label}
-                        <Badge variant="secondary" className="ml-2">{statusCounts[option.value]}</Badge>
-                    </Button>
-                ))}
-            </div>
-          {isLoading ? (
-             <div className="flex justify-center items-center h-64">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
-             </div>
-          ) : fetchError ? (
-            <div className="text-center text-destructive py-12">
-              <p className="font-bold">Error Fetching Users</p>
-              <p className="text-sm">{fetchError}</p>
-            </div>
-          ) : users.length === 0 ? (
-            <p className="text-center text-muted-foreground py-12">
-              No users found in the database.
-            </p>
-          ) : (
-            <>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>
-                      <button onClick={() => requestSort('name')} className="flex items-center">
-                          User {getSortIndicator('name')}
-                      </button>
-                  </TableHead>
-                  <TableHead>
-                      <button onClick={() => requestSort('email')} className="flex items-center">
-                          Email {getSortIndicator('email')}
-                      </button>
-                  </TableHead>
-                  <TableHead>Plan</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-center">
-                      <button onClick={() => requestSort('proposalCredits')} className="flex items-center">
-                          Credits {getSortIndicator('proposalCredits')}
-                      </button>
-                  </TableHead>
-                  <TableHead>
-                      <button onClick={() => requestSort('createdAt')} className="flex items-center">
-                          Sign-up Date {getSortIndicator('createdAt')}
-                      </button>
-                  </TableHead>
-                  <TableHead className="text-center">
-                      <button onClick={() => requestSort('proposalCount')} className="flex items-center">
-                          Proposals {getSortIndicator('proposalCount')}
-                      </button>
-                  </TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {currentUsers.map((user) => (
-                  <TableRow key={user.id}>
-                    <TableCell>
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-9 w-9">
-                          <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-                        </Avatar>
-                        {user.country?.code && (
-                            <Tooltip>
-                                <TooltipTrigger>
-                                     <img
-                                        src={`https://flag.vercel.app/s/${user.country.code}.svg`}
-                                        alt={`${user.country.name} flag`}
-                                        className="h-4 w-6 rounded-sm object-cover"
-                                    />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>{user.country.name}</p>
-                                </TooltipContent>
-                            </Tooltip>
-                        )}
-                        <div className="font-medium">{user.name || "N/A"}</div>
-                        {user.signInProvider === 'google.com' && (
-                          <Tooltip>
-                            <TooltipTrigger>
-                              <GoogleIcon className="h-4 w-4" />
-                            </TooltipTrigger>
-                            <TooltipContent>
-                              <p>Signed in with Google</p>
-                            </TooltipContent>
-                          </Tooltip>
-                        )}
-                      </div>
-                    </TableCell>
-                    <TableCell>{user.email || "N/A"}</TableCell>
-                     <TableCell>
-                        {user.subscriptionInterval ? (
-                            <Badge variant="outline">
-                                Pro {user.subscriptionInterval === 'month' ? 'Monthly' : 'Yearly'}
-                            </Badge>
-                        ) : (
-                            <Badge variant="outline">N/A</Badge>
-                        )}
-                    </TableCell>
-                    <TableCell>
-                        <SubscriptionBadge status={user.subscriptionStatus} />
-                    </TableCell>
-                    <TableCell className="text-center">
-                        <div className="flex items-center justify-center gap-1">
-                            <Star className="h-4 w-4 text-yellow-400" />
-                            {user.proposalCredits}
-                        </div>
-                    </TableCell>
-                    <TableCell>
-                      {user.createdAt ? format(new Date(user.createdAt), "MMM d, yyyy") : "NA"}
-                    </TableCell>
-                    <TableCell className="text-center">{user.proposalCount}</TableCell>
-                    <TableCell className="text-right">
-                      <UserActions user={user} />
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-             {currentUsers.length === 0 && (
-                <p className="text-center text-muted-foreground py-12">
-                    No users match your search or filter criteria.
-                </p>
-             )}
-            </>
-          )}
-        </CardContent>
-        {totalPages > 1 && (
-            <CardFooter>
-                <div className="flex justify-between items-center w-full">
-                    <span className="text-sm text-muted-foreground">
-                        Showing {indexOfFirstUser + 1} - {Math.min(indexOfLastUser, sortedAndFilteredUsers.length)} of {sortedAndFilteredUsers.length} users
-                    </span>
-                    <div className="flex gap-2">
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                            disabled={currentPage === 1}
-                        >
-                            Previous
-                        </Button>
-                        <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                            disabled={currentPage === totalPages}
-                        >
-                            Next
-                        </Button>
-                    </div>
+      <div className="space-y-6">
+        <div className="space-y-1">
+          <h1 className="text-2xl font-bold tracking-tight">User Management</h1>
+          <p className="text-muted-foreground">View, search, and manage all users in your application.</p>
+        </div>
+        
+        <Card className="w-full">
+          <CardHeader>
+            <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+                <div>
+                  <CardTitle>All Users</CardTitle>
+                  <CardDescription>A live list of all registered users in your application.</CardDescription>
                 </div>
-            </CardFooter>
-        )}
-      </Card>
-    </div>
+                <div className="relative w-full sm:max-w-xs">
+                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    placeholder="Search by name or email..."
+                    value={searchTerm}
+                    onChange={(e) => {
+                      setSearchTerm(e.target.value);
+                      setCurrentPage(1);
+                    }}
+                    className="pl-10"
+                  />
+                </div>
+            </div>
+          </CardHeader>
+          <CardContent>
+              <div className="flex items-center gap-2 mb-4 overflow-x-auto pb-2">
+                  {filterOptions.map(option => (
+                      <Button 
+                          key={option.value}
+                          variant={statusFilter === option.value ? 'default' : 'outline'}
+                          size="sm"
+                          onClick={() => {
+                              setStatusFilter(option.value);
+                              setCurrentPage(1);
+                          }}
+                          className="shrink-0"
+                      >
+                          {option.label}
+                          <Badge variant="secondary" className="ml-2">{statusCounts[option.value]}</Badge>
+                      </Button>
+                  ))}
+              </div>
+            {isLoading ? (
+              <div className="flex justify-center items-center h-64">
+                  <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              </div>
+            ) : fetchError ? (
+              <div className="text-center text-destructive py-12">
+                <p className="font-bold">Error Fetching Users</p>
+                <p className="text-sm">{fetchError}</p>
+              </div>
+            ) : users.length === 0 ? (
+              <p className="text-center text-muted-foreground py-12">
+                No users found in the database.
+              </p>
+            ) : (
+              <>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>
+                        <button onClick={() => requestSort('name')} className="flex items-center">
+                            User {getSortIndicator('name')}
+                        </button>
+                    </TableHead>
+                    <TableHead>
+                        <button onClick={() => requestSort('email')} className="flex items-center">
+                            Email {getSortIndicator('email')}
+                        </button>
+                    </TableHead>
+                    <TableHead>Plan</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-center">
+                        <button onClick={() => requestSort('proposalCredits')} className="flex items-center">
+                            Credits {getSortIndicator('proposalCredits')}
+                        </button>
+                    </TableHead>
+                    <TableHead>
+                        <button onClick={() => requestSort('createdAt')} className="flex items-center">
+                            Sign-up Date {getSortIndicator('createdAt')}
+                        </button>
+                    </TableHead>
+                    <TableHead className="text-center">
+                        <button onClick={() => requestSort('proposalCount')} className="flex items-center">
+                            Proposals {getSortIndicator('proposalCount')}
+                        </button>
+                    </TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {currentUsers.map((user) => (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9">
+                            <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                          </Avatar>
+                          <div className="font-medium">{user.name || "N/A"}</div>
+                          {user.country?.code && (
+                              <Tooltip>
+                                  <TooltipTrigger asChild>
+                                      <img
+                                          src={`https://flag.vercel.app/s/${user.country.code}.svg`}
+                                          alt={`${user.country.name} flag`}
+                                          className="h-4 w-6 rounded-sm object-cover"
+                                      />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                      <p>{user.country.name}</p>
+                                  </TooltipContent>
+                              </Tooltip>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          {user.email || "N/A"}
+                          {user.signInProvider === 'google.com' && (
+                              <Tooltip>
+                                  <TooltipTrigger>
+                                      <GoogleIcon className="h-4 w-4" />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                      <p>Signed in with Google</p>
+                                  </TooltipContent>
+                              </Tooltip>
+                          )}
+                        </div>
+                      </TableCell>
+                      <TableCell>
+                          {user.subscriptionInterval ? (
+                              <Badge variant="outline">
+                                  Pro {user.subscriptionInterval === 'month' ? 'Monthly' : 'Yearly'}
+                              </Badge>
+                          ) : (
+                              <Badge variant="outline">N/A</Badge>
+                          )}
+                      </TableCell>
+                      <TableCell>
+                          <SubscriptionBadge status={user.subscriptionStatus} />
+                      </TableCell>
+                      <TableCell className="text-center">
+                          <div className="flex items-center justify-center gap-1">
+                              <Star className="h-4 w-4 text-yellow-400" />
+                              {user.proposalCredits}
+                          </div>
+                      </TableCell>
+                      <TableCell>
+                        {user.createdAt ? format(new Date(user.createdAt), "MMM d, yyyy") : "NA"}
+                      </TableCell>
+                      <TableCell className="text-center">{user.proposalCount}</TableCell>
+                      <TableCell className="text-right">
+                        <UserActions user={user} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+              {currentUsers.length === 0 && (
+                  <p className="text-center text-muted-foreground py-12">
+                      No users match your search or filter criteria.
+                  </p>
+              )}
+              </>
+            )}
+          </CardContent>
+          {totalPages > 1 && (
+              <CardFooter>
+                  <div className="flex justify-between items-center w-full">
+                      <span className="text-sm text-muted-foreground">
+                          Showing {indexOfFirstUser + 1} - {Math.min(indexOfLastUser, sortedAndFilteredUsers.length)} of {sortedAndFilteredUsers.length} users
+                      </span>
+                      <div className="flex gap-2">
+                          <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+                              disabled={currentPage === 1}
+                          >
+                              Previous
+                          </Button>
+                          <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+                              disabled={currentPage === totalPages}
+                          >
+                              Next
+                          </Button>
+                      </div>
+                  </div>
+              </CardFooter>
+          )}
+        </Card>
+      </div>
     </TooltipProvider>
   );
 }
