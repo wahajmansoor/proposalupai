@@ -14,12 +14,11 @@ import { getGoogleAuthUrl } from '@/app/lib/actions';
 import { createStripeCustomer } from '@/app/lib/auth-actions';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
-import { createUserWithEmailAndPassword, signInWithCustomToken } from 'firebase/auth';
+import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { BgPattern } from '@/components/bg-pattern';
 import { ThemeToggle } from '@/components/theme-toggle';
-import { v4 as uuidv4 } from 'uuid';
 
 const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => {
   return (
@@ -151,17 +150,19 @@ export function SignupForm() {
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const newUser = userCredential.user;
       
+      // Step 2: Update the user's profile with their name
+      await updateProfile(newUser, { displayName: fullName });
+      
       const storedReferralCode = localStorage.getItem('referralCode');
-      const newSessionId = uuidv4();
 
-      // Step 2: Create Stripe customer via a simple server action
+      // Step 3: Create Stripe customer via a simple server action
       const stripeResult = await createStripeCustomer({ email, name: fullName, firebaseUID: newUser.uid });
 
       if (!stripeResult.customerId) {
         throw new Error(stripeResult.error || 'Failed to create Stripe customer.');
       }
 
-      // Step 3: Create user document in Firestore directly from the client
+      // Step 4: Create user document in Firestore directly from the client
       const userDocRef = doc(db, 'users', newUser.uid);
       
       const userData: { [key: string]: any } = {
@@ -175,8 +176,6 @@ export function SignupForm() {
         subscriptionStatus: null,
         referralCode: newUser.uid.substring(0, 8),
         onboardingComplete: false, 
-        currentSession: newSessionId,
-        lastLogin: serverTimestamp(),
       };
 
       if (storedReferralCode) {
@@ -185,23 +184,8 @@ export function SignupForm() {
       
       await setDoc(userDocRef, userData);
       
-      // Step 4: Get a custom token with the session ID
-      const response = await fetch('/api/auth/token', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ uid: newUser.uid, sessionId: newSessionId }),
-      });
-      
-      if (!response.ok) {
-        throw new Error('Failed to create custom token.');
-      }
-
-      const { customToken } = await response.json();
-
-      // Step 5: Sign in with the custom token and create server session
-      const customTokenCredential = await signInWithCustomToken(auth, customToken);
-      const idToken = await customTokenCredential.user.getIdToken();
-
+      // Step 5: Create the server session
+      const idToken = await newUser.getIdToken();
       await fetch('/api/auth/session', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },

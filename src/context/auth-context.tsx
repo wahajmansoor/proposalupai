@@ -10,7 +10,6 @@ import { useRouter } from 'next/navigation';
 import { useToast } from '@/hooks/use-toast';
 import { errorEmitter } from '@/lib/firebase/error-emitter';
 import { FirestorePermissionError } from '@/lib/firebase/errors';
-import { handleUserLogout as handleUserLogoutServer } from '@/lib/actions';
 
 interface UserProfile {
   uid: string;
@@ -31,15 +30,13 @@ interface UserProfile {
   upgradeBonusGiven?: boolean;
   trialCreditsAwarded?: boolean;
   onboardingComplete?: boolean;
-  currentSession?: string;
-  lastLogin?: Timestamp;
 }
 
 interface AuthContextType {
   user: User | null;
   userProfile: UserProfile | null;
   loading: boolean;
-  handleLogout: (message?: string) => void;
+  handleLogout: () => void;
   creditChange: number;
 }
 
@@ -62,23 +59,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [loading, setLoading] = useState(true);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const router = useRouter();
-  const { toast } = useToast();
   
   const [creditChange, setCreditChange] = useState(0);
 
-  const handleLogout = useCallback(async (message?: string) => {
+  const handleLogout = useCallback(async () => {
     if (isLoggingOut) return;
     setIsLoggingOut(true);
 
-    if (message) {
-      toast({
-        title: "Logged Out",
-        description: message,
-        variant: "destructive",
-      });
-    }
-
-    await handleUserLogoutServer();
+    await fetch('/api/auth/session', { method: 'DELETE' });
     
     if(isFirebaseConfigured) {
         await signOut(auth);
@@ -91,7 +79,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         router.push('/login');
         setIsLoggingOut(false);
     }, 2500); 
-  }, [router, isLoggingOut, toast]);
+  }, [router, isLoggingOut]);
   
 
   useEffect(() => {
@@ -109,33 +97,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         const unsubscribeSnapshot = onSnapshot(userRef, (snap) => {
             if (snap.exists()) {
                 const data = snap.data() as UserProfile;
+                const profile: UserProfile = {
+                    ...data,
+                    subscriptionCurrentPeriodEnd: data.subscriptionCurrentPeriodEnd?.toDate().toISOString(),
+                };
 
-                firebaseUser.getIdTokenResult().then(idTokenResult => {
-                    const tokenSessionId = idTokenResult.claims.sessionId;
-                    if (data.currentSession && tokenSessionId && data.currentSession !== tokenSessionId) {
-                        handleLogout("You have been logged out because a new session was started on another device.");
-                        return;
-                    }
-
-                    const profile: UserProfile = {
-                        ...data,
-                        subscriptionCurrentPeriodEnd: data.subscriptionCurrentPeriodEnd?.toDate().toISOString(),
-                    };
-    
-                    const oldCredits = userProfile?.proposalCredits ?? profile.proposalCredits;
-                    const newCredits = profile.proposalCredits;
-                    if (typeof oldCredits === 'number' && typeof newCredits === 'number' && newCredits > oldCredits) {
-                        setCreditChange(newCredits - oldCredits);
-                    }
-                    
-                    setUserProfile(profile);
-                    setLoading(false);
-                });
-
-
+                const oldCredits = userProfile?.proposalCredits ?? profile.proposalCredits;
+                const newCredits = profile.proposalCredits;
+                if (typeof oldCredits === 'number' && typeof newCredits === 'number' && newCredits > oldCredits) {
+                    setCreditChange(newCredits - oldCredits);
+                }
+                
+                setUserProfile(profile);
+                setLoading(false);
             } else {
                 setUserProfile(null);
-                handleLogout("Your user profile could not be found.");
+                setLoading(false);
+                // Don't auto-logout here, might be a temporary state or new user
+                console.warn(`User document not found for UID: ${firebaseUser.uid}`);
             }
         }, (error) => {
             console.error("Error on user snapshot:", error);
@@ -156,7 +135,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
 
     return () => unsubscribeAuth();
-  }, [handleLogout, userProfile?.proposalCredits]);
+  }, [userProfile?.proposalCredits]);
   
   if (isLoggingOut) {
     return <LogoutScreen />;

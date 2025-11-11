@@ -102,16 +102,6 @@ export async function GET(req: NextRequest) {
     const userRef = adminDb.collection('users').doc(userRecord.uid);
     const userDoc = await userRef.get();
     
-    // --- SINGLE SESSION POLICY CHECK ---
-    if (userDoc.exists && userDoc.data()?.currentSession) {
-        console.warn(`Blocking new login for ${email} - active session exists.`);
-        errorRedirectUrl.searchParams.set('error', 'session-exists');
-        errorRedirectUrl.searchParams.set('details', 'An active session for this account already exists on another device. Please log out from the other device first.');
-        return NextResponse.redirect(errorRedirectUrl);
-    }
-
-    const newSessionId = uuidv4();
-    
     if (!userDoc.exists) {
         const customer = await stripe.customers.create({
             email: userRecord.email!,
@@ -135,8 +125,6 @@ export async function GET(req: NextRequest) {
             country: country,
             referralCode: userRecord.uid.substring(0, 8),
             onboardingComplete: false,
-            currentSession: newSessionId,
-            lastLogin: FieldValue.serverTimestamp(),
         };
         
         if (referralCode) {
@@ -147,15 +135,9 @@ export async function GET(req: NextRequest) {
             userData.photoURL = picture;
         }
         await userRef.set(userData, { merge: true });
-    } else {
-        // User exists, just update session info
-        await userRef.update({
-            currentSession: newSessionId,
-            lastLogin: FieldValue.serverTimestamp(),
-        });
     }
 
-    const customToken = await adminAuth.createCustomToken(userRecord.uid, { sessionId: newSessionId });
+    const customToken = await adminAuth.createCustomToken(userRecord.uid);
     const redirectUrl = new URL('/auth/callback-client', `${protocol}://${host}`);
     redirectUrl.searchParams.set('token', customToken);
 

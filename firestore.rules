@@ -31,9 +31,7 @@ service cloud.firestore {
           'referralBonusAwarded',
           'lastPrice',
           'upgradeBonusGiven',
-          'trialCreditsAwarded',
-          'currentSession',
-          'lastLogin'
+          'trialCreditsAwarded'
         ]);
 
       // Prevent clients from deleting user documents.

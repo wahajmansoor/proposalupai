@@ -215,6 +215,7 @@ export async function generateProposalAction(input: z.infer<typeof generatePropo
     const { user, userDoc } = currentUser;
     const { subscriptionStatus, proposalCount = 0 } = userDoc;
 
+    // Enforce trial limit
     if (subscriptionStatus === 'trialing' && proposalCount >= 5) {
       return { error: 'You have reached your trial limit of 5 proposals. Please upgrade to continue.' };
     }
@@ -228,6 +229,7 @@ export async function generateProposalAction(input: z.infer<typeof generatePropo
     try {
       const result = await generateProposal(validatedFields.data);
 
+      // If successful, increment the proposal count
       await incrementProposalCount(user.uid);
 
       return { data: result };
@@ -302,24 +304,6 @@ export async function getGoogleAuthUrl(referralCode: string | null) {
     return authorizeUrl;
 }
 
-export async function handleUserLogout() {
-  const currentUser = await getCurrentUser();
-  if (!currentUser) {
-    return { success: true };
-  }
-
-  try {
-    const userRef = adminDb.collection('users').doc(currentUser.user.uid);
-    await userRef.update({
-      currentSession: null,
-    });
-    return { success: true };
-  } catch (error: any) {
-    console.error("Error clearing user session on logout:", error);
-    return { success: false, error: "Could not clear server session." };
-  }
-}
-
 const updateDisplayNameSchema = z.object({
     displayName: z.string().min(1, 'Display name cannot be empty.'),
 });
@@ -358,6 +342,7 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
         return { error: 'User not authenticated.' };
     }
 
+    // Strategy 1: Fetch from Firestore first
     try {
         const historyRef = adminDb.collection('users').doc(currentUser.user.uid).collection('billingHistory');
         const querySnapshot = await historyRef.orderBy('date', 'desc').limit(20).get();
@@ -378,8 +363,10 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
         }
     } catch (error: any) {
         console.warn('Could not fetch billing history from Firestore, falling back to Stripe:', error.message);
+        // If Firestore fails or is empty, we fall through to the Stripe API call.
     }
 
+    // Strategy 2: Fallback to Stripe API for invoices (if Firestore is empty)
     if (currentUser.userDoc?.stripeCustomerId) {
         const { stripeCustomerId } = currentUser.userDoc;
         try {
@@ -397,14 +384,17 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
                 description: invoice.lines.data[0]?.description || 'Subscription Payment',
             }));
 
+            // Return Stripe data if found
             if (invoiceDetails.length > 0) {
               return { invoices: invoiceDetails };
             }
         } catch (error: any) {
             console.error('Error fetching billing history from Stripe:', error);
+            // Don't return an error here, just fall through to the empty state
         }
     }
     
+    // If both Firestore and Stripe are empty or fail, return empty
     return { invoices: [] };
 }
 
