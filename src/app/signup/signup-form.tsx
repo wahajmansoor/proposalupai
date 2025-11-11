@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -193,7 +192,7 @@ export function SignupForm() {
       });
       
       localStorage.removeItem('referralCode');
-      toast({ title: 'Account created successfully!', description: "Start your 2-day free trial & explore all Proposal Up features." });
+      toast({ title: 'Account created successfully!', description: "Welcome to Proposal Up!" });
       router.push('/onboarding');
 
     } catch (error: any) {
