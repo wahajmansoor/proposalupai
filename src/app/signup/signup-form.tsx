@@ -7,7 +7,7 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { ProposalUpLogoLight, GoogleIcon } from '@/components/icons';
+import { ProposalUpLogos, ProposalUpLogoLight, GoogleIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, XCircle, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { getGoogleAuthUrl } from '@/app/lib/actions';
@@ -213,7 +213,7 @@ export function SignupForm() {
    if (loading || user) {
      return (
       <div className="flex items-center justify-center min-h-screen">
-        <Loader2 className="h-24 w-24 animate-spin text-primary" />
+        <ProposalUpLogos className="h-24 w-24 animate-pulse text-primary" />
       </div>
     );
   }
@@ -232,7 +232,7 @@ export function SignupForm() {
             </Link>
             <div className="mb-8">
               <h1 className="text-3xl font-bold tracking-tight">Create an Account</h1>
-              <p className="text-muted-foreground mt-1">Enter your information to get started.</p>
+              <p className="text-muted-foreground mt-1">Welcome to Proposal Up!</p>
             </div>
             
             <Button variant="outline" className="w-full mb-6 rounded-full" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>

@@ -5,7 +5,7 @@ import { Suspense } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { ProposalUpLogos, ProposalUpLogoLight } from '@/components/icons';
-import { ArrowLeft, Loader2 } from 'lucide-react';
+import { ArrowLeft } from 'lucide-react';
 import { BgPattern } from '@/components/bg-pattern';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { SignupForm } from './signup-form';
@@ -28,7 +28,7 @@ function SignupPageSkeleton() {
               <p className="text-muted-foreground mt-1">Enter your information to get started.</p>
             </div>
             <div className="flex items-center justify-center h-48">
-              <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <ProposalUpLogos className="h-24 w-24 animate-pulse text-primary" />
             </div>
           </div>
         </div>
