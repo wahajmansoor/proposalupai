@@ -32,13 +32,20 @@ function AuthCallback() {
       const userDocRef = doc(db, 'users', user.uid);
       const userDocSnap = await getDoc(userDocRef);
 
-      if (userDocSnap.exists() && userDocSnap.data()?.onboardingComplete === false) {
-         // New user, redirect to onboarding
-        router.push('/onboarding');
+      const isOnboardingComplete = userDocSnap.exists() && userDocSnap.data()?.onboardingComplete !== false;
+      const redirectPath = isOnboardingComplete ? '/dashboard' : '/onboarding';
+
+      // --- New Logic ---
+      if (window.opener) {
+        // Send success message to the parent window
+        window.opener.postMessage({ type: 'auth-success', redirectPath }, window.location.origin);
+        // Close the popup window
+        window.close();
       } else {
-        // Returning user, redirect to dashboard
-        router.push('/dashboard');
+        // Fallback for cases where it's not a popup
+        router.push(redirectPath);
       }
+      // --- End New Logic ---
 
     } catch (error: any) {
       console.error("Firebase custom sign-in error:", error);

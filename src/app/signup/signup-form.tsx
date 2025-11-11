@@ -1,3 +1,4 @@
+
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -10,7 +11,7 @@ import { ProposalUpLogoLight, GoogleIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, XCircle, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { getGoogleAuthUrl } from '@/app/lib/actions';
-import { createStripeCustomer } from '@/app/lib/auth-actions';
+import { createStripeCustomer } from '@/lib/stripe-actions';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
@@ -82,6 +83,7 @@ export function SignupForm() {
             title: 'Successfully signed up!',
             description: "Welcome! We're redirecting you now.",
           });
+          router.push(redirectPath || '/dashboard');
           router.refresh();
       } else if (type === 'auth-error') {
           toast({

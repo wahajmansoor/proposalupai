@@ -45,6 +45,8 @@ export default function LoginPage() {
             title: 'Successfully signed in!',
             description: "Welcome back! We're redirecting you now.",
           });
+          // The popup will close itself, the parent window just needs to redirect.
+          router.push(redirectPath || '/dashboard');
           router.refresh();
       } else if (type === 'auth-error') {
           toast({
