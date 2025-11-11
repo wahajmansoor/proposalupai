@@ -19,7 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
-import { GoogleIcon } from "@/components/icons";
+import { GoogleIcon, GmailIcon } from "@/components/icons";
 
 function getInitials(name: string | null | undefined) {
   if (!name) return "U";
@@ -182,6 +182,7 @@ export default function AdminUsersPage() {
 
 
   return (
+    <TooltipProvider>
     <div className="space-y-6">
       <div className="space-y-1">
         <h1 className="text-2xl font-bold tracking-tight">User Management</h1>
@@ -378,5 +379,6 @@ export default function AdminUsersPage() {
         )}
       </Card>
     </div>
+    </TooltipProvider>
   );
 }
