@@ -301,14 +301,14 @@ export default function AdminUsersPage() {
                         )}
                         <div className="font-medium">{user.name || "N/A"}</div>
                         {user.signInProvider === 'google.com' && (
-                            <Tooltip>
-                                <TooltipTrigger>
-                                    <GoogleIcon className="h-4 w-4" />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                    <p>Signed in with Google</p>
-                                </TooltipContent>
-                            </Tooltip>
+                          <Tooltip>
+                            <TooltipTrigger>
+                              <GoogleIcon className="h-4 w-4" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p>Signed in with Google</p>
+                            </TooltipContent>
+                          </Tooltip>
                         )}
                       </div>
                     </TableCell>
