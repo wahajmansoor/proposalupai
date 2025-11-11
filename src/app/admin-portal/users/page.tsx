@@ -19,6 +19,7 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip"
+import { GoogleIcon } from "@/components/icons";
 
 function getInitials(name: string | null | undefined) {
   if (!name) return "U";
@@ -299,6 +300,16 @@ export default function AdminUsersPage() {
                             </Tooltip>
                         )}
                         <div className="font-medium">{user.name || "N/A"}</div>
+                        {user.signInProvider === 'google.com' && (
+                            <Tooltip>
+                                <TooltipTrigger>
+                                    <GoogleIcon className="h-4 w-4" />
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Signed in with Google</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        )}
                       </div>
                     </TableCell>
                     <TableCell>{user.email || "N/A"}</TableCell>

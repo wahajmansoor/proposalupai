@@ -19,6 +19,7 @@ export interface AppUser {
   stripeCustomerId: string | null;
   country?: { code: string; name: string };
   referralCode?: string;
+  signInProvider?: string;
 }
 
 export async function getUsers(): Promise<AppUser[]> {
@@ -30,6 +31,8 @@ export async function getUsers(): Promise<AppUser[]> {
     const userDoc = await userDocRef.get();
     
     let userData: any;
+
+    const signInProvider = user.providerData.length > 0 ? user.providerData[0].providerId : 'unknown';
 
     if (userDoc.exists) {
       userData = userDoc.data();
@@ -55,6 +58,7 @@ export async function getUsers(): Promise<AppUser[]> {
         stripeCustomerId: userData?.stripeCustomerId || null,
         country: userData?.country || null,
         referralCode: userData?.referralCode || null,
+        signInProvider: signInProvider,
       };
     } else {
       // Fallback for users who might exist in Auth but not Firestore
@@ -70,6 +74,7 @@ export async function getUsers(): Promise<AppUser[]> {
         stripeCustomerId: null,
         country: null,
         referralCode: null,
+        signInProvider: signInProvider,
       };
     }
   });
