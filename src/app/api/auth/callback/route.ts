@@ -135,7 +135,7 @@ export async function GET(req: NextRequest) {
             country: country,
             referralCode: userRecord.uid.substring(0, 8),
             onboardingComplete: false,
-            currentSession: newSessionId, // Set session ID on creation
+            currentSession: newSessionId,
             lastLogin: FieldValue.serverTimestamp(),
         };
         

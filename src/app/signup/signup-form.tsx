@@ -14,12 +14,13 @@ import { getGoogleAuthUrl } from '@/app/lib/actions';
 import { createStripeCustomer } from '@/app/lib/auth-actions';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
-import { createUserWithEmailAndPassword } from 'firebase/auth';
+import { createUserWithEmailAndPassword, signInWithCustomToken } from 'firebase/auth';
 import { auth, db } from '@/lib/firebase/config';
 import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { BgPattern } from '@/components/bg-pattern';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { v4 as uuidv4 } from 'uuid';
+import { adminAuth } from '@/lib/firebase/admin';
 
 
 const PasswordRequirement = ({ met, text }: { met: boolean; text: string }) => {
@@ -153,7 +154,7 @@ export function SignupForm() {
       // Step 1: Create user client-side
       const userCredential = await createUserWithEmailAndPassword(auth, email, password);
       const newUser = userCredential.user;
-      const idToken = await newUser.getIdToken();
+      
       const storedReferralCode = localStorage.getItem('referralCode');
       const newSessionId = uuidv4();
 
@@ -177,8 +178,8 @@ export function SignupForm() {
         proposalCount: 0,
         subscriptionStatus: null,
         referralCode: newUser.uid.substring(0, 8),
-        onboardingComplete: false, // Flag for new user onboarding
-        currentSession: newSessionId, // Set session ID on creation
+        onboardingComplete: false, 
+        currentSession: newSessionId,
         lastLogin: serverTimestamp(),
       };
 
@@ -187,6 +188,22 @@ export function SignupForm() {
       }
       
       await setDoc(userDocRef, userData);
+
+      const response = await fetch('/api/auth/token', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ uid: newUser.uid, sessionId: newSessionId }),
+      });
+      
+      if (!response.ok) {
+        throw new Error('Failed to create custom token.');
+      }
+
+      const { customToken } = await response.json();
+
+      await signInWithCustomToken(auth, customToken);
+      const idToken = await newUser.getIdToken();
+
 
       // Step 4: Create server session cookie
       await fetch('/api/auth/session', {
@@ -298,7 +315,7 @@ export function SignupForm() {
                       <PasswordRequirement met={passwordValidation.special} text="1 special" />
                   </div>
                 )}
-                <Button type="submit" className="w-full mt-2" disabled={isLoading || isGoogleLoading || (password.length > 0 && !allRequirementsMet)}>
+                <Button type="submit" className="w-full mt-2 rounded-full" disabled={isLoading || isGoogleLoading || (password.length > 0 && !allRequirementsMet)}>
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
                   Create an account
                 </Button>

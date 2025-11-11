@@ -101,16 +101,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
 
     const unsubscribeAuth = onIdTokenChanged(auth, async (firebaseUser) => {
+      setLoading(true);
       if (firebaseUser) {
         setUser(firebaseUser);
         const userRef = doc(db, 'users', firebaseUser.uid);
         
         const unsubscribeSnapshot = onSnapshot(userRef, (snap) => {
-            setLoading(true);
             if (snap.exists()) {
                 const data = snap.data() as UserProfile;
 
-                // Client-side validation to ensure this session is the active one
                 firebaseUser.getIdTokenResult().then(idTokenResult => {
                     const tokenSessionId = idTokenResult.claims.sessionId;
                     if (data.currentSession && tokenSessionId && data.currentSession !== tokenSessionId) {
@@ -136,7 +135,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
             } else {
                 setUserProfile(null);
-                 handleLogout("Your user profile could not be found.");
+                handleLogout("Your user profile could not be found.");
             }
         }, (error) => {
             console.error("Error on user snapshot:", error);
