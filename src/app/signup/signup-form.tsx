@@ -11,7 +11,7 @@ import { ProposalUpLogoLight, GoogleIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, XCircle, CheckCircle2, ArrowLeft } from 'lucide-react';
 import { getGoogleAuthUrl } from '@/app/lib/actions';
-import { createStripeCustomer } from '@/app/lib/auth-actions';
+import { createStripeCustomer } from '@/lib/auth-actions';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/context/auth-context';
 import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';

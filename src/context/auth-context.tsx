@@ -114,7 +114,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                 setUserProfile(null);
                 setLoading(false);
                 // Don't auto-logout here, might be a temporary state or new user
-                console.warn(`User document not found for UID: ${firebaseUser.uid}`);
+                console.warn(`User document not found for UID: ${firebaseUser.uid}. This can happen briefly during signup.`);
             }
         }, (error) => {
             console.error("Error on user snapshot:", error);

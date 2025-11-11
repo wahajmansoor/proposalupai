@@ -7,7 +7,6 @@ import { headers } from 'next/headers';
 import type { UserRecord } from 'firebase-admin/auth';
 import { stripe } from '@/lib/stripe/config';
 import { getCountryFromIp } from '@/app/lib/location';
-import { v4 as uuidv4 } from 'uuid';
 import { FieldValue } from 'firebase-admin/firestore';
 
 
