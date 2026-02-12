@@ -205,8 +205,12 @@ export async function createAdminCustomerPortalSession(formData: FormData): Prom
     const { stripeCustomerId } = validatedFields.data;
     
     const headersList = headers();
+    const host = headersList.get('x-forwarded-host') || headersList.get('host');
+    if (!host) {
+        return { error: 'Could not determine the host from the request.' };
+    }
+
     const protocol = headersList.get('x-forwarded-proto') || 'http';
-    const host = headersList.get('host');
     const returnUrl = `${protocol}://${host}/admin-portal/users`;
 
     try {
