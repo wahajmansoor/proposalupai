@@ -6,6 +6,7 @@ import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { stripe } from '@/lib/stripe/config';
 import { addCredits } from '@/lib/stripe-actions';
+import { headers } from 'next/headers';
 
 export interface AppUser {
   id: string;
@@ -203,7 +204,10 @@ export async function createAdminCustomerPortalSession(formData: FormData): Prom
 
     const { stripeCustomerId } = validatedFields.data;
     
-    const returnUrl = `${process.env.NEXT_PUBLIC_BASE_URL}/admin-portal/users`;
+    const headersList = headers();
+    const protocol = headersList.get('x-forwarded-proto') || 'http';
+    const host = headersList.get('host');
+    const returnUrl = `${protocol}://${host}/admin-portal/users`;
 
     try {
         const portalSession = await stripe.billingPortal.sessions.create({
