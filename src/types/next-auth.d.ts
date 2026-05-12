@@ -1,12 +1,10 @@
-import NextAuth from "next-auth";
+import { type DefaultSession } from "next-auth";
+import { type JWT } from "next-auth/jwt";
 
 declare module "next-auth" {
   interface Session {
     user: {
       id: string;
-      name?: string | null;
-      email?: string | null;
-      image?: string | null;
       bio?: string | null;
       title?: string | null;
       services?: string | null;
@@ -21,7 +19,23 @@ declare module "next-auth" {
         subscriptionInterval?: string | null;
         subscriptionCurrentPeriodEnd?: Date | null;
         referralCode?: string | null;
+        country?: { code: string; name: string } | null;
       };
-    };
+    } & DefaultSession["user"];
+  }
+
+  interface User {
+    id?: string;
+    bio?: string | null;
+    title?: string | null;
+    services?: string | null;
+    whatsapp?: string | null;
+    isFeatured?: boolean;
+  }
+}
+
+declare module "next-auth/jwt" {
+  interface JWT {
+    sub?: string;
   }
 }

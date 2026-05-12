@@ -5,8 +5,7 @@ import { z } from 'zod';
 import { OAuth2Client } from 'google-auth-library';
 import { headers } from 'next/headers';
 import { revalidatePath } from 'next/cache';
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/authOptions";
+import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 
 import type { PortfolioLink } from '@/app/lib/types';
@@ -70,7 +69,7 @@ export interface CreditHistoryItem {
 }
 
 async function getAuthenticatedUser() {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id) return null;
     
     const user = await prisma.user.findUnique({

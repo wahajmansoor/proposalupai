@@ -1,12 +1,11 @@
 "use server";
 
-import { getServerSession } from "next-auth";
-import { authOptions } from "@/lib/authOptions";
+import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import type { SavedProposal } from "@/app/lib/types";
 
 async function getAuthenticatedUserId(): Promise<string> {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user?.id) {
     throw new Error("Not authenticated");
   }

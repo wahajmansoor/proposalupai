@@ -2,8 +2,7 @@
 'use server';
 
 import { paddle } from './paddle/config';
-import { getServerSession } from 'next-auth';
-import { authOptions } from './authOptions';
+import { auth } from '@/auth';
 import prisma from './prisma';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
@@ -48,7 +47,7 @@ export async function addCreditsAction(userId: string, amount: number, reason: s
 
 // --- Paddle Portal Action ---
 export async function createPaddlePortalSession() {
-    const session = await getServerSession(authOptions);
+    const session = await auth();
     if (!session?.user?.id) {
         return { error: 'User not authenticated.' };
     }
@@ -145,7 +144,7 @@ export async function createDiscountAction(data: { code: string; description: st
 
 export async function checkUserStatusAction() {
     try {
-        const session = await getServerSession(authOptions);
+        const session = await auth();
         if (!session?.user?.id) return { error: "Unauthorized" };
 
         const user = await prisma.user.findUnique({

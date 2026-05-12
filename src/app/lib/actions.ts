@@ -3,8 +3,7 @@
 
 import { z } from 'zod';
 import { headers } from 'next/headers';
-import { getServerSession } from 'next-auth';
-import { authOptions } from '@/lib/authOptions';
+import { auth } from '@/auth';
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
@@ -70,7 +69,7 @@ export interface CreditHistoryItem {
 
 // Helper: get authenticated user + their DB record
 async function getAuthenticatedUser() {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user?.id) return null;
 
   const user = await prisma.user.findUnique({
@@ -309,7 +308,7 @@ const updateProfileSchema = z.object({
 });
 
 export async function updateProfileAction(formData: FormData) {
-  const session = await getServerSession(authOptions);
+  const session = await auth();
   if (!session?.user?.id) {
     return { error: 'You must be logged in to update your profile.' };
   }

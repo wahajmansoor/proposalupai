@@ -1,20 +1,21 @@
+import NextAuth, { type Session, type User } from "next-auth";
+import { type JWT } from "next-auth/jwt";
+import Google from "next-auth/providers/google";
+import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
-import { AuthOptions } from "next-auth";
-import GoogleProvider from "next-auth/providers/google";
-import CredentialsProvider from "next-auth/providers/credentials";
-import prisma from "./prisma";
+import prisma from "@/lib/prisma";
 import * as bcrypt from "bcryptjs";
 import { headers } from "next/headers";
 import { getCountryFromIp } from "@/app/lib/location";
 
-export const authOptions: AuthOptions = {
-  adapter: PrismaAdapter(prisma) as any,
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  adapter: PrismaAdapter(prisma),
   providers: [
-    GoogleProvider({
+    Google({
       clientId: process.env.AUTH_GOOGLE_ID || "",
       clientSecret: process.env.AUTH_GOOGLE_SECRET || "",
     }),
-    CredentialsProvider({
+    Credentials({
       name: "Credentials",
       credentials: {
         email: { label: "Email", type: "email" },
@@ -26,7 +27,7 @@ export const authOptions: AuthOptions = {
         }
 
         const user = await prisma.user.findUnique({
-          where: { email: credentials.email }
+          where: { email: credentials.email as string }
         });
 
         if (!user || !user.password) {
@@ -34,7 +35,7 @@ export const authOptions: AuthOptions = {
         }
 
         const isPasswordValid = await bcrypt.compare(
-          credentials.password,
+          credentials.password as string,
           user.password
         );
 
@@ -42,7 +43,7 @@ export const authOptions: AuthOptions = {
           throw new Error("Invalid credentials");
         }
 
-        return user;
+        return user as any; // Cast as any to satisfy AdapterUser | User type
       }
     })
   ],
@@ -50,7 +51,7 @@ export const authOptions: AuthOptions = {
     strategy: "jwt",
   },
   callbacks: {
-    async session({ session, token }) {
+    async session({ session, token }: { session: Session; token: JWT }) {
       if (token.sub && session.user) {
         session.user.id = token.sub;
 
@@ -140,7 +141,7 @@ export const authOptions: AuthOptions = {
       }
       return session;
     },
-    async jwt({ token, user }) {
+    async jwt({ token, user }: { token: JWT; user?: User }) {
       if (user) {
         token.sub = user.id;
       }
@@ -150,4 +151,4 @@ export const authOptions: AuthOptions = {
   pages: {
     signIn: "/login",
   }
-};
+});
