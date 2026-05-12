@@ -99,7 +99,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           }
 
           if (!dbUser.countryCode) {
-            const headersList = headers();
+            const headersList = await headers();
             const ip = headersList.get('x-forwarded-for')?.split(',')[0] || headersList.get('x-real-ip') || null;
             const country = await getCountryFromIp(ip);
             if (country) {

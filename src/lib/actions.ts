@@ -294,13 +294,13 @@ export async function improveProposalAction(input: z.infer<typeof improveProposa
       return { data: result };
     } catch (error) {
       console.error(error);
-      return { error: 'Failed to improve proposal.' };
+    return { error: 'Failed to improve proposal.' };
     }
   }
 
 
 export async function getGoogleAuthUrl(referralCode: string | null) {
-    const headersList = headers();
+    const headersList = await headers();
     const protocol = headersList.get('x-forwarded-proto') || 'http';
     const host = headersList.get('host');
     const redirectUri = `${protocol}://${host}/api/auth/callback`;

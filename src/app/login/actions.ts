@@ -56,7 +56,8 @@ export async function adminLogin(formData: FormData): Promise<{ success: boolean
         .setExpirationTime('1d')
         .sign(secret);
     
-    cookies().set(ADMIN_SESSION_COOKIE, token, {
+    const cookieStore = await cookies();
+    cookieStore.set(ADMIN_SESSION_COOKIE, token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       path: '/',
@@ -71,12 +72,14 @@ export async function adminLogin(formData: FormData): Promise<{ success: boolean
 }
 
 export async function adminLogout() {
-    cookies().delete(ADMIN_SESSION_COOKIE);
+    const cookieStore = await cookies();
+    cookieStore.delete(ADMIN_SESSION_COOKIE);
     redirect('/admin-login');
 }
 
 export async function getAdminSession(): Promise<JWTPayload | null> {
-  const token = cookies().get(ADMIN_SESSION_COOKIE)?.value;
+  const cookieStore = await cookies();
+  const token = cookieStore.get(ADMIN_SESSION_COOKIE)?.value;
   if (!token) return null;
 
   try {
