@@ -37,6 +37,7 @@ jobs:
           mkdir deploy
           cp -r .next/standalone/* deploy/
           cp -r public deploy/
+          cp -r prisma deploy/
           mkdir -p deploy/.next
           cp -r .next/static deploy/.next/
 
