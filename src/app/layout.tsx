@@ -3,8 +3,6 @@ import type { Metadata, Viewport } from 'next';
 import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Outfit } from 'next/font/google';
-import { SpeedInsights } from '@vercel/speed-insights/next';
-import { Analytics } from '@vercel/analytics/next';
 import { Providers } from '@/components/providers';
 
 const outfit = Outfit({
@@ -47,13 +45,11 @@ export default function RootLayout({
   return (
     <html lang="en" className={outfit.variable} suppressHydrationWarning>
       <head />
-      <body>
+      <body suppressHydrationWarning>
         <Providers>
           {children}
           <Toaster />
         </Providers>
-        <SpeedInsights />
-        <Analytics />
       </body>
     </html>
   );

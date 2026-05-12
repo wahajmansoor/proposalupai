@@ -1,8 +1,7 @@
-
 import Link from 'next/link';
 import { getAdminSession, adminLogout } from '@/app/login/actions';
 import { redirect } from 'next/navigation';
-import { Home, Users, LogOut, PanelLeft, Ticket, Search, Bell } from 'lucide-react';
+import { Home, Users, LogOut, PanelLeft, Ticket, Search, Bell, UserCircle, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
@@ -34,20 +33,27 @@ function SidebarNav() {
             Users
           </Link>
           <Link
-            href="/admin-portal/coupons"
+            href="/admin-portal/discounts"
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-foreground hover:bg-muted"
           >
             <Ticket className="h-4 w-4" />
-            Coupons
+            Discounts
+          </Link>
+          <Link
+            href="/admin-portal/featured"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-foreground hover:bg-muted"
+          >
+            <Star className="h-4 w-4" />
+            Featured
           </Link>
         </div>
       </div>
       <div className="mt-auto p-4 border-t border-border">
         <form action={adminLogout}>
-            <button type="submit" className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-foreground hover:bg-muted">
-                <LogOut className="h-4 w-4" />
-                Logout
-            </button>
+          <button type="submit" className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-foreground hover:bg-muted">
+            <LogOut className="h-4 w-4" />
+            Logout
+          </button>
         </form>
       </div>
     </nav>
@@ -60,7 +66,7 @@ export default async function AdminLayout({
   children: React.ReactNode;
 }) {
   const session = await getAdminSession();
-  
+
   if (!session) {
     redirect('/admin-login');
   }
@@ -75,7 +81,7 @@ export default async function AdminLayout({
   return (
     <div className="grid min-h-screen w-full md:grid-cols-[220px_1fr] lg:grid-cols-[280px_1fr]">
       <div className="hidden border-r bg-muted/40 md:block">
-          <SidebarNav />
+        <SidebarNav />
       </div>
       <div className="flex flex-col">
         <header className="flex h-14 items-center gap-4 border-b bg-muted/40 px-4 lg:h-[60px] lg:px-6">
@@ -95,7 +101,7 @@ export default async function AdminLayout({
             </SheetContent>
           </Sheet>
           <div className="w-full flex-1">
-            
+
           </div>
           <AdminHeader recentUsers={recentUsers} />
         </header>

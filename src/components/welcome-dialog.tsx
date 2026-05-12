@@ -12,6 +12,7 @@ import {
 import { Button } from "@/components/ui/button";
 import { CheckCircle } from "lucide-react";
 import { ProposalUpLogos } from '@/components/icons';
+import Link from 'next/link';
 
 export function WelcomeDialog({
   open,
@@ -21,7 +22,7 @@ export function WelcomeDialog({
 }: {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  subscriptionStatus?: string;
+  subscriptionStatus?: string | null;
   planInterval?: 'monthly' | 'yearly' | null;
 }) {
   const isTrialing = subscriptionStatus === 'trialing';
@@ -42,26 +43,17 @@ export function WelcomeDialog({
             {isTrialing ? "Welcome to Proposal Up!" : "Welcome to Proposal Up!"}
           </DialogTitle>
           <DialogDescription className="text-base text-center">
-            Your subscription is active, and your journey to winning more projects has begun.
+            Your account is ready, and your journey to winning more projects has begun.
           </DialogDescription>
         </DialogHeader>
         <div className="my-4 space-y-3">
-          <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
-            <CheckCircle className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-            <div>
-              <h4 className="font-semibold">Your Plan: {getPlanName()}</h4>
-              <p className="text-sm text-muted-foreground">
-                You have unlimited access to all features.
-              </p>
-            </div>
-          </div>
           {isTrialing ? (
-            <div className="flex items-start gap-3 p-3 bg-muted rounded-lg">
+            <div className="flex items-start gap-3 p-3 bg-muted rounded-lg text-left">
               <CheckCircle className="h-5 w-5 text-primary mt-0.5 shrink-0" />
               <div>
-                <h4 className="font-semibold">2-Day Free Trial</h4>
+                <h4 className="font-semibold">7 Days Free Trial</h4>
                 <p className="text-sm text-muted-foreground">
-                  Your free trial has started. You won't be charged for 2 days.
+                  Your free trial has started. You can use all AI features for 7 days.
                 </p>
               </div>
             </div>
@@ -77,10 +69,18 @@ export function WelcomeDialog({
             </div>
           )}
         </div>
-        <DialogFooter className="sm:justify-center">
-          <Button type="button" onClick={() => onOpenChange(false)}>
-            Start Creating Proposals
-          </Button>
+        <DialogFooter className="flex flex-col sm:flex-row gap-2 sm:justify-center">
+          {isTrialing ? (
+            <>
+              <Button type="button" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
+                Let's Start Creating Proposal
+              </Button>
+            </>
+          ) : (
+            <Button type="button" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
+              Start Creating Proposals
+            </Button>
+          )}
         </DialogFooter>
       </DialogContent>
     </Dialog>

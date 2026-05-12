@@ -4,13 +4,13 @@
 import { z } from 'zod';
 import { OAuth2Client } from 'google-auth-library';
 import { headers } from 'next/headers';
-import { getCurrentUser, incrementProposalCount, decrementProposalCredits } from '@/lib/firebase/server-auth';
 import { revalidatePath } from 'next/cache';
-import { adminDb } from '@/lib/firebase/admin';
+import { getServerSession } from "next-auth";
+import { authOptions } from "@/lib/authOptions";
+import prisma from "@/lib/prisma";
 
-import type { PortfolioLink } from './types';
+import type { PortfolioLink } from '@/app/lib/types';
 import { getCountryFromIp } from '@/app/lib/location';
-import { ai } from '@/ai/genkit';
 import type {
   AnalyzeJobForProposalInput,
   AnalyzeJobForProposalOutput,
@@ -51,7 +51,6 @@ import type {
   SuggestWordLimitOutput,
 } from '@/ai/flows/suggest-word-limit';
 import { suggestWordLimit } from '@/ai/flows/suggest-word-limit';
-import { stripe } from '@/lib/stripe/config';
 
 
 export interface InvoiceDetails {
@@ -68,6 +67,17 @@ export interface CreditHistoryItem {
     amount: number;
     reason: string;
     createdAt: string;
+}
+
+async function getAuthenticatedUser() {
+    const session = await getServerSession(authOptions);
+    if (!session?.user?.id) return null;
+    
+    const user = await prisma.user.findUnique({
+        where: { id: session.user.id }
+    });
+    
+    return user;
 }
 
 const projectDetailsSchema = z.object({
@@ -100,13 +110,12 @@ const analyzeAndSuggestSchema = z.object({
 });
 
 export async function analyzeAndSuggestAction(input: z.infer<typeof analyzeAndSuggestSchema>) {
-    const currentUser = await getCurrentUser();
-    if (!currentUser || !currentUser.userDoc) {
+    const user = await getAuthenticatedUser();
+    if (!user) {
       return { error: 'You must be logged in to use this feature.' };
     }
 
-    const { userDoc } = currentUser;
-    const { subscriptionStatus, proposalCount = 0 } = userDoc;
+    const { subscriptionStatus, proposalCount = 0 } = user;
 
     if (subscriptionStatus === 'trialing' && proposalCount >= 5) {
       return { error: 'You have reached your trial limit of 5 proposals. Please upgrade to continue.' };
@@ -197,9 +206,9 @@ const generateProposalSchema = z.object({
     pastSuccesses: z.string(),
     profileLinks: z.array(linkSchema),
     manualLinks: z.array(linkSchema),
-    greeting: z.string(),
+    greeting: z.string().optional(),
     openingStrategy: z.string().optional(),
-    closingCta: z.string(),
+    closingCta: z.string().optional(),
     closingCta2: z.string().optional(),
     tone: z.string(),
     wordLimit: z.string().optional(),
@@ -207,13 +216,12 @@ const generateProposalSchema = z.object({
 });
 
 export async function generateProposalAction(input: z.infer<typeof generateProposalSchema>) {
-    const currentUser = await getCurrentUser();
-    if (!currentUser || !currentUser.userDoc) {
+    const user = await getAuthenticatedUser();
+    if (!user) {
       return { error: 'You must be logged in to generate a proposal.' };
     }
 
-    const { user, userDoc } = currentUser;
-    const { subscriptionStatus, proposalCount = 0 } = userDoc;
+    const { subscriptionStatus, proposalCount = 0 } = user;
 
     // Enforce trial limit
     if (subscriptionStatus === 'trialing' && proposalCount >= 5) {
@@ -230,7 +238,10 @@ export async function generateProposalAction(input: z.infer<typeof generatePropo
       const result = await generateProposal(validatedFields.data);
 
       // If successful, increment the proposal count
-      await incrementProposalCount(user.uid);
+      await prisma.user.update({
+          where: { id: user.id },
+          data: { proposalCount: { increment: 1 } }
+      });
 
       return { data: result };
     } catch (error) {
@@ -247,13 +258,12 @@ const improveProposalSchema = z.object({
 });
 
 export async function improveProposalAction(input: z.infer<typeof improveProposalSchema>) {
-    const currentUser = await getCurrentUser();
-    if (!currentUser || !currentUser.userDoc) {
+    const user = await getAuthenticatedUser();
+    if (!user) {
       return { error: 'You must be logged in to use this feature.' };
     }
   
-    const { user, userDoc } = currentUser;
-    const { proposalCredits = 0 } = userDoc;
+    const { proposalCredits = 0 } = user;
   
     if (proposalCredits <= 0) {
       return { error: 'You have no proposal improvement credits left. Please refer a friend to earn more.' };
@@ -266,7 +276,22 @@ export async function improveProposalAction(input: z.infer<typeof improveProposa
   
     try {
       const result = await improveProposal(validatedFields.data);
-      await decrementProposalCredits(user.uid);
+      
+      await prisma.user.update({
+          where: { id: user.id },
+          data: { proposalCredits: { decrement: 1 } }
+      });
+
+      // Log the credit usage
+      // @ts-ignore
+      await prisma.creditHistory.create({
+          data: {
+              userId: user.id,
+              amount: -1,
+              reason: 'Improve Proposal'
+          }
+      });
+
       return { data: result };
     } catch (error) {
       console.error(error);
@@ -309,8 +334,8 @@ const updateDisplayNameSchema = z.object({
 });
 
 export async function updateUserDisplayNameAction(formData: FormData) {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) {
+    const user = await getAuthenticatedUser();
+    if (!user) {
         return { error: 'You must be logged in to update your profile.' };
     }
     const validatedFields = updateDisplayNameSchema.safeParse({
@@ -322,11 +347,10 @@ export async function updateUserDisplayNameAction(formData: FormData) {
     }
 
     try {
-        const { adminAuth } = await import('@/lib/firebase/admin');
-        await adminAuth.updateUser(currentUser.user.uid, { displayName: validatedFields.data.displayName });
-        
-        const userRef = adminDb.collection('users').doc(currentUser.user.uid);
-        await userRef.update({ displayName: validatedFields.data.displayName });
+        await prisma.user.update({
+            where: { id: user.id },
+            data: { name: validatedFields.data.displayName }
+        });
         
         revalidatePath('/profile');
         return { success: 'Display name updated successfully.' };
@@ -336,152 +360,82 @@ export async function updateUserDisplayNameAction(formData: FormData) {
     }
 }
 
+import { paddle } from './paddle/config';
+
 export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]; error?: string }> {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) {
-        return { error: 'User not authenticated.' };
+    const user = await getAuthenticatedUser();
+    if (!user) {
+        return { error: 'You must be logged in to view billing history.' };
     }
 
-    // Strategy 1: Fetch from Firestore first
+    if (!user.paddleCustomerId) {
+        return { invoices: [] };
+    }
+
     try {
-        const historyRef = adminDb.collection('users').doc(currentUser.user.uid).collection('billingHistory');
-        const querySnapshot = await historyRef.orderBy('date', 'desc').limit(20).get();
+        const transactionsCollection = paddle.transactions.list({
+            customerId: [user.paddleCustomerId],
+        });
 
-        if (!querySnapshot.empty) {
-            const invoices: InvoiceDetails[] = querySnapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    date: data.date.toDate().toLocaleDateString(),
-                    total: `$${(data.total / 100).toFixed(2)}`,
-                    status: data.status || 'unknown',
-                    invoiceUrl: data.invoiceUrl,
-                    description: data.description || 'Payment'
-                };
+        const invoices: InvoiceDetails[] = [];
+        let count = 0;
+        for await (const t of transactionsCollection) {
+            // Limit to 20 transactions for the history
+            if (count >= 20) break;
+            
+            // Only show completed/billed transactions to users
+            if (t.status !== 'completed' && t.status !== 'billed' && t.status !== 'paid') continue;
+            
+            invoices.push({
+                id: t.id,
+                date: new Date(t.billedAt || t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                total: `${(parseInt(t.details?.totals?.grandTotal || '0') / 100).toFixed(2)} ${t.currencyCode}`,
+                status: t.status,
+                invoiceUrl: (t as any).checkout?.url || null,
+                description: t.items?.map((i: any) => i.price?.description || i.price?.name || 'Purchase').join(', ') || 'Subscription'
             });
-            return { invoices };
+            count++;
         }
-    } catch (error: any) {
-        console.warn('Could not fetch billing history from Firestore, falling back to Stripe:', error.message);
-        // If Firestore fails or is empty, we fall through to the Stripe API call.
+
+        return { invoices };
+    } catch (error) {
+        console.error("Error fetching billing history:", error);
+        return { error: 'Failed to load billing history.' };
     }
-
-    // Strategy 2: Fallback to Stripe API for invoices (if Firestore is empty)
-    if (currentUser.userDoc?.stripeCustomerId) {
-        const { stripeCustomerId } = currentUser.userDoc;
-        try {
-            const invoices = await stripe.invoices.list({
-                customer: stripeCustomerId,
-                limit: 20,
-            });
-
-            const invoiceDetails: InvoiceDetails[] = invoices.data.map(invoice => ({
-                id: invoice.id,
-                date: new Date(invoice.created * 1000).toLocaleDateString(),
-                total: `$${(invoice.total / 100).toFixed(2)}`,
-                status: invoice.status || 'unknown',
-                invoiceUrl: invoice.hosted_invoice_url,
-                description: invoice.lines.data[0]?.description || 'Subscription Payment',
-            }));
-
-            // Return Stripe data if found
-            if (invoiceDetails.length > 0) {
-              return { invoices: invoiceDetails };
-            }
-        } catch (error: any) {
-            console.error('Error fetching billing history from Stripe:', error);
-            // Don't return an error here, just fall through to the empty state
-        }
-    }
-    
-    // If both Firestore and Stripe are empty or fail, return empty
-    return { invoices: [] };
 }
 
 
 export async function getCreditPurchaseHistory(): Promise<{ invoices?: InvoiceDetails[]; error?: string }> {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) {
-        return { error: 'User not authenticated.' };
-    }
-
-    try {
-        const historyRef = adminDb.collection('users').doc(currentUser.user.uid).collection('creditBillingHistory');
-        const querySnapshot = await historyRef.orderBy('date', 'desc').limit(20).get();
-
-        if (!querySnapshot.empty) {
-            const invoices: InvoiceDetails[] = querySnapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    date: data.date.toDate().toLocaleDateString(),
-                    total: `$${(data.total / 100).toFixed(2)}`,
-                    status: data.status || 'unknown',
-                    invoiceUrl: data.invoiceUrl,
-                    description: data.description || 'Credit Purchase'
-                };
-            });
-            return { invoices };
-        }
-    } catch (error: any) {
-        console.warn('Could not fetch credit purchase history from Firestore, falling back to Stripe:', error.message);
-    }
-    
-    if (currentUser.userDoc?.stripeCustomerId) {
-        const { stripeCustomerId } = currentUser.userDoc;
-        try {
-            const charges = await stripe.charges.list({
-                customer: stripeCustomerId,
-                limit: 20,
-            });
-
-            const creditCharges = charges.data.filter(charge => charge.metadata.purchase_type === 'credits');
-            
-            const invoiceDetails: InvoiceDetails[] = creditCharges.map(charge => ({
-                id: charge.id,
-                date: new Date(charge.created * 1000).toLocaleDateString(),
-                total: `$${(charge.amount / 100).toFixed(2)}`,
-                status: charge.status || 'unknown',
-                invoiceUrl: charge.receipt_url,
-                description: charge.description || 'Credit Purchase',
-            }));
-
-            if (invoiceDetails.length > 0) {
-              return { invoices: invoiceDetails };
-            }
-        } catch (error: any) {
-            console.error('Error fetching credit charges from Stripe:', error);
-        }
-    }
-
+    // TODO: Implement CreditBillingHistory with Prisma model
+    // For now, we return empty as the model doesn't exist yet.
     return { invoices: [] };
 }
 
 
 export async function getCreditHistory(): Promise<{ history?: CreditHistoryItem[]; error?: string }> {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) {
-        return { error: 'User not authenticated.' };
+    const user = await getAuthenticatedUser();
+    if (!user) {
+        return { error: 'You must be logged in to view credit history.' };
     }
-    
+
     try {
-        const historyRef = adminDb.collection('users').doc(currentUser.user.uid).collection('creditHistory');
-        const querySnapshot = await historyRef.orderBy('createdAt', 'desc').get();
-        
-        const history: CreditHistoryItem[] = querySnapshot.docs.map(doc => {
-            const data = doc.data();
-            const createdAtTimestamp = data.createdAt;
-            return {
-                id: doc.id,
-                amount: data.amount,
-                reason: data.reason,
-                createdAt: createdAtTimestamp.toDate().toISOString(),
-            };
+        // @ts-ignore
+        const records = await prisma.creditHistory.findMany({
+            where: { userId: user.id },
+            orderBy: { createdAt: 'desc' },
+            take: 50,
         });
 
+        const history: CreditHistoryItem[] = records.map((r: any) => ({
+            id: r.id,
+            amount: r.amount,
+            reason: r.reason,
+            createdAt: r.createdAt.toISOString(),
+        }));
+
         return { history };
-    } catch (error: any) {
+    } catch (error) {
         console.error('Error fetching credit history:', error);
-        return { error: 'Could not retrieve credit history.' };
+        return { error: 'Failed to load credit history.' };
     }
 }

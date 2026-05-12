@@ -25,7 +25,7 @@ export default function AdminLoginPage() {
     const result = await adminLogin(formData);
 
     if (result.success) {
-      toast({
+      toast({ variant: "success", 
         title: 'Login Successful',
         description: 'Redirecting to the admin dashboard...',
       });

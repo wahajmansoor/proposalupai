@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/context/auth-context';
+import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -12,11 +12,11 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, Plus, Trash2, X, Link as LinkIcon, Edit, Info } from 'lucide-react';
 import type { SkillProfile, PortfolioLink } from '@/app/lib/types';
 import {
-  addSkillProfile,
-  deleteSkillProfile,
-  getSkillProfiles,
-  updateSkillProfile,
-} from '@/lib/firebase/profiles';
+  addSkillProfileAction,
+  deleteSkillProfileAction,
+  getSkillProfilesAction,
+  updateSkillProfileAction,
+} from '@/lib/profile-actions';
 import { Badge } from '@/components/ui/badge';
 import {
   AlertDialog,
@@ -175,7 +175,7 @@ function ProfileForm({
 
 
 export default function SkillProfilesPage() {
-  const { user } = useAuth();
+  const { data: session } = useSession();
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -198,12 +198,16 @@ export default function SkillProfilesPage() {
 
 
   const fetchProfiles = useCallback(async () => {
-    if (!user) return;
     setIsLoading(true);
     try {
-      const userProfiles = await getSkillProfiles(user.uid);
+      const result = await getSkillProfilesAction();
+      if (result.error) {
+        toast({ title: 'Error', description: result.error, variant: 'destructive' });
+        return;
+      }
+      const userProfiles = result.profiles || [];
       setProfiles(userProfiles);
-       if (userProfiles.length > 0) {
+      if (userProfiles.length > 0) {
         // If a profile is already selected, keep it selected, otherwise default to the first one
         const currentSelected = userProfiles.find(p => p.id === selectedProfile?.id);
         setSelectedProfile(currentSelected || userProfiles[0]);
@@ -215,15 +219,15 @@ export default function SkillProfilesPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, toast, selectedProfile?.id]);
+  }, [toast, selectedProfile?.id]);
 
   useEffect(() => {
-    if (user) {
+    if (session) {
       fetchProfiles();
     } else {
       setIsLoading(false);
     }
-  }, [user, fetchProfiles]);
+  }, [session, fetchProfiles]);
 
   const resetFormState = () => {
     setEditingProfile(null);
@@ -256,7 +260,6 @@ export default function SkillProfilesPage() {
 
   const handleFormSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!user) return;
 
     const finalLinks = links.filter(link => link.url.trim() !== '');
     for (const link of finalLinks) {
@@ -276,38 +279,40 @@ export default function SkillProfilesPage() {
         links: finalLinks,
         tone,
         length,
-    }
+    };
 
     setIsSaving(true);
     try {
       if (editingProfile) {
-        await updateSkillProfile(user.uid, editingProfile.id, profileData);
-        toast({ title: 'Success', description: 'Profile updated.' });
+        const result = await updateSkillProfileAction(editingProfile.id, profileData);
+        if (result.error) throw new Error(result.error);
+        toast({ variant: "success",  title: 'Success', description: 'Profile updated.' });
       } else {
-        await addSkillProfile(user.uid, profileData as Omit<SkillProfile, 'id' | 'createdAt'>);
-        toast({ title: 'Success', description: 'Profile created.' });
+        const result = await addSkillProfileAction(profileData as Omit<SkillProfile, 'id' | 'createdAt'>);
+        if (result.error) throw new Error(result.error);
+        toast({ variant: "success",  title: 'Success', description: 'Profile created.' });
       }
       setIsFormOpen(false);
       resetFormState();
       await fetchProfiles();
-    } catch (error) {
-      toast({ title: 'Error', description: `Failed to ${editingProfile ? 'update' : 'create'} profile.`, variant: 'destructive' });
+    } catch (error: any) {
+      toast({ title: 'Error', description: error.message || `Failed to ${editingProfile ? 'update' : 'create'} profile.`, variant: 'destructive' });
     } finally {
       setIsSaving(false);
     }
   };
 
   const handleDeleteProfile = async (profileId: string) => {
-    if (!user) return;
     try {
-      await deleteSkillProfile(user.uid, profileId);
-      toast({ title: "Profile Deleted", description: "The skill profile has been removed." });
+      const result = await deleteSkillProfileAction(profileId);
+      if (result.error) throw new Error(result.error);
+      toast({ variant: "success",  title: "Profile Deleted", description: "The skill profile has been removed." });
       if (selectedProfile?.id === profileId) {
         setSelectedProfile(profiles.length > 1 ? profiles.filter(p => p.id !== profileId)[0] : null);
       }
       fetchProfiles();
-    } catch (error) {
-      toast({ title: "Error", description: "Failed to delete profile.", variant: "destructive" });
+    } catch (error: any) {
+      toast({ title: "Error", description: error.message || "Failed to delete profile.", variant: "destructive" });
     }
   };
 

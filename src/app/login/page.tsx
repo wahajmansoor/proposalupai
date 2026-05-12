@@ -10,10 +10,7 @@ import { Label } from '@/components/ui/label';
 import { ProposalUpLogos, GoogleIcon, ProposalUpLogoLight } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft } from 'lucide-react';
-import { getGoogleAuthUrl } from '@/app/lib/actions';
-import { useAuth } from '@/context/auth-context';
-import { signInWithEmailAndPassword } from 'firebase/auth';
-import { auth } from '@/lib/firebase/config';
+import { signIn, useSession } from 'next-auth/react';
 import { Checkbox } from '@/components/ui/checkbox';
 import { BgPattern } from '@/components/bg-pattern';
 import { ThemeToggle } from '@/components/theme-toggle';
@@ -21,7 +18,10 @@ import { ThemeToggle } from '@/components/theme-toggle';
 export default function LoginPage() {
   const router = useRouter();
   const { toast } = useToast();
-  const { user, loading } = useAuth();
+  const { data: session, status } = useSession();
+  const loading = status === "loading";
+  const user = session?.user;
+  
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -33,54 +33,17 @@ export default function LoginPage() {
     }
   }, [user, loading, router]);
   
-  useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) {
-        return;
-      }
-      
-      const { type, error, details, redirectPath } = event.data;
-      if (type === 'auth-success') {
-          toast({
-            title: 'Successfully signed in!',
-            description: "Welcome back! We're redirecting you now.",
-          });
-          // The popup will close itself, the parent window just needs to redirect.
-          router.push(redirectPath || '/dashboard');
-          router.refresh();
-      } else if (type === 'auth-error') {
-          toast({
-              title: `Google Sign-In Failed: ${error}`,
-              description: details || 'An unexpected error occurred.',
-              variant: 'destructive',
-          });
-      }
-      setIsGoogleLoading(false);
-    };
-
-    window.addEventListener('message', handleMessage);
-
-    return () => {
-      window.removeEventListener('message', handleMessage);
-    };
-  }, [router, toast]);
-
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     try {
-      const googleAuthUrl = await getGoogleAuthUrl(null);
-      const width = 800;
-      const height = 700;
-      const left = (window.screen.width - width) / 2;
-      const top = (window.screen.height - height) / 2;
-      window.open(googleAuthUrl, 'google-signin', `width=${width},height=${height},left=${left},top=${top}`);
+      await signIn('google', { callbackUrl: '/dashboard' });
     } catch (error: any) {
       toast({
         title: 'Google Sign-In Failed',
         description: "Could not initiate Google Sign-In. Please try again.",
         variant: 'destructive',
       });
-       setIsGoogleLoading(false);
+      setIsGoogleLoading(false);
     }
   };
 
@@ -92,32 +55,27 @@ export default function LoginPage() {
     }
     setIsLoading(true);
     try {
-      // Step 1: Sign in on the client
-      const userCredential = await signInWithEmailAndPassword(auth, email, password);
-      
-      // Step 2: Get the ID token from the signed-in user
-      const idToken = await userCredential.user.getIdToken();
-
-      // Step 3: Send the ID token to the server to create a session cookie
-      await fetch('/api/auth/session', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken }),
+      const res = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
       });
       
-      toast({ title: 'Login Successful', description: 'Welcome back!' });
-      router.push('/dashboard');
-
-    } catch (error: any) {
-      let errorMessage = 'An unexpected error occurred.';
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        errorMessage = 'Invalid email or password. Please try again.';
+      if (res?.error) {
+         toast({
+          title: 'Login Failed',
+          description: "Invalid email or password. Please try again.",
+          variant: 'destructive',
+        });
       } else {
-        errorMessage = error.message;
+        toast({ variant: "success",  title: 'Login Successful', description: 'Welcome back!' });
+        router.push('/dashboard');
+        router.refresh();
       }
-      toast({
+    } catch (error: any) {
+       toast({
         title: 'Login Failed',
-        description: errorMessage,
+        description: "An unexpected error occurred.",
         variant: 'destructive',
       });
     } finally {

@@ -10,7 +10,7 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ArrowRight } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { CountryStats } from "./country-stats";
+
 
 function getInitials(name: string | null | undefined) {
   if (!name) return "U";
@@ -22,35 +22,35 @@ function getInitials(name: string | null | undefined) {
 }
 
 function SubscriptionBadge({ status }: { status: string | null }) {
-    if (!status || status === 'N/A' || status === 'No Record') {
-        return <Badge variant="secondary">{status || 'Unknown'}</Badge>;
-    }
-    const lowerStatus = status.toLowerCase();
-    
-    let statusText = status.charAt(0).toUpperCase() + status.slice(1);
-    if (lowerStatus === 'past_due' || lowerStatus === 'unpaid') {
-      statusText = 'Payment Due';
-    }
+  if (!status || status === 'N/A' || status === 'No Record') {
+    return <Badge variant="secondary">{status || 'Unknown'}</Badge>;
+  }
+  const lowerStatus = status.toLowerCase();
 
-    return (
-        <Badge
-            variant={cn({
-                "default": lowerStatus === 'active',
-                "trial": lowerStatus === 'trialing',
-                "warning": lowerStatus === 'past_due' || lowerStatus === 'unpaid',
-                "destructive": lowerStatus === 'canceled',
-                "secondary": !['active', 'trialing', 'past_due', 'unpaid', 'canceled'].includes(lowerStatus)
-            }) as "default" | "destructive" | "secondary" | "warning" | "trial"}
-        >
-            {statusText}
-        </Badge>
-    );
+  let statusText = status.charAt(0).toUpperCase() + status.slice(1);
+  if (lowerStatus === 'past_due' || lowerStatus === 'unpaid') {
+    statusText = 'Payment Due';
+  }
+
+  return (
+    <Badge
+      variant={cn({
+        "default": lowerStatus === 'active',
+        "trial": lowerStatus === 'trialing',
+        "warning": lowerStatus === 'past_due' || lowerStatus === 'unpaid',
+        "destructive": lowerStatus === 'canceled',
+        "secondary": !['active', 'trialing', 'past_due', 'unpaid', 'canceled'].includes(lowerStatus)
+      }) as "default" | "destructive" | "secondary" | "warning" | "trial"}
+    >
+      {statusText}
+    </Badge>
+  );
 }
 
 export default async function AdminDashboardPage() {
   let users: AppUser[] = [];
   let fetchError: string | null = null;
-  
+
   try {
     users = await getUsers();
   } catch (error: any) {
@@ -65,13 +65,13 @@ export default async function AdminDashboardPage() {
     .filter(u => u.createdAt)
     .sort((a, b) => new Date(b.createdAt!).getTime() - new Date(a.createdAt!).getTime())
     .slice(0, 5);
-    
+
   const countryData = users.reduce((acc, user) => {
     if (user.country) {
-        if (!acc[user.country.code]) {
-            acc[user.country.code] = { name: user.country.name, count: 0 };
-        }
-        acc[user.country.code].count++;
+      if (!acc[user.country.code]) {
+        acc[user.country.code] = { name: user.country.name, count: 0 };
+      }
+      acc[user.country.code].count++;
     }
     return acc;
   }, {} as Record<string, { name: string, count: number }>);
@@ -82,16 +82,16 @@ export default async function AdminDashboardPage() {
 
   if (fetchError) {
     return (
-        <div className="flex items-center justify-center rounded-lg border border-dashed shadow-sm h-[80vh]">
-            <div className="flex flex-col items-center gap-1 text-center">
-                <h3 className="text-2xl font-bold tracking-tight text-destructive">
-                    Error Fetching Data
-                </h3>
-                <p className="text-sm text-muted-foreground">
-                    {fetchError}
-                </p>
-            </div>
+      <div className="flex items-center justify-center rounded-lg border border-dashed shadow-sm h-[80vh]">
+        <div className="flex flex-col items-center gap-1 text-center">
+          <h3 className="text-2xl font-bold tracking-tight text-destructive">
+            Error Fetching Data
+          </h3>
+          <p className="text-sm text-muted-foreground">
+            {fetchError}
+          </p>
         </div>
+      </div>
     )
   }
 
@@ -100,7 +100,7 @@ export default async function AdminDashboardPage() {
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Dashboard</h1>
       </div>
-      
+
       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-3">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -134,70 +134,81 @@ export default async function AdminDashboardPage() {
         </Card>
       </div>
 
-      <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-5">
-        <Card className="lg:col-span-3">
-            <CardHeader className="flex flex-row items-center justify-between">
-                <div>
-                    <CardTitle>Recent Signups</CardTitle>
-                    <CardDescription className="text-sm text-muted-foreground pt-1">The latest users to join your application.</CardDescription>
-                </div>
-                <Button asChild variant="outline" size="sm">
-                    <Link href="/admin-portal/users">
-                        View All Users <ArrowRight className="ml-2 h-4 w-4" />
-                    </Link>
-                </Button>
-            </CardHeader>
-            <CardContent>
+      <div className="grid gap-6">
+        <Card className="lg:col-span-5">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <div>
+              <CardTitle>Recent Signups</CardTitle>
+              <CardDescription className="text-sm text-muted-foreground pt-1">The latest users to join your application.</CardDescription>
+            </div>
+            <Button asChild variant="outline" size="sm">
+              <Link href="/admin-portal/users">
+                View All Users <ArrowRight className="ml-2 h-4 w-4" />
+              </Link>
+            </Button>
+          </CardHeader>
+          <CardContent>
             {recentUsers.length > 0 ? (
-                <Table>
-                    <TableHeader>
-                        <TableRow>
-                            <TableHead>User</TableHead>
-                            <TableHead>Email</TableHead>
-                            <TableHead>Plan</TableHead>
-                            <TableHead>Status</TableHead>
-                            <TableHead className="text-right">Time</TableHead>
-                        </TableRow>
-                    </TableHeader>
-                    <TableBody>
-                        {recentUsers.map(user => (
-                            <TableRow key={user.id}>
-                                <TableCell>
-                                    <div className="flex items-center gap-3">
-                                        <Avatar className="h-9 w-9">
-                                            <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
-                                        </Avatar>
-                                        <div className="font-medium">{user.name || "N/A"}</div>
-                                    </div>
-                                </TableCell>
-                                <TableCell>{user.email}</TableCell>
-                                <TableCell>
-                                    {user.subscriptionInterval ? (
-                                        <Badge variant="outline">
-                                            Pro {user.subscriptionInterval === 'month' ? 'Monthly' : 'Yearly'}
-                                        </Badge>
-                                    ) : (
-                                        <Badge variant="outline">N/A</Badge>
-                                    )}
-                                </TableCell>
-                                <TableCell>
-                                    <SubscriptionBadge status={user.subscriptionStatus} />
-                                </TableCell>
-                                <TableCell className="text-right">
-                                    {user.createdAt ? formatDistanceToNow(new Date(user.createdAt), { addSuffix: true }) : 'N/A'}
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                    </TableBody>
-                </Table>
-                ) : (
-                    <div className="text-center p-8 text-muted-foreground">
-                        No recent user signups.
-                    </div>
-                )}
-            </CardContent>
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>User</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Plan</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Time</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {recentUsers.map(user => (
+                    <TableRow key={user.id}>
+                      <TableCell>
+                        <div className="flex items-center gap-3">
+                          <Avatar className="h-9 w-9">
+                            <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
+                          </Avatar>
+                          <div className="flex flex-col">
+                            <div className="font-medium">{user.name || "N/A"}</div>
+                            {user.country && (
+                              <div className="flex items-center gap-1.5 text-[11px] text-muted-foreground mt-0.5">
+                                <img
+                                  src={`https://flag.vercel.app/s/${user.country.code}.svg`}
+                                  alt=""
+                                  className="h-2.5 w-4 rounded-[1px] object-cover"
+                                />
+                                <span>{user.country.name}</span>
+                              </div>
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{user.email}</TableCell>
+                      <TableCell>
+                        {user.subscriptionInterval ? (
+                          <Badge variant="outline">
+                            Pro {user.subscriptionInterval === 'month' ? 'Monthly' : 'Yearly'}
+                          </Badge>
+                        ) : (
+                          <Badge variant="outline">N/A</Badge>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <SubscriptionBadge status={user.subscriptionStatus} />
+                      </TableCell>
+                      <TableCell className="text-right">
+                        {user.createdAt ? formatDistanceToNow(new Date(user.createdAt), { addSuffix: true }) : 'N/A'}
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="text-center p-8 text-muted-foreground">
+                No recent user signups.
+              </div>
+            )}
+          </CardContent>
         </Card>
-        <CountryStats countries={sortedCountries} />
       </div>
     </div>
   );

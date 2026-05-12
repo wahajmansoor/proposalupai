@@ -1,8 +1,7 @@
-
 // src/app/dashboard/dashboard-client.tsx
 "use client";
 
-import { useAuth } from "@/context/auth-context";
+import { useSession } from "next-auth/react";
 import { useRouter, usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import { ProposalUpLogos } from '@/components/icons';
@@ -15,27 +14,28 @@ export function DashboardClient({
 }: {
   children: React.ReactNode;
 }) {
-  const { user, userProfile, loading: authLoading } = useAuth();
+  const { data: session, status } = useSession();
+  const authLoading = status === "loading";
+  const user = session?.user;
+  const userProfile = user?.profile;
   const router = useRouter();
   const pathname = usePathname();
   const [isAuthorized, setIsAuthorized] = useState(false);
 
   useEffect(() => {
     if (authLoading) {
-      return; // 1. Wait for auth state and profile to finish loading.
+      return; // 1. Wait for auth state to finish loading.
     }
 
-    if (!user || !userProfile) {
-      // 2. If, after loading, there's no user or profile, redirect to login.
-      // This is the critical check that waits for the Firestore fetch to complete.
+    if (!user) {
+      // 2. If no user after loading, redirect to login.
       router.replace("/login"); 
       return;
     }
     
-    // --- From here, we know user and userProfile are loaded ---
+    // --- From here, we know user is loaded ---
 
-    const status = userProfile.subscriptionStatus;
-    const isAllowedOnboarding = pathname === '/onboarding';
+    const subscriptionStatus = userProfile?.subscriptionStatus;
     const isAllowedPricing = pathname === '/dashboard/pricing';
     const isAllowedRoot = pathname === '/';
     
@@ -44,24 +44,9 @@ export function DashboardClient({
         return;
     }
     
-    // 4. New user who has not selected a plan yet (onboarding incomplete)
-    if (userProfile.onboardingComplete === false) {
-        if (!isAllowedOnboarding) {
-            router.replace('/onboarding');
-            return;
-        }
-    } else {
-        // User has completed onboarding, they should not be on the onboarding page
-        if (isAllowedOnboarding) {
-            router.replace('/dashboard');
-            return;
-        }
-    }
-    
-    // 5. User has completed onboarding but has a non-active subscription status
-    // (e.g., 'canceled', 'past_due'). They should be on the pricing/subscription page.
-    const isActiveOrTrial = status === 'active' || status === 'trialing';
-    if (userProfile.onboardingComplete && !isActiveOrTrial) {
+    // User has completed onboarding via NextAuth signup, route them based on subscription
+    const isActiveOrTrial = subscriptionStatus === 'active' || subscriptionStatus === 'trialing';
+    if (userProfile && !isActiveOrTrial) {
         if (!isAllowedPricing && pathname !== '/subscription') {
             router.replace('/dashboard/pricing');
             return;
@@ -73,17 +58,16 @@ export function DashboardClient({
     
   }, [user, userProfile, authLoading, router, pathname]);
   
-  if (authLoading || !isAuthorized) {
+  // Only show the loading screen on initial mount before we have a session or authorization.
+  // If we already have a user, do not unmount the dashboard during background session updates!
+  const isInitialLoading = authLoading && !user;
+
+  if (isInitialLoading || !isAuthorized) {
     return (
       <div className="flex items-center justify-center min-h-screen bg-background">
         <ProposalUpLogos className="h-24 w-24 animate-pulse text-primary" />
       </div>
     );
-  }
-  
-  // Do not render the main layout for the onboarding page
-  if (pathname === '/onboarding') {
-    return <main>{children}</main>;
   }
 
   return (

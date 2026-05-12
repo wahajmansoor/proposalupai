@@ -6,6 +6,7 @@ const nextConfig = {
       maxDuration: 120, // Increase timeout to 2 minutes for AI operations
     },
   },
+  output: 'standalone',
   typescript: {
     ignoreBuildErrors: true,
   },

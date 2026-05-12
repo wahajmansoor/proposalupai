@@ -4,14 +4,17 @@ import { ProposalUpLogo } from '@/components/icons';
 import { UserNav } from '@/components/user-nav';
 import Link from 'next/link';
 import { Button } from './ui/button';
-import { useAuth } from '@/context/auth-context';
+import { useSession } from 'next-auth/react';
 import { Sparkles } from 'lucide-react';
 import { ThemeToggle } from './theme-toggle';
 import { SidebarTrigger } from './ui/sidebar';
 import { CreditsButton } from './credits-button';
 
 export function Header() {
-  const { user, userProfile, loading } = useAuth();
+  const { data: session, status } = useSession();
+  const loading = status === "loading";
+  const user = session?.user;
+  const userProfile = user?.profile;
 
   const canSeeCredits = user && userProfile?.subscriptionStatus && userProfile.subscriptionStatus !== 'N/A' && userProfile.subscriptionStatus !== null;
 

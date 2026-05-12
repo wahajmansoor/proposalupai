@@ -1,10 +1,9 @@
-
 // src/components/sidebar.tsx
 "use client";
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { useAuth } from "@/context/auth-context";
+import { signOut } from "next-auth/react";
 import { HugeiconsIcon } from '@hugeicons/react';
 import { FileEditIcon, BookmarkIcon, Profile02Icon, CreditCardIcon, Logout01Icon, CreditCardValidationIcon, UserSettings01Icon } from "@hugeicons/core-free-icons";
 import {
@@ -30,7 +29,6 @@ const navItems = [
 function SidebarNav() {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
-  const { handleLogout } = useAuth();
   
   const handleLinkClick = () => {
     setOpenMobile(false);
@@ -92,7 +90,9 @@ function SidebarNav() {
             </SidebarMenuItem>
              <SidebarMenuItem>
               <SidebarMenuButton
-                  onClick={() => handleLogout()}
+                  onClick={async () => {
+                    await signOut({ redirect: true, callbackUrl: '/login' });
+                  }}
                   tooltip="Logout"
                   className="w-full"
                 >

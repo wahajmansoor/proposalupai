@@ -3,14 +3,14 @@
 "use client";
 
 import { useState, useEffect, useCallback } from 'react';
-import { useAuth } from '@/context/auth-context';
+import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
-import { Loader2, Trash2, Clipboard, FileText, Edit, Save, X } from 'lucide-react';
+import { Loader2, Trash2, Clipboard, FileText, Edit, Save, X, AlertCircle } from 'lucide-react';
 import type { SavedProposal } from '@/app/lib/types';
-import { getSavedProposals, deleteSavedProposal, updateSavedProposal } from '@/lib/firebase/proposals';
+import { getSavedProposalsAction, deleteSavedProposalAction, updateSavedProposalAction } from '@/lib/proposal-actions';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -27,7 +27,8 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 
 export default function SavedProposalsPage() {
-  const { user, loading: authLoading } = useAuth();
+  const { data: session, status } = useSession();
+  const authLoading = status === 'loading';
   const { toast } = useToast();
   const router = useRouter();
 
@@ -43,10 +44,14 @@ export default function SavedProposalsPage() {
 
 
   const fetchProposals = useCallback(async () => {
-    if (!user) return;
     setIsLoading(true);
     try {
-      const userProposals = await getSavedProposals(user.uid);
+      const result = await getSavedProposalsAction();
+      if (result.error) {
+        toast({ title: 'Error', description: result.error, variant: 'destructive' });
+        return;
+      }
+      const userProposals = result.proposals || [];
       setProposals(userProposals);
       setFilteredProposals(userProposals);
     } catch (error) {
@@ -54,15 +59,15 @@ export default function SavedProposalsPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [user, toast]);
+  }, [toast]);
 
   useEffect(() => {
-    if (user) {
+    if (session) {
       fetchProposals();
     } else if (!authLoading) {
       setIsLoading(false);
     }
-  }, [user, authLoading, fetchProposals]);
+  }, [session, authLoading, fetchProposals]);
 
   useEffect(() => {
     const lowercasedFilter = searchTerm.toLowerCase();
@@ -74,19 +79,19 @@ export default function SavedProposalsPage() {
   }, [searchTerm, proposals]);
 
   const handleDeleteProposal = async (proposalId: string) => {
-    if(!user) return;
     try {
-        await deleteSavedProposal(user.uid, proposalId);
-        toast({ title: "Proposal Deleted", description: "The saved proposal has been removed." });
+        const result = await deleteSavedProposalAction(proposalId);
+        if (result.error) throw new Error(result.error);
+        toast({ variant: "success",  title: "Proposal Deleted", description: "The saved proposal has been removed." });
         fetchProposals();
-    } catch (error) {
-        toast({ title: "Error", description: "Failed to delete proposal.", variant: "destructive"});
+    } catch (error: any) {
+        toast({ title: "Error", description: error.message || "Failed to delete proposal.", variant: "destructive"});
     }
   }
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text);
-    toast({ title: 'Copied!', description: 'Proposal content copied to clipboard.' });
+    toast({ variant: "success",  title: 'Copied!', description: 'Proposal content copied to clipboard.' });
   };
 
   const handleEdit = (proposal: SavedProposal) => {
@@ -102,7 +107,7 @@ export default function SavedProposalsPage() {
   };
 
   const handleSaveEdit = async () => {
-    if (!user || !editingProposalId) return;
+    if (!editingProposalId) return;
 
     if (!editedTitle.trim() || !editedContent.trim()) {
         toast({ title: "Cannot Save", description: "Title and content cannot be empty.", variant: "destructive"});
@@ -111,15 +116,16 @@ export default function SavedProposalsPage() {
 
     setIsSaving(true);
     try {
-        await updateSavedProposal(user.uid, editingProposalId, {
+        const result = await updateSavedProposalAction(editingProposalId, {
             title: editedTitle.trim(),
             content: editedContent.trim(),
         });
-        toast({ title: "Proposal Updated", description: "Your changes have been saved." });
+        if (result.error) throw new Error(result.error);
+        toast({ variant: "success",  title: "Proposal Updated", description: "Your changes have been saved." });
         setEditingProposalId(null);
         fetchProposals();
-    } catch (error) {
-        toast({ title: "Error", description: "Failed to update proposal.", variant: "destructive"});
+    } catch (error: any) {
+        toast({ title: "Error", description: error.message || "Failed to update proposal.", variant: "destructive"});
     } finally {
         setIsSaving(false);
     }
@@ -259,6 +265,10 @@ export default function SavedProposalsPage() {
                             </div>
                         </CardHeader>
                         <CardContent>
+                            <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2 mb-4">
+                              <AlertCircle className="h-3.5 w-3.5 shrink-0" />
+                              <span>AI may make mistakes. Double-check all generated proposals.</span>
+                            </div>
                             <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap border-t pt-4">
                               {proposal.content}
                             </div>

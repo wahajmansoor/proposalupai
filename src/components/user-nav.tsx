@@ -10,13 +10,11 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { useAuth } from '@/context/auth-context';
 import Link from 'next/link';
 import { Skeleton } from './ui/skeleton';
 import { ChevronDown, CreditCard, LogOut, User, Loader2, Star } from 'lucide-react';
-import { createCustomerPortalSession } from '@/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
-import { useState } from 'react';
+import { useSession, signOut } from 'next-auth/react';
 
 import { HugeiconsIcon } from '@hugeicons/react';
 import { Logout01Icon, CreditCardValidationIcon, UserSettings01Icon } from "@hugeicons/core-free-icons";
@@ -24,25 +22,12 @@ import { Badge } from './ui/badge';
 
 
 export function UserNav() {
-  const { user, userProfile, loading, handleLogout } = useAuth();
-  const [isManagingBilling, setIsManagingBilling] = useState(false);
+  const { data: session, status } = useSession();
+  const loading = status === "loading";
+  const user = session?.user;
+  const userProfile = user?.profile;
   const { toast } = useToast();
 
-  const handleManageBilling = async () => {
-    setIsManagingBilling(true);
-    const result = await createCustomerPortalSession();
-    if (result.error) {
-      toast({
-        title: 'Error',
-        description: result.error,
-        variant: 'destructive',
-      });
-    } else if (result.url) {
-      window.location.href = result.url;
-    }
-    setIsManagingBilling(false);
-  };
-  
   if (loading) {
     return (
         <div className="flex items-center gap-2">
@@ -72,8 +57,8 @@ export function UserNav() {
     return name.substring(0, 2).toUpperCase();
   };
   
-  const displayName = userProfile?.displayName || user?.displayName;
-  const photoURL = user.photoURL;
+  const displayName = user.name;
+  const photoURL = user.image;
   const email = user.email;
   const isPremium = userProfile?.subscriptionStatus === 'active';
 
@@ -123,7 +108,7 @@ export function UserNav() {
                   General Profile
               </Link>
            </DropdownMenuItem>
-          {userProfile?.stripeCustomerId && (
+           {userProfile?.paddleCustomerId && (
              <DropdownMenuItem asChild>
                 <Link href="/subscription">
                   <HugeiconsIcon icon={CreditCardValidationIcon} size={24} className="mr-2 h-4 w-4"/>
@@ -133,7 +118,9 @@ export function UserNav() {
           )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={() => handleLogout()}>
+        <DropdownMenuItem onClick={async () => {
+          await signOut({ redirect: true, callbackUrl: '/login' });
+        }}>
           <HugeiconsIcon icon={Logout01Icon} size={24} className="mr-2 h-4 w-4"/>
             Log out
         </DropdownMenuItem>

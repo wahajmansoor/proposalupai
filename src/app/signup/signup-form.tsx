@@ -10,13 +10,8 @@ import { Label } from '@/components/ui/label';
 import { ProposalUpLogos, ProposalUpLogoLight, GoogleIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
 import { Loader2, XCircle, CheckCircle2, ArrowLeft } from 'lucide-react';
-import { getGoogleAuthUrl } from '@/app/lib/actions';
-import { createStripeCustomer } from '@/lib/stripe-actions';
+import { signIn, useSession } from 'next-auth/react';
 import { cn } from '@/lib/utils';
-import { useAuth } from '@/context/auth-context';
-import { createUserWithEmailAndPassword, updateProfile } from 'firebase/auth';
-import { auth, db } from '@/lib/firebase/config';
-import { doc, setDoc, serverTimestamp } from 'firebase/firestore';
 import { BgPattern } from '@/components/bg-pattern';
 import { ThemeToggle } from '@/components/theme-toggle';
 
@@ -33,7 +28,10 @@ export function SignupForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { toast } = useToast();
-  const { user, loading } = useAuth();
+  const { data: session, status } = useSession();
+  const loading = status === "loading";
+  const user = session?.user;
+  
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -71,39 +69,6 @@ export function SignupForm() {
   }, [user, loading, router]);
   
   useEffect(() => {
-    const handleMessage = (event: MessageEvent) => {
-      if (event.origin !== window.location.origin) {
-        return;
-      }
-      
-      const { type, error, details, redirectPath } = event.data;
-      if (type === 'auth-success') {
-          localStorage.removeItem('referralCode');
-          toast({
-            title: 'Successfully signed up!',
-            description: "Welcome! We're redirecting you now.",
-          });
-          router.push(redirectPath || '/dashboard');
-          router.refresh();
-      } else if (type === 'auth-error') {
-          toast({
-              title: `Google Sign-Up Failed: ${error}`,
-              description: details || 'An unexpected error occurred.',
-              variant: 'destructive',
-          });
-      }
-      setIsGoogleLoading(false);
-    };
-
-    window.addEventListener('message', handleMessage);
-
-    return () => {
-      window.removeEventListener('message', handleMessage);
-    };
-  }, [router, toast]);
-
-
-  useEffect(() => {
     setPasswordValidation({
       length: password.length >= 8,
       uppercase: /[A-Z]/.test(password),
@@ -116,20 +81,14 @@ export function SignupForm() {
   const handleGoogleSignIn = async () => {
     setIsGoogleLoading(true);
     try {
-      const storedReferralCode = localStorage.getItem('referralCode');
-      const googleAuthUrl = await getGoogleAuthUrl(storedReferralCode);
-      const width = 800;
-      const height = 700;
-      const left = (window.screen.width - width) / 2;
-      const top = (window.screen.height - height) / 2;
-      window.open(googleAuthUrl, 'google-signin', `width=${width},height=${height},left=${left},top=${top}`);
+      await signIn('google', { callbackUrl: '/dashboard' });
     } catch (error: any) {
       toast({
         title: 'Google Sign-Up Failed',
         description: "Could not initiate Google Sign-Up. Please try again.",
         variant: 'destructive',
       });
-       setIsGoogleLoading(false);
+      setIsGoogleLoading(false);
     }
   };
 
@@ -147,64 +106,36 @@ export function SignupForm() {
     setIsLoading(true);
 
     try {
-      // Step 1: Create user client-side
-      const userCredential = await createUserWithEmailAndPassword(auth, email, password);
-      const newUser = userCredential.user;
-      
-      // Step 2: Update the user's profile with their name
-      await updateProfile(newUser, { displayName: fullName });
-      
-      const storedReferralCode = localStorage.getItem('referralCode');
-
-      // Step 3: Create Stripe customer via a simple server action
-      const stripeResult = await createStripeCustomer({ email, name: fullName, firebaseUID: newUser.uid });
-
-      if (!stripeResult.customerId) {
-        throw new Error(stripeResult.error || 'Failed to create Stripe customer.');
-      }
-
-      // Step 4: Create user document in Firestore directly from the client
-      const userDocRef = doc(db, 'users', newUser.uid);
-      
-      const userData: { [key: string]: any } = {
-        uid: newUser.uid,
-        email: email,
-        displayName: fullName,
-        photoURL: newUser.photoURL || null,
-        createdAt: serverTimestamp(),
-        stripeCustomerId: stripeResult.customerId,
-        proposalCount: 0,
-        subscriptionStatus: null,
-        referralCode: newUser.uid.substring(0, 8),
-        onboardingComplete: false, 
-      };
-
-      if (storedReferralCode) {
-        userData.referredBy = storedReferralCode;
-      }
-      
-      await setDoc(userDocRef, userData);
-      
-      // Step 5: Create the server session
-      const idToken = await newUser.getIdToken();
-      await fetch('/api/auth/session', {
+      // Create user via API
+      const response = await fetch('/api/auth/register', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ idToken }),
+        body: JSON.stringify({ email, password, name: fullName, referralCode }),
       });
+
+      if (!response.ok) {
+         const errorText = await response.text();
+         throw new Error(errorText || 'Failed to register');
+      }
+
+      // Log in after registration
+      const signInRes = await signIn('credentials', {
+        email,
+        password,
+        redirect: false,
+      });
+
+      if (signInRes?.error) {
+         throw new Error("Failed to auto-login after registration.");
+      }
       
       localStorage.removeItem('referralCode');
-      toast({ title: 'Account created successfully!', description: "Welcome to Proposal Up!" });
-      router.push('/onboarding');
+      toast({ variant: "success",  title: 'Account created successfully!', description: "Welcome to Proposal Up!" });
+      router.push('/dashboard?new=true');
+      router.refresh();
 
     } catch (error: any) {
-      let errorMessage = 'An unexpected error occurred.';
-       if (error.code === 'auth/email-already-in-use') {
-        errorMessage = 'This email is already in use by another account.';
-      } else {
-        errorMessage = error.message;
-      }
-      toast({ title: 'Sign Up Failed', description: errorMessage, variant: 'destructive' });
+      toast({ title: 'Sign Up Failed', description: error.message, variant: 'destructive' });
     } finally {
       setIsLoading(false);
     }

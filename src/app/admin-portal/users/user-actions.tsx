@@ -35,25 +35,25 @@ export function UserActions({ user }: { user: AppUser }) {
     setIsDeleting(true);
     const result = await deleteUser(user.id);
     if (result.success) {
-      toast({ title: 'User Deleted', description: 'The user has been successfully removed.' });
+      toast({ variant: "success", title: 'User Deleted', description: 'The user has been successfully removed.' });
       setIsDeleteDialogOpen(false);
     } else {
       toast({ title: 'Error', description: result.error, variant: 'destructive' });
     }
     setIsDeleting(false);
   };
-  
+
   const handleUpdate = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     setIsSaving(true);
     const formData = new FormData(event.currentTarget);
     const result = await updateUser(formData);
-    
+
     if (result.success) {
-        toast({ title: 'User Updated', description: 'User details have been saved.' });
-        setIsEditDialogOpen(false);
+      toast({ variant: "success", title: 'User Updated', description: 'User details have been saved.' });
+      setIsEditDialogOpen(false);
     } else {
-        toast({ title: 'Error', description: result.error, variant: 'destructive' });
+      toast({ title: 'Error', description: result.error, variant: 'destructive' });
     }
     setIsSaving(false);
   }
@@ -63,26 +63,26 @@ export function UserActions({ user }: { user: AppUser }) {
     setIsSavingCredits(true);
     const formData = new FormData(event.currentTarget);
     const result = await updateUserCredits(formData);
-    
+
     if (result.success) {
-        toast({ title: 'Credits Updated', description: "The user's credit balance has been updated." });
-        setIsCreditsDialogOpen(false);
+      toast({ variant: "success", title: 'Credits Updated', description: "The user's credit balance has been updated." });
+      setIsCreditsDialogOpen(false);
     } else {
-        toast({ title: 'Error', description: result.error, variant: 'destructive' });
+      toast({ title: 'Error', description: result.error, variant: 'destructive' });
     }
     setIsSavingCredits(false);
   }
 
 
   const handleManageBilling = async () => {
-    if (!user.stripeCustomerId) {
-      toast({ title: 'No Billing Info', description: "This user doesn't have a Stripe customer ID.", variant: 'destructive' });
+    if (!user.paddleCustomerId) {
+      toast({ title: 'No Billing Info', description: "This user doesn't have a Paddle customer ID.", variant: 'destructive' });
       return;
     }
     setIsManagingBilling(true);
     const formData = new FormData();
-    formData.append('stripeCustomerId', user.stripeCustomerId);
-    
+    formData.append('paddleCustomerId', user.paddleCustomerId);
+
     const result = await createAdminCustomerPortalSession(formData);
     if (result.url) {
       window.open(result.url, '_blank');
@@ -103,7 +103,7 @@ export function UserActions({ user }: { user: AppUser }) {
 
     const result = await sendPasswordResetLink(formData);
     if (result.success) {
-      toast({ title: 'Email Action Simulated', description: `In a real app, a password reset email would be sent to ${user.email}.` });
+      toast({ variant: "success", title: 'Email Action Simulated', description: `In a real app, a password reset email would be sent to ${user.email}.` });
     } else {
       toast({ title: 'Error', description: result.error, variant: 'destructive' });
     }
@@ -129,7 +129,7 @@ export function UserActions({ user }: { user: AppUser }) {
             <Star className="mr-2 h-4 w-4" />
             Manage Credits
           </DropdownMenuItem>
-           <DropdownMenuItem onSelect={handleManageBilling} disabled={!user.stripeCustomerId || isManagingBilling}>
+          <DropdownMenuItem onSelect={handleManageBilling} disabled={!user.paddleCustomerId || isManagingBilling}>
             {isManagingBilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
             Manage Billing
           </DropdownMenuItem>
@@ -165,59 +165,59 @@ export function UserActions({ user }: { user: AppUser }) {
 
       <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
         <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Edit User</DialogTitle>
-                <DialogDescription>Update the details for {user.name || user.email}.</DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleUpdate}>
-                <input type="hidden" name="id" value={user.id} />
-                <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="name" className="text-right">Name</Label>
-                        <Input id="name" name="name" defaultValue={user.name || ''} className="col-span-3" />
-                    </div>
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="email" className="text-right">Email</Label>
-                        <Input id="email" name="email" type="email" defaultValue={user.email || ''} className="col-span-3" />
-                    </div>
-                </div>
-                 <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
-                    <Button type="submit" disabled={isSaving}>
-                        {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Save Changes
-                    </Button>
-                </DialogFooter>
-            </form>
+          <DialogHeader>
+            <DialogTitle>Edit User</DialogTitle>
+            <DialogDescription>Update the details for {user.name || user.email}.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleUpdate}>
+            <input type="hidden" name="id" value={user.id} />
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="name" className="text-right">Name</Label>
+                <Input id="name" name="name" defaultValue={user.name || ''} className="col-span-3" />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="isFeatured" className="text-right">Featured</Label>
+                <input id="isFeatured" name="isFeatured" type="checkbox" defaultChecked={user.isFeatured} className="col-span-3" />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsEditDialogOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={isSaving}>
+                {isSaving && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Save Changes
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
-      
-       <Dialog open={isCreditsDialogOpen} onOpenChange={setIsCreditsDialogOpen}>
+
+      <Dialog open={isCreditsDialogOpen} onOpenChange={setIsCreditsDialogOpen}>
         <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Manage Credits</DialogTitle>
-                <DialogDescription>Adjust the credit balance for {user.name || user.email}.</DialogDescription>
-            </DialogHeader>
-            <form onSubmit={handleCreditsUpdate}>
-                <input type="hidden" name="userId" value={user.id} />
-                <div className="grid gap-4 py-4">
-                    <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="credits" className="text-right">Credits</Label>
-                        <Input id="credits" name="credits" type="number" defaultValue={user.proposalCredits || 0} className="col-span-3" />
-                    </div>
-                     <div className="grid grid-cols-4 items-center gap-4">
-                        <Label htmlFor="reason" className="text-right">Reason</Label>
-                        <Input id="reason" name="reason" type="text" placeholder="e.g., Admin grant" className="col-span-3" required />
-                    </div>
-                </div>
-                 <DialogFooter>
-                    <Button type="button" variant="outline" onClick={() => setIsCreditsDialogOpen(false)}>Cancel</Button>
-                    <Button type="submit" disabled={isSavingCredits}>
-                        {isSavingCredits && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Update Credits
-                    </Button>
-                </DialogFooter>
-            </form>
+          <DialogHeader>
+            <DialogTitle>Manage Credits</DialogTitle>
+            <DialogDescription>Adjust the credit balance for {user.name || user.email}.</DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleCreditsUpdate}>
+            <input type="hidden" name="userId" value={user.id} />
+            <div className="grid gap-4 py-4">
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="credits" className="text-right">Credits</Label>
+                <Input id="credits" name="credits" type="number" defaultValue={user.proposalCredits || 0} className="col-span-3" />
+              </div>
+              <div className="grid grid-cols-4 items-center gap-4">
+                <Label htmlFor="reason" className="text-right">Reason</Label>
+                <Input id="reason" name="reason" type="text" placeholder="e.g., Admin grant" className="col-span-3" required />
+              </div>
+            </div>
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setIsCreditsDialogOpen(false)}>Cancel</Button>
+              <Button type="submit" disabled={isSavingCredits}>
+                {isSavingCredits && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Update Credits
+              </Button>
+            </DialogFooter>
+          </form>
         </DialogContent>
       </Dialog>
 

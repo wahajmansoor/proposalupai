@@ -43,7 +43,12 @@ export async function suggestOpeningStrategy(
 
   Analyze the provided job details and the list of available strategies. Think about what would grab this specific client's attention. Is the job post formal or informal? Does it mention a company milestone? Is there a clear, urgent problem?
 
-  Your goal is to choose the strategy ID that will create the most compelling and tailored opening hook, avoiding generic choices unless they are truly the best fit.
+  Your goal is to choose the strategy ID that will create the most compelling and tailored opening hook. 
+  
+  CRITICAL INSTRUCTION: DO NOT default to generic strategies like 'none' or 'extensiveExperience'. You must actively look for reasons to use more creative and engaging strategies like 'strategicQuestions', 'helpWithTask', 'freeSample', 'similarProject', or 'congratulations'. For example:
+  - If the job is very brief or lacks details, 'strategicQuestions' is an excellent way to engage the client.
+  - If the client describes a very specific pain point, 'helpWithTask' or 'freeSample' are highly effective.
+  - If the client mentions a new launch, use 'congratulations'.
 
   Project Title: ${input.projectTitle}
   Summary: ${input.summary}
@@ -60,7 +65,7 @@ export async function suggestOpeningStrategy(
     const completion = await openai.chat.completions.create({
         model: 'gpt-4o-mini',
         messages: [{ role: 'user', content: prompt }],
-        temperature: 0.7,
+        temperature: 0.9,
         tools: [
             {
                 type: 'function',

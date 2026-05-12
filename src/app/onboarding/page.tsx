@@ -4,15 +4,16 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Check, Loader2 } from 'lucide-react';
-import { handlePlanChange } from '@/lib/stripe-actions';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/context/auth-context';
+import { useSession, signOut } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { ProposalUpLogos } from '@/components/icons';
 import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { PADDLE_PRICES } from '@/lib/paddle/constants';
+import PaddleCheckout from '@/components/paddle-checkout';
 
 
 const plans = {
@@ -85,13 +86,19 @@ function PlanRow({
 
 function PlanDetailsCard({ 
     plan, 
-    isSubmitting, 
-    onSubmit
+    userId,
+    userEmail,
+    onSuccess
 }: { 
     plan: typeof plans.monthly | typeof plans.yearly;
-    isSubmitting: boolean;
-    onSubmit: () => void;
+    userId: string;
+    userEmail: string;
+    onSuccess?: () => void;
 }) {
+    const { toast } = useToast();
+    const router = useRouter();
+    const priceId = plan.interval === 'monthly' ? PADDLE_PRICES.monthly : PADDLE_PRICES.yearly;
+
     return (
         <div className="bg-white/80 dark:bg-slate-900/80 text-card-foreground rounded-xl shadow-2xl border w-full">
             <div className="p-6">
@@ -128,15 +135,17 @@ function PlanDetailsCard({
                     ))}
                 </ul>
                  <div className="flex flex-col-reverse sm:flex-row justify-start items-center sm:items-end my-4 gap-4">
-                    <Button 
-                        size="lg" 
-                        className="text-base font-medium w-full sm:w-auto"
-                        onClick={onSubmit}
-                        disabled={isSubmitting}
-                    >
-                        {isSubmitting ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : null}
-                        Start a 2-Day Free Trial
-                    </Button>
+                    <PaddleCheckout 
+                        priceId={priceId}
+                        userId={userId}
+                        userEmail={userEmail}
+                        buttonText="Start a 2-Day Free Trial"
+                        className="w-full sm:w-auto inline-flex items-center justify-center rounded-md text-base font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-8"
+                        onSuccess={() => {
+                            toast({ variant: "success",  title: 'Success!', description: 'Checkout completed. Welcome aboard!' });
+                            if (onSuccess) onSuccess();
+                        }}
+                    />
                 </div>
             </div>
         </div>
@@ -144,37 +153,10 @@ function PlanDetailsCard({
 }
 
 export default function OnboardingPage() {
-  const { user, userProfile, handleLogout } = useAuth();
+  const { data: session, update } = useSession();
+  const user = session?.user;
   const router = useRouter();
-  const { toast } = useToast();
-  const [isSubmitting, setIsSubmitting] = useState(false);
   const [selectedInterval, setSelectedInterval] = useState<'monthly' | 'yearly'>('monthly');
-
-  const handleSelectPlan = async () => {
-    if (!user || !userProfile) {
-        toast({ title: "Not Authenticated", description: "Please log in to subscribe.", variant: "destructive" });
-        router.push('/login');
-        return;
-    }
-    
-    setIsSubmitting(true);
-    
-    const formData = new FormData();
-    formData.append('interval', selectedInterval);
-    
-    const result = await handlePlanChange(formData);
-
-    if (result?.error) {
-      toast({ title: 'An error occurred', description: result.error, variant: "destructive" });
-      setIsSubmitting(false);
-    } else if (result?.redirectUrl) {
-      router.push(result.redirectUrl);
-    } else if (result?.success) {
-        toast({ title: 'Success!', description: result.message || 'Your plan has been updated.' });
-        setTimeout(() => router.refresh(), 3000); 
-        setIsSubmitting(false);
-    }
-  };
 
   const selectedPlanDetails = plans[selectedInterval];
 
@@ -192,7 +174,9 @@ export default function OnboardingPage() {
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={handleLogout}
+                      onClick={async () => {
+                        await signOut({ redirect: true, callbackUrl: '/login' });
+                      }}
                       className="rounded-full flex items-center justify-center p-2 text-foreground hover:text-foreground"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor"><path d="M15.5 8.04045C15.4588 6.87972 15.3216 6.15451 14.8645 5.58671C14.2114 4.77536 13.0944 4.52064 10.8605 4.01121L9.85915 3.78286C6.4649 3.00882 4.76777 2.6218 3.63388 3.51317C2.5 4.40454 2.5 6.1257 2.5 9.56803V14.432C2.5 17.8743 2.5 19.5955 3.63388 20.4868C4.76777 21.3782 6.4649 20.9912 9.85915 20.2171L10.8605 19.9888C13.0944 19.4794 14.2114 19.2246 14.8645 18.4133C15.3216 17.8455 15.4588 17.1203 15.5 15.9595" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5"></path><path d="M18.5 9.01172C18.5 9.01172 21.5 11.2212 21.5 12.0117C21.5 12.8023 18.5 15.0117 18.5 15.0117M21 12.0117H8.49998" stroke="currentColor" strokeLinecap="round" strokeLinejoin="round" strokeWidth="1.5"></path></svg>
@@ -232,8 +216,13 @@ export default function OnboardingPage() {
             <div className="flex justify-center">
                 <PlanDetailsCard
                     plan={selectedPlanDetails}
-                    isSubmitting={isSubmitting}
-                    onSubmit={handleSelectPlan}
+                    userId={user?.id || ''}
+                    userEmail={user?.email || ''}
+                    onSuccess={async () => {
+                      setTimeout(() => {
+                        window.location.href = `/dashboard?subscribed=true&interval=${selectedInterval}`;
+                      }, 2000);
+                    }}
                 />
             </div>
         </div>

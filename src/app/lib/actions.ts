@@ -2,15 +2,13 @@
 'use server';
 
 import { z } from 'zod';
-import { OAuth2Client } from 'google-auth-library';
 import { headers } from 'next/headers';
-import { getCurrentUser, incrementProposalCount, decrementProposalCredits } from '@/lib/firebase/server-auth';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/authOptions';
+import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
-import { adminDb } from '@/lib/firebase/admin';
 
 import type { PortfolioLink } from './types';
-import { getCountryFromIp } from '@/app/lib/location';
-import { ai } from '@/ai/genkit';
 import type {
   AnalyzeJobForProposalInput,
   AnalyzeJobForProposalOutput,
@@ -51,7 +49,7 @@ import type {
   SuggestWordLimitOutput,
 } from '@/ai/flows/suggest-word-limit';
 import { suggestWordLimit } from '@/ai/flows/suggest-word-limit';
-import { stripe } from '@/lib/stripe/config';
+import { paddle } from '@/lib/paddle/config';
 
 
 export interface InvoiceDetails {
@@ -64,10 +62,31 @@ export interface InvoiceDetails {
 }
 
 export interface CreditHistoryItem {
-    id: string;
-    amount: number;
-    reason: string;
-    createdAt: string;
+  id: string;
+  amount: number;
+  reason: string;
+  createdAt: string;
+}
+
+// Helper: get authenticated user + their DB record
+async function getAuthenticatedUser() {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) return null;
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: {
+      id: true,
+      name: true,
+      email: true,
+      subscriptionStatus: true,
+      proposalCount: true,
+      proposalCredits: true,
+      paddleCustomerId: true,
+      paddleSubscriptionId: true,
+    }
+  });
+  return user;
 }
 
 const projectDetailsSchema = z.object({
@@ -100,46 +119,45 @@ const analyzeAndSuggestSchema = z.object({
 });
 
 export async function analyzeAndSuggestAction(input: z.infer<typeof analyzeAndSuggestSchema>) {
-    const currentUser = await getCurrentUser();
-    if (!currentUser || !currentUser.userDoc) {
-      return { error: 'You must be logged in to use this feature.' };
-    }
+  const user = await getAuthenticatedUser();
+  if (!user) {
+    return { error: 'You must be logged in to use this feature.' };
+  }
 
-    const { userDoc } = currentUser;
-    const { subscriptionStatus, proposalCount = 0 } = userDoc;
+  const { subscriptionStatus, proposalCount = 0 } = user;
 
-    if (subscriptionStatus === 'trialing' && proposalCount >= 5) {
-      return { error: 'You have reached your trial limit of 5 proposals. Please upgrade to continue.' };
-    }
+  if (subscriptionStatus === 'trialing' && proposalCount >= 5) {
+    return { error: 'You have reached your trial limit of 5 proposals. Please upgrade to continue.' };
+  }
 
-    const validatedFields = analyzeAndSuggestSchema.safeParse(input);
-    if (!validatedFields.success) {
-        return { error: 'Invalid input for analysis and suggestions.' };
-    }
-    try {
-        const [templateSuggestion, strategySuggestion, wordLimitSuggestion] = await Promise.all([
-          suggestProposalTemplate(validatedFields.data.projectDetails),
-          suggestOpeningStrategy({
-            ...validatedFields.data.projectDetails,
-            strategies: validatedFields.data.strategies,
-          }),
-          suggestWordLimit(validatedFields.data.projectDetails)
-        ]);
-        
-        return { 
-          data: {
-            template: templateSuggestion.template,
-            templateReasoning: templateSuggestion.reasoning,
-            strategyId: strategySuggestion.strategyId,
-            strategyReasoning: strategySuggestion.reasoning,
-            wordLimit: wordLimitSuggestion.wordLimit,
-            wordLimitReasoning: wordLimitSuggestion.reasoning,
-          } 
-        };
-    } catch (error) {
-        console.error("Error in analyzeAndSuggestAction:", error);
-        return { error: "Failed to get AI suggestions" }
-    }
+  const validatedFields = analyzeAndSuggestSchema.safeParse(input);
+  if (!validatedFields.success) {
+    return { error: 'Invalid input for analysis and suggestions.' };
+  }
+  try {
+    const [templateSuggestion, strategySuggestion, wordLimitSuggestion] = await Promise.all([
+      suggestProposalTemplate(validatedFields.data.projectDetails),
+      suggestOpeningStrategy({
+        ...validatedFields.data.projectDetails,
+        strategies: validatedFields.data.strategies,
+      }),
+      suggestWordLimit(validatedFields.data.projectDetails)
+    ]);
+
+    return {
+      data: {
+        template: templateSuggestion.template,
+        templateReasoning: templateSuggestion.reasoning,
+        strategyId: strategySuggestion.strategyId,
+        strategyReasoning: strategySuggestion.reasoning,
+        wordLimit: wordLimitSuggestion.wordLimit,
+        wordLimitReasoning: wordLimitSuggestion.reasoning,
+      }
+    };
+  } catch (error) {
+    console.error("Error in analyzeAndSuggestAction:", error);
+    return { error: "Failed to get AI suggestions" }
+  }
 }
 
 
@@ -150,10 +168,10 @@ const autofillSkillsSchema = z.object({
 });
 
 export async function autofillSkillsAction(input: z.infer<typeof autofillSkillsSchema>) {
-   const validatedFields = autofillSkillsSchema.safeParse(input);
-    if (!validatedFields.success) {
-        return { error: 'Invalid input for autofill.' };
-    }
+  const validatedFields = autofillSkillsSchema.safeParse(input);
+  if (!validatedFields.success) {
+    return { error: 'Invalid input for autofill.' };
+  }
   try {
     const result = await autofillProposalSections(validatedFields.data);
     return { data: result };
@@ -170,10 +188,10 @@ const answerQuestionsSchema = z.object({
 });
 
 export async function answerQuestionsAction(input: z.infer<typeof answerQuestionsSchema>) {
-    const validatedFields = answerQuestionsSchema.safeParse(input);
-    if (!validatedFields.success) {
-        return { error: 'Invalid input for answering questions.' };
-    }
+  const validatedFields = answerQuestionsSchema.safeParse(input);
+  if (!validatedFields.success) {
+    return { error: 'Invalid input for answering questions.' };
+  }
   try {
     const result = await answerClientQuestions(validatedFields.data);
     return { data: result };
@@ -189,54 +207,56 @@ const linkSchema = z.object({
 });
 
 const generateProposalSchema = z.object({
-    projectTitle: z.string(),
-    summary: z.string(),
-    profileSummary: z.string(),
-    userName: z.string(),
-    relevantSkills: z.string(),
-    pastSuccesses: z.string(),
-    profileLinks: z.array(linkSchema),
-    manualLinks: z.array(linkSchema),
-    greeting: z.string(),
-    openingStrategy: z.string().optional(),
-    closingCta: z.string(),
-    closingCta2: z.string().optional(),
-    tone: z.string(),
-    wordLimit: z.string().optional(),
-    proposalTemplate: z.enum(['standard', 'video']).optional(),
+  projectTitle: z.string(),
+  summary: z.string(),
+  profileSummary: z.string(),
+  userName: z.string(),
+  relevantSkills: z.string(),
+  pastSuccesses: z.string(),
+  profileLinks: z.array(linkSchema),
+  manualLinks: z.array(linkSchema),
+  greeting: z.string().optional(),
+  openingStrategy: z.string().optional(),
+  closingCta: z.string().optional(),
+  closingCta2: z.string().optional(),
+  tone: z.string(),
+  wordLimit: z.string().optional(),
+  proposalTemplate: z.enum(['standard', 'video']).optional(),
 });
 
 export async function generateProposalAction(input: z.infer<typeof generateProposalSchema>) {
-    const currentUser = await getCurrentUser();
-    if (!currentUser || !currentUser.userDoc) {
-      return { error: 'You must be logged in to generate a proposal.' };
-    }
+  const user = await getAuthenticatedUser();
+  if (!user) {
+    return { error: 'You must be logged in to generate a proposal.' };
+  }
 
-    const { user, userDoc } = currentUser;
-    const { subscriptionStatus, proposalCount = 0 } = userDoc;
+  const { subscriptionStatus, proposalCount = 0 } = user;
 
-    // Enforce trial limit
-    if (subscriptionStatus === 'trialing' && proposalCount >= 5) {
-      return { error: 'You have reached your trial limit of 5 proposals. Please upgrade to continue.' };
-    }
+  // Enforce trial limit
+  if (subscriptionStatus === 'trialing' && proposalCount >= 5) {
+    return { error: 'You have reached your trial limit of 5 proposals. Please upgrade to continue.' };
+  }
 
-    const validatedFields = generateProposalSchema.safeParse(input);
-    if (!validatedFields.success) {
-        console.log(validatedFields.error.flatten());
-        return { error: 'Invalid input for generating proposal.' };
-    }
+  const validatedFields = generateProposalSchema.safeParse(input);
+  if (!validatedFields.success) {
+    console.log(validatedFields.error.flatten());
+    return { error: 'Invalid input for generating proposal.' };
+  }
 
-    try {
-      const result = await generateProposal(validatedFields.data);
+  try {
+    const result = await generateProposal(validatedFields.data);
 
-      // If successful, increment the proposal count
-      await incrementProposalCount(user.uid);
+    // Increment proposal count in Prisma
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { proposalCount: { increment: 1 } },
+    });
 
-      return { data: result };
-    } catch (error) {
-      console.error(error);
-      return { error: 'Failed to generate proposal.' };
-    }
+    return { data: result };
+  } catch (error) {
+    console.error(error);
+    return { error: 'Failed to generate proposal.' };
+  }
 }
 
 const improveProposalSchema = z.object({
@@ -247,182 +267,124 @@ const improveProposalSchema = z.object({
 });
 
 export async function improveProposalAction(input: z.infer<typeof improveProposalSchema>) {
-    const currentUser = await getCurrentUser();
-    if (!currentUser || !currentUser.userDoc) {
-      return { error: 'You must be logged in to use this feature.' };
-    }
-  
-    const { user, userDoc } = currentUser;
-    const { proposalCredits = 0 } = userDoc;
-  
-    if (proposalCredits <= 0) {
-      return { error: 'You have no proposal improvement credits left. Please refer a friend to earn more.' };
-    }
-
-    const validatedFields = improveProposalSchema.safeParse(input);
-    if (!validatedFields.success) {
-        return { error: 'Invalid input for improving proposal.' };
-    }
-  
-    try {
-      const result = await improveProposal(validatedFields.data);
-      await decrementProposalCredits(user.uid);
-      return { data: result };
-    } catch (error) {
-      console.error(error);
-      return { error: 'Failed to improve proposal.' };
-    }
+  const user = await getAuthenticatedUser();
+  if (!user) {
+    return { error: 'You must be logged in to use this feature.' };
   }
 
+  const { proposalCredits = 0 } = user;
 
-export async function getGoogleAuthUrl(referralCode: string | null) {
-    const headersList = headers();
-    const protocol = headersList.get('x-forwarded-proto') || 'http';
-    const host = headersList.get('host');
-    const redirectUri = `${protocol}://${host}/api/auth/callback`;
+  if (proposalCredits <= 0) {
+    return { error: 'You have no proposal improvement credits left. Please refer a friend to earn more.' };
+  }
 
-    const oAuth2Client = new OAuth2Client(
-        process.env.GOOGLE_CLIENT_ID,
-        process.env.GOOGLE_CLIENT_SECRET,
-        redirectUri
-    );
+  const validatedFields = improveProposalSchema.safeParse(input);
+  if (!validatedFields.success) {
+    return { error: 'Invalid input for improving proposal.' };
+  }
 
-    const state = JSON.stringify({
-        referralCode: referralCode || null
+  try {
+    const result = await improveProposal(validatedFields.data);
+
+    // Decrement proposal credits in Prisma
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { proposalCredits: { decrement: 1 } },
     });
 
-    const authorizeUrl = oAuth2Client.generateAuthUrl({
-        access_type: 'offline',
-        scope: [
-            'https://www.googleapis.com/auth/userinfo.email',
-            'https://www.googleapis.com/auth/userinfo.profile',
-        ],
-        prompt: 'consent',
-        state: encodeURIComponent(state),
-    });
-    
-    return authorizeUrl;
+    return { data: result };
+  } catch (error) {
+    console.error(error);
+    return { error: 'Failed to improve proposal.' };
+  }
 }
 
-const updateDisplayNameSchema = z.object({
-    displayName: z.string().min(1, 'Display name cannot be empty.'),
+
+const updateProfileSchema = z.object({
+  displayName: z.string().min(1, 'Display name cannot be empty.'),
+  title: z.string().optional(),
+  bio: z.string().optional(),
+  services: z.array(z.string()).optional(),
+  image: z.string().optional(),
 });
 
-export async function updateUserDisplayNameAction(formData: FormData) {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) {
-        return { error: 'You must be logged in to update your profile.' };
-    }
-    const validatedFields = updateDisplayNameSchema.safeParse({
-        displayName: formData.get('displayName'),
+export async function updateProfileAction(formData: FormData) {
+  const session = await getServerSession(authOptions);
+  if (!session?.user?.id) {
+    return { error: 'You must be logged in to update your profile.' };
+  }
+
+  const servicesRaw = formData.get('services') as string;
+  const services = servicesRaw ? JSON.parse(servicesRaw) : [];
+
+  const name = formData.get('displayName');
+  const title = formData.get('title');
+  const bio = formData.get('bio');
+  const image = formData.get('image');
+  const whatsapp = formData.get('whatsapp');
+
+  try {
+    await prisma.user.update({
+      where: { id: session.user.id },
+      data: {
+        ...(name !== null && { name: name as string }),
+        ...(title !== null && { title: title as string }),
+        ...(bio !== null && { bio: bio as string }),
+        services: JSON.stringify(services),
+        ...(image !== null && { image: image as string }),
+        ...(whatsapp !== null && { whatsapp: whatsapp as string }),
+      },
     });
 
-    if (!validatedFields.success) {
-        return { error: validatedFields.error.flatten().fieldErrors.displayName?.[0] };
-    }
-
-    try {
-        const { adminAuth } = await import('@/lib/firebase/admin');
-        await adminAuth.updateUser(currentUser.user.uid, { displayName: validatedFields.data.displayName });
-        
-        const userRef = adminDb.collection('users').doc(currentUser.user.uid);
-        await userRef.update({ displayName: validatedFields.data.displayName });
-        
-        revalidatePath('/profile');
-        return { success: 'Display name updated successfully.' };
-    } catch (error: any) {
-        console.error("Error updating display name:", error);
-        return { error: error.message || 'Failed to update display name.' };
-    }
+    revalidatePath('/profile');
+    return { success: 'Profile updated successfully.' };
+  } catch (error: any) {
+    console.error("Error updating profile:", error);
+    return { error: error.message || 'Failed to update profile.' };
+  }
 }
 
 export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]; error?: string }> {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) {
-        return { error: 'User not authenticated.' };
-    }
+  const user = await getAuthenticatedUser();
+  if (!user) {
+    return { error: 'User not authenticated.' };
+  }
 
-    // Strategy 1: Fetch from Firestore first
-    try {
-        const historyRef = adminDb.collection('users').doc(currentUser.user.uid).collection('billingHistory');
-        const querySnapshot = await historyRef.orderBy('date', 'desc').limit(20).get();
-
-        if (!querySnapshot.empty) {
-            const invoices: InvoiceDetails[] = querySnapshot.docs.map(doc => {
-                const data = doc.data();
-                return {
-                    id: doc.id,
-                    date: data.date.toDate().toLocaleDateString(),
-                    total: `$${(data.total / 100).toFixed(2)}`,
-                    status: data.status || 'unknown',
-                    invoiceUrl: data.invoiceUrl,
-                    description: data.description || 'Payment'
-                };
-            });
-            return { invoices };
-        }
-    } catch (error: any) {
-        console.warn('Could not fetch billing history from Firestore, falling back to Stripe:', error.message);
-        // If Firestore fails or is empty, we fall through to the Stripe API call.
-    }
-
-    // Strategy 2: Fallback to Stripe API for invoices (if Firestore is empty)
-    if (currentUser.userDoc?.stripeCustomerId) {
-        const { stripeCustomerId } = currentUser.userDoc;
-        try {
-            const invoices = await stripe.invoices.list({
-                customer: stripeCustomerId,
-                limit: 20,
-            });
-
-            const invoiceDetails: InvoiceDetails[] = invoices.data.map(invoice => ({
-                id: invoice.id,
-                date: new Date(invoice.created * 1000).toLocaleDateString(),
-                total: `$${(invoice.total / 100).toFixed(2)}`,
-                status: invoice.status || 'unknown',
-                invoiceUrl: invoice.hosted_invoice_url,
-                description: invoice.lines.data[0]?.description || 'Subscription Payment',
-            }));
-
-            // Return Stripe data if found
-            if (invoiceDetails.length > 0) {
-              return { invoices: invoiceDetails };
-            }
-        } catch (error: any) {
-            console.error('Error fetching billing history from Stripe:', error);
-            // Don't return an error here, just fall through to the empty state
-        }
-    }
-    
-    // If both Firestore and Stripe are empty or fail, return empty
+  if (!user.paddleCustomerId) {
     return { invoices: [] };
-}
+  }
 
+  try {
+    const transactions = paddle.transactions.list({
+      customerId: [user.paddleCustomerId],
+      status: ['completed'],
+    });
+
+    const invoiceDetails: InvoiceDetails[] = [];
+
+    for await (const transaction of transactions) {
+      const totalAmount = transaction.details?.totals?.total;
+      const description = transaction.items[0]?.price?.description || 'Payment';
+
+      invoiceDetails.push({
+        id: transaction.id,
+        date: new Date(transaction.createdAt).toLocaleDateString(),
+        total: totalAmount ? `$${(Number(totalAmount) / 100).toFixed(2)}` : 'N/A',
+        status: transaction.status,
+        invoiceUrl: null, // Paddle handles invoices via emails or customer portal
+        description: description,
+      });
+    }
+
+    return { invoices: invoiceDetails };
+  } catch (error: any) {
+    console.error('Error fetching billing history from Paddle:', error);
+    return { error: 'Could not retrieve billing history.' };
+  }
+}
 
 export async function getCreditHistory(): Promise<{ history?: CreditHistoryItem[]; error?: string }> {
-    const currentUser = await getCurrentUser();
-    if (!currentUser) {
-        return { error: 'User not authenticated.' };
-    }
-    
-    try {
-        const historyRef = adminDb.collection('users').doc(currentUser.user.uid).collection('creditHistory');
-        const querySnapshot = await historyRef.orderBy('createdAt', 'desc').get();
-        
-        const history: CreditHistoryItem[] = querySnapshot.docs.map(doc => {
-            const data = doc.data();
-            const createdAtTimestamp = data.createdAt;
-            return {
-                id: doc.id,
-                amount: data.amount,
-                reason: data.reason,
-                createdAt: createdAtTimestamp.toDate().toISOString(),
-            };
-        });
-
-        return { history };
-    } catch (error: any) {
-        console.error('Error fetching credit history:', error);
-        return { error: 'Could not retrieve credit history.' };
-    }
+  // Return empty until a CreditHistory model is added to Prisma.
+  return { history: [] };
 }
+

@@ -22,7 +22,7 @@ const transporter = nodemailer.createTransport({
 });
 
 export async function sendOtpEmail(to: string, otp: string) {
-  if (!transporter.options.host) {
+  if (!SMTP_HOST) {
     console.log(`Simulating OTP email to ${to}: Your code is ${otp}`);
     return; // Do not send email if not configured
   }
