@@ -8,6 +8,18 @@ import { ProposalUpLogos } from '@/components/icons';
 import { Header } from "@/components/header";
 import { Sidebar } from "@/components/sidebar";
 import { SidebarInset } from "@/components/ui/sidebar";
+import { checkSessionStatusAction } from "@/app/lib/actions";
+import { 
+  AlertDialog, 
+  AlertDialogContent, 
+  AlertDialogHeader, 
+  AlertDialogTitle, 
+  AlertDialogDescription,
+  AlertDialogFooter
+} from "@/components/ui/alert-dialog";
+import { AlertCircle, LogOut } from "lucide-react";
+import { signOut } from "next-auth/react";
+
 
 export function DashboardClient({
   children,
@@ -21,6 +33,9 @@ export function DashboardClient({
   const router = useRouter();
   const pathname = usePathname();
   const [isAuthorized, setIsAuthorized] = useState(false);
+  const [sessionMismatch, setSessionMismatch] = useState(false);
+  const [countdown, setCountdown] = useState(5);
+
 
   useEffect(() => {
     if (authLoading) {
@@ -57,6 +72,37 @@ export function DashboardClient({
     setIsAuthorized(true);
     
   }, [user, userProfile, authLoading, router, pathname]);
+
+  // Background session check
+  useEffect(() => {
+    if (!user || !isAuthorized || sessionMismatch) return;
+
+    const interval = setInterval(async () => {
+      const result = await checkSessionStatusAction((session as any).sessionId);
+      if (result.status === 'invalidated') {
+        setSessionMismatch(true);
+        clearInterval(interval);
+      }
+    }, 30000); // Check every 30 seconds
+
+    return () => clearInterval(interval);
+  }, [user, isAuthorized, session, sessionMismatch]);
+
+  // Handle countdown
+  useEffect(() => {
+    if (!sessionMismatch) return;
+
+    if (countdown > 0) {
+      const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
+      return () => clearTimeout(timer);
+    } else {
+      // Force logout and redirect
+      signOut({ redirect: false }).then(() => {
+        router.push('/login?error=ConcurrentLogin');
+      });
+    }
+  }, [sessionMismatch, countdown, router]);
+
   
   // Only show the loading screen on initial mount before we have a session or authorization.
   // If we already have a user, do not unmount the dashboard during background session updates!
@@ -71,6 +117,7 @@ export function DashboardClient({
   }
 
   return (
+    <>
      <div className="min-h-screen flex bg-main-background">
       <Sidebar collapsible="icon" />
       <div className="flex-1 flex flex-col">
@@ -82,5 +129,35 @@ export function DashboardClient({
         </SidebarInset>
       </div>
     </div>
+    
+    <AlertDialog open={sessionMismatch}>
+        <AlertDialogContent className="max-w-md border-t-4 border-t-destructive">
+            <AlertDialogHeader className="items-center text-center">
+                <div className="p-3 bg-destructive/10 rounded-full mb-4">
+                    <AlertCircle className="h-10 w-10 text-destructive animate-pulse" />
+                </div>
+                <AlertDialogTitle className="text-2xl font-bold">New Login Detected</AlertDialogTitle>
+                <AlertDialogDescription className="text-base">
+                    You have been logged in from another device. To protect your account security, this session is now inactive.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <div className="py-6 text-center">
+                <div className="inline-flex items-center justify-center h-16 w-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin mb-4">
+                   <span className="text-xl font-bold animate-none" style={{ animation: 'none' }}>{countdown}</span>
+                </div>
+                <p className="text-sm font-medium text-muted-foreground flex items-center justify-center gap-2">
+                    <LogOut className="h-4 w-4" />
+                    Redirecting to login...
+                </p>
+            </div>
+            <AlertDialogFooter className="sm:justify-center">
+                <p className="text-xs text-muted-foreground italic">
+                    If this wasn't you, please change your password immediately.
+                </p>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
+

@@ -91,6 +91,22 @@ export const getAuthenticatedUser = cache(async () => {
   return user;
 });
 
+export async function checkSessionStatusAction(clientSessionId: string) {
+  const session = await auth();
+  if (!session?.user?.id) return { status: 'unauthenticated' };
+
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
+    select: { currentSessionId: true }
+  });
+
+  if (!user || (user.currentSessionId && user.currentSessionId !== clientSessionId)) {
+    return { status: 'invalidated' };
+  }
+
+  return { status: 'valid' };
+}
+
 const projectDetailsSchema = z.object({
   projectTitle: z.string().min(1, 'Project title is required.'),
   summary: z.string().min(1, 'Summary is required.'),
