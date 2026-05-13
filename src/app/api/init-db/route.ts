@@ -18,9 +18,9 @@ export async function GET(request: Request) {
 
   try {
     // Run the prisma db push command
-    // We use a direct path to the binary because 'npx' is missing on Hostinger
-    // We also specify the schema path explicitly
-    const output = execSync(`node ./node_modules/prisma/build/index.js db push --schema ./prisma/schema.prisma --accept-data-loss`, { 
+    // We use process.execPath to get the absolute path to the node binary
+    // and a direct path to the prisma script.
+    const output = execSync(`${process.execPath} ./node_modules/prisma/build/index.js db push --schema ./prisma/schema.prisma --accept-data-loss`, { 
       encoding: 'utf8',
       cwd: process.cwd(),
       env: {
