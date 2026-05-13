@@ -791,9 +791,9 @@ function DashboardContent() {
                 </div>
 
                 {isAnalyzing && (
-                  <div className="space-y-2 pt-4">
-                    <Skeleton className="h-6 w-1/3" />
-                    <Skeleton className="h-4 w-full" />
+                  <div className="flex flex-col items-center justify-center py-6 border rounded-lg bg-muted/30">
+                    <Loader2 className="h-8 w-8 animate-spin text-primary mb-2" />
+                    <p className="text-sm text-muted-foreground font-medium">Analyzing project requirements...</p>
                   </div>
                 )}
 
@@ -1153,12 +1153,10 @@ function DashboardContent() {
               </div>
               <div onMouseUp={() => setSelectedText(window.getSelection()?.toString() ?? '')}>
                 {isGenerating ? (
-                  <div className="space-y-2 pt-4">
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-5/6" />
-                    <Skeleton className="h-4 w-full mt-4" />
-                    <Skeleton className="h-4 w-full" />
-                    <Skeleton className="h-4 w-2/3" />
+                  <div className="flex flex-col items-center justify-center py-20">
+                    <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+                    <p className="text-muted-foreground font-medium">Crafting your custom proposal...</p>
+                    <p className="text-xs text-muted-foreground mt-1">This usually takes 10-15 seconds</p>
                   </div>
                 ) : generatedProposal ? (
                   <div className="prose prose-sm max-w-none dark:prose-invert whitespace-pre-wrap">

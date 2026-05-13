@@ -103,13 +103,26 @@ export default function PricingPage() {
 
   const handleManageClick = async () => {
     setIsSubmitting(true);
-    const result = await createPaddlePortalSession();
-    if ('error' in result) {
-      toast({ variant: "success",  title: 'Note', description: result.error });
-    } else if ('url' in result) {
-      window.location.href = result.url;
+    try {
+      const result = await createPaddlePortalSession();
+      if ('error' in result) {
+        toast({ 
+          variant: "destructive", 
+          title: 'Action Failed', 
+          description: result.error 
+        });
+      } else if ('url' in result) {
+        window.location.href = result.url;
+      }
+    } catch (error) {
+      toast({ 
+        variant: "destructive", 
+        title: 'Error', 
+        description: 'An unexpected error occurred. Please try again.' 
+      });
+    } finally {
+      setIsSubmitting(false);
     }
-    setIsSubmitting(false);
   }
 
   const isCurrentPlanSelected = (isMonthlyActive && billingInterval === 'monthly') || (isYearlyActive && billingInterval === 'yearly');

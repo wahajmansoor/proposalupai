@@ -364,67 +364,7 @@ export default function SkillProfilesPage() {
     isMobile
   };
 
-  if (isLoading) {
-    return (
-      <div className="space-y-8">
-        <div className="space-y-2">
-            <Skeleton className="h-8 w-1/3" />
-            <Skeleton className="h-4 w-1/2" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-8 items-start">
-            <div className="md:col-span-1">
-            <Card>
-                <CardHeader className="flex flex-row items-center justify-between">
-                <Skeleton className="h-6 w-24" />
-                <Skeleton className="h-8 w-20 rounded-full" />
-                </CardHeader>
-                <CardContent className="space-y-2">
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-                <Skeleton className="h-8 w-full" />
-                </CardContent>
-            </Card>
-            </div>
-            <div className="md:col-span-3">
-            <Card>
-                <CardHeader>
-                <div className="flex items-start justify-between">
-                    <div className="space-y-2">
-                    <Skeleton className="h-8 w-64" />
-                    </div>
-                    <div className="flex items-center gap-2">
-                    <Skeleton className="h-10 w-10 rounded-full" />
-                    <Skeleton className="h-10 w-10 rounded-full" />
-                    </div>
-                </div>
-                </CardHeader>
-                <CardContent className="space-y-6">
-                <Skeleton className="h-5 w-full" />
-                <Skeleton className="h-5 w-5/6" />
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                    <div className="space-y-2"><Skeleton className="h-5 w-24" /><Skeleton className="h-5 w-16" /></div>
-                    <div className="space-y-2"><Skeleton className="h-5 w-24" /><Skeleton className="h-5 w-16" /></div>
-                    <div className="space-y-2"><Skeleton className="h-5 w-24" /><Skeleton className="h-5 w-16" /></div>
-                </div>
-                <div className="space-y-2">
-                    <Skeleton className="h-5 w-24" />
-                    <div className="flex flex-wrap gap-2">
-                    <Skeleton className="h-6 w-20 rounded-full" />
-                    <Skeleton className="h-6 w-28 rounded-full" />
-                    <Skeleton className="h-6 w-24 rounded-full" />
-                    </div>
-                </div>
-                <div className="space-y-2">
-                    <Skeleton className="h-5 w-24" />
-                    <Skeleton className="h-6 w-32" />
-                </div>
-                </CardContent>
-            </Card>
-            </div>
-        </div>
-      </div>
-    );
-  }
+
 
   return (
     <>
@@ -466,8 +406,12 @@ export default function SkillProfilesPage() {
                       </li>
                     ))}
                   </ul>
-                ) : (
+                ) : !isLoading ? (
                   <p className="text-sm text-muted-foreground text-center py-4">No profiles yet. Click "Create" to start.</p>
+                ) : (
+                  <div className="flex justify-center py-4">
+                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  </div>
                 )}
               </CardContent>
             </Card>
@@ -550,13 +494,17 @@ export default function SkillProfilesPage() {
                       </div>
                   </CardContent>
               </Card>
-            ) : (
+            ) : !isLoading ? (
               <Card className="flex items-center justify-center h-96">
                   <div className="text-center">
                       <p className="text-lg font-semibold text-muted-foreground">Select a profile to view its details</p>
                       <p className="text-sm text-muted-foreground">or create a new one to get started.</p>
                       <Button className="mt-4 rounded-full" onClick={handleCreateClick}><Plus className="mr-2 h-4 w-4" />Create Your First Profile</Button>
                   </div>
+              </Card>
+            ) : (
+              <Card className="flex items-center justify-center h-96">
+                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
               </Card>
             )}
           </div>

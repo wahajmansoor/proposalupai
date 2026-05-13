@@ -111,47 +111,7 @@ export default function ProfilePage() {
 
   const currentName = user?.name;
 
-  if (!isMounted || loading) {
-    return (
-      <div className="space-y-8">
-        <div className="space-y-2">
-          <Skeleton className="h-8 w-1/3" />
-          <Skeleton className="h-4 w-1/2" />
-        </div>
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-1/4" />
-            <Skeleton className="h-4 w-1/3" />
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex items-center gap-4">
-              <Skeleton className="h-16 w-16 rounded-full" />
-              <div className="grid w-full gap-1.5">
-                <Skeleton className="h-4 w-24" />
-                <Skeleton className="h-10 w-full" />
-              </div>
-            </div>
-            <div className="grid w-full gap-1.5">
-              <Skeleton className="h-4 w-24" />
-              <Skeleton className="h-10 w-full" />
-            </div>
-          </CardContent>
-          <CardFooter className="border-t px-6 py-4">
-            <Skeleton className="h-10 w-32 rounded-full" />
-          </CardFooter>
-        </Card>
-        <Card>
-          <CardHeader>
-            <Skeleton className="h-6 w-24" />
-            <Skeleton className="h-4 w-1/2" />
-          </CardHeader>
-          <CardContent>
-            <Skeleton className="h-20 w-full" />
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+
 
   return (
     <div className="space-y-8">

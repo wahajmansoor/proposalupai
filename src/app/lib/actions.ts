@@ -67,8 +67,10 @@ export interface CreditHistoryItem {
   createdAt: string;
 }
 
+import { cache } from 'react';
+
 // Helper: get authenticated user + their DB record
-async function getAuthenticatedUser() {
+export const getAuthenticatedUser = cache(async () => {
   const session = await auth();
   if (!session?.user?.id) return null;
 
@@ -86,7 +88,7 @@ async function getAuthenticatedUser() {
     }
   });
   return user;
-}
+});
 
 const projectDetailsSchema = z.object({
   projectTitle: z.string().min(1, 'Project title is required.'),

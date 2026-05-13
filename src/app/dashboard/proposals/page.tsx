@@ -132,30 +132,7 @@ export default function SavedProposalsPage() {
   }
 
 
-  if (isLoading) {
-    return (
-        <div className="space-y-8">
-            <div className="space-y-2">
-                <div className="h-8 w-1/2 bg-gray-200 rounded animate-pulse"></div>
-                <div className="h-4 w-3/4 bg-gray-200 rounded animate-pulse"></div>
-            </div>
-            <div className="h-10 w-full bg-gray-200 rounded animate-pulse"></div>
-            <Card>
-                <CardHeader>
-                    <div className="h-6 w-1/3 bg-gray-200 rounded animate-pulse"></div>
-                    <div className="h-4 w-1/4 bg-gray-200 rounded animate-pulse mt-1"></div>
-                </CardHeader>
-                <CardContent>
-                    <div className="space-y-2">
-                        <div className="h-4 w-full bg-gray-200 rounded animate-pulse"></div>
-                        <div className="h-4 w-full bg-gray-200 rounded animate-pulse"></div>
-                        <div className="h-4 w-2/3 bg-gray-200 rounded animate-pulse"></div>
-                    </div>
-                </CardContent>
-            </Card>
-        </div>
-    );
-  }
+
 
   return (
     <div className="space-y-8">
@@ -172,8 +149,13 @@ export default function SavedProposalsPage() {
           className="w-full"
         />
         
-         <div className="space-y-6">
-            {filteredProposals.length === 0 && !isLoading ? (
+          <div className="space-y-6">
+            {isLoading ? (
+                <div className="flex flex-col items-center justify-center p-12">
+                    <Loader2 className="h-10 w-10 animate-spin text-muted-foreground mb-4" />
+                    <p className="text-muted-foreground">Loading your proposals...</p>
+                </div>
+            ) : filteredProposals.length === 0 ? (
                 <Card className="text-center p-8">
                   <FileText className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
                   <h3 className="text-xl font-semibold">

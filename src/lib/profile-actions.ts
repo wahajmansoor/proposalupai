@@ -1,17 +1,20 @@
 "use server";
 
+import { cache } from 'react';
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import type { SkillProfile, PortfolioLink } from "@/app/lib/types";
 
+import { cache } from 'react';
+
 // Helper to get authenticated user ID
-async function getAuthenticatedUserId(): Promise<string> {
+const getAuthenticatedUserId = cache(async (): Promise<string> => {
   const session = await auth();
   if (!session?.user?.id) {
     throw new Error("Not authenticated");
   }
   return session.user.id;
-}
+});
 
 // Helper to convert Prisma SkillProfile to app SkillProfile type
 function toAppSkillProfile(p: any): SkillProfile {

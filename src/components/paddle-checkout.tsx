@@ -16,6 +16,8 @@ interface PaddleCheckoutProps {
     couponCode?: string;
 }
 
+import { Loader2 } from 'lucide-react';
+
 export default function PaddleCheckout({
     priceId,
     userId,
@@ -28,6 +30,7 @@ export default function PaddleCheckout({
     couponCode
 }: PaddleCheckoutProps) {
     const [paddle, setPaddle] = useState<Paddle | undefined>(undefined);
+    const [isLoading, setIsLoading] = useState(true);
 
     useEffect(() => {
         let currentPaddle: Paddle | undefined;
@@ -50,6 +53,7 @@ export default function PaddleCheckout({
             if (paddleInstance) {
                 currentPaddle = paddleInstance;
                 setPaddle(paddleInstance);
+                setIsLoading(false);
             }
         });
     }, [onSuccess]);
@@ -83,9 +87,10 @@ export default function PaddleCheckout({
     return (
         <button
             onClick={handleCheckout}
-            disabled={!paddle}
+            disabled={isLoading || !paddle}
             className={className}
         >
+            {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
             {buttonText}
         </button>
     );
