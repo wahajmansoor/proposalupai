@@ -37,9 +37,13 @@ export async function forgotPasswordAction(email: string) {
     });
 
     // Send email
-    await sendPasswordResetEmail(user.email!, token);
+    const emailResult = await sendPasswordResetEmail(user.email!, token);
 
-    return { success: true, message: "If an account exists with that email, a reset link has been sent." };
+    if (emailResult.error) {
+        return { error: emailResult.error };
+    }
+
+    return { success: true, message: "A reset link has been sent to your email." };
 }
 
 export async function resetPasswordAction(token: string, newPassword: string) {

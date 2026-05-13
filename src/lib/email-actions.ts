@@ -153,11 +153,17 @@ export async function sendPasswordResetEmail(email: string, token: string) {
     };
 
     try {
-        await transporter.sendMail(mailOptions);
-        console.log(`PASSWORD_RESET_EMAIL_SENT: ${email}`);
+        console.log(`ATTEMPTING_PASSWORD_RESET_EMAIL: ${email} via ${process.env.EMAIL_SERVER_HOST}`);
+        const info = await transporter.sendMail(mailOptions);
+        console.log(`PASSWORD_RESET_EMAIL_SUCCESS: ${info.messageId}`);
         return { success: true };
-    } catch (error) {
-        console.error("PASSWORD_RESET_EMAIL_ERROR:", error);
-        return { error: "Failed to send reset email." };
+    } catch (error: any) {
+        console.error("PASSWORD_RESET_EMAIL_CRITICAL_ERROR:", {
+            message: error.message,
+            code: error.code,
+            command: error.command,
+            response: error.response
+        });
+        return { error: `Failed to send reset email: ${error.message}` };
     }
 }
