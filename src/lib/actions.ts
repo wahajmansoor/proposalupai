@@ -69,14 +69,26 @@ export interface CreditHistoryItem {
 }
 
 async function getAuthenticatedUser() {
-    const session = await auth();
-    if (!session?.user?.id) return null;
-    
-    const user = await prisma.user.findUnique({
-        where: { id: session.user.id }
-    });
-    
-    return user;
+    try {
+        const session = await auth();
+        if (!session?.user?.id) {
+            console.log("getAuthenticatedUser: No session or user ID found.");
+            return null;
+        }
+        
+        const user = await prisma.user.findUnique({
+            where: { id: session.user.id }
+        });
+        
+        if (!user) {
+            console.log(`getAuthenticatedUser: User ID ${session.user.id} from session not found in DB.`);
+        }
+
+        return user;
+    } catch (error) {
+        console.error("getAuthenticatedUser ERROR:", error);
+        return null;
+    }
 }
 
 const projectDetailsSchema = z.object({
