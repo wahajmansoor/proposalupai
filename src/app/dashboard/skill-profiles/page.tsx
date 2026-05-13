@@ -409,8 +409,10 @@ export default function SkillProfilesPage() {
                 ) : !isLoading ? (
                   <p className="text-sm text-muted-foreground text-center py-4">No profiles yet. Click "Create" to start.</p>
                 ) : (
-                  <div className="flex justify-center py-4">
-                    <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+                  <div className="space-y-2">
+                    {[1, 2, 3].map(i => (
+                      <Skeleton key={i} className="h-9 w-full rounded-md" />
+                    ))}
                   </div>
                 )}
               </CardContent>
@@ -503,8 +505,30 @@ export default function SkillProfilesPage() {
                   </div>
               </Card>
             ) : (
-              <Card className="flex items-center justify-center h-96">
-                <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+              <Card className="h-96 overflow-hidden">
+                <CardHeader>
+                  <Skeleton className="h-8 w-1/2" />
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-full" />
+                    <Skeleton className="h-4 w-2/3" />
+                  </div>
+                  <div className="grid grid-cols-3 gap-4">
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                    <Skeleton className="h-10 w-full" />
+                  </div>
+                  <div className="space-y-2">
+                    <Skeleton className="h-4 w-1/4" />
+                    <div className="flex gap-2">
+                      <Skeleton className="h-6 w-16" />
+                      <Skeleton className="h-6 w-20" />
+                      <Skeleton className="h-6 w-14" />
+                    </div>
+                  </div>
+                </CardContent>
               </Card>
             )}
           </div>

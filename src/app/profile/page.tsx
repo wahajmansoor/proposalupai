@@ -28,6 +28,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { WelcomeDialog } from '@/components/welcome-dialog';
 import { FeaturedRequestSection } from '@/components/featured-request-section';
 import { hasPendingFeaturedRequest } from '@/lib/featured-request-actions';
+import { cn } from '@/lib/utils';
+
 
 export default function ProfilePage() {
   const { data: session, status, update } = useSession();
@@ -44,6 +46,11 @@ export default function ProfilePage() {
   const [isSendingReset, setIsSendingReset] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
   const [hasPendingRequest, setHasPendingRequest] = useState(false);
+  const [errors, setErrors] = useState<Record<string, string>>({});
+
+  const bioWordCount = bio.trim().split(/\s+/).filter(Boolean).length;
+  const bioCharCount = bio.length;
+
 
   const completionFields = [!!displayName, !!title, !!bio, !!profileImage, !!whatsapp, services.some(s => s.trim() !== '')];
   const progress = (completionFields.filter(Boolean).length / completionFields.length) * 100;
@@ -80,8 +87,33 @@ export default function ProfilePage() {
     return name.substring(0, 2).toUpperCase();
   };
 
+  const validateForm = () => {
+    const newErrors: Record<string, string> = {};
+    if (!displayName.trim()) newErrors.displayName = "Display Name is required.";
+    if (!title.trim()) newErrors.title = "Professional Title is required.";
+    
+    if (!bio.trim()) {
+      newErrors.bio = "Bio is required.";
+    } else if (bioCharCount > 300) {
+      newErrors.bio = "Bio cannot exceed 300 characters.";
+    } else if (bioWordCount > 60) {
+      newErrors.bio = "Bio cannot exceed 60 words.";
+    }
+
+    if (!whatsapp.trim()) newErrors.whatsapp = "WhatsApp number is required.";
+    if (services.every(s => !s.trim())) newErrors.services = "At least one service is required.";
+
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
+  };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+    if (!validateForm()) {
+      toast({ title: 'Validation Error', description: 'Please check the required fields.', variant: 'destructive' });
+      return;
+    }
+    
     setIsSaving(true);
     const formData = new FormData(event.currentTarget);
     formData.append('title', title);
@@ -205,9 +237,13 @@ export default function ProfilePage() {
                   id="displayName"
                   name="displayName"
                   value={displayName}
-                  onChange={(e) => setDisplayName(e.target.value)}
+                  onChange={(e) => {
+                    setDisplayName(e.target.value);
+                    if (errors.displayName) setErrors(prev => ({ ...prev, displayName: '' }));
+                  }}
                   disabled={isLocked}
                 />
+                {errors.displayName && <p className="text-xs text-red-500 font-medium">{errors.displayName}</p>}
               </div>
             </div>
             <div className="grid w-full gap-1.5">
@@ -225,10 +261,14 @@ export default function ProfilePage() {
                 id="title"
                 name="title"
                 value={title}
-                onChange={(e) => setTitle(e.target.value)}
+                onChange={(e) => {
+                  setTitle(e.target.value);
+                  if (errors.title) setErrors(prev => ({ ...prev, title: '' }));
+                }}
                 placeholder="e.g. Senior Software Engineer"
                 disabled={isLocked}
               />
+              {errors.title && <p className="text-xs text-red-500 font-medium">{errors.title}</p>}
             </div>
             <div className="grid w-full gap-1.5">
               <Label htmlFor="bio">Bio (Introduction) <span className="text-red-500">*</span></Label>
@@ -236,10 +276,26 @@ export default function ProfilePage() {
                 id="bio"
                 name="bio"
                 value={bio}
-                onChange={(e) => setBio(e.target.value)}
+                onChange={(e) => {
+                  setBio(e.target.value);
+                  if (errors.bio) setErrors(prev => ({ ...prev, bio: '' }));
+                }}
                 placeholder="Tell us about yourself"
                 disabled={isLocked}
               />
+              <div className="flex justify-between mt-1">
+                {errors.bio ? (
+                  <p className="text-xs text-red-500 font-medium">{errors.bio}</p>
+                ) : (
+                  <p className="text-[10px] text-muted-foreground italic">Summarize your expertise in a few sentences.</p>
+                )}
+                <p className={cn(
+                  "text-[10px] font-medium",
+                  (bioCharCount > 300 || bioWordCount > 60) ? "text-red-500" : "text-muted-foreground"
+                )}>
+                  {bioWordCount}/60 words | {bioCharCount}/300 chars
+                </p>
+              </div>
             </div>
             <div className="grid w-full gap-1.5">
               <Label htmlFor="whatsapp">WhatsApp Number <span className="text-red-500">*</span></Label>
@@ -247,11 +303,14 @@ export default function ProfilePage() {
                 id="whatsapp"
                 name="whatsapp"
                 value={whatsapp}
-                onChange={(e) => setWhatsapp(e.target.value)}
+                onChange={(e) => {
+                  setWhatsapp(e.target.value);
+                  if (errors.whatsapp) setErrors(prev => ({ ...prev, whatsapp: '' }));
+                }}
                 placeholder="e.g. +1234567890"
-                required
                 disabled={isLocked}
               />
+              {errors.whatsapp && <p className="text-xs text-red-500 font-medium">{errors.whatsapp}</p>}
             </div>
             <div className="grid w-full gap-1.5">
               <Label htmlFor="services">Services <span className="text-red-500">*</span></Label>
@@ -285,6 +344,7 @@ export default function ProfilePage() {
                     Add Service
                   </Button>
                 )}
+                {errors.services && <p className="text-xs text-red-500 font-medium mt-1">{errors.services}</p>}
               </div>
             </div>
           </CardContent>
