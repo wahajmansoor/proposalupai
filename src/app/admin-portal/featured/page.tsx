@@ -349,7 +349,7 @@ export default function FeaturedPage() {
                         <AvatarFallback><User className="h-8 w-8 text-slate-300" /></AvatarFallback>
                       </Avatar>
                       <Badge className="bg-yellow-50 dark:bg-yellow-900/30 text-yellow-600 dark:text-yellow-500 hover:bg-yellow-100 dark:hover:bg-yellow-900/40 border-yellow-200 dark:border-yellow-800 font-bold text-xs py-1 px-3 rounded-full">
-                        <Star className="h-3.5 w-3.5 mr-1.5 fill-yellow-600 dark:fill-yellow-500" /> Featured
+                        <Crown className="h-3.5 w-3.5 mr-1.5 fill-yellow-600 dark:fill-yellow-500" /> Featured
                       </Badge>
                     </div>
                     <div className="mt-6 flex flex-col gap-2.5">

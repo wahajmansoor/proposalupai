@@ -6,6 +6,7 @@ import nodemailer from 'nodemailer';
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_SERVER_HOST || 'smtp.gmail.com',
   port: parseInt(process.env.EMAIL_SERVER_PORT || '587'),
+  secure: process.env.EMAIL_SERVER_PORT === '465', // true for 465, false for other ports
   auth: {
     user: process.env.EMAIL_SERVER_USER,
     pass: process.env.EMAIL_SERVER_PASSWORD,
@@ -88,4 +89,32 @@ export async function sendContactEmail({
   }
 }
 
+export async function sendAdminNotificationEmail(newUser: { name: string; email: string }) {
+  const adminEmail = process.env.ADMIN_EMAIL || 'wahajmansoorcom@gmail.com'; // Fallback admin email
+
+  const mailOptions = {
+    from: `"Proposal Up AI System" <${process.env.EMAIL_SERVER_USER}>`,
+    to: adminEmail,
+    subject: `New User Signup: ${newUser.name}`,
+    html: `
+      <div style="font-family: sans-serif; padding: 20px;">
+        <h2>New Account Created</h2>
+        <p>A new user has just signed up on Proposal Up AI.</p>
+        <p><strong>Name:</strong> ${newUser.name}</p>
+        <p><strong>Email:</strong> ${newUser.email}</p>
+        <p><strong>Time:</strong> ${new Date().toLocaleString()}</p>
+        <hr>
+        <p style="font-size: 12px; color: #888;">This is an automated notification from the Proposal Up AI system.</p>
+      </div>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending admin notification email:', error);
+    return { success: false };
+  }
+}
 

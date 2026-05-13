@@ -124,9 +124,12 @@ export async function POST(req: Request) {
       }
     });
 
-    // SEND VERIFICATION EMAIL
-    const { sendVerificationEmail } = await import("@/lib/email-actions");
-    await sendVerificationEmail(email, verificationToken);
+    // SEND VERIFICATION EMAIL & ADMIN NOTIFICATION
+    const { sendVerificationEmail, sendAdminNotificationEmail } = await import("@/lib/email-actions");
+    await Promise.all([
+      sendVerificationEmail(email, verificationToken),
+      sendAdminNotificationEmail({ name, email })
+    ]);
 
     return NextResponse.json({ 
       ...user, 
