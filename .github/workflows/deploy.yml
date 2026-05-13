@@ -38,6 +38,11 @@ jobs:
           cp -r .next/standalone/* deploy/
           cp -r public deploy/
           cp -r prisma deploy/
+          # Manually copy prisma CLI and engines for migrations
+          mkdir -p deploy/node_modules/prisma
+          cp -r node_modules/prisma/* deploy/node_modules/prisma/
+          mkdir -p deploy/node_modules/@prisma/engines
+          cp -r node_modules/@prisma/engines/* deploy/node_modules/@prisma/engines/
           mkdir -p deploy/.next
           cp -r .next/static deploy/.next/
 

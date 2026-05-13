@@ -18,9 +18,23 @@ export async function GET(request: Request) {
 
   try {
     // Run the prisma db push command
-    // We use process.execPath to get the absolute path to the node binary
-    // and a direct path to the prisma script.
-    const output = execSync(`${process.execPath} ./node_modules/prisma/build/index.js db push --schema ./prisma/schema.prisma --accept-data-loss`, { 
+    // We try multiple common paths to find the prisma binary
+    const paths = [
+      './node_modules/prisma/build/index.js',
+      '../node_modules/prisma/build/index.js',
+      '../../node_modules/prisma/build/index.js'
+    ];
+    
+    let prismaPath = paths[0];
+    const fs = require('fs');
+    for (const p of paths) {
+      if (fs.existsSync(p)) {
+        prismaPath = p;
+        break;
+      }
+    }
+
+    const output = execSync(`${process.execPath} ${prismaPath} db push --schema ./prisma/schema.prisma --accept-data-loss`, { 
       encoding: 'utf8',
       cwd: process.cwd(),
       env: {
