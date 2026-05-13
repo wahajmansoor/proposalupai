@@ -4,7 +4,7 @@
 import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Star, Loader2, CheckCircle } from 'lucide-react';
+import { Crown, Loader2, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { submitFeaturedRequest } from '@/lib/featured-request-actions';
 
@@ -32,9 +32,9 @@ export function FeaturedRequestSection({
   if (isFeatured) {
     return (
       <Card className="border-primary/20 bg-primary/5">
-        <CardHeader className="md:pb-0">
+        <CardHeader className="">
           <CardTitle className="flex items-center gap-2">
-            <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
+            <Crown className="h-5 w-5 fill-yellow-400 text-yellow-400" />
             Featured Status Active
           </CardTitle>
           <CardDescription>
@@ -50,7 +50,7 @@ export function FeaturedRequestSection({
       <Card>
         <CardHeader className="md:pb-0">
           <CardTitle className="flex items-center gap-2">
-            <Star className="h-5 w-5 text-muted-foreground" />
+            <Crown className="h-5 w-5 text-muted-foreground" />
             Get Featured
           </CardTitle>
           <CardDescription>
@@ -99,7 +99,7 @@ export function FeaturedRequestSection({
     <Card className="border-primary/20">
       <CardHeader className="md:pb-0">
         <CardTitle className="flex items-center gap-2">
-          <Star className="h-5 w-5 text-primary" />
+          <Crown className="h-5 w-5 text-primary" />
           Request to be Featured
         </CardTitle>
         <CardDescription>
