@@ -134,11 +134,33 @@ export default function ProfilePage() {
   };
 
   const handlePasswordReset = async () => {
-    toast({
-      variant: "success",
-      title: 'Success',
-      description: `Password reset instructions will be sent to your email.`,
-    });
+    if (!user?.email) return;
+    setIsSendingReset(true);
+    try {
+      const { forgotPasswordAction } = await import('@/lib/password-actions');
+      const result = await forgotPasswordAction(user.email);
+      if (result.success) {
+        toast({
+          variant: "success",
+          title: 'Email Sent',
+          description: `A password reset link has been sent to ${user.email}.`,
+        });
+      } else {
+        toast({
+          variant: "destructive",
+          title: 'Error',
+          description: result.error || 'Failed to send reset link.',
+        });
+      }
+    } catch (error) {
+      toast({
+        variant: "destructive",
+        title: 'Error',
+        description: 'An unexpected error occurred.',
+      });
+    } finally {
+      setIsSendingReset(false);
+    }
   };
 
   const currentName = user?.name;

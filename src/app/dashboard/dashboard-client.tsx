@@ -141,9 +141,10 @@ export function DashboardClient({
                     You have been logged in from another device. To protect your account security, this session is now inactive.
                 </AlertDialogDescription>
             </AlertDialogHeader>
-            <div className="py-6 text-center">
-                <div className="inline-flex items-center justify-center h-16 w-16 rounded-full border-4 border-primary/20 border-t-primary animate-spin mb-4">
-                   <span className="text-xl font-bold animate-none" style={{ animation: 'none' }}>{countdown}</span>
+            <div className="py-6 text-center flex flex-col items-center">
+                <div className="relative inline-flex items-center justify-center h-16 w-16 mb-4">
+                   <div className="absolute inset-0 rounded-full border-4 border-primary/20 border-t-primary animate-spin"></div>
+                   <span className="relative text-xl font-bold">{countdown}</span>
                 </div>
                 <p className="text-sm font-medium text-muted-foreground flex items-center justify-center gap-2">
                     <LogOut className="h-4 w-4" />

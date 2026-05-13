@@ -4,9 +4,9 @@ import nodemailer from 'nodemailer';
 
 // These should be in .env. Providing defaults for development/testing if missing.
 const transporter = nodemailer.createTransport({
-  host: process.env.EMAIL_SERVER_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.EMAIL_SERVER_PORT || '465'),
-  secure: true, // Port 465 is always secure
+  host: process.env.EMAIL_SERVER_HOST || 'smtp.hostinger.com',
+  port: 587,
+  secure: false, // Port 587 is STARTTLS
   auth: {
     user: process.env.EMAIL_SERVER_USER,
     pass: process.env.EMAIL_SERVER_PASSWORD,
