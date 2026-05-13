@@ -1,21 +1,19 @@
 import NextAuth, { type Session, type User } from "next-auth";
 import { type JWT } from "next-auth/jwt";
-import Google from "next-auth/providers/google";
-import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import prisma from "@/lib/prisma";
 import * as bcrypt from "bcryptjs";
+import { authConfig } from "./auth.config";
+import Credentials from "next-auth/providers/credentials";
 import { headers } from "next/headers";
 import { getCountryFromIp } from "@/app/lib/location";
 
 export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
   adapter: PrismaAdapter(prisma),
   secret: process.env.AUTH_SECRET,
   providers: [
-    Google({
-      clientId: process.env.AUTH_GOOGLE_ID || "",
-      clientSecret: process.env.AUTH_GOOGLE_SECRET || "",
-    }),
+    ...authConfig.providers.filter(p => p.id !== 'credentials'),
     Credentials({
       name: "Credentials",
       credentials: {
@@ -23,40 +21,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         password: { label: "Password", type: "password" }
       },
       async authorize(credentials) {
-        if (!credentials?.email || !credentials?.password) {
-          console.log("LOGIN_ATTEMPT: Missing email or password");
-          throw new Error("Invalid credentials");
-        }
-
-        console.log(`LOGIN_ATTEMPT: Checking user ${credentials.email}`);
+        if (!credentials?.email || !credentials?.password) return null;
         const email = (credentials.email as string)?.toLowerCase();
-        
-        const user = await prisma.user.findUnique({
-          where: { email }
-        });
-
-        if (!user) {
-          console.log(`LOGIN_ATTEMPT: User not found in DB: ${credentials.email}`);
-          throw new Error("Invalid credentials");
-        }
-
-        if (!user.password) {
-          console.log(`LOGIN_ATTEMPT: User has no password set (possibly OAuth user): ${credentials.email}`);
-          throw new Error("Invalid credentials");
-        }
-
-        const isPasswordValid = await bcrypt.compare(
-          credentials.password as string,
-          user.password
-        );
-
-        if (!isPasswordValid) {
-          console.log(`LOGIN_ATTEMPT: Password mismatch for user: ${credentials.email}`);
-          throw new Error("Invalid credentials");
-        }
-
-        console.log(`LOGIN_ATTEMPT: Success for user: ${credentials.email}`);
-        return user as any; 
+        const user = await prisma.user.findUnique({ where: { email } });
+        if (!user || !user.password) return null;
+        const isPasswordValid = await bcrypt.compare(credentials.password as string, user.password);
+        if (!isPasswordValid) return null;
+        return user as any;
       }
     })
   ],
@@ -64,11 +35,17 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     strategy: "jwt",
   },
   callbacks: {
-    async session({ session, token }: { session: Session; token: JWT }) {
-      try {
-        if (token.sub && session.user) {
-          session.user.id = token.sub;
+    async session({ session, token }: { session: any; token: any }) {
+      if (token?.sub && session.user) {
+        session.user.id = token.sub;
 
+        // SKIP DATABASE CHECK IN EDGE RUNTIME (Middleware)
+        if (process.env.NEXT_RUNTIME === 'edge') {
+          session.sessionId = token.sessionId;
+          return session;
+        }
+
+        try {
           // Fetch user from DB to get custom fields
           const dbUser = await prisma.user.findUnique({
             where: { id: token.sub },
@@ -159,12 +136,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               proposalCredits: dbUser.proposalCredits,
             };
           }
+        } catch (error) {
+          console.error("SESSION_CALLBACK_ERROR:", error);
+          return session; // Return partial session instead of null to avoid total lockout
         }
-        return session;
-      } catch (error) {
-        console.error("SESSION_CALLBACK_ERROR:", error);
-        return session; // Return partial session instead of null to avoid total lockout
       }
+      return session;
     },
     async jwt({ token, user }: { token: JWT; user?: User }) {
       if (user) {

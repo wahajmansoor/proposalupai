@@ -1,5 +1,8 @@
-import { auth } from "@/auth";
+import NextAuth from "next-auth";
+import { authConfig } from "./auth.config";
 import { NextResponse } from "next/server";
+
+const { auth } = NextAuth(authConfig);
 
 export default auth(async (req) => {
   const { pathname } = req.nextUrl;
@@ -18,8 +21,10 @@ export default auth(async (req) => {
   }
 
   // Rule 2: Basic Dashboard Protection
-  // We handle the concurrent session check in the Layout to avoid Edge Runtime issues
-  if (pathname.startsWith('/dashboard') || pathname.startsWith('/profile')) {
+  const isProtectedPath = pathname.startsWith('/dashboard') || pathname.startsWith('/profile');
+  const isAuthPath = pathname.startsWith('/forgot-password') || pathname.startsWith('/new-password');
+
+  if (isProtectedPath && !isAuthPath) {
     if (!session) {
       return NextResponse.redirect(new URL('/login', req.url));
     }
@@ -29,5 +34,11 @@ export default auth(async (req) => {
 });
 
 export const config = {
-  matcher: ['/admin-login', '/admin-portal/:path*', '/dashboard/:path*', '/profile/:path*'],
+  matcher: [
+    '/admin-login', 
+    '/admin-portal/:path*', 
+    '/dashboard/:path*', 
+    '/profile/:path*',
+    '/((?!api|_next/static|_next/image|favicon.ico|forgot-password|new-password).*)',
+  ],
 };
