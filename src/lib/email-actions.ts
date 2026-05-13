@@ -133,7 +133,7 @@ export async function sendPasswordResetEmail(email: string, token: string) {
     const resetLink = `${process.env.NEXTAUTH_URL}/new-password?token=${token}`;
 
     const mailOptions = {
-        from: `"Proposal Up AI" <${process.env.SMTP_USER}>`,
+        from: `"Proposal Up AI" <${process.env.EMAIL_SERVER_USER}>`,
         to: email,
         subject: "Reset your Password - Proposal Up AI",
         html: `

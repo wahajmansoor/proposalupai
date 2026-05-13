@@ -155,6 +155,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             // Only keep basic subscription info in session to keep it small
             (session.user as any).profile = {
               subscriptionStatus: dbUser.subscriptionStatus,
+              proposalCount: dbUser.proposalCount,
               proposalCredits: dbUser.proposalCredits,
             };
           }
