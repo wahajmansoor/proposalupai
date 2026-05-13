@@ -141,31 +141,21 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
           if (dbUser) {
             session.user.name = dbUser.name;
             session.user.image = dbUser.image;
-            session.user.bio = dbUser.bio;
-            session.user.title = dbUser.title;
-            session.user.services = dbUser.services;
-            session.user.whatsapp = dbUser.whatsapp;
             session.user.isFeatured = dbUser.isFeatured;
             session.user.emailVerified = dbUser.emailVerified;
 
-            // SINGLE SESSION CHECK - Mandatory for all sessions
+            // SINGLE SESSION CHECK
             if (!token.sessionId || (dbUser.currentSessionId && dbUser.currentSessionId !== token.sessionId)) {
-              console.log(`SESSION_LOCK: Invalidating session for ${dbUser.email} (Mismatch or Missing ID)`);
+              console.log(`SESSION_LOCK: Invalidating session for ${dbUser.email}`);
               return null as any;
             }
 
             (session as any).sessionId = token.sessionId;
 
+            // Only keep basic subscription info in session to keep it small
             (session.user as any).profile = {
               subscriptionStatus: dbUser.subscriptionStatus,
-              proposalCount: dbUser.proposalCount,
               proposalCredits: dbUser.proposalCredits,
-              paddleCustomerId: dbUser.paddleCustomerId,
-              paddleSubscriptionId: dbUser.paddleSubscriptionId,
-              subscriptionInterval: dbUser.subscriptionInterval,
-              subscriptionCurrentPeriodEnd: dbUser.subscriptionCurrentPeriodEnd,
-              referralCode: dbUser.referralCode,
-              country: dbUser.countryCode ? { code: dbUser.countryCode, name: dbUser.countryName || '' } : null,
             };
           }
         }

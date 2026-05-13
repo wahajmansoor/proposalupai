@@ -12,7 +12,17 @@ export async function GET(req: Request) {
   }
 
   try {
-    // 1. Find the verification token
+    // 1. Check if user is already verified
+    const user = await prisma.user.findUnique({
+      where: { email },
+      select: { emailVerified: true }
+    });
+
+    if (user?.emailVerified) {
+      return NextResponse.redirect(new URL("/dashboard?verified=true", req.url));
+    }
+
+    // 2. Find the verification token
     const verificationToken = await prisma.verificationToken.findUnique({
       where: {
         token: token,
@@ -20,15 +30,15 @@ export async function GET(req: Request) {
     });
 
     if (!verificationToken || verificationToken.identifier !== email) {
-      return new NextResponse("Invalid or expired token", { status: 400 });
+      return new NextResponse("Invalid or expired token. Please request a new one from your dashboard.", { status: 400 });
     }
 
-    // 2. Check if expired
+    // 3. Check if expired
     if (new Date() > verificationToken.expires) {
       await prisma.verificationToken.delete({
         where: { token },
       });
-      return new NextResponse("Token has expired", { status: 400 });
+      return new NextResponse("This verification link has expired. Please request a new one.", { status: 400 });
     }
 
     // 3. Mark user as verified
