@@ -46,7 +46,7 @@ function SidebarNav() {
         <SidebarMenu>
           {navItems.map((item) => (
             <SidebarMenuItem key={item.href}>
-              <Link href={item.href} legacyBehavior passHref>
+              <Link href={item.href}>
                 <SidebarMenuButton
                   onClick={handleLinkClick}
                   isActive={
@@ -65,7 +65,7 @@ function SidebarNav() {
        <SidebarFooter>
         <SidebarMenu>
             <SidebarMenuItem>
-                <Link href="/profile" legacyBehavior passHref>
+                <Link href="/profile">
                     <SidebarMenuButton
                     onClick={handleLinkClick}
                     isActive={pathname.startsWith('/profile')}
@@ -77,7 +77,7 @@ function SidebarNav() {
                 </Link>
             </SidebarMenuItem>
             <SidebarMenuItem>
-                <Link href="/subscription" legacyBehavior passHref>
+                <Link href="/subscription">
                     <SidebarMenuButton
                     onClick={handleLinkClick}
                     isActive={pathname.startsWith('/subscription')}

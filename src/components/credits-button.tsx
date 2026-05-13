@@ -152,16 +152,16 @@ function CreditsDialogContent() {
                 </div>
               </div>
               <div className="flex items-center justify-center gap-8 pt-2">
-                <Link href={socialShareLinks.facebook} target="_blank" passHref>
+                <Link href={socialShareLinks.facebook} target="_blank">
                   <ShareIcons.Facebook className="h-6 w-6 cursor-pointer dark:fill-white opacity-70 hover:opacity-100" />
                 </Link>
-                 <Link href={socialShareLinks.twitter} target="_blank" passHref>
+                 <Link href={socialShareLinks.twitter} target="_blank">
                   <ShareIcons.Twitter className="h-6 w-6 cursor-pointer dark:fill-white opacity-70 hover:opacity-100" />
                 </Link>
-                 <Link href={socialShareLinks.linkedin} target="_blank" passHref>
+                 <Link href={socialShareLinks.linkedin} target="_blank">
                   <ShareIcons.LinkedIn className="h-6 w-6 cursor-pointer dark:fill-white opacity-70 hover:opacity-100" />
                 </Link>
-                 <Link href={socialShareLinks.whatsapp} target="_blank" passHref>
+                 <Link href={socialShareLinks.whatsapp} target="_blank">
                   <ShareIcons.WhatsApp className="h-6 w-6 cursor-pointer dark:fill-white opacity-70 hover:opacity-100" />
                 </Link>
               </div>
