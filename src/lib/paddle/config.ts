@@ -10,7 +10,7 @@ if (!process.env.PADDLE_API_KEY) {
 }
 
 export const paddle = new Paddle(process.env.PADDLE_API_KEY, {
-  environment: process.env.NODE_ENV === 'production'
+  environment: process.env.NEXT_PUBLIC_PADDLE_ENVIRONMENT === 'production'
     ? Environment.production
     : Environment.sandbox,
 });

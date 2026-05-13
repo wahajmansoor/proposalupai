@@ -9,7 +9,7 @@ import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
-  Check, X, Loader2, Star, User, Trash2, Mail, Globe, MapPin, Search, Bell, Rocket, MessageSquareQuote, Phone
+  Check, X, Loader2, Crown, User, Trash2, Mail, Globe, MapPin, Search, Bell, Rocket, MessageSquareQuote, Phone
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { getPendingFeaturedRequests, updateFeaturedRequestStatus } from "@/lib/featured-request-actions";
@@ -327,10 +327,10 @@ export default function FeaturedPage() {
               <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
             </div>
           ) : featuredUsers.length === 0 ? (
-            <Card className="p-20 text-center border-dashed rounded-[32px] bg-slate-50/30 dark:bg-slate-900/20 border-slate-200 dark:border-slate-800">
+            <Card className="p-20 text-center rounded-lg border bg-card text-card-foreground border-slate-200 dark:border-slate-800 shadow-sm">
               <div className="flex flex-col items-center gap-4">
                 <div className="h-16 w-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                  <Star className="h-8 w-8 text-slate-300 dark:text-slate-700" />
+                  <Crown className="h-8 w-8 text-slate-300 dark:text-slate-700" />
                 </div>
                 <div className="space-y-1">
                   <p className="text-lg font-bold">No Featured Users</p>
@@ -360,16 +360,16 @@ export default function FeaturedPage() {
                             {user.title || 'Freelancer'}
                           </Badge>
                         </div>
-                          <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                            <Mail className="h-4 w-4" />
-                            {user.email}
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                          <Mail className="h-4 w-4" />
+                          {user.email}
+                        </div>
+                        {user.whatsapp && (
+                          <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-500 font-medium">
+                            <Phone className="h-4 w-4" />
+                            {user.whatsapp}
                           </div>
-                          {user.whatsapp && (
-                            <div className="flex items-center gap-2 text-sm text-green-600 dark:text-green-500 font-medium">
-                              <Phone className="h-4 w-4" />
-                              {user.whatsapp}
-                            </div>
-                          )}
+                        )}
                       </div>
                     </div>
                   </CardHeader>
