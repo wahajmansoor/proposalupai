@@ -134,6 +134,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               subscriptionStatus: dbUser.subscriptionStatus,
               proposalCount: dbUser.proposalCount,
               proposalCredits: dbUser.proposalCredits,
+              subscriptionInterval: dbUser.subscriptionInterval,
+              subscriptionCurrentPeriodEnd: dbUser.subscriptionCurrentPeriodEnd,
+              paddleCustomerId: dbUser.paddleCustomerId,
+              paddleSubscriptionId: dbUser.paddleSubscriptionId,
+              referralCode: dbUser.referralCode,
+              country: dbUser.countryCode ? { code: dbUser.countryCode, name: dbUser.countryName || '' } : null,
             };
           }
         } catch (error) {
