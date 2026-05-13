@@ -7,7 +7,7 @@ import useEmblaCarousel from 'embla-carousel-react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
-import { Check, ShoppingCart, Search, Lightbulb, Globe, Mail, BarChart2, ChevronLeft, ChevronRight, Star } from 'lucide-react';
+import { Check, ShoppingCart, Search, Lightbulb, Globe, Mail, BarChart2, ChevronLeft, ChevronRight, Crown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { ContactUserForm } from './contact-user-form';
 import type { FeaturedUser } from '@/lib/featured-actions';
@@ -93,7 +93,7 @@ export function FeaturedUsersCarousel({ users }: FeaturedUsersCarouselProps) {
                     </div>
                     <div className="absolute top-4 right-4">
                       <Badge className="bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 backdrop-blur-md shadow-sm flex items-center gap-1 py-1 px-3">
-                        <Star className="h-3 w-3 fill-yellow-900" /> Featured Freelancer
+                        <Crown className="h-3 w-3 fill-yellow-900" /> Featured Freelancer
                       </Badge>
                     </div>
                   </div>
@@ -101,7 +101,7 @@ export function FeaturedUsersCarousel({ users }: FeaturedUsersCarouselProps) {
                   <div className="pt-12 px-6 pb-6 space-y-4 flex-1 flex flex-col">
                     <div>
                       <h4 className="text-2xl font-bold text-slate-900 dark:text-slate-50">{user.name}</h4>
-                      <p className="text-xs text-white bg-button-gradient px-3 py-1.4 inline-flex justify-center items-center rounded-full h-6 w-auto">{user.title || 'Freelancer'}</p>
+                      <p className="text-sm text-white bg-button-gradient px-3 py-1.4 inline-flex justify-center items-center rounded-full h-6 w-auto">{user.title || 'Freelancer'}</p>
                     </div>
 
                     <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">

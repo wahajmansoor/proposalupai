@@ -5,19 +5,24 @@ import nodemailer from 'nodemailer';
 // These should be in .env. Providing defaults for development/testing if missing.
 const transporter = nodemailer.createTransport({
   host: process.env.EMAIL_SERVER_HOST || 'smtp.gmail.com',
-  port: parseInt(process.env.EMAIL_SERVER_PORT || '587'),
-  secure: process.env.EMAIL_SERVER_PORT === '465', // true for 465, false for other ports
+  port: parseInt(process.env.EMAIL_SERVER_PORT || '465'),
+  secure: true, // Port 465 is always secure
   auth: {
     user: process.env.EMAIL_SERVER_USER,
     pass: process.env.EMAIL_SERVER_PASSWORD,
   },
+  tls: {
+    // Do not fail on invalid certs (common with some SMTP providers)
+    rejectUnauthorized: false
+  }
 });
 
 export async function sendVerificationEmail(email: string, token: string) {
   const verifyUrl = `${process.env.NEXTAUTH_URL}/api/auth/verify?token=${token}&email=${email}`;
+  const senderEmail = process.env.EMAIL_SERVER_USER;
 
   const mailOptions = {
-    from: `"Proposal Up AI" <${process.env.EMAIL_SERVER_USER}>`,
+    from: `"Proposal Up AI" <${senderEmail}>`,
     to: email,
     subject: `Verify your email - Proposal Up AI`,
     html: `
@@ -44,10 +49,12 @@ export async function sendVerificationEmail(email: string, token: string) {
   };
 
   try {
-    await transporter.sendMail(mailOptions);
+    console.log(`Attempting to send verification email to: ${email} via ${process.env.EMAIL_SERVER_HOST}`);
+    const info = await transporter.sendMail(mailOptions);
+    console.log('Verification email sent successfully:', info.messageId);
     return { success: true };
   } catch (error) {
-    console.error('Error sending verification email:', error);
+    console.error('CRITICAL_EMAIL_ERROR:', error);
     return { success: false, error: 'Failed to send verification email.' };
   }
 }
@@ -65,8 +72,9 @@ export async function sendContactEmail({
   subject: string;
   message: string;
 }) {
+  const senderEmail = process.env.EMAIL_SERVER_USER;
   const mailOptions = {
-    from: `"${fromName}" <${process.env.EMAIL_SERVER_USER}>`,
+    from: `"${fromName}" <${senderEmail}>`,
     replyTo: fromEmail,
     to,
     subject: `New Contact Request: ${subject}`,
@@ -81,19 +89,21 @@ export async function sendContactEmail({
   };
 
   try {
+    console.log(`Sending contact email from: ${fromEmail} to: ${to}`);
     await transporter.sendMail(mailOptions);
     return { success: true };
   } catch (error) {
-    console.error('Error sending contact email:', error);
+    console.error('CONTACT_EMAIL_ERROR:', error);
     return { success: false, error: 'Failed to send email. Please check server logs.' };
   }
 }
 
 export async function sendAdminNotificationEmail(newUser: { name: string; email: string }) {
   const adminEmail = process.env.ADMIN_EMAIL || 'wahajmansoorcom@gmail.com'; // Fallback admin email
+  const senderEmail = process.env.EMAIL_SERVER_USER;
 
   const mailOptions = {
-    from: `"Proposal Up AI System" <${process.env.EMAIL_SERVER_USER}>`,
+    from: `"Proposal Up AI System" <${senderEmail}>`,
     to: adminEmail,
     subject: `New User Signup: ${newUser.name}`,
     html: `
@@ -110,10 +120,11 @@ export async function sendAdminNotificationEmail(newUser: { name: string; email:
   };
 
   try {
+    console.log(`Sending admin notification for user: ${newUser.email}`);
     await transporter.sendMail(mailOptions);
     return { success: true };
   } catch (error) {
-    console.error('Error sending admin notification email:', error);
+    console.error('ADMIN_NOTIFY_ERROR:', error);
     return { success: false };
   }
 }
