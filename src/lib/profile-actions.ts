@@ -4,9 +4,6 @@ import { cache } from 'react';
 import { auth } from "@/auth";
 import prisma from "@/lib/prisma";
 import type { SkillProfile, PortfolioLink } from "@/app/lib/types";
-
-import { cache } from 'react';
-
 // Helper to get authenticated user ID
 const getAuthenticatedUserId = cache(async (): Promise<string> => {
   const session = await auth();
