@@ -24,10 +24,19 @@ export async function POST(req: Request) {
     const DISPOSABLE_DOMAINS = [
       'temp-mail.org', 'guerrillamail.com', 'mailinator.com', '10minutemail.com', 
       'throwawaymail.com', 'getnada.com', 'tempmail.com', 'yopmail.com', 
-      'sharklasers.com', 'guerrillamailblock.com', 'pokemail.net', 'spam4.me'
+      'sharklasers.com', 'guerrillamailblock.com', 'pokemail.net', 'spam4.me',
+      'maildrop.cc', 'dispostable.com', 'mailexpire.com', 'mailforspam.com',
+      'mytrashmail.com', 'spambox.us', 'tempemail.co', 'temp-mail.io',
+      'tempmail.net', 'tempmail.dev', 'tempmail.biz', 'dropmail.me',
+      'minuteinbox.com', '10minutemail.net', 'temp-mail.com', 'tempmail.host',
+      'tempmail.email', 'tempmail.ninja', 'tempmail.pro', 'tempmail.plus',
+      'internxt.com', 'protonmail.com', 'tutanota.com', 'tutanota.de', // Sometimes used for spam but often legit, use with caution
+      'disroot.org', 'cock.li', 'mail.tm', 'mail.gw', 'secmail.pro',
+      'disposable.com', 'tempmail.id', 'tempmail.ooo', 'tempmail.site',
+      'tempmail.top', 'tempmail.win', 'tempmail.xyz', 'tempmail.icu'
     ];
     
-    if (DISPOSABLE_DOMAINS.includes(domain)) {
+    if (DISPOSABLE_DOMAINS.includes(domain) || domain.includes('temp-mail')) {
       return new NextResponse("Temporary email addresses are not allowed. Please use a permanent email address.", { status: 400 });
     }
 

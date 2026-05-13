@@ -753,19 +753,19 @@ function DashboardContent() {
         planInterval={planInterval}
       />
       {resendSuccess ? (
-        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6 w-full flex items-center justify-between">
-          <span className="flex items-center gap-2"><CheckCircle className="h-5 w-5 text-green-600" /> Verification link resent! Please check your inbox.</span>
+        <div className="bg-green-100 border border-green-400 text-green-700 dark:bg-green-950/30 dark:border-green-900 dark:text-green-200 px-4 py-3 rounded relative mb-6 w-full flex items-center justify-between">
+          <span className="flex items-center gap-2"><CheckCircle className="h-5 w-5 text-green-600 dark:text-green-400" /> Verification link resent! Please check your inbox.</span>
         </div>
       ) : !isEmailVerified && (
-        <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded relative mb-6 w-full flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 dark:bg-amber-950/30 dark:border-amber-900 dark:text-amber-200 px-4 py-3 rounded relative mb-6 w-full flex flex-col md:flex-row items-center justify-between gap-4">
           <div className="flex items-center gap-2">
-            <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
+            <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
             <span className="text-sm font-medium">Please verify your email address to enable proposal generation.</span>
           </div>
           <Button 
             size="sm" 
             variant="outline" 
-            className="border-amber-300 text-amber-800 hover:bg-amber-100 shrink-0"
+            className="border-amber-300 text-amber-800 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-900/50 shrink-0"
             onClick={handleResendVerification}
             disabled={isResending}
           >
@@ -812,7 +812,7 @@ function DashboardContent() {
               <CardContent className="p-6 space-y-4">
                 <div>
                   <Label htmlFor="projectTitle">Project Title</Label>
-                  <Input id="projectTitle" value={projectDetails.projectTitle} onChange={(e) => setProjectDetails({ ...projectDetails, projectTitle: e.target.value })} placeholder="e.g., Senior Frontend Developer" />
+                  <Input id="projectTitle" value={projectDetails.projectTitle} onChange={(e) => setProjectDetails({ ...projectDetails, projectTitle: e.target.value })} placeholder="e.g., Senior Frontend Developer" disabled={!isEmailVerified} />
                 </div>
                 <div>
                   <Label htmlFor="summary">Summary</Label>
@@ -824,10 +824,11 @@ function DashboardContent() {
                     placeholder="Paste the project summary from Upwork or another platform here..."
                     className="resize-none overflow-hidden"
                     rows={1}
+                    disabled={!isEmailVerified}
                   />
                 </div>
                 <div>
-                  <Button onClick={handleAnalyzeJob} disabled={isAnalyzing || trialLimitReached}>
+                  <Button onClick={handleAnalyzeJob} disabled={isAnalyzing || trialLimitReached || !isEmailVerified}>
                     {isAnalyzing ? "Analyzing..." : <><Sparkles className="mr-2" />Analyze & Get Suggestions</>}
                   </Button>
                   <p className="text-xs text-muted-foreground mt-2">

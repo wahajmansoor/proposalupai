@@ -106,6 +106,11 @@ export async function analyzeJobAction(prevState: any, formData: FormData) {
     return { error: 'Invalid input.' };
   }
 
+  const user = await getAuthenticatedUser();
+  if (!user?.emailVerified) {
+    return { error: 'Please verify your email to use this feature.' };
+  }
+
   try {
     const result = await analyzeJobForProposal(validatedFields.data);
     return { data: result };
@@ -124,6 +129,10 @@ export async function analyzeAndSuggestAction(input: z.infer<typeof analyzeAndSu
   const user = await getAuthenticatedUser();
   if (!user) {
     return { error: 'You must be logged in to use this feature.' };
+  }
+
+  if (!user.emailVerified) {
+    return { error: 'Please verify your email to use this feature.' };
   }
 
   const { subscriptionStatus, proposalCount = 0 } = user;
