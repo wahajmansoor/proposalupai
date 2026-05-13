@@ -4,7 +4,8 @@ import prisma from "@/lib/prisma";
 
 export async function POST(req: Request) {
   try {
-    const { email, password, name, referralCode } = await req.json();
+    const { email: rawEmail, password, name, referralCode } = await req.json();
+    const email = rawEmail?.toLowerCase();
 
     if (!email || !password || !name) {
       return new NextResponse("Missing fields", { status: 400 });
