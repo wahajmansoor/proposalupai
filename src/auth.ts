@@ -154,6 +154,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               return null as any;
             }
 
+            (session as any).sessionId = token.sessionId;
+
             (session.user as any).profile = {
               subscriptionStatus: dbUser.subscriptionStatus,
               proposalCount: dbUser.proposalCount,

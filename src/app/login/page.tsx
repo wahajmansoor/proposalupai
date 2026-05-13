@@ -3,7 +3,9 @@
 
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
+
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -12,17 +14,24 @@ import { useToast } from '@/hooks/use-toast';
 import { Loader2, ArrowLeft } from 'lucide-react';
 import { signIn, useSession } from 'next-auth/react';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { AlertCircle } from 'lucide-react';
+
 import { BgPattern } from '@/components/bg-pattern';
 import { ThemeToggle } from '@/components/theme-toggle';
 
-export default function LoginPage() {
+function LoginContent() {
   const router = useRouter();
   const { toast } = useToast();
   const { data: session, status } = useSession();
   const loading = status === "loading";
   const user = session?.user;
   
+  const searchParams = useSearchParams();
+  const error = searchParams.get('error');
+
   const [email, setEmail] = useState('');
+
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
@@ -108,6 +117,17 @@ export default function LoginPage() {
               <p className="text-muted-foreground mt-1">Enter your email and password to sign in!</p>
             </div>
 
+            {error === 'ConcurrentLogin' && (
+              <Alert variant="destructive" className="mb-6 bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-900/30">
+                <AlertCircle className="h-4 w-4" />
+                <AlertTitle>Logged out</AlertTitle>
+                <AlertDescription>
+                  You have been logged out because your account was used to sign in from another device.
+                </AlertDescription>
+              </Alert>
+            )}
+
+
             <Button variant="outline" className="w-full mb-6" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
               {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}
               Sign in with Google
@@ -153,7 +173,7 @@ export default function LoginPage() {
                     <Checkbox id="keep-logged-in" />
                     <Label htmlFor="keep-logged-in" className="text-sm font-normal">Keep me logged in</Label>
                   </div>
-                  <Link href="/forgot-password" name="forgot-password-link" className="text-sm font-medium text-primary hover:underline">Forgot password?</Link>
+                  <Link href="/forgot-password" className="text-sm font-medium text-primary hover:underline">Forgot password?</Link>
                 </div>
                 <Button type="submit" className="w-full mt-2" disabled={isLoading || isGoogleLoading}>
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
@@ -184,5 +204,13 @@ export default function LoginPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function LoginPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-screen"><Loader2 className="h-12 w-12 animate-spin text-primary" /></div>}>
+      <LoginContent />
+    </Suspense>
   );
 }

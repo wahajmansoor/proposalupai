@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { headers } from "next/headers";
 import * as bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
 

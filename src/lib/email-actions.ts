@@ -129,3 +129,35 @@ export async function sendAdminNotificationEmail(newUser: { name: string; email:
   }
 }
 
+export async function sendPasswordResetEmail(email: string, token: string) {
+    const resetLink = `${process.env.NEXTAUTH_URL}/new-password?token=${token}`;
+
+    const mailOptions = {
+        from: `"Proposal Up AI" <${process.env.SMTP_USER}>`,
+        to: email,
+        subject: "Reset your Password - Proposal Up AI",
+        html: `
+            <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
+                <h2 style="color: #333;">Password Reset Request</h2>
+                <p>Hello,</p>
+                <p>We received a request to reset your password for your Proposal Up AI account. Click the button below to set a new password:</p>
+                <div style="text-align: center; margin: 30px 0;">
+                    <a href="${resetLink}" style="background-color: #000; color: #fff; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold;">Reset Password</a>
+                </div>
+                <p>This link will expire in 1 hour. If you didn't request this, you can safely ignore this email.</p>
+                <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
+                <p style="font-size: 12px; color: #888;">If the button above doesn't work, copy and paste this link into your browser:</p>
+                <p style="font-size: 12px; color: #888;">${resetLink}</p>
+            </div>
+        `,
+    };
+
+    try {
+        await transporter.sendMail(mailOptions);
+        console.log(`PASSWORD_RESET_EMAIL_SENT: ${email}`);
+        return { success: true };
+    } catch (error) {
+        console.error("PASSWORD_RESET_EMAIL_ERROR:", error);
+        return { error: "Failed to send reset email." };
+    }
+}
