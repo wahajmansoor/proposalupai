@@ -10,6 +10,7 @@ declare module "next-auth" {
       services?: string | null;
       whatsapp?: string | null;
       isFeatured?: boolean;
+      emailVerified?: Date | null;
       profile?: {
         subscriptionStatus?: string | null;
         proposalCount?: number;
@@ -37,5 +38,6 @@ declare module "next-auth" {
 declare module "next-auth/jwt" {
   interface JWT {
     sub?: string;
+    sessionId?: string;
   }
 }

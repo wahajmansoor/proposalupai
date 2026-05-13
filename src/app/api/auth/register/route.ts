@@ -19,6 +19,21 @@ export async function POST(req: Request) {
       return new NextResponse("Email already exists", { status: 400 });
     }
 
+    // DISPOSABLE EMAIL CHECK
+    const domain = email.split('@')[1];
+    const DISPOSABLE_DOMAINS = [
+      'temp-mail.org', 'guerrillamail.com', 'mailinator.com', '10minutemail.com', 
+      'throwawaymail.com', 'getnada.com', 'tempmail.com', 'yopmail.com', 
+      'sharklasers.com', 'guerrillamailblock.com', 'pokemail.net', 'spam4.me'
+    ];
+    
+    if (DISPOSABLE_DOMAINS.includes(domain)) {
+      return new NextResponse("Temporary email addresses are not allowed. Please use a permanent email address.", { status: 400 });
+    }
+
+    // BASIC IP RATE LIMITING (Optional: store IP in User table to enforce strictly)
+    // For now, we just proceed, but we could block if needed.
+
     const hashedPassword = await bcrypt.hash(password, 10);
 
     // Generate a short unique referral code for the new user
@@ -88,7 +103,26 @@ export async function POST(req: Request) {
       }
     }
 
-    return NextResponse.json(user);
+    // GENERATE VERIFICATION TOKEN
+    const verificationToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours from now
+
+    await prisma.verificationToken.create({
+      data: {
+        identifier: email,
+        token: verificationToken,
+        expires,
+      }
+    });
+
+    // SEND VERIFICATION EMAIL
+    const { sendVerificationEmail } = await import("@/lib/email-actions");
+    await sendVerificationEmail(email, verificationToken);
+
+    return NextResponse.json({ 
+      ...user, 
+      message: "Verification email sent. Please check your inbox." 
+    });
   } catch (error: any) {
     console.error("REGISTER_ERROR", error);
     return new NextResponse("Internal Error", { status: 500 });

@@ -71,6 +71,7 @@ model User {
   referredBy                   String?
   countryCode                  String?
   countryName                  String?
+  currentSessionId             String?
 
   accounts      Account[]
   sessions      Session[]

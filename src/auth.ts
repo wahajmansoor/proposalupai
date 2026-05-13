@@ -91,6 +91,8 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               referralCode: true,
               countryCode: true,
               countryName: true,
+              emailVerified: true,
+              currentSessionId: true,
             }
           });
 
@@ -110,6 +112,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               dbUser.subscriptionCurrentPeriodEnd = trialEndDate;
               dbUser.referralCode = userReferralCode;
               dbUser.proposalCredits = 5;
+              
+              // New OAuth users are verified by default
+              updateData.emailVerified = new Date();
+              dbUser.emailVerified = new Date();
             }
 
             if (!dbUser.countryCode) {
@@ -140,6 +146,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             session.user.services = dbUser.services;
             session.user.whatsapp = dbUser.whatsapp;
             session.user.isFeatured = dbUser.isFeatured;
+            session.user.emailVerified = dbUser.emailVerified;
+
+            // SINGLE SESSION CHECK
+            if (token.sessionId && dbUser.currentSessionId !== token.sessionId) {
+              console.log(`SESSION_LOCK: Invalidating session for ${dbUser.email} (ID mismatch)`);
+              return null as any;
+            }
+
             (session.user as any).profile = {
               subscriptionStatus: dbUser.subscriptionStatus,
               proposalCount: dbUser.proposalCount,
@@ -162,6 +176,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }: { token: JWT; user?: User }) {
       if (user) {
         token.sub = user.id;
+        
+        // Generate new session ID on login
+        const sessionId = Math.random().toString(36).substring(2, 15);
+        await prisma.user.update({
+          where: { id: user.id },
+          data: { currentSessionId: sessionId }
+        });
+        token.sessionId = sessionId;
       }
       return token;
     }

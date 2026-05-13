@@ -12,6 +12,45 @@ const transporter = nodemailer.createTransport({
   },
 });
 
+export async function sendVerificationEmail(email: string, token: string) {
+  const verifyUrl = `${process.env.NEXTAUTH_URL}/api/auth/verify?token=${token}&email=${email}`;
+
+  const mailOptions = {
+    from: `"Proposal Up AI" <${process.env.EMAIL_SERVER_USER}>`,
+    to: email,
+    subject: `Verify your email - Proposal Up AI`,
+    html: `
+      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
+        <h2 style="color: #333; text-align: center;">Verify your email</h2>
+        <p style="color: #555; line-height: 1.6;">
+          Thank you for signing up for Proposal Up AI! To start generating winning proposals, please verify your email address by clicking the button below:
+        </p>
+        <div style="text-align: center; margin: 30px 0;">
+          <a href="${verifyUrl}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+            Verify Email Address
+          </a>
+        </div>
+        <p style="color: #888; font-size: 12px; text-align: center;">
+          If the button above doesn't work, copy and paste this link into your browser:<br>
+          <a href="${verifyUrl}" style="color: #0070f3;">${verifyUrl}</a>
+        </p>
+        <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+        <p style="color: #aaa; font-size: 12px; text-align: center;">
+          If you didn't create an account with Proposal Up AI, you can safely ignore this email.
+        </p>
+      </div>
+    `,
+  };
+
+  try {
+    await transporter.sendMail(mailOptions);
+    return { success: true };
+  } catch (error) {
+    console.error('Error sending verification email:', error);
+    return { success: false, error: 'Failed to send verification email.' };
+  }
+}
+
 export async function sendContactEmail({
   to,
   fromName,
@@ -48,3 +87,5 @@ export async function sendContactEmail({
     return { success: false, error: 'Failed to send email. Please check server logs.' };
   }
 }
+
+

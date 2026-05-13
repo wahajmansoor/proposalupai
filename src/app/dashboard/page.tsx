@@ -9,6 +9,7 @@ import {
   autofillSkillsAction,
   answerQuestionsAction,
   improveProposalAction,
+  resendVerificationEmailAction,
 } from '@/app/lib/actions';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card';
@@ -158,6 +159,28 @@ function DashboardContent() {
 
   const [showWelcomeDialog, setShowWelcomeDialog] = useState(false);
   const [planInterval, setPlanInterval] = useState<'monthly' | 'yearly' | null>(null);
+  const [isResending, setIsResending] = useState(false);
+  const [resendSuccess, setResendSuccess] = useState(false);
+
+  const handleResendVerification = async () => {
+    setIsResending(true);
+    try {
+      const result = await resendVerificationEmailAction();
+      if (result.success) {
+        setResendSuccess(true);
+        toast({ title: 'Email Sent', description: 'Verification link has been resent to your email.' });
+      } else {
+        toast({ title: 'Error', description: result.error || 'Failed to resend email.', variant: 'destructive' });
+      }
+    } catch (error) {
+      toast({ title: 'Error', description: 'An unexpected error occurred.', variant: 'destructive' });
+    } finally {
+      setIsResending(false);
+    }
+  };
+
+  const isEmailVerified = session?.user?.emailVerified;
+
 
 
   const [customImprovementInstruction, setCustomImprovementInstruction] = useState('');
@@ -729,6 +752,28 @@ function DashboardContent() {
         subscriptionStatus={userProfile?.subscriptionStatus}
         planInterval={planInterval}
       />
+      {resendSuccess ? (
+        <div className="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative mb-6 w-full flex items-center justify-between">
+          <span className="flex items-center gap-2"><CheckCircle className="h-5 w-5 text-green-600" /> Verification link resent! Please check your inbox.</span>
+        </div>
+      ) : !isEmailVerified && (
+        <div className="bg-amber-50 border border-amber-200 text-amber-800 px-4 py-3 rounded relative mb-6 w-full flex flex-col md:flex-row items-center justify-between gap-4">
+          <div className="flex items-center gap-2">
+            <AlertCircle className="h-5 w-5 text-amber-600 shrink-0" />
+            <span className="text-sm font-medium">Please verify your email address to enable proposal generation.</span>
+          </div>
+          <Button 
+            size="sm" 
+            variant="outline" 
+            className="border-amber-300 text-amber-800 hover:bg-amber-100 shrink-0"
+            onClick={handleResendVerification}
+            disabled={isResending}
+          >
+            {isResending ? <RefreshCcw className="h-4 w-4 animate-spin mr-2" /> : <Mail className="h-4 w-4 mr-2" />}
+            Resend Verification Link
+          </Button>
+        </div>
+      )}
       {trialLimitReached && (
         <Card className="mb-6 border-destructive bg-destructive/5 text-destructive-foreground">
           <CardHeader>

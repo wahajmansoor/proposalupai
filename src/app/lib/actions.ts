@@ -85,6 +85,7 @@ export const getAuthenticatedUser = cache(async () => {
       proposalCredits: true,
       paddleCustomerId: true,
       paddleSubscriptionId: true,
+      emailVerified: true,
     }
   });
   return user;
@@ -231,6 +232,11 @@ export async function generateProposalAction(input: z.infer<typeof generatePropo
     return { error: 'You must be logged in to generate a proposal.' };
   }
 
+  // GATING: Email Verification
+  if (!user.emailVerified) {
+    return { error: 'Please verify your email to generate proposals. Check your inbox for the verification link.' };
+  }
+
   const { subscriptionStatus, proposalCount = 0 } = user;
 
   // Enforce trial limit
@@ -271,6 +277,11 @@ export async function improveProposalAction(input: z.infer<typeof improveProposa
   const user = await getAuthenticatedUser();
   if (!user) {
     return { error: 'You must be logged in to use this feature.' };
+  }
+
+  // GATING: Email Verification
+  if (!user.emailVerified) {
+    return { error: 'Please verify your email to use this feature. Check your inbox for the verification link.' };
   }
 
   const { proposalCredits = 0 } = user;
@@ -387,5 +398,47 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
 export async function getCreditHistory(): Promise<{ history?: CreditHistoryItem[]; error?: string }> {
   // Return empty until a CreditHistory model is added to Prisma.
   return { history: [] };
+}
+
+export async function resendVerificationEmailAction(): Promise<{ success?: boolean; error?: string }> {
+  const user = await getAuthenticatedUser();
+  if (!user || !user.email) {
+    return { error: 'You must be logged in to resend the verification email.' };
+  }
+
+  // Double check in DB for verified status
+  const dbUser = await prisma.user.findUnique({
+    where: { id: user.id },
+    select: { emailVerified: true }
+  });
+
+  if (dbUser?.emailVerified) {
+    return { error: 'Your email is already verified.' };
+  }
+
+  try {
+    const verificationToken = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    const expires = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
+
+    await prisma.verificationToken.deleteMany({
+      where: { identifier: user.email }
+    });
+
+    await prisma.verificationToken.create({
+      data: {
+        identifier: user.email,
+        token: verificationToken,
+        expires,
+      }
+    });
+
+    const { sendVerificationEmail } = await import("@/lib/email-actions");
+    await sendVerificationEmail(user.email, verificationToken);
+
+    return { success: true };
+  } catch (error: any) {
+    console.error("RESEND_VERIFY_ERROR", error);
+    return { error: 'Failed to resend verification email.' };
+  }
 }
 
