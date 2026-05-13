@@ -5,14 +5,14 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { getUsers, AppUser, toggleFeaturedUser } from "./actions";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { UserActions } from "./user-actions";
 import { Badge } from "@/components/ui/badge";
 import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Search, Loader2, Star } from "lucide-react";
+import { ArrowUpDown, Search, Loader2, Star, User } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -293,6 +293,7 @@ export default function AdminUsersPage() {
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-9 w-9">
+                              <AvatarImage src={user.image || ""} alt={user.name || ""} className="object-cover" />
                               <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                             </Avatar>
                             <div className="font-medium">{user.name || "N/A"}</div>

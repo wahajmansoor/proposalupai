@@ -21,6 +21,7 @@ export interface AppUser {
   signInProvider?: string | null;
   isFeatured: boolean;
   country?: { code: string; name: string } | null;
+  image?: string | null;
 }
 
 export async function getUsers(): Promise<AppUser[]> {
@@ -48,6 +49,7 @@ export async function getUsers(): Promise<AppUser[]> {
     appliedCoupon: user.appliedCoupon,
     signInProvider: user.accounts[0]?.provider || null,
     country: user.countryCode ? { code: user.countryCode, name: user.countryName || '' } : null,
+    image: user.image,
   }));
 }
 
