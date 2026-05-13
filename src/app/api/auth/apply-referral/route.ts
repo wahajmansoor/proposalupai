@@ -41,17 +41,17 @@ export async function POST(req: Request) {
       data: { referredBy: referralCode }
     });
 
-    // Reward the referrer (+5 for every successful referral)
+    // Reward the referrer (+10 for every successful referral)
     await prisma.user.update({
       where: { id: referrer.id },
-      data: { proposalCredits: { increment: 5 } }
+      data: { proposalCredits: { increment: 10 } }
     });
 
     // @ts-ignore
     await prisma.creditHistory.create({
       data: {
         userId: referrer.id,
-        amount: 5,
+        amount: 10,
         reason: `Referral Bonus – new user signed up with your link`,
       }
     });

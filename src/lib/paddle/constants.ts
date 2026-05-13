@@ -11,7 +11,7 @@ export const PADDLE_PRICES = {
 } as const;
 
 export const CREDIT_AMOUNTS: Record<string, number> = {
-  [PADDLE_PRICES.credits.ten]: 10,
-  [PADDLE_PRICES.credits.twentyfive]: 25,
-  [PADDLE_PRICES.credits.fifty]: 50,
+  [PADDLE_PRICES.credits.ten]: 30,
+  [PADDLE_PRICES.credits.twentyfive]: 70,
+  [PADDLE_PRICES.credits.fifty]: 200,
 };

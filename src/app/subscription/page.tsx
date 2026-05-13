@@ -23,9 +23,9 @@ import { useRouter } from 'next/navigation';
 
 
 const creditPackages = [
-  { name: "10 Credits", price: 5, credits: 10, priceId: PADDLE_PRICES.credits.ten },
-  { name: "25 Credits", price: 10, credits: 25, priceId: PADDLE_PRICES.credits.twentyfive },
-  { name: "50 Credits", price: 25, credits: 50, priceId: PADDLE_PRICES.credits.fifty }
+  { name: "30 Credits", price: 5, credits: 30, priceId: PADDLE_PRICES.credits.ten },
+  { name: "70 Credits", price: 10, credits: 70, priceId: PADDLE_PRICES.credits.twentyfive },
+  { name: "200 Credits", price: 25, credits: 200, priceId: PADDLE_PRICES.credits.fifty }
 ];
 
 function BuyCredits({ onPurchaseSuccess }: { onPurchaseSuccess: () => void }) {
@@ -101,7 +101,7 @@ function BuyCredits({ onPurchaseSuccess }: { onPurchaseSuccess: () => void }) {
       </CardContent>
       <CardFooter className="flex-col items-start gap-4 border-t pt-4">
         <h4 className="font-semibold">Refer a Friend, Get Credits</h4>
-        <p className="text-sm text-muted-foreground -mt-3">Invite a friend. When they activate their Pro plan, you both get 5 free credits!</p>
+        <p className="text-sm text-muted-foreground -mt-3">Invite a friend. You get 10 credits and they get 5 credits!</p>
         <div className="w-full space-y-2">
           <Label htmlFor="referral-link" className="sr-only">Your Referral Link</Label>
           <div className="flex items-center gap-2">
@@ -307,7 +307,7 @@ export default function SubscriptionPage() {
       });
       setIsManagingBilling(false);
     } else if ('url' in result) {
-      window.location.href = result.url;
+      window.open(result.url, '_blank');
     }
   };
 

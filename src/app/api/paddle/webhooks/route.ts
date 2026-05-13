@@ -48,9 +48,9 @@ export async function POST(req: Request) {
                     // Award initial credits
                     const interval = subscription.items[0]?.price?.billingCycle?.interval;
                     if (interval === 'month') {
-                        await addCreditsAction(userId, 10, 'Monthly plan activation');
+                        await addCreditsAction(userId, 30, 'Monthly plan activation');
                     } else if (interval === 'year') {
-                        await addCreditsAction(userId, 100, 'Yearly plan activation');
+                        await addCreditsAction(userId, 400, 'Yearly plan activation');
                     }
                 }
                 break;

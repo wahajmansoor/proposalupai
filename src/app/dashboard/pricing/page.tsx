@@ -24,16 +24,16 @@ const plans = {
     price: 5,
     priceDescription: "/month",
     description: "Access all AI-powered features with no limits and craft proposals in seconds.",
-    credits: 10,
+    credits: 30,
     creditsDescription: "credits/month",
     priceId: PADDLE_PRICES.monthly,
   },
   yearly: {
     name: "Pro Yearly",
-    price: 60,
+    price: 50,
     priceDescription: "/year",
     description: "The best value for long-term growth with AI-powered features to generate winning proposals in seconds.",
-    credits: 100,
+    credits: 400,
     creditsDescription: "credits/year",
     priceId: PADDLE_PRICES.yearly,
   }
@@ -112,7 +112,7 @@ export default function PricingPage() {
           description: result.error 
         });
       } else if ('url' in result) {
-        window.location.href = result.url;
+        window.open(result.url, '_blank');
       }
     } catch (error) {
       toast({ 
