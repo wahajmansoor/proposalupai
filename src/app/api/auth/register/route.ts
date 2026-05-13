@@ -51,6 +51,10 @@ export async function POST(req: Request) {
     const trialEndDate = new Date();
     trialEndDate.setDate(trialEndDate.getDate() + 7);
 
+    // Get IP for anti-abuse
+    const headersList = await headers();
+    const registrationIp = headersList.get('x-forwarded-for')?.split(',')[0] || headersList.get('x-real-ip') || 'unknown';
+
     const user = await prisma.user.create({
       data: {
         email,
@@ -62,6 +66,7 @@ export async function POST(req: Request) {
         proposalCredits: 5,
         referralCode: userReferralCode,
         referredBy: referralCode || null,
+        registrationIp,
       }
     });
 

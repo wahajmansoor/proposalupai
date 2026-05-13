@@ -153,7 +153,7 @@ export default function LoginPage() {
                     <Checkbox id="keep-logged-in" />
                     <Label htmlFor="keep-logged-in" className="text-sm font-normal">Keep me logged in</Label>
                   </div>
-                  <Link href="#" className="text-sm font-medium text-primary hover:underline">Forgot password?</Link>
+                  <Link href="/forgot-password" name="forgot-password-link" className="text-sm font-medium text-primary hover:underline">Forgot password?</Link>
                 </div>
                 <Button type="submit" className="w-full mt-2" disabled={isLoading || isGoogleLoading}>
                   {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}

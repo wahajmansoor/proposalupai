@@ -148,9 +148,9 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             session.user.isFeatured = dbUser.isFeatured;
             session.user.emailVerified = dbUser.emailVerified;
 
-            // SINGLE SESSION CHECK
-            if (token.sessionId && dbUser.currentSessionId !== token.sessionId) {
-              console.log(`SESSION_LOCK: Invalidating session for ${dbUser.email} (ID mismatch)`);
+            // SINGLE SESSION CHECK - Mandatory for all sessions
+            if (!token.sessionId || (dbUser.currentSessionId && dbUser.currentSessionId !== token.sessionId)) {
+              console.log(`SESSION_LOCK: Invalidating session for ${dbUser.email} (Mismatch or Missing ID)`);
               return null as any;
             }
 
