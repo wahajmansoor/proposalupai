@@ -32,7 +32,7 @@ function SidebarNav() {
   const { setOpenMobile } = useSidebar();
   const { data: session } = useSession();
   const isAdminUser = checkAdmin(session?.user?.email);
-  
+
   const handleLinkClick = () => {
     setOpenMobile(false);
   };
@@ -48,12 +48,12 @@ function SidebarNav() {
       <SidebarContent>
         <SidebarMenu>
           {navItems.map((item) => (
-            <SidebarMenuItem 
-              key={item.href} 
+            <SidebarMenuItem
+              key={item.href}
               id={
-                item.href === '/dashboard/skill-profiles' ? 'tour-sidebar-profiles' : 
-                item.href === '/dashboard/pricing' ? 'tour-sidebar-pricing' : 
-                undefined
+                item.href === '/dashboard/skill-profiles' ? 'tour-sidebar-profiles' :
+                  item.href === '/dashboard/pricing' ? 'tour-sidebar-pricing' :
+                    undefined
               }
             >
               <Link href={item.href}>
@@ -72,59 +72,59 @@ function SidebarNav() {
           ))}
         </SidebarMenu>
       </SidebarContent>
-       <SidebarFooter>
+      <SidebarFooter>
         <SidebarMenu>
-            {isAdminUser && (
-              <SidebarMenuItem>
-                  <Link href="/admin-portal">
-                      <SidebarMenuButton
-                      onClick={handleLinkClick}
-                      isActive={pathname.startsWith('/admin-portal')}
-                      tooltip="Admin Portal"
-                      className="text-primary hover:text-primary/90"
-                      >
-                      <HugeiconsIcon icon={SecurityCheckIcon} size={24} className="h-6 w-6"/>
-                      <span className="font-bold">Admin Portal</span>
-                      </SidebarMenuButton>
-                  </Link>
-              </SidebarMenuItem>
-            )}
-            <SidebarMenuItem id="tour-sidebar-general">
-                <Link href="/profile">
-                    <SidebarMenuButton
-                    onClick={handleLinkClick}
-                    isActive={pathname.startsWith('/profile')}
-                    tooltip="General Profile"
-                    >
-                    <HugeiconsIcon icon={UserSettings01Icon} size={24} className="h-6 w-6"/>
-                    <span>General Profile</span>
-                    </SidebarMenuButton>
-                </Link>
-            </SidebarMenuItem>
-            <SidebarMenuItem id="tour-sidebar-subscription">
-                <Link href="/subscription">
-                    <SidebarMenuButton
-                    onClick={handleLinkClick}
-                    isActive={pathname.startsWith('/subscription')}
-                    tooltip="Subscription"
-                    >
-                    <HugeiconsIcon icon={CreditCardValidationIcon} size={24} className="h-6 w-6"/>
-                    <span>Subscription</span>
-                    </SidebarMenuButton>
-                </Link>
-            </SidebarMenuItem>
-             <SidebarMenuItem>
-              <SidebarMenuButton
-                  onClick={async () => {
-                    await signOut({ redirect: true, callbackUrl: '/login' });
-                  }}
-                  tooltip="Logout"
-                  className="w-full"
+          {isAdminUser && (
+            <SidebarMenuItem>
+              <Link href="/admin-portal">
+                <SidebarMenuButton
+                  onClick={handleLinkClick}
+                  isActive={pathname.startsWith('/admin-portal')}
+                  tooltip="Admin Portal"
+                  className="text-primary hover:text-primary/90"
                 >
-                  <HugeiconsIcon icon={Logout01Icon} size={24} className="h-6 w-6"/>
-                  <span>Logout</span>
+                  <HugeiconsIcon icon={SecurityCheckIcon} size={24} className="h-6 w-6" />
+                  <span className="font-bold">Admin Portal</span>
                 </SidebarMenuButton>
+              </Link>
             </SidebarMenuItem>
+          )}
+          <SidebarMenuItem id="tour-sidebar-general">
+            <Link href="/profile">
+              <SidebarMenuButton
+                onClick={handleLinkClick}
+                isActive={pathname.startsWith('/profile')}
+                tooltip="General Profile"
+              >
+                <HugeiconsIcon icon={UserSettings01Icon} size={24} className="h-6 w-6" />
+                <span>General Profile</span>
+              </SidebarMenuButton>
+            </Link>
+          </SidebarMenuItem>
+          <SidebarMenuItem id="tour-sidebar-subscription">
+            <Link href="/subscription">
+              <SidebarMenuButton
+                onClick={handleLinkClick}
+                isActive={pathname.startsWith('/subscription')}
+                tooltip="Subscription"
+              >
+                <HugeiconsIcon icon={CreditCardValidationIcon} size={24} className="h-6 w-6" />
+                <span>Subscription</span>
+              </SidebarMenuButton>
+            </Link>
+          </SidebarMenuItem>
+          <SidebarMenuItem>
+            <SidebarMenuButton
+              onClick={async () => {
+                await signOut({ callbackUrl: '/login' });
+              }}
+              tooltip="Logout"
+              className="w-full"
+            >
+              <HugeiconsIcon icon={Logout01Icon} size={24} className="h-6 w-6" />
+              <span>Logout</span>
+            </SidebarMenuButton>
+          </SidebarMenuItem>
         </SidebarMenu>
       </SidebarFooter>
     </>

@@ -30,13 +30,13 @@ export function UserNav() {
 
   if (loading) {
     return (
-        <div className="flex items-center gap-2">
-            <Skeleton className="h-9 w-9 rounded-full" />
-            <div className="hidden sm:flex flex-col gap-1">
-              <Skeleton className="h-4 w-20" />
-              <Skeleton className="h-3 w-28" />
-            </div>
+      <div className="flex items-center gap-2">
+        <Skeleton className="h-9 w-9 rounded-full" />
+        <div className="hidden sm:flex flex-col gap-1">
+          <Skeleton className="h-4 w-20" />
+          <Skeleton className="h-3 w-28" />
         </div>
+      </div>
     );
   }
 
@@ -56,7 +56,7 @@ export function UserNav() {
     }
     return name.substring(0, 2).toUpperCase();
   };
-  
+
   const displayName = user.name;
   const photoURL = user.image;
   const email = user.email;
@@ -73,14 +73,14 @@ export function UserNav() {
             )}
             <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
           </Avatar>
-           <div className="hidden sm:flex flex-col text-left">
-              <span className="font-semibold text-sm leading-tight text-foreground">{displayName}</span>
-               {isPremium && (
-                <Badge variant="premium" className="px-1.5 py-0 h-auto justify-start w-fit">
-                    <Star className="mr-1 h-3 w-3"/>
-                    Premium
-                </Badge>
-              )}
+          <div className="hidden sm:flex flex-col text-left">
+            <span className="font-semibold text-sm leading-tight text-foreground">{displayName}</span>
+            {isPremium && (
+              <Badge variant="premium" className="px-1.5 py-0 h-auto justify-start w-fit">
+                <Star className="mr-1 h-3 w-3" />
+                Premium
+              </Badge>
+            )}
           </div>
           <ChevronDown className="h-4 w-4 text-muted-foreground hidden sm:block" />
         </Button>
@@ -102,27 +102,27 @@ export function UserNav() {
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-           <DropdownMenuItem asChild>
-              <Link href="/profile">
-                  <HugeiconsIcon icon={UserSettings01Icon} size={24} className="mr-2 h-4 w-4"/>
-                  General Profile
+          <DropdownMenuItem asChild>
+            <Link href="/profile">
+              <HugeiconsIcon icon={UserSettings01Icon} size={24} className="mr-2 h-4 w-4" />
+              General Profile
+            </Link>
+          </DropdownMenuItem>
+          {userProfile?.paddleCustomerId && (
+            <DropdownMenuItem asChild>
+              <Link href="/subscription">
+                <HugeiconsIcon icon={CreditCardValidationIcon} size={24} className="mr-2 h-4 w-4" />
+                Subscription
               </Link>
-           </DropdownMenuItem>
-           {userProfile?.paddleCustomerId && (
-             <DropdownMenuItem asChild>
-                <Link href="/subscription">
-                  <HugeiconsIcon icon={CreditCardValidationIcon} size={24} className="mr-2 h-4 w-4"/>
-                    Subscription
-                </Link>
             </DropdownMenuItem>
           )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={async () => {
-          await signOut({ redirect: true, callbackUrl: '/login' });
+          await signOut({ callbackUrl: '/login' });
         }}>
-          <HugeiconsIcon icon={Logout01Icon} size={24} className="mr-2 h-4 w-4"/>
-            Log out
+          <HugeiconsIcon icon={Logout01Icon} size={24} className="mr-2 h-4 w-4" />
+          Log out
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>

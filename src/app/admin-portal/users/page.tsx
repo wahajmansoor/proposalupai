@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Search, Loader2, Crown, Star, User } from "lucide-react";
+import { ArrowUpDown, Search, Loader2, Crown, Star, User, ShieldCheck, ShieldAlert } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -307,9 +307,20 @@ export default function AdminUsersPage() {
                             <div className="flex flex-col gap-1">
                               <div className="font-medium flex items-center gap-2">
                                 {user.name || "N/A"}
-                                <Badge variant={user.emailVerified ? "default" : "secondary"} className={cn(user.emailVerified ? "bg-green-600 hover:bg-green-700" : "bg-orange-500 hover:bg-orange-600")}>
-                                  {user.emailVerified ? "Verified" : "Unverified"}
-                                </Badge>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <span>
+                                      {user.emailVerified ? (
+                                        <ShieldCheck className="h-4 w-4 text-white fill-green-500/10" />
+                                      ) : (
+                                        <ShieldAlert className="h-4 w-4 text-white fill-orange-500/10" />
+                                      )}
+                                    </span>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{user.emailVerified ? "Email Verified" : "Email Unverified"}</p>
+                                  </TooltipContent>
+                                </Tooltip>
                               </div>
                               {user.country?.code && (
                                 <Tooltip>
