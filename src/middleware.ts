@@ -15,7 +15,7 @@ export default auth(async (req) => {
     const isNextAuthAdmin = checkAdmin(session?.user?.email);
     const hasAdminCookie = !!adminCookie;
     const isAdmin = isNextAuthAdmin || hasAdminCookie;
-    
+
     if (pathname === '/admin-login' && isAdmin) {
       return NextResponse.redirect(new URL('/admin-portal', req.url));
     }
@@ -32,6 +32,11 @@ export default auth(async (req) => {
     if (!session) {
       return NextResponse.redirect(new URL('/login', req.url));
     }
+
+    // Deactivated user check
+    if ((session.user as any).deactivated) {
+      return NextResponse.redirect(new URL('/login?error=Deactivated', req.url));
+    }
   }
 
   return NextResponse.next();
@@ -39,9 +44,9 @@ export default auth(async (req) => {
 
 export const config = {
   matcher: [
-    '/admin-login', 
-    '/admin-portal/:path*', 
-    '/dashboard/:path*', 
+    '/admin-login',
+    '/admin-portal/:path*',
+    '/dashboard/:path*',
     '/profile/:path*',
     '/((?!api|_next/static|_next/image|favicon.ico|forgot-password|new-password).*)',
   ],

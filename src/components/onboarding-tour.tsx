@@ -113,56 +113,48 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
       content: "The most powerful AI tool for winning freelance jobs. Let's take a 1-minute tour of your new command center.",
       placement: "center",
       disableBeacon: true,
-      image: "/onboarding/welcome.png",
     },
     {
       target: "#tour-sidebar-profiles",
       title: "1. Create Your Skill Profiles",
       content: "Your first real mission! You need to create at least one Skill Profile so the AI knows your expertise and can write tailored proposals that sell.",
       placement: "right",
-      image: "/onboarding/profiles.png",
     },
     {
       target: "#tour-sidebar-pricing",
       title: "2. Plans & Pricing",
       content: "Upgrade your account to unlock more credits, custom tones, and priority AI generation. We have plans for every stage of your career.",
       placement: "right",
-      image: "/onboarding/pricing.png",
     },
     {
       target: "#tour-sidebar-general",
       title: "3. General Profile",
       content: "Manage your personal details and account settings. Keep your information up-to-date for a professional appearance.",
       placement: "right",
-      image: "/onboarding/general.png",
     },
     {
       target: "#tour-sidebar-subscription",
       title: "4. Your Subscription",
       content: "View and manage your current plan, billing history, and upcoming renewals all in one place.",
       placement: "right",
-      image: "/onboarding/subscription.png",
     },
     {
       target: "#tour-header-credits",
       title: "5. Credits & Fuel",
-      content: "Each proposal uses a small amount of fuel. Keep an eye on your credits here and top up anytime to keep winning.",
+      content: "Each proposal improvement uses a 1 credit. Keep an eye on your credits here and top up anytime to keep improving and winning.",
       placement: "bottom",
-      image: "/onboarding/credits.png",
     },
     {
       target: "#tour-proposal-form",
       title: "6. The Magic Generator",
       content: "This is where the magic happens! Paste any job description here. Our AI will use your profiles to craft a high-converting proposal in seconds.",
       placement: "top",
-      image: "/onboarding/generator.png",
     },
     {
       target: "body",
       title: "You're Ready to Win!",
       content: "That's it! You're now equipped with the ultimate freelance weapon. Go ahead and start your journey!",
       placement: "center",
-      image: "/onboarding/victory.png",
     }
   ];
 
@@ -183,7 +175,7 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
             <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold">
               {index + 1}
             </span>
-            <span className="text-[10px] uppercase tracking-widest font-bold text-slate-400">Step Guide</span>
+            <span className="text-[10px] uppercase tracking-widest font-bold text-slate-400">System Guide</span>
           </div>
           <button
             type="button"
@@ -205,31 +197,6 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
             {step.content}
           </div>
         </div>
-
-        {/* Clickable Image → Lightbox */}
-        {step.image && (
-          <div className="mt-4 group relative">
-            <button
-              type="button"
-              className="w-full rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-              onClick={() => openLightbox(step.image, step.title)}
-              aria-label="View full-size image"
-            >
-              <img
-                src={step.image}
-                alt={step.title}
-                className="w-full h-40 object-cover transition-transform duration-300 group-hover:scale-105"
-              />
-              {/* Hover overlay hint */}
-              <div className="absolute inset-0 rounded-xl flex items-center justify-center bg-black/0 group-hover:bg-black/30 transition-all duration-200">
-                <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center gap-1.5 bg-white/90 text-slate-800 text-xs font-semibold px-3 py-1.5 rounded-full shadow">
-                  <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M15 3h6v6" /><path d="M10 14 21 3" /><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6" /></svg>
-                  View full size
-                </span>
-              </div>
-            </button>
-          </div>
-        )}
 
         {/* Footer */}
         <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
@@ -275,11 +242,6 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
           },
         } as any}
       />
-
-      {/* Lightbox portal — renders above everything including Joyride */}
-      {lightboxSrc && (
-        <Lightbox src={lightboxSrc} alt={lightboxAlt} onClose={closeLightbox} />
-      )}
     </>
   );
 }

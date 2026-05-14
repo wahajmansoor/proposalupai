@@ -70,26 +70,28 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               countryName: true,
               emailVerified: true,
               currentSessionId: true,
+              isActive: true,
+              deactivationReason: true,
             }
           });
 
           // Initialize new OAuth users or users missing data
           if (dbUser && (!dbUser.subscriptionCurrentPeriodEnd || !dbUser.countryCode)) {
             const updateData: any = {};
-            
+
             if (!dbUser.subscriptionCurrentPeriodEnd && dbUser.subscriptionStatus === 'trialing') {
               const trialEndDate = new Date();
               trialEndDate.setDate(trialEndDate.getDate() + 7);
               const userReferralCode = Math.random().toString(36).substring(2, 10).toUpperCase();
-              
+
               updateData.subscriptionCurrentPeriodEnd = trialEndDate;
               updateData.referralCode = userReferralCode;
               updateData.proposalCredits = 5;
-              
+
               dbUser.subscriptionCurrentPeriodEnd = trialEndDate;
               dbUser.referralCode = userReferralCode;
               dbUser.proposalCredits = 5;
-              
+
               // New OAuth users are verified by default
               updateData.emailVerified = new Date();
               dbUser.emailVerified = new Date();
@@ -121,6 +123,13 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             session.user.isFeatured = dbUser.isFeatured;
             session.user.emailVerified = dbUser.emailVerified;
 
+            // Check if user is active
+            if (dbUser.isActive === false) {
+              (session.user as any).deactivated = {
+                message: dbUser.deactivationReason || "Your profile has been deactivated."
+              };
+            }
+
             // SINGLE SESSION CHECK
             if (!token.sessionId || (dbUser.currentSessionId && dbUser.currentSessionId !== token.sessionId)) {
               console.log(`SESSION_LOCK: Invalidating session for ${dbUser.email}`);
@@ -140,6 +149,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               paddleSubscriptionId: dbUser.paddleSubscriptionId,
               referralCode: dbUser.referralCode,
               country: dbUser.countryCode ? { code: dbUser.countryCode, name: dbUser.countryName || '' } : null,
+              isActive: dbUser.isActive,
             };
           }
         } catch (error) {
@@ -152,7 +162,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     async jwt({ token, user }: { token: JWT; user?: User }) {
       if (user) {
         token.sub = user.id;
-        
+
         // Generate new session ID on login
         const sessionId = Math.random().toString(36).substring(2, 15);
         await prisma.user.update({

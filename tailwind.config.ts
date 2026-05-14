@@ -1,4 +1,4 @@
-import type {Config} from 'tailwindcss';
+import type { Config } from 'tailwindcss';
 const { fontFamily } = require("tailwindcss/defaultTheme")
 
 export default {
@@ -18,7 +18,7 @@ export default {
     },
     extend: {
       backgroundImage: {
-        'button-gradient': 'linear-gradient(135deg,#52dc1c,#3cd828,#00cc4a,#00c12b,#00ca4f,#47dc26)',
+        'button-gradient': 'linear-gradient(135deg,#3cd828,#00cc4a,#00c12b,#00ca4f,#47dc26)',
       },
       fontFamily: {
         sans: ["var(--font-outfit)", ...fontFamily.sans],
@@ -85,7 +85,7 @@ export default {
             height: '0',
           },
         },
-         'credit-pop': {
+        'credit-pop': {
           '0%': { transform: 'translateY(0) scale(0.5)', opacity: '0' },
           '20%': { transform: 'translateY(-10px) scale(1.1)', opacity: '1' },
           '80%': { transform: 'translateY(-60px) scale(1)', opacity: '1' },

@@ -40,7 +40,7 @@ export function WelcomeDialog({
             <ProposalUpLogos className="h-16 w-16 text-primary" />
           </div>
           <DialogTitle className="text-2xl font-bold">
-            {isTrialing ? "Welcome to Proposal Up!" : "Welcome to Proposal Up!"}
+            {isTrialing ? "Welcome to Proposal Up AI!" : "Welcome to Proposal Up AI!"}
           </DialogTitle>
           <DialogDescription className="text-base text-center">
             Your account is ready, and your journey to winning more projects has begun.
@@ -53,7 +53,7 @@ export function WelcomeDialog({
               <div>
                 <h4 className="font-semibold">7 Days Free Trial</h4>
                 <p className="text-sm text-muted-foreground">
-                  Your free trial has started. You can use all AI features for 7 days.
+                  Your free trial has started. You can use all AI features.
                 </p>
               </div>
             </div>
@@ -73,7 +73,7 @@ export function WelcomeDialog({
           {isTrialing ? (
             <>
               <Button type="button" onClick={() => onOpenChange(false)} className="w-full sm:w-auto">
-                Let's Start Creating Proposal
+                Start Creating Proposal
               </Button>
             </>
           ) : (

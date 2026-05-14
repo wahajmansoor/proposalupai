@@ -4,7 +4,8 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash2, Loader2, CreditCard, Mail, Crown, Star } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { MoreHorizontal, Edit, Trash2, Loader2, CreditCard, Mail, Crown, Star, Power } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
@@ -14,17 +15,38 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { deleteUser, updateUser, AppUser, createAdminCustomerPortalSession, sendPasswordResetLink, updateUserCredits, verifyUserEmail } from './actions';
+import { toggleUserStatus, updateUser, AppUser, createAdminCustomerPortalSession, sendPasswordResetLink, updateUserCredits, verifyUserEmail } from './actions';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { CheckCircle } from 'lucide-react';
 
 export function UserActions({ user }: { user: AppUser }) {
+  return (
+    <TooltipProvider>
+      <UserActionsInner user={user} />
+    </TooltipProvider>
+  );
+}
+
+function UserActionsInner({ user }: { user: AppUser }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isPasswordResetDialogOpen, setIsPasswordResetDialogOpen] = useState(false);
   const [isCreditsDialogOpen, setIsCreditsDialogOpen] = useState(false);
   const [isVerifyingDialogOpen, setIsVerifyingDialogOpen] = useState(false);
+  const handleVerifyEmail = async () => {
+    setIsVerifying(true);
+    const result = await verifyUserEmail(user.id);
+    if (result.success) {
+      toast({ variant: "success", title: 'User Verified', description: `User ${user.email} has been verified.` });
+      setIsVerifyingDialogOpen(false);
+    } else {
+      toast({ title: 'Error', description: result.error, variant: 'destructive' });
+    }
+    setIsVerifying(false);
+  };
+  const [isStatusToggleDialogOpen, setIsStatusToggleDialogOpen] = useState(false);
+  const [deactivationReason, setDeactivationReason] = useState("");
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
@@ -32,17 +54,12 @@ export function UserActions({ user }: { user: AppUser }) {
   const [isSendingReset, setIsSendingReset] = useState(false);
   const [isSavingCredits, setIsSavingCredits] = useState(false);
   const [isVerifying, setIsVerifying] = useState(false);
+  const [isStatusToggling, setIsStatusToggling] = useState(false);
   const { toast } = useToast();
 
   const handleDelete = async () => {
     setIsDeleting(true);
-    const result = await deleteUser(user.id);
-    if (result.success) {
-      toast({ variant: "success", title: 'User Deleted', description: 'The user has been successfully removed.' });
-      setIsDeleteDialogOpen(false);
-    } else {
-      toast({ title: 'Error', description: result.error, variant: 'destructive' });
-    }
+    toast({ title: 'Note', description: 'Delete functionality is currently disabled.' });
     setIsDeleting(false);
   };
 
@@ -77,16 +94,16 @@ export function UserActions({ user }: { user: AppUser }) {
   }
 
 
-  const handleVerifyEmail = async () => {
-    setIsVerifying(true);
-    const result = await verifyUserEmail(user.id);
+  const handleToggleStatus = async () => {
+    setIsStatusToggling(true);
+    const result = await toggleUserStatus(user.id, !user.isActive, deactivationReason);
     if (result.success) {
-      toast({ variant: "success", title: 'User Verified', description: `User ${user.email} has been verified.` });
-      setIsVerifyingDialogOpen(false);
+      toast({ variant: "success", title: 'User Updated', description: 'User status updated successfully.' });
+      setIsStatusToggleDialogOpen(false);
     } else {
       toast({ title: 'Error', description: result.error, variant: 'destructive' });
     }
-    setIsVerifying(false);
+    setIsStatusToggling(false);
   };
 
   const handleManageBilling = async () => {
@@ -156,6 +173,10 @@ export function UserActions({ user }: { user: AppUser }) {
             <CheckCircle className="mr-2 h-4 w-4" />
             Verify Email
           </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => setIsStatusToggleDialogOpen(true)}>
+            <Power className="mr-2 h-4 w-4" />
+            {user.isActive ? 'Deactivate User' : 'Reactivate User'}
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => setIsDeleteDialogOpen(true)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
             <Trash2 className="mr-2 h-4 w-4" />
@@ -163,6 +184,7 @@ export function UserActions({ user }: { user: AppUser }) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
 
       <AlertDialog open={isVerifyingDialogOpen} onOpenChange={setIsVerifyingDialogOpen}>
         <AlertDialogContent>
@@ -177,6 +199,37 @@ export function UserActions({ user }: { user: AppUser }) {
             <AlertDialogAction onClick={handleVerifyEmail} disabled={isVerifying}>
               {isVerifying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Verify Email
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      <AlertDialog open={isStatusToggleDialogOpen} onOpenChange={setIsStatusToggleDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>{user.isActive ? 'Deactivate' : 'Reactivate'} User?</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div className="text-sm text-muted-foreground">
+                {user.isActive ? (
+                  <>
+                    Are you sure you want to deactivate <span className="font-semibold">{user.name || user.email}</span>?
+                    They will no longer be able to use the platform.
+                    <div className="mt-4">
+                      <Label htmlFor="deactivationReason">Deactivation Message (shown to user)</Label>
+                      <Input id="deactivationReason" value={deactivationReason} onChange={(e) => setDeactivationReason(e.target.value)} placeholder="Reason for deactivation..." />
+                    </div>
+                  </>
+                ) : (
+                  `Are you sure you want to reactivate ${user.name || user.email}?`
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleToggleStatus} disabled={isStatusToggling}>
+              {isStatusToggling && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {user.isActive ? 'Deactivate' : 'Reactivate'}
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

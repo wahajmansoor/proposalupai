@@ -23,6 +23,8 @@ export interface AppUser {
   appliedCoupon?: string | null;
   signInProvider?: string | null;
   isFeatured: boolean;
+  isActive: boolean;
+  deactivationReason: string | null;
   emailVerified: string | null;
   country?: { code: string; name: string } | null;
   image?: string | null;
@@ -43,6 +45,8 @@ export async function getUsers(): Promise<AppUser[]> {
     name: user.name,
     email: user.email,
     isFeatured: user.isFeatured,
+    isActive: user.isActive,
+    deactivationReason: user.deactivationReason,
     emailVerified: user.emailVerified ? new Date(user.emailVerified).toISOString() : null,
     subscriptionStatus: user.subscriptionStatus,
     proposalCount: user.proposalCount,
@@ -134,16 +138,17 @@ export async function updateUserCredits(formData: FormData): Promise<{ success: 
 }
 
 
-export async function deleteUser(userId: string): Promise<{ success: boolean, error?: string }> {
+export async function toggleUserStatus(userId: string, isActive: boolean, reason: string | null): Promise<{ success: boolean, error?: string }> {
   try {
-    await prisma.user.delete({
-      where: { id: userId }
+    await prisma.user.update({
+      where: { id: userId },
+      data: { isActive, deactivationReason: reason }
     });
 
     revalidatePath('/admin-portal/users');
     return { success: true };
   } catch (error: any) {
-    console.error("Failed to delete user:", error);
+    console.error("Failed to toggle user status:", error);
     return { success: false, error: error.message };
   }
 }

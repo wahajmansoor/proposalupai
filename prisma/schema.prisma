@@ -55,6 +55,8 @@ model User {
   
   // Custom Fields
   subscriptionStatus           String?   @default("trialing") // 'trialing', 'active', 'canceled', 'past_due'
+  isActive                     Boolean   @default(true)
+  deactivationReason           String?   @db.Text
   proposalCount                Int       @default(0)
   proposalCredits              Int       @default(0)
   isFeatured                   Boolean   @default(false)

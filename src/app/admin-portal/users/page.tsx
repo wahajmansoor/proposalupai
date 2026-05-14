@@ -297,7 +297,7 @@ export default function AdminUsersPage() {
                   </TableHeader>
                   <TableBody>
                     {currentUsers.map((user) => (
-                      <TableRow key={user.id}>
+                      <TableRow key={user.id} className={cn(user.isActive ? "" : "bg-red-50 dark:bg-red-950/20")}>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-9 w-9">
@@ -311,9 +311,9 @@ export default function AdminUsersPage() {
                                   <TooltipTrigger asChild>
                                     <span>
                                       {user.emailVerified ? (
-                                        <ShieldCheck className="h-4 w-4 text-white fill-green-500/10" />
+                                        <ShieldCheck className="h-5 w-5 text-white fill-green-500" />
                                       ) : (
-                                        <ShieldAlert className="h-4 w-4 text-white fill-orange-500/10" />
+                                        <ShieldAlert className="h-5 w-5 text-white fill-orange-500" />
                                       )}
                                     </span>
                                   </TooltipTrigger>
