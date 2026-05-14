@@ -549,6 +549,62 @@ export async function getCreditHistory(): Promise<{ history?: CreditHistoryItem[
     }
 }
 
+export async function syncSubscriptionFromTransaction(transactionId: string): Promise<{ success?: boolean; status?: string; error?: string }> {
+    const user = await getAuthenticatedUser();
+    if (!user) return { error: 'You must be logged in.' };
+
+    try {
+        const transaction = await paddle.transactions.get(transactionId);
+        
+        if (!transaction || !transaction.subscriptionId) {
+            // Might be a one-time purchase or invalid transaction
+            return { error: 'No subscription found for this transaction.' };
+        }
+
+        const subscription = await paddle.subscriptions.get(transaction.subscriptionId);
+        if (!subscription) {
+            return { error: 'Subscription details could not be retrieved.' };
+        }
+
+        const interval = subscription.items?.[0]?.price?.billingCycle?.interval;
+        const newStatus = subscription.status;
+
+        // Write to DB
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                paddleCustomerId: subscription.customerId || user.paddleCustomerId || undefined,
+                paddleSubscriptionId: subscription.id || user.paddleSubscriptionId || undefined,
+                subscriptionStatus: newStatus,
+                subscriptionInterval: interval,
+                subscriptionCurrentPeriodEnd: subscription.currentBillingPeriod
+                    ? new Date(subscription.currentBillingPeriod.endsAt)
+                    : null,
+            } as any,
+        });
+
+        // Award credits if now active and none yet awarded
+        if (newStatus === 'active') {
+            const reason = interval === 'year' ? 'Yearly plan activation' : 'Monthly plan activation';
+            const amount = interval === 'year' ? 400 : 30;
+            const existing = await prisma.creditHistory.findFirst({ where: { userId: user.id, reason } });
+            if (!existing) {
+                await prisma.user.update({ where: { id: user.id }, data: { proposalCredits: { increment: amount } } });
+                await prisma.creditHistory.create({ data: { userId: user.id, amount, reason } });
+            }
+        }
+
+        revalidatePath('/dashboard');
+        revalidatePath('/dashboard/pricing');
+        revalidatePath('/subscription');
+
+        return { success: true, status: newStatus };
+    } catch (error: any) {
+        console.error('syncSubscriptionFromTransaction ERROR:', error);
+        return { error: error.message || 'Failed to sync subscription.' };
+    }
+}
+
 export async function resendVerificationEmailAction(): Promise<{ success?: boolean; error?: string }> {
   const user = await getAuthenticatedUser();
   if (!user || !user.email) {

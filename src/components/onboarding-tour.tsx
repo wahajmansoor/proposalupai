@@ -60,8 +60,16 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
   const pathname = usePathname();
 
   useEffect(() => {
-    const isLocalCompletedStorage = localStorage.getItem("onboardingCompleted") === "true";
-    if (isLocalCompletedStorage) setLocalCompleted(true);
+    let isLocalCompletedStorage = false;
+    try {
+      isLocalCompletedStorage = localStorage.getItem("onboardingCompleted") === "true";
+    } catch (e) {
+      // Ignore if localStorage is disabled
+    }
+
+    if (isLocalCompletedStorage) {
+      setLocalCompleted(true);
+    }
 
     if (!onboardingCompleted && !localCompleted && !isLocalCompletedStorage && pathname === "/dashboard") {
       const timer = setTimeout(() => setRun(true), 1500);
@@ -70,11 +78,19 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
   }, [onboardingCompleted, pathname, localCompleted]);
 
   const handleJoyrideCallback = async (data: any) => {
-    const { status, action } = data;
-    if (status === "finished" || status === "skipped" || action === "close") {
+    const { status, action, type, index } = data;
+    
+    // Aggressively catch any scenario that means the tour is ending/exiting
+    const isFinished = status === "finished" || status === "skipped";
+    const isClosed = action === "close" || type === "tour:end";
+    const isLastStepNext = action === "next" && index === steps.length - 1;
+
+    if (isFinished || isClosed || isLastStepNext) {
       setRun(false);
       setLocalCompleted(true);
-      localStorage.setItem("onboardingCompleted", "true");
+      try {
+        localStorage.setItem("onboardingCompleted", "true");
+      } catch (e) {}
       await completeOnboardingAction();
     }
   };

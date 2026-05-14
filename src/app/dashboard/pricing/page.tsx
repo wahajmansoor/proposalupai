@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useMemo, useEffect } from 'react';
@@ -76,7 +75,6 @@ export default function PricingPage() {
 
   const currentPlan = plans[billingInterval];
 
-  // Set initial state based on user's plan
   useEffect(() => {
     if (isYearlyActive) {
       setBillingInterval('yearly');
@@ -108,43 +106,22 @@ export default function PricingPage() {
     try {
       const result = await createPaddlePortalSession();
       if ('error' in result) {
-        toast({ 
-          variant: "destructive", 
-          title: 'Action Failed', 
-          description: result.error 
+        toast({
+          variant: "destructive",
+          title: 'Action Failed',
+          description: result.error
         });
       } else if ('url' in result) {
         window.open(result.url, '_blank');
       }
     } catch (error) {
-      toast({ 
-        variant: "destructive", 
-        title: 'Error', 
-        description: 'An unexpected error occurred. Please try again.' 
+      toast({
+        variant: "destructive",
+        title: 'Error',
+        description: 'An unexpected error occurred. Please try again.'
       });
     } finally {
       setIsSubmitting(false);
-    }
-  }
-
-  const handleSyncPlan = async () => {
-    setIsSyncing(true);
-    try {
-      const result = await syncSubscriptionFromPaddle();
-      if (result.error) {
-        toast({ variant: "destructive", title: 'Sync Failed', description: result.error });
-      } else if (result.status === 'active') {
-        toast({ variant: "success", title: 'Plan Activated!', description: 'Your Pro plan is now active.' });
-        await update();
-        router.refresh();
-      } else {
-        toast({ title: 'Plan Status', description: `Your plan status is: ${result.status}. Payment may still be processing.` });
-        await update();
-      }
-    } catch (e) {
-      toast({ variant: "destructive", title: 'Error', description: 'Could not sync plan status.' });
-    } finally {
-      setIsSyncing(false);
     }
   };
 
@@ -275,25 +252,37 @@ export default function PricingPage() {
                   userEmail={user.email || ''}
                   buttonText={getButtonText()}
                   className="w-full inline-flex items-center justify-center rounded-full text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-8"
-                  onSuccess={async () => {
-                    toast({ variant: "success",  title: "Payment Successful!", description: "Activating your plan — this may take a few seconds..." });
-                    let attempts = 0;
-                    const poll = setInterval(async () => {
-                      attempts++;
-                      const res = await checkUserStatusAction();
-                      const status = res?.data?.subscriptionStatus;
-                      // Plan is active when status changes from trialing → active
-                      if (status === 'active' || attempts >= 15) {
-                        clearInterval(poll);
-                        await update(); // Refresh the session
-                        if (status === 'active') {
+                  onSuccess={async (data) => {
+                    toast({ variant: "success", title: "Payment Successful!", description: "Activating your plan — this may take a few seconds..." });
+                    setIsSyncing(true);
+                    try {
+                      // Import sync function dynamically if needed, or use the imported one
+                      const { syncSubscriptionFromTransaction } = await import('@/lib/actions');
+                      // data.id is the transaction id from Paddle
+                      if (data?.id) {
+                        const result = await syncSubscriptionFromTransaction(data.id);
+                        if (result.status === 'active') {
+                          await update();
                           toast({ variant: "success", title: "Plan Activated!", description: "You now have full Pro access. Enjoy!" });
                           router.refresh();
                         } else {
-                          toast({ title: "Almost there!", description: "Your plan is activating. Please refresh the page in a moment." });
+                          // Plan not immediately active in API, fallback to showing success and refreshing
+                          await update();
+                          toast({ variant: "success", title: "Payment Received!", description: "Your plan will be fully active momentarily." });
+                          router.refresh();
                         }
+                      } else {
+                        await update();
+                        toast({ variant: "success", title: "Payment Received!", description: "Your plan will be fully active momentarily." });
+                        router.refresh();
                       }
-                    }, 2000);
+                    } catch (e) {
+                      await update();
+                      toast({ variant: "success", title: "Payment Received!", description: "Your plan will be fully active momentarily." });
+                      router.refresh();
+                    } finally {
+                      setIsSyncing(false);
+                    }
                   }}
                 />
               )}
