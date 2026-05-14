@@ -20,12 +20,15 @@ import {
 import { AlertCircle, LogOut } from "lucide-react";
 import { signOut } from "next-auth/react";
 import { isAdmin as checkAdmin } from "@/lib/utils";
+import { OnboardingTour } from "@/components/onboarding-tour";
 
 
 export function DashboardClient({
   children,
+  onboardingCompleted,
 }: {
   children: React.ReactNode;
+  onboardingCompleted: boolean;
 }) {
   const { data: session, status } = useSession();
   const authLoading = status === "loading";
@@ -121,6 +124,7 @@ export function DashboardClient({
 
   return (
     <>
+     <OnboardingTour onboardingCompleted={onboardingCompleted} />
      <div className="min-h-screen flex bg-main-background">
       <Sidebar collapsible="icon" />
       <div className="flex-1 flex flex-col">

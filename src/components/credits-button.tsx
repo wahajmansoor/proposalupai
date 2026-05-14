@@ -185,6 +185,7 @@ export function CreditsButton() {
   
   const DialogTriggerButton = (
     <Button
+        id="tour-header-credits"
         variant="outline"
         className="relative h-9 px-3 bg-yellow-400 hover:bg-yellow-400 text-yellow-900 hover:text-yellow-900 font-semibold gap-2 rounded-full"
       >

@@ -74,6 +74,7 @@ model User {
   countryName                  String?
   currentSessionId             String?
   registrationIp               String?
+  onboardingCompleted          Boolean   @default(false)
 
   accounts      Account[]
   sessions      Session[]

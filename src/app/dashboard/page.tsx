@@ -787,7 +787,7 @@ function DashboardContent() {
           </CardHeader>
         </Card>
       )}
-      <div className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
+      <div id="tour-proposal-form" className="grid grid-cols-1 xl:grid-cols-2 gap-8 items-start">
         <div className="space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">

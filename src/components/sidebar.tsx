@@ -48,7 +48,14 @@ function SidebarNav() {
       <SidebarContent>
         <SidebarMenu>
           {navItems.map((item) => (
-            <SidebarMenuItem key={item.href}>
+            <SidebarMenuItem 
+              key={item.href} 
+              id={
+                item.href === '/dashboard/skill-profiles' ? 'tour-sidebar-profiles' : 
+                item.href === '/dashboard/pricing' ? 'tour-sidebar-pricing' : 
+                undefined
+              }
+            >
               <Link href={item.href}>
                 <SidebarMenuButton
                   onClick={handleLinkClick}
@@ -82,7 +89,7 @@ function SidebarNav() {
                   </Link>
               </SidebarMenuItem>
             )}
-            <SidebarMenuItem>
+            <SidebarMenuItem id="tour-sidebar-general">
                 <Link href="/profile">
                     <SidebarMenuButton
                     onClick={handleLinkClick}
@@ -94,7 +101,7 @@ function SidebarNav() {
                     </SidebarMenuButton>
                 </Link>
             </SidebarMenuItem>
-            <SidebarMenuItem>
+            <SidebarMenuItem id="tour-sidebar-subscription">
                 <Link href="/subscription">
                     <SidebarMenuButton
                     onClick={handleLinkClick}

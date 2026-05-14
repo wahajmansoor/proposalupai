@@ -3,6 +3,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
+import { useSearchParams } from 'next/navigation';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -86,7 +87,7 @@ function ProfileForm({
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div className="space-y-2">
                 <Label htmlFor="title">Profile Title</Label>
-                <Input id="title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., Senior Web Developer" required />
+                <Input id="tour-profile-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., Senior Web Developer" required />
                 </div>
                 <div className="space-y-2">
                 <Label htmlFor="experience">Experience (Years)</Label>
@@ -228,6 +229,10 @@ export default function SkillProfilesPage() {
       setIsLoading(false);
     }
   }, [session, fetchProfiles]);
+
+  const searchParams = useSearchParams();
+
+  // Onboarding auto-open logic removed to keep the tour simple and stable.
 
   const resetFormState = () => {
     setEditingProfile(null);
@@ -390,7 +395,7 @@ export default function SkillProfilesPage() {
                       </Tooltip>
                   </TooltipProvider>
                 </div>
-                <Button size="sm" onClick={handleCreateClick} className="rounded-full"><Plus className="mr-2 h-4 w-4" />Create</Button>
+                <Button id="tour-create-profile-btn" size="sm" onClick={handleCreateClick} className="rounded-full"><Plus className="mr-2 h-4 w-4" />Create</Button>
               </CardHeader>
               <CardContent>
                 {profiles.length > 0 ? (
@@ -537,9 +542,9 @@ export default function SkillProfilesPage() {
       
       {isMobile ? (
         <Drawer open={isFormOpen} onOpenChange={setIsFormOpen}>
-            <DrawerContent className="max-h-[90dvh] flex flex-col">
+            <DrawerContent className="tour-profile-dialog max-h-[90dvh] flex flex-col">
                 <DrawerHeader className="text-left">
-                    <DrawerTitle>{editingProfile ? 'Edit' : 'Create'} Skill Profile</DrawerTitle>
+                    <DrawerTitle className="tour-profile-title">{editingProfile ? 'Edit' : 'Create'} Skill Profile</DrawerTitle>
                     <DrawerDescription>
                         Define a profile for a specific skill set to generate tailored proposals.
                     </DrawerDescription>
@@ -549,9 +554,9 @@ export default function SkillProfilesPage() {
         </Drawer>
       ) : (
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-            <DialogContent className="sm:max-w-2xl p-0 h-[80vh] flex flex-col">
+            <DialogContent className="tour-profile-dialog sm:max-w-2xl p-0 h-[80vh] flex flex-col">
                 <DialogHeader className="p-6 pb-0">
-                    <DialogTitle>{editingProfile ? 'Edit' : 'Create'} Skill Profile</DialogTitle>
+                    <DialogTitle className="tour-profile-title">{editingProfile ? 'Edit' : 'Create'} Skill Profile</DialogTitle>
                     <DialogDescription>
                         Define a profile for a specific skill set to generate tailored proposals.
                     </DialogDescription>
