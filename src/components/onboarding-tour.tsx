@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
 import { completeOnboardingAction } from "@/app/dashboard/onboarding-action";
 import { usePathname } from "next/navigation";
+import { useSession } from "next-auth/react";
 import { createPortal } from "react-dom";
 
 const Joyride = dynamic(() => import("react-joyride").then(mod => mod.Joyride), { ssr: false }) as any;
@@ -27,7 +28,7 @@ function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: ()
       onClick={onClose}
     >
       <div
-        className="relative max-w-4xl w-full animate-in zoom-in-95 duration-200"
+        className="relative max-w-7xl w-full animate-in zoom-in-95 duration-200"
         onClick={(e) => e.stopPropagation()}
       >
         <img
@@ -58,6 +59,7 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [lightboxAlt, setLightboxAlt] = useState<string>("");
   const pathname = usePathname();
+  const { data: session } = useSession();
 
   useEffect(() => {
     let isLocalCompletedStorage = false;
@@ -71,15 +73,15 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
       setLocalCompleted(true);
     }
 
-    if (!onboardingCompleted && !localCompleted && !isLocalCompletedStorage && pathname === "/dashboard") {
+    if (!onboardingCompleted && !localCompleted && !isLocalCompletedStorage && pathname === "/dashboard" && session?.user?.emailVerified) {
       const timer = setTimeout(() => setRun(true), 1500);
       return () => clearTimeout(timer);
     }
-  }, [onboardingCompleted, pathname, localCompleted]);
+  }, [onboardingCompleted, pathname, localCompleted, session?.user?.emailVerified]);
 
   const handleJoyrideCallback = async (data: any) => {
     const { status, action, type, index } = data;
-    
+
     // Aggressively catch any scenario that means the tour is ending/exiting
     const isFinished = status === "finished" || status === "skipped";
     const isClosed = action === "close" || type === "tour:end";
@@ -90,7 +92,7 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
       setLocalCompleted(true);
       try {
         localStorage.setItem("onboardingCompleted", "true");
-      } catch (e) {}
+      } catch (e) { }
       await completeOnboardingAction();
     }
   };
@@ -207,7 +209,7 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
           <div className="mt-4 group relative">
             <button
               type="button"
-              className="w-full rounded-xl overflow-hidden border border-slate-100 dark:border-slate-800 block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+              className="w-full rounded-xl overflow-hidden border border-slate-200 dark:border-slate-700 block focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               onClick={() => openLightbox(step.image, step.title)}
               aria-label="View full-size image"
             >
