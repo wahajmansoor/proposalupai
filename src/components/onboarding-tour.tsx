@@ -38,56 +38,56 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
       content: "The most powerful AI tool for winning freelance jobs. Let's take a 1-minute tour of your new command center.",
       placement: "center",
       disableBeacon: true,
-      image: "https://images.unsplash.com/photo-1557683316-973673baf926?q=80&w=800&auto=format&fit=crop", // Placeholder
+      image: "/onboarding/welcome.png",
     },
     {
       target: "#tour-sidebar-profiles",
       title: "1. Create Your Skill Profiles",
       content: "Your first real mission! You need to create at least one Skill Profile so the AI knows your expertise and can write tailored proposals that sell.",
       placement: "right",
-      image: "https://images.unsplash.com/photo-1460925895917-afdab827c52f?q=80&w=800&auto=format&fit=crop", // Placeholder
+      image: "/onboarding/profiles.png",
     },
     {
       target: "#tour-sidebar-pricing",
       title: "2. Plans & Pricing",
       content: "Upgrade your account to unlock more credits, custom tones, and priority AI generation. We have plans for every stage of your career.",
       placement: "right",
-      image: "https://images.unsplash.com/photo-1553484771-047a44eee27f?q=80&w=800&auto=format&fit=crop", // Placeholder
+      image: "/onboarding/pricing.png",
     },
     {
       target: "#tour-sidebar-general",
       title: "3. General Profile",
       content: "Manage your personal details and account settings. Keep your information up-to-date for a professional appearance.",
       placement: "right",
-      image: "https://images.unsplash.com/photo-1432888498266-38ffec3eaf0a?q=80&w=800&auto=format&fit=crop", // Placeholder
+      image: "/onboarding/general.png",
     },
     {
       target: "#tour-sidebar-subscription",
       title: "4. Your Subscription",
       content: "View and manage your current plan, billing history, and upcoming renewals all in one place.",
       placement: "right",
-      image: "https://images.unsplash.com/photo-1554224155-6726b3ff858f?q=80&w=800&auto=format&fit=crop", // Placeholder
+      image: "/onboarding/subscription.png",
     },
     {
       target: "#tour-header-credits",
       title: "5. Credits & Fuel",
       content: "Each proposal uses a small amount of fuel. Keep an eye on your credits here and top up anytime to keep winning.",
       placement: "bottom",
-      image: "https://images.unsplash.com/photo-1518544801976-3e159e50e5bb?q=80&w=800&auto=format&fit=crop", // Placeholder
+      image: "/onboarding/credits.png",
     },
     {
       target: "#tour-proposal-form",
       title: "6. The Magic Generator",
       content: "This is where the magic happens! Paste any job description here. Our AI will use your profiles to craft a high-converting proposal in seconds.",
       placement: "top",
-      image: "https://images.unsplash.com/photo-1677442136019-21780ecad995?q=80&w=800&auto=format&fit=crop", // Placeholder
+      image: "/onboarding/generator.png",
     },
     {
       target: "body",
       title: "You're Ready to Win!",
       content: "That's it! You're now equipped with the ultimate freelance weapon. Go ahead and start your journey!",
       placement: "center",
-      image: "https://images.unsplash.com/photo-1522071820081-009f0129c71c?q=80&w=800&auto=format&fit=crop", // Placeholder
+      image: "/onboarding/victory.png",
     }
   ];
 
