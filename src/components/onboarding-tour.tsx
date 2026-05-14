@@ -93,7 +93,9 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
       try {
         localStorage.setItem("onboardingCompleted", "true");
       } catch (e) { }
-      await completeOnboardingAction();
+      console.log("Tour ended, calling completeOnboardingAction");
+      const res = await completeOnboardingAction();
+      console.log("completeOnboardingAction result:", res);
     }
   };
 
