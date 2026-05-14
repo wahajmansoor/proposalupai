@@ -178,3 +178,10 @@ export async function verifyUserEmail(userId: string): Promise<{ success: boolea
     return { success: false, error: error.message };
   }
 }
+
+export async function sendPasswordResetLink(formData: FormData): Promise<{ success: boolean, error?: string }> {
+  const email = formData.get('email') as string;
+  // This is a placeholder for actual password reset logic
+  console.log(`Simulating password reset link for ${email}`);
+  return { success: true };
+}
