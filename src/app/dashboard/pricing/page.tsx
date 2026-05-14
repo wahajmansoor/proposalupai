@@ -5,8 +5,9 @@ import { useState, useMemo, useEffect } from 'react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Check, Loader2, Briefcase, ArrowLeft, Tag, X, AlertTriangle, CreditCard, Sparkles } from 'lucide-react';
+import { Check, Loader2, Briefcase, ArrowLeft, Tag, X, AlertTriangle, CreditCard, Sparkles, RefreshCw } from 'lucide-react';
 import { createPaddlePortalSession, checkUserStatusAction } from '@/lib/paddle-actions';
+import { syncSubscriptionFromPaddle } from '@/lib/actions';
 import { PADDLE_PRICES } from '@/lib/paddle/constants';
 import PaddleCheckout from '@/components/paddle-checkout';
 import { useToast } from '@/hooks/use-toast';
@@ -55,6 +56,7 @@ export default function PricingPage() {
   const router = useRouter();
   const { toast } = useToast();
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isSyncing, setIsSyncing] = useState(false);
   const [billingInterval, setBillingInterval] = useState<'monthly' | 'yearly'>('monthly');
 
   const subscriptionStatus = userProfile?.subscriptionStatus;
@@ -124,6 +126,27 @@ export default function PricingPage() {
       setIsSubmitting(false);
     }
   }
+
+  const handleSyncPlan = async () => {
+    setIsSyncing(true);
+    try {
+      const result = await syncSubscriptionFromPaddle();
+      if (result.error) {
+        toast({ variant: "destructive", title: 'Sync Failed', description: result.error });
+      } else if (result.status === 'active') {
+        toast({ variant: "success", title: 'Plan Activated!', description: 'Your Pro plan is now active.' });
+        await update();
+        router.refresh();
+      } else {
+        toast({ title: 'Plan Status', description: `Your plan status is: ${result.status}. Payment may still be processing.` });
+        await update();
+      }
+    } catch (e) {
+      toast({ variant: "destructive", title: 'Error', description: 'Could not sync plan status.' });
+    } finally {
+      setIsSyncing(false);
+    }
+  };
 
   const isCurrentPlanSelected = (isMonthlyActive && billingInterval === 'monthly') || (isYearlyActive && billingInterval === 'yearly');
 
@@ -253,15 +276,22 @@ export default function PricingPage() {
                   buttonText={getButtonText()}
                   className="w-full inline-flex items-center justify-center rounded-full text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-8"
                   onSuccess={async () => {
-                    toast({ variant: "success",  title: "Success!", description: "Checkout completed. Activating your plan..." });
+                    toast({ variant: "success",  title: "Payment Successful!", description: "Activating your plan — this may take a few seconds..." });
                     let attempts = 0;
                     const poll = setInterval(async () => {
                       attempts++;
                       const res = await checkUserStatusAction();
-                      if (res?.data?.subscriptionStatus === 'active' || attempts >= 10) {
+                      const status = res?.data?.subscriptionStatus;
+                      // Plan is active when status changes from trialing → active
+                      if (status === 'active' || attempts >= 15) {
                         clearInterval(poll);
-                        await update();
-                        toast({ variant: "success",  title: "Plan Activated!", description: "You are now on the Pro plan." });
+                        await update(); // Refresh the session
+                        if (status === 'active') {
+                          toast({ variant: "success", title: "Plan Activated!", description: "You now have full Pro access. Enjoy!" });
+                          router.refresh();
+                        } else {
+                          toast({ title: "Almost there!", description: "Your plan is activating. Please refresh the page in a moment." });
+                        }
                       }
                     }, 2000);
                   }}

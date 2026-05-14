@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { ProposalUpLogos, ProposalUpLogoLight, GoogleIcon } from '@/components/icons';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, XCircle, CheckCircle2, ArrowLeft } from 'lucide-react';
+import { Loader2, XCircle, CheckCircle2, ArrowLeft, Eye, EyeOff } from 'lucide-react';
 import { signIn, useSession } from 'next-auth/react';
 import { cn } from '@/lib/utils';
 import { BgPattern } from '@/components/bg-pattern';
@@ -35,6 +35,7 @@ export function SignupForm() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [referralCode, setReferralCode] = useState<string | null>(null);
@@ -207,15 +208,31 @@ export function SignupForm() {
                 </div>
                 <div className="grid gap-2">
                   <Label htmlFor="password">Password <span className="text-destructive">*</span></Label>
-                  <Input 
-                    id="password" 
-                    type="password" 
-                    placeholder="Password (at least 8 characters)"
-                    required
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
-                    disabled={isLoading || isGoogleLoading}
-                  />
+                  <div className="relative">
+                    <Input 
+                      id="password" 
+                      type={showPassword ? "text" : "password"} 
+                      placeholder="Password (at least 8 characters)"
+                      required
+                      value={password}
+                      onChange={(e) => setPassword(e.target.value)}
+                      disabled={isLoading || isGoogleLoading}
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowPassword(!showPassword)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      disabled={isLoading || isGoogleLoading}
+                      tabIndex={-1}
+                    >
+                      {showPassword ? (
+                        <EyeOff className="h-4 w-4" />
+                      ) : (
+                        <Eye className="h-4 w-4" />
+                      )}
+                    </button>
+                  </div>
                 </div>
 
                 {password && (

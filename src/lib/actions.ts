@@ -432,6 +432,94 @@ export async function getCreditPurchaseHistory(): Promise<{ invoices?: InvoiceDe
     return { invoices: [] };
 }
 
+/**
+ * Syncs subscription status directly from Paddle API into the database.
+ * This is a fallback for when webhooks are delayed or misconfigured.
+ */
+export async function syncSubscriptionFromPaddle(): Promise<{ success?: boolean; status?: string; error?: string }> {
+    const user = await getAuthenticatedUser();
+    if (!user) return { error: 'You must be logged in.' };
+
+    try {
+        let latestSub: any = null;
+
+        // 1. Try by stored subscription ID first (fastest path)
+        if (user.paddleSubscriptionId) {
+            try {
+                latestSub = await paddle.subscriptions.get(user.paddleSubscriptionId);
+            } catch (e) {
+                console.warn('syncSubscription: could not fetch by subscriptionId, falling back to customer search', e);
+            }
+        }
+
+        // 2. Fall back to listing by customer ID
+        if (!latestSub && user.paddleCustomerId) {
+            const subs = paddle.subscriptions.list({ customerId: [user.paddleCustomerId] });
+            for await (const s of subs) {
+                // Take the most recently created active/trialing one
+                if (!latestSub || new Date(s.createdAt) > new Date(latestSub.createdAt)) {
+                    latestSub = s;
+                }
+            }
+        }
+
+        // 3. Fall back to listing by email
+        if (!latestSub && user.email) {
+            const customers = paddle.customers.list({ email: [user.email] });
+            for await (const c of customers) {
+                const subs = paddle.subscriptions.list({ customerId: [c.id] });
+                for await (const s of subs) {
+                    if (!latestSub || new Date(s.createdAt) > new Date(latestSub.createdAt)) {
+                        latestSub = s;
+                    }
+                }
+            }
+        }
+
+        if (!latestSub) {
+            return { error: 'No Paddle subscription found for this account. Please complete a payment first.' };
+        }
+
+        const interval = latestSub.items?.[0]?.price?.billingCycle?.interval;
+        const newStatus = latestSub.status;
+
+        // Write to DB
+        await prisma.user.update({
+            where: { id: user.id },
+            data: {
+                paddleCustomerId: latestSub.customerId || user.paddleCustomerId || undefined,
+                paddleSubscriptionId: latestSub.id || user.paddleSubscriptionId || undefined,
+                subscriptionStatus: newStatus,
+                subscriptionInterval: interval,
+                subscriptionCurrentPeriodEnd: latestSub.currentBillingPeriod
+                    ? new Date(latestSub.currentBillingPeriod.endsAt)
+                    : null,
+            } as any,
+        });
+
+        // Award credits if now active and none yet awarded
+        if (newStatus === 'active') {
+            const reason = interval === 'year' ? 'Yearly plan activation' : 'Monthly plan activation';
+            const amount = interval === 'year' ? 400 : 30;
+            const existing = await prisma.creditHistory.findFirst({ where: { userId: user.id, reason } });
+            if (!existing) {
+                await prisma.user.update({ where: { id: user.id }, data: { proposalCredits: { increment: amount } } });
+                await prisma.creditHistory.create({ data: { userId: user.id, amount, reason } });
+            }
+        }
+
+        revalidatePath('/dashboard');
+        revalidatePath('/dashboard/pricing');
+        revalidatePath('/subscription');
+
+        return { success: true, status: newStatus };
+    } catch (error: any) {
+        console.error('syncSubscriptionFromPaddle ERROR:', error);
+        return { error: error.message || 'Failed to sync subscription.' };
+    }
+}
+
+
 
 export async function getCreditHistory(): Promise<{ history?: CreditHistoryItem[]; error?: string }> {
     const user = await getAuthenticatedUser();

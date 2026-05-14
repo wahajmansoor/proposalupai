@@ -6,6 +6,25 @@ import { addCreditsAction } from '@/lib/paddle-actions';
 
 const PADDLE_WEBHOOK_SECRET = process.env.PADDLE_WEBHOOK_SECRET || '';
 
+// Award credits only once per subscription activation to prevent duplicates
+async function awardActivationCredits(userId: string, interval: string | undefined, subscriptionId: string) {
+    const reason = interval === 'year' ? 'Yearly plan activation' : 'Monthly plan activation';
+    const amount = interval === 'year' ? 400 : 30;
+
+    // Check if we already awarded credits for this subscription activation
+    const existing = await prisma.creditHistory.findFirst({
+        where: { userId, reason },
+    });
+
+    if (existing) {
+        console.log(`Credits already awarded for user ${userId} (${reason}). Skipping.`);
+        return;
+    }
+
+    console.log(`Awarding ${amount} credits to user ${userId} for ${reason}`);
+    await addCreditsAction(userId, amount, reason);
+}
+
 export async function POST(req: Request) {
     console.log('Webhook received!');
     const signature = req.headers.get('paddle-signature') || '';
@@ -31,27 +50,28 @@ export async function POST(req: Request) {
 
         switch (eventType) {
             case 'subscription.created': {
-                const subscription = data;
+                const subscription = data as any;
                 const userId = subscription.customData?.userId;
+                console.log(`subscription.created: userId=${userId}, status=${subscription.status}`);
                 if (userId) {
+                    const interval = subscription.items?.[0]?.price?.billingCycle?.interval;
                     await prisma.user.update({
                         where: { id: userId },
                         data: {
                             paddleCustomerId: subscription.customerId,
                             paddleSubscriptionId: subscription.id,
                             subscriptionStatus: subscription.status,
-                            subscriptionInterval: subscription.items[0]?.price?.billingCycle?.interval,
+                            subscriptionInterval: interval,
                             subscriptionCurrentPeriodEnd: subscription.currentBillingPeriod ? new Date(subscription.currentBillingPeriod.endsAt) : null,
                         } as any
                     });
 
-                    // Award initial credits
-                    const interval = subscription.items[0]?.price?.billingCycle?.interval;
-                    if (interval === 'month') {
-                        await addCreditsAction(userId, 30, 'Monthly plan activation');
-                    } else if (interval === 'year') {
-                        await addCreditsAction(userId, 400, 'Yearly plan activation');
+                    // Award credits immediately if activated (not trialing)
+                    if (subscription.status === 'active') {
+                        await awardActivationCredits(userId, interval, subscription.id);
                     }
+                } else {
+                    console.error('subscription.created: No userId in customData!', JSON.stringify(subscription.customData));
                 }
                 break;
             }
@@ -59,8 +79,16 @@ export async function POST(req: Request) {
             case 'subscription.updated': {
                 const subscription = data as any;
                 const userId = subscription.customData?.userId;
+                console.log(`subscription.updated: userId=${userId}, status=${subscription.status}`);
                 if (userId) {
-                    // Detect scheduled cancellation: status stays 'active' but scheduledChange.action = 'cancel'
+                    // Fetch previous status to detect trialing → active transition
+                    const dbUser = await prisma.user.findUnique({
+                        where: { id: userId },
+                        select: { subscriptionStatus: true } as any,
+                    }) as any;
+                    const previousStatus = dbUser?.subscriptionStatus;
+
+                    const interval = subscription.items?.[0]?.price?.billingCycle?.interval;
                     const scheduledCancel = subscription.scheduledChange?.action === 'cancel'
                         ? new Date(subscription.scheduledChange.effectiveAt)
                         : null;
@@ -68,32 +96,47 @@ export async function POST(req: Request) {
                     await prisma.user.update({
                         where: { id: userId },
                         data: {
+                            paddleCustomerId: subscription.customerId || undefined,
+                            paddleSubscriptionId: subscription.id || undefined,
                             subscriptionStatus: subscription.status,
-                            subscriptionInterval: subscription.items?.[0]?.price?.billingCycle?.interval,
+                            subscriptionInterval: interval,
                             subscriptionCurrentPeriodEnd: subscription.currentBillingPeriod
                                 ? new Date(subscription.currentBillingPeriod.endsAt)
                                 : null,
-                            // Store the scheduled cancellation date if present
                             ...(scheduledCancel !== undefined && { scheduledCancelAt: scheduledCancel }),
                         } as any
                     });
+
+                    // Award credits when trial converts to active paid plan
+                    if (subscription.status === 'active' && previousStatus !== 'active') {
+                        console.log(`Trial converted to active for user ${userId}. Awarding credits.`);
+                        await awardActivationCredits(userId, interval, subscription.id);
+                    }
+                } else {
+                    console.error('subscription.updated: No userId in customData!', JSON.stringify(subscription.customData));
                 }
                 break;
             }
 
             case 'subscription.activated': {
-                // Similar to created/updated, ensure status is active
-                const subscription = data;
+                const subscription = data as any;
                 const userId = subscription.customData?.userId;
+                console.log(`subscription.activated: userId=${userId}`);
                 if (userId) {
+                    const interval = subscription.items?.[0]?.price?.billingCycle?.interval;
                     await prisma.user.update({
                         where: { id: userId },
                         data: {
+                            paddleCustomerId: subscription.customerId || undefined,
+                            paddleSubscriptionId: subscription.id || undefined,
                             subscriptionStatus: 'active',
-                            subscriptionInterval: subscription.items[0]?.price?.billingCycle?.interval,
+                            subscriptionInterval: interval,
                             subscriptionCurrentPeriodEnd: subscription.currentBillingPeriod ? new Date(subscription.currentBillingPeriod.endsAt) : null,
                         } as any
                     });
+                    await awardActivationCredits(userId, interval, subscription.id);
+                } else {
+                    console.error('subscription.activated: No userId in customData!', JSON.stringify(subscription.customData));
                 }
                 break;
             }
