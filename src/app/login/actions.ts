@@ -5,6 +5,8 @@ import { z } from 'zod';
 import { cookies } from 'next/headers';
 import { SignJWT, jwtVerify, type JWTPayload } from 'jose';
 import { redirect } from 'next/navigation';
+import { auth } from '@/auth';
+import { isAdmin as checkAdmin } from '@/lib/utils';
 
 const loginSchema = z.object({
   email: z.string().email(),
@@ -80,14 +82,27 @@ export async function adminLogout() {
 export async function getAdminSession(): Promise<JWTPayload | null> {
   const cookieStore = await cookies();
   const token = cookieStore.get(ADMIN_SESSION_COOKIE)?.value;
-  if (!token) return null;
-
-  try {
-    const secret = await getSecretKey();
-    const { payload } = await jwtVerify(token, secret);
-    return payload;
-  } catch (error) {
-    // If token is invalid, it will throw. We can safely return null.
-    return null;
+  
+  // 1. Try Custom Admin Cookie
+  if (token) {
+    try {
+      const secret = await getSecretKey();
+      const { payload } = await jwtVerify(token, secret);
+      return payload;
+    } catch (error) {
+      // Token invalid, fall through to NextAuth check
+    }
   }
+
+  // 2. Try NextAuth Session Fallback
+  try {
+    const nextSession = await auth();
+    if (nextSession?.user?.email && checkAdmin(nextSession.user.email)) {
+      return { sub: nextSession.user.email, admin: true } as JWTPayload;
+    }
+  } catch (error) {
+    console.error("ADMIN_SESSION_NEXTAUTH_CHECK_ERROR:", error);
+  }
+
+  return null;
 }

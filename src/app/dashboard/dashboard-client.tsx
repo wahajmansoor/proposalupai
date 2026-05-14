@@ -19,6 +19,7 @@ import {
 } from "@/components/ui/alert-dialog";
 import { AlertCircle, LogOut } from "lucide-react";
 import { signOut } from "next-auth/react";
+import { isAdmin as checkAdmin } from "@/lib/utils";
 
 
 export function DashboardClient({
@@ -61,7 +62,9 @@ export function DashboardClient({
     
     // User has completed onboarding via NextAuth signup, route them based on subscription
     const isActiveOrTrial = subscriptionStatus === 'active' || subscriptionStatus === 'trialing';
-    if (userProfile && !isActiveOrTrial) {
+    const isAdminUser = checkAdmin(user?.email);
+
+    if (userProfile && !isActiveOrTrial && !isAdminUser) {
         if (!isAllowedPricing && pathname !== '/subscription') {
             router.replace('/dashboard/pricing');
             return;

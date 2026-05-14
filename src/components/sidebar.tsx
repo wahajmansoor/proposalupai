@@ -3,9 +3,10 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { signOut } from "next-auth/react";
+import { signOut, useSession } from "next-auth/react";
 import { HugeiconsIcon } from '@hugeicons/react';
-import { FileEditIcon, BookmarkIcon, Profile02Icon, CreditCardIcon, Logout01Icon, CreditCardValidationIcon, UserSettings01Icon } from "@hugeicons/core-free-icons";
+import { FileEditIcon, BookmarkIcon, Profile02Icon, CreditCardIcon, Logout01Icon, CreditCardValidationIcon, UserSettings01Icon, SecurityCheckIcon } from "@hugeicons/core-free-icons";
+import { isAdmin as checkAdmin } from "@/lib/utils";
 import {
   Sidebar as SidebarPrimitive,
   SidebarContent,
@@ -29,6 +30,8 @@ const navItems = [
 function SidebarNav() {
   const pathname = usePathname();
   const { setOpenMobile } = useSidebar();
+  const { data: session } = useSession();
+  const isAdminUser = checkAdmin(session?.user?.email);
   
   const handleLinkClick = () => {
     setOpenMobile(false);
@@ -64,6 +67,21 @@ function SidebarNav() {
       </SidebarContent>
        <SidebarFooter>
         <SidebarMenu>
+            {isAdminUser && (
+              <SidebarMenuItem>
+                  <Link href="/admin-portal">
+                      <SidebarMenuButton
+                      onClick={handleLinkClick}
+                      isActive={pathname.startsWith('/admin-portal')}
+                      tooltip="Admin Portal"
+                      className="text-primary hover:text-primary/90"
+                      >
+                      <HugeiconsIcon icon={SecurityCheckIcon} size={24} className="h-6 w-6"/>
+                      <span className="font-bold">Admin Portal</span>
+                      </SidebarMenuButton>
+                  </Link>
+              </SidebarMenuItem>
+            )}
             <SidebarMenuItem>
                 <Link href="/profile">
                     <SidebarMenuButton

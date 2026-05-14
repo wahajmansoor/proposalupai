@@ -131,7 +131,7 @@ export default function PricingPage() {
     return (
       <div className="flex flex-col items-center justify-center p-8 text-center">
         <h2 className="text-2xl font-bold mb-4">Please log in to view pricing</h2>
-        <Button asChild>
+        <Button asChild className="rounded-full">
           <Link href="/login">Log In</Link>
         </Button>
       </div>
@@ -162,7 +162,7 @@ export default function PricingPage() {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">Please update your payment method to reactivate your Pro plan.</p>
-            <Button onClick={handleManageClick} disabled={isSubmitting} className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90">
+            <Button onClick={handleManageClick} disabled={isSubmitting} className="w-full bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-full">
               {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
               Manage Payment
             </Button>
@@ -237,7 +237,7 @@ export default function PricingPage() {
               {isCurrentPlanSelected ? (
                 <Button
                   size="lg"
-                  className="w-full text-sm font-medium"
+                  className="w-full text-sm font-medium rounded-full"
                   disabled={isSubmitting}
                   onClick={handleManageClick}
                   variant="outline"
@@ -251,7 +251,7 @@ export default function PricingPage() {
                   userId={user.id}
                   userEmail={user.email || ''}
                   buttonText={getButtonText()}
-                  className="w-full inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-8"
+                  className="w-full inline-flex items-center justify-center rounded-full text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-8"
                   onSuccess={async () => {
                     toast({ variant: "success",  title: "Success!", description: "Checkout completed. Activating your plan..." });
                     let attempts = 0;
@@ -287,7 +287,7 @@ export default function PricingPage() {
 
       {showPlanManagement && (
         <div className="mt-6 w-full max-w-md">
-          <Button asChild size="lg" className="w-full" variant="ghost">
+          <Button asChild size="lg" className="w-full rounded-full" variant="ghost">
             <Link href="/dashboard">
               <ArrowLeft className="mr-2 h-4 w-4" />
               Back to Dashboard

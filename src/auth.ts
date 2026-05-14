@@ -162,7 +162,14 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         token.sessionId = sessionId;
       }
       return token;
-    }
+    },
+    async redirect({ url, baseUrl }) {
+      // If the url is just the base or dashboard, check for admin
+      // This is a bit limited since we don't have session here easily
+      // But we can let the middleware or client handle the specific hop
+      // For now, standard next-auth redirect behavior is fine if client handles it
+      return url.startsWith(baseUrl) ? url : baseUrl;
+    },
   },
   pages: {
     signIn: "/login",

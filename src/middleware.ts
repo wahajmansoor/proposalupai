@@ -1,16 +1,20 @@
 import NextAuth from "next-auth";
 import { authConfig } from "./auth.config";
 import { NextResponse } from "next/server";
+import { isAdmin as checkAdmin } from "./lib/utils";
 
 const { auth } = NextAuth(authConfig);
 
 export default auth(async (req) => {
   const { pathname } = req.nextUrl;
   const session = req.auth;
+  const adminCookie = req.cookies.get('admin-session');
 
   // Rule 1: Admin Protection
   if (pathname.startsWith('/admin-portal') || pathname === '/admin-login') {
-    const isAdmin = session?.user?.email === 'wahajmansoorcom@gmail.com' || session?.user?.email === 'wahajmansoor@gmail.com';
+    const isNextAuthAdmin = checkAdmin(session?.user?.email);
+    const hasAdminCookie = !!adminCookie;
+    const isAdmin = isNextAuthAdmin || hasAdminCookie;
     
     if (pathname === '/admin-login' && isAdmin) {
       return NextResponse.redirect(new URL('/admin-portal', req.url));

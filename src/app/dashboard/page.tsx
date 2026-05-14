@@ -644,7 +644,7 @@ function DashboardContent() {
       toast({ title: 'Error Improving Proposal', description: result.error, variant: 'destructive' });
     } else if (result?.data) {
       let improvedText = result.data.improvedProposal;
-      
+
       let newFullProposal;
       if (selectedText) {
         // Find the index of the selected text to ensure we replace the correct instance
@@ -652,7 +652,7 @@ function DashboardContent() {
         if (index !== -1) {
           const before = baseProposal.substring(0, index);
           const after = baseProposal.substring(index + selectedText.length);
-          
+
           // If improvedText is empty (deleted), clean up potential double newlines
           if (improvedText === '') {
             // Remove the selected text and collapse extra newlines created by deletion
@@ -762,9 +762,9 @@ function DashboardContent() {
             <AlertCircle className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0" />
             <span className="text-sm font-medium">Please verify your email address to enable proposal generation.</span>
           </div>
-          <Button 
-            size="sm" 
-            variant="outline" 
+          <Button
+            size="sm"
+            variant="outline"
             className="border-amber-300 text-amber-800 hover:bg-amber-100 dark:border-amber-700 dark:text-amber-300 dark:hover:bg-amber-900/50 shrink-0"
             onClick={handleResendVerification}
             disabled={isResending}
@@ -1175,7 +1175,7 @@ function DashboardContent() {
 
         <div className="space-y-6 xl:sticky xl:top-24">
           <Card>
-            <CardHeader className="flex flex-row items-center justify-between">
+            <CardHeader className="flex flex-row items-center justify-between md:pb-0">
               <div className="flex items-center gap-2">
                 <CardTitle>Generated Proposal</CardTitle>
                 {wordCount > 0 && improvements.length === 0 && (
@@ -1297,9 +1297,9 @@ function DashboardContent() {
                 <div className="flex items-center justify-end mb-4">
                   <div className="flex items-center gap-2 bg-slate-100 dark:bg-slate-800/50 px-3 py-1.5 rounded-full border border-slate-200 dark:border-slate-700">
                     <span className="text-xs font-medium text-slate-600 dark:text-slate-400">Highlight Changes</span>
-                    <Switch 
-                      id="toggle-diff" 
-                      checked={showDiff} 
+                    <Switch
+                      id="toggle-diff"
+                      checked={showDiff}
                       onCheckedChange={setShowDiff}
                       className="scale-75"
                     />

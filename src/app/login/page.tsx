@@ -19,6 +19,7 @@ import { AlertCircle } from 'lucide-react';
 
 import { BgPattern } from '@/components/bg-pattern';
 import { ThemeToggle } from '@/components/theme-toggle';
+import { isAdmin as checkAdmin } from '@/lib/utils';
 
 function LoginContent() {
   const router = useRouter();
@@ -78,7 +79,15 @@ function LoginContent() {
         });
       } else {
         toast({ variant: "success",  title: 'Login Successful', description: 'Welcome back!' });
-        router.push('/dashboard');
+        
+        // Role-based redirection
+        const isAdminUser = checkAdmin(email);
+        if (isAdminUser) {
+          router.push('/admin-portal');
+        } else {
+          router.push('/dashboard');
+        }
+        
         router.refresh();
       }
     } catch (error: any) {
