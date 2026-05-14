@@ -4,7 +4,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
-import { MoreHorizontal, Edit, Trash2, Loader2, CreditCard, Mail, Star } from 'lucide-react';
+import { MoreHorizontal, Edit, Trash2, Loader2, CreditCard, Mail, Crown, Star } from 'lucide-react';
 import {
   AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
   AlertDialogDescription, AlertDialogFooter, AlertDialogHeader,
@@ -175,10 +175,6 @@ export function UserActions({ user }: { user: AppUser }) {
               <div className="grid grid-cols-4 items-center gap-4">
                 <Label htmlFor="name" className="text-right">Name</Label>
                 <Input id="name" name="name" defaultValue={user.name || ''} className="col-span-3" />
-              </div>
-              <div className="grid grid-cols-4 items-center gap-4">
-                <Label htmlFor="isFeatured" className="text-right">Featured</Label>
-                <input id="isFeatured" name="isFeatured" type="checkbox" defaultChecked={user.isFeatured} className="col-span-3" />
               </div>
             </div>
             <DialogFooter>

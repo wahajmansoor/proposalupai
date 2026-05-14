@@ -57,15 +57,24 @@ export async function POST(req: Request) {
             }
 
             case 'subscription.updated': {
-                const subscription = data;
+                const subscription = data as any;
                 const userId = subscription.customData?.userId;
                 if (userId) {
+                    // Detect scheduled cancellation: status stays 'active' but scheduledChange.action = 'cancel'
+                    const scheduledCancel = subscription.scheduledChange?.action === 'cancel'
+                        ? new Date(subscription.scheduledChange.effectiveAt)
+                        : null;
+
                     await prisma.user.update({
                         where: { id: userId },
                         data: {
                             subscriptionStatus: subscription.status,
-                            subscriptionInterval: subscription.items[0]?.price?.billingCycle?.interval,
-                            subscriptionCurrentPeriodEnd: subscription.currentBillingPeriod ? new Date(subscription.currentBillingPeriod.endsAt) : null,
+                            subscriptionInterval: subscription.items?.[0]?.price?.billingCycle?.interval,
+                            subscriptionCurrentPeriodEnd: subscription.currentBillingPeriod
+                                ? new Date(subscription.currentBillingPeriod.endsAt)
+                                : null,
+                            // Store the scheduled cancellation date if present
+                            ...(scheduledCancel !== undefined && { scheduledCancelAt: scheduledCancel }),
                         } as any
                     });
                 }
@@ -97,7 +106,8 @@ export async function POST(req: Request) {
                         where: { id: userId },
                         data: {
                             subscriptionStatus: 'canceled',
-                        }
+                            scheduledCancelAt: null,
+                        } as any
                     });
                 }
                 break;

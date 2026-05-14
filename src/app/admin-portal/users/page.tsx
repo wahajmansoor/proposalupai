@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { format } from "date-fns";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { ArrowUpDown, Search, Loader2, Star, User } from "lucide-react";
+import { ArrowUpDown, Search, Loader2, Crown, Star, User } from "lucide-react";
 import {
   Tooltip,
   TooltipContent,
@@ -84,6 +84,14 @@ export default function AdminUsersPage() {
 
   useEffect(() => {
     setIsMounted(true);
+    // Read filter from URL if present
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const filterParam = params.get('filter') as StatusFilter;
+      if (filterParam && ['all', 'trialing', 'active', 'payment_due', 'canceled', 'na'].includes(filterParam)) {
+        setStatusFilter(filterParam);
+      }
+    }
   }, []);
 
   const fetchUsers = useCallback(async () => {
@@ -337,7 +345,7 @@ export default function AdminUsersPage() {
 
                             className="focus:outline-none transition-transform active:scale-125"
                           >
-                            <Star
+                            <Crown
                               className={cn(
                                 "h-5 w-5 transition-colors",
                                 user.isFeatured ? "fill-yellow-400 text-yellow-400" : "text-muted-foreground/30 hover:text-yellow-400/50"
@@ -375,7 +383,7 @@ export default function AdminUsersPage() {
                         </TableCell>
                         <TableCell className="text-center">
                           <div className="flex items-center justify-center gap-1">
-                            <Star className="h-4 w-4 text-yellow-400" />
+                            <Star className="h-4 w-4 text-yellow-500 fill-yellow-500" />
                             {user.proposalCredits}
                           </div>
                         </TableCell>

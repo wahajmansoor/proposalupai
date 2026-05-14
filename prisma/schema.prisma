@@ -64,6 +64,7 @@ model User {
   paddlePriceId                String?
   subscriptionCurrentPeriodEnd DateTime?
   subscriptionInterval         String?   // 'month' | 'year'
+  scheduledCancelAt            DateTime? // Set when user schedules a cancellation but hasn't expired yet
   // Referral & Trial Tracking
   trialCreditsAwarded          Boolean   @default(false)
   referralBonusAwarded         Boolean   @default(false)

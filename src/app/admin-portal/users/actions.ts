@@ -5,6 +5,7 @@ import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
 import { addCreditsAction } from '@/lib/paddle-actions';
+import { paddle } from '@/lib/paddle/config';
 
 export interface AppUser {
   id: string;
@@ -14,6 +15,8 @@ export interface AppUser {
   proposalCount: number;
   proposalCredits: number;
   subscriptionInterval: string | null;
+  subscriptionCurrentPeriodEnd: string | null;
+  scheduledCancelAt: string | null;
   createdAt: string | null;
   paddleCustomerId: string | null;
   referralCode?: string | null;
@@ -43,6 +46,8 @@ export async function getUsers(): Promise<AppUser[]> {
     proposalCount: user.proposalCount,
     proposalCredits: user.proposalCredits,
     subscriptionInterval: user.subscriptionInterval,
+    subscriptionCurrentPeriodEnd: user.subscriptionCurrentPeriodEnd ? new Date(user.subscriptionCurrentPeriodEnd).toISOString() : null,
+    scheduledCancelAt: user.scheduledCancelAt ? new Date(user.scheduledCancelAt).toISOString() : null,
     createdAt: user.createdAt ? new Date(user.createdAt).toISOString() : null,
     paddleCustomerId: user.paddleCustomerId,
     referralCode: user.referralCode,
@@ -57,12 +62,10 @@ export async function updateUser(formData: FormData): Promise<{ success: boolean
   const id = formData.get('id') as string;
   const name = formData.get('name') as string;
   const email = formData.get('email') as string;
-  const isFeatured = formData.get('isFeatured') === 'on';
-
   try {
     await prisma.user.update({
       where: { id },
-      data: { name, email, isFeatured }
+      data: { name, email }
     });
 
     revalidatePath('/admin-portal/users');
@@ -143,11 +146,20 @@ export async function deleteUser(userId: string): Promise<{ success: boolean, er
   }
 }
 
-
 export async function createAdminCustomerPortalSession(formData: FormData): Promise<{ url?: string, error?: string }> {
-  // Paddle admin portal management is usually done in the Paddle dashboard itself.
-  // We could return a link to the user's specific transaction/subscription management if needed.
-  return { error: "Paddle Admin management should be done via Paddle Dashboard." };
+  const paddleCustomerId = formData.get('paddleCustomerId') as string;
+
+  if (!paddleCustomerId) {
+    return { error: "User does not have a Paddle Customer ID." };
+  }
+
+  try {
+    const portalSession = await paddle.customerPortalSessions.create(paddleCustomerId, []);
+    return { url: portalSession.urls.general.overview };
+  } catch (error: any) {
+    console.error("Failed to create admin customer portal session:", error);
+    return { error: error.message || "Failed to create management session. Ensure the user has an active subscription." };
+  }
 }
 
 export async function sendPasswordResetLink(formData: FormData): Promise<{ success: boolean, error?: string }> {
