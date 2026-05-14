@@ -4,6 +4,7 @@ import './globals.css';
 import { Toaster } from '@/components/ui/toaster';
 import { Outfit } from 'next/font/google';
 import { Providers } from '@/components/providers';
+import { SpeedInsights } from '@vercel/speed-insights/next';
 
 const outfit = Outfit({
   subsets: ['latin'],
@@ -50,6 +51,7 @@ export default function RootLayout({
           {children}
           <Toaster />
         </Providers>
+        <SpeedInsights />
       </body>
     </html>
   );
