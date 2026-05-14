@@ -23,6 +23,7 @@ export interface AppUser {
   appliedCoupon?: string | null;
   signInProvider?: string | null;
   isFeatured: boolean;
+  emailVerified: string | null;
   country?: { code: string; name: string } | null;
   image?: string | null;
 }
@@ -42,6 +43,7 @@ export async function getUsers(): Promise<AppUser[]> {
     name: user.name,
     email: user.email,
     isFeatured: user.isFeatured,
+    emailVerified: user.emailVerified ? new Date(user.emailVerified).toISOString() : null,
     subscriptionStatus: user.subscriptionStatus,
     proposalCount: user.proposalCount,
     proposalCredits: user.proposalCredits,
@@ -162,8 +164,17 @@ export async function createAdminCustomerPortalSession(formData: FormData): Prom
   }
 }
 
-export async function sendPasswordResetLink(formData: FormData): Promise<{ success: boolean, error?: string }> {
-  // This would typically use NextAuth's forgot password flow or a custom service.
-  // For now, return a message.
-  return { success: false, error: "Password reset via admin is not yet implemented with Prisma." };
+export async function verifyUserEmail(userId: string): Promise<{ success: boolean, error?: string }> {
+  try {
+    await prisma.user.update({
+      where: { id: userId },
+      data: { emailVerified: new Date() }
+    });
+
+    revalidatePath('/admin-portal/users');
+    return { success: true };
+  } catch (error: any) {
+    console.error("Failed to verify user email:", error);
+    return { success: false, error: error.message };
+  }
 }

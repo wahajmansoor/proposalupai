@@ -304,21 +304,28 @@ export default function AdminUsersPage() {
                               <AvatarImage src={user.image || ""} alt={user.name || ""} className="object-cover" />
                               <AvatarFallback>{getInitials(user.name)}</AvatarFallback>
                             </Avatar>
-                            <div className="font-medium">{user.name || "N/A"}</div>
-                            {user.country?.code && (
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <img
-                                    src={`https://flagcdn.com/w20/${user.country.code.toLowerCase()}.png`}
-                                    alt={`${user.country.name} flag`}
-                                    className="h-4 w-6 rounded-sm object-cover"
-                                  />
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>{user.country.name}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                            )}
+                            <div className="flex flex-col gap-1">
+                              <div className="font-medium flex items-center gap-2">
+                                {user.name || "N/A"}
+                                <Badge variant={user.emailVerified ? "default" : "secondary"} className={cn(user.emailVerified ? "bg-green-600 hover:bg-green-700" : "bg-orange-500 hover:bg-orange-600")}>
+                                  {user.emailVerified ? "Verified" : "Unverified"}
+                                </Badge>
+                              </div>
+                              {user.country?.code && (
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <img
+                                      src={`https://flagcdn.com/w20/${user.country.code.toLowerCase()}.png`}
+                                      alt={`${user.country.name} flag`}
+                                      className="h-3 w-5 rounded-sm object-cover"
+                                    />
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{user.country.name}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              )}
+                            </div>
                           </div>
                         </TableCell>
                         <TableCell className="text-center">

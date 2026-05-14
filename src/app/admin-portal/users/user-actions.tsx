@@ -14,21 +14,24 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogDescription, DialogFooter
 } from '@/components/ui/dialog';
 import { useToast } from '@/hooks/use-toast';
-import { deleteUser, updateUser, AppUser, createAdminCustomerPortalSession, sendPasswordResetLink, updateUserCredits } from './actions';
+import { deleteUser, updateUser, AppUser, createAdminCustomerPortalSession, sendPasswordResetLink, updateUserCredits, verifyUserEmail } from './actions';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
+import { CheckCircle } from 'lucide-react';
 
 export function UserActions({ user }: { user: AppUser }) {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isPasswordResetDialogOpen, setIsPasswordResetDialogOpen] = useState(false);
   const [isCreditsDialogOpen, setIsCreditsDialogOpen] = useState(false);
+  const [isVerifyingDialogOpen, setIsVerifyingDialogOpen] = useState(false);
 
   const [isDeleting, setIsDeleting] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
   const [isManagingBilling, setIsManagingBilling] = useState(false);
   const [isSendingReset, setIsSendingReset] = useState(false);
   const [isSavingCredits, setIsSavingCredits] = useState(false);
+  const [isVerifying, setIsVerifying] = useState(false);
   const { toast } = useToast();
 
   const handleDelete = async () => {
@@ -73,6 +76,18 @@ export function UserActions({ user }: { user: AppUser }) {
     setIsSavingCredits(false);
   }
 
+
+  const handleVerifyEmail = async () => {
+    setIsVerifying(true);
+    const result = await verifyUserEmail(user.id);
+    if (result.success) {
+      toast({ variant: "success", title: 'User Verified', description: `User ${user.email} has been verified.` });
+      setIsVerifyingDialogOpen(false);
+    } else {
+      toast({ title: 'Error', description: result.error, variant: 'destructive' });
+    }
+    setIsVerifying(false);
+  };
 
   const handleManageBilling = async () => {
     if (!user.paddleCustomerId) {
@@ -137,6 +152,10 @@ export function UserActions({ user }: { user: AppUser }) {
             <Mail className="mr-2 h-4 w-4" />
             Send Password Reset
           </DropdownMenuItem>
+          <DropdownMenuItem onSelect={() => setIsVerifyingDialogOpen(true)}>
+            <CheckCircle className="mr-2 h-4 w-4" />
+            Verify Email
+          </DropdownMenuItem>
           <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => setIsDeleteDialogOpen(true)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
             <Trash2 className="mr-2 h-4 w-4" />
@@ -144,6 +163,24 @@ export function UserActions({ user }: { user: AppUser }) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+
+      <AlertDialog open={isVerifyingDialogOpen} onOpenChange={setIsVerifyingDialogOpen}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Verify Email?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will manually verify the email for <span className="font-semibold">{user.email}</span>. Are you sure?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleVerifyEmail} disabled={isVerifying}>
+              {isVerifying && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              Verify Email
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
       <AlertDialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
         <AlertDialogContent>
