@@ -75,9 +75,7 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
       setLocalCompleted(true);
     }
 
-    const skipCountStr = localStorage.getItem("onboardingSkipCount") || "0";
-    const skipCount = parseInt(skipCountStr, 10);
-    const shouldShow = !isMobile && !onboardingCompleted && !localCompleted && !isLocalCompletedStorage && pathname === "/dashboard" && session?.user?.emailVerified && skipCount < 3;
+    const shouldShow = !isMobile && !onboardingCompleted && !localCompleted && pathname === "/dashboard" && session?.user?.emailVerified;
 
     if (shouldShow) {
       const timer = setTimeout(() => setRun(true), 1500);
@@ -97,16 +95,12 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
       setRun(false);
       setLocalCompleted(true);
 
-      const skipCountStr = localStorage.getItem("onboardingSkipCount") || "0";
-      const skipCount = parseInt(skipCountStr, 10);
+      localStorage.setItem("onboardingCompleted", "true");
+      localStorage.removeItem("onboardingSkipCount");
 
-      if (action === "skip") {
-        localStorage.setItem("onboardingSkipCount", (skipCount + 1).toString());
-      } else {
-        localStorage.setItem("onboardingCompleted", "true");
-        localStorage.removeItem("onboardingSkipCount");
-        const res = await completeOnboardingAction();
-      }
+      console.log("Tour ended, calling completeOnboardingAction");
+      const res = await completeOnboardingAction();
+      console.log("completeOnboardingAction result:", res);
     }
   };
 
