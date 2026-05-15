@@ -20,23 +20,22 @@ export async function POST(req: Request) {
       return new NextResponse("Email already exists", { status: 400 });
     }
 
-    // DISPOSABLE EMAIL CHECK
     const domain = email.split('@')[1];
     const DISPOSABLE_DOMAINS = [
-      'temp-mail.org', 'guerrillamail.com', 'mailinator.com', '10minutemail.com', 
-      'throwawaymail.com', 'getnada.com', 'tempmail.com', 'yopmail.com', 
+      'temp-mail.org', 'guerrillamail.com', 'mailinator.com', '10minutemail.com',
+      'throwawaymail.com', 'getnada.com', 'tempmail.com', 'yopmail.com',
       'sharklasers.com', 'guerrillamailblock.com', 'pokemail.net', 'spam4.me',
       'maildrop.cc', 'dispostable.com', 'mailexpire.com', 'mailforspam.com',
       'mytrashmail.com', 'spambox.us', 'tempemail.co', 'temp-mail.io',
       'tempmail.net', 'tempmail.dev', 'tempmail.biz', 'dropmail.me',
       'minuteinbox.com', '10minutemail.net', 'temp-mail.com', 'tempmail.host',
       'tempmail.email', 'tempmail.ninja', 'tempmail.pro', 'tempmail.plus',
-      'internxt.com', 'protonmail.com', 'tutanota.com', 'tutanota.de', // Sometimes used for spam but often legit, use with caution
+      'internxt.com', 'protonmail.com', 'tutanota.com', 'tutanota.de',
       'disroot.org', 'cock.li', 'mail.tm', 'mail.gw', 'secmail.pro',
       'disposable.com', 'tempmail.id', 'tempmail.ooo', 'tempmail.site',
       'tempmail.top', 'tempmail.win', 'tempmail.xyz', 'tempmail.icu'
     ];
-    
+
     if (DISPOSABLE_DOMAINS.includes(domain) || domain.includes('temp-mail')) {
       return new NextResponse("Temporary email addresses are not allowed. Please use a permanent email address.", { status: 400 });
     }
@@ -137,9 +136,9 @@ export async function POST(req: Request) {
       sendAdminNotificationEmail({ name, email })
     ]);
 
-    return NextResponse.json({ 
-      ...user, 
-      message: "Verification email sent. Please check your inbox." 
+    return NextResponse.json({
+      ...user,
+      message: "Verification email sent. Please check your inbox."
     });
   } catch (error: any) {
     console.error("REGISTER_ERROR", error);

@@ -26,13 +26,13 @@ export async function sendVerificationEmail(email: string, token: string) {
     to: email,
     subject: `Verify your email - Proposal Up AI`,
     html: `
-      <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
+      <div style="font-family: outfit; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
         <h2 style="color: #333; text-align: center;">Verify your email</h2>
-        <p style="color: #555; line-height: 1.6;">
+        <p style="color: #555; line-height: 1.6; text-align: center;">
           Thank you for signing up for Proposal Up AI! To start generating winning proposals, please verify your email address by clicking the button below:
         </p>
         <div style="text-align: center; margin: 30px 0;">
-          <a href="${verifyUrl}" style="background-color: #0070f3; color: white; padding: 12px 24px; text-decoration: none; border-radius: 5px; font-weight: bold; display: inline-block;">
+          <a href="${verifyUrl}" style="background-color: #00cc4a; color: white; padding: 12px 24px; text-decoration: none; border-radius: 100px; font-weight: bold; display: inline-block;">
             Verify Email Address
           </a>
         </div>
@@ -130,13 +130,13 @@ export async function sendAdminNotificationEmail(newUser: { name: string; email:
 }
 
 export async function sendPasswordResetEmail(email: string, token: string) {
-    const resetLink = `${process.env.NEXTAUTH_URL}/new-password?token=${token}`;
+  const resetLink = `${process.env.NEXTAUTH_URL}/new-password?token=${token}`;
 
-    const mailOptions = {
-        from: `"Proposal Up AI" <${process.env.EMAIL_SERVER_USER}>`,
-        to: email,
-        subject: "Reset your Password - Proposal Up AI",
-        html: `
+  const mailOptions = {
+    from: `"Proposal Up AI" <${process.env.EMAIL_SERVER_USER}>`,
+    to: email,
+    subject: "Reset your Password - Proposal Up AI",
+    html: `
             <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e1e1e1; border-radius: 10px;">
                 <h2 style="color: #333;">Password Reset Request</h2>
                 <p>Hello,</p>
@@ -150,20 +150,20 @@ export async function sendPasswordResetEmail(email: string, token: string) {
                 <p style="font-size: 12px; color: #888;">${resetLink}</p>
             </div>
         `,
-    };
+  };
 
-    try {
-        console.log(`ATTEMPTING_PASSWORD_RESET_EMAIL: ${email} via ${process.env.EMAIL_SERVER_HOST}`);
-        const info = await transporter.sendMail(mailOptions);
-        console.log(`PASSWORD_RESET_EMAIL_SUCCESS: ${info.messageId}`);
-        return { success: true };
-    } catch (error: any) {
-        console.error("PASSWORD_RESET_EMAIL_CRITICAL_ERROR:", {
-            message: error.message,
-            code: error.code,
-            command: error.command,
-            response: error.response
-        });
-        return { error: `Failed to send reset email: ${error.message}` };
-    }
+  try {
+    console.log(`ATTEMPTING_PASSWORD_RESET_EMAIL: ${email} via ${process.env.EMAIL_SERVER_HOST}`);
+    const info = await transporter.sendMail(mailOptions);
+    console.log(`PASSWORD_RESET_EMAIL_SUCCESS: ${info.messageId}`);
+    return { success: true };
+  } catch (error: any) {
+    console.error("PASSWORD_RESET_EMAIL_CRITICAL_ERROR:", {
+      message: error.message,
+      code: error.code,
+      command: error.command,
+      response: error.response
+    });
+    return { error: `Failed to send reset email: ${error.message}` };
+  }
 }
