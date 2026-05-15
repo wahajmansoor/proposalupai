@@ -6,6 +6,7 @@ import { completeOnboardingAction } from "@/app/dashboard/onboarding-action";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { createPortal } from "react-dom";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 const Joyride = dynamic(() => import("react-joyride").then(mod => mod.Joyride), { ssr: false }) as any;
 
@@ -60,6 +61,7 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
   const [lightboxAlt, setLightboxAlt] = useState<string>("");
   const pathname = usePathname();
   const { data: session } = useSession();
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     let isLocalCompletedStorage = false;
@@ -73,11 +75,11 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
       setLocalCompleted(true);
     }
 
-    if (!onboardingCompleted && !localCompleted && !isLocalCompletedStorage && pathname === "/dashboard" && session?.user?.emailVerified) {
+    if (!isMobile && !onboardingCompleted && !localCompleted && !isLocalCompletedStorage && pathname === "/dashboard" && session?.user?.emailVerified) {
       const timer = setTimeout(() => setRun(true), 1500);
       return () => clearTimeout(timer);
     }
-  }, [onboardingCompleted, pathname, localCompleted, session?.user?.emailVerified]);
+  }, [onboardingCompleted, pathname, localCompleted, session?.user?.emailVerified, isMobile]);
 
   const handleJoyrideCallback = async (data: any) => {
     const { status, action, type, index } = data;

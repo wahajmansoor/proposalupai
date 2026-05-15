@@ -73,7 +73,7 @@ const SidebarProvider = React.forwardRef<
     ref
   ) => {
     const isMobileDevice = useIsMobile();
-    const [isMobile, setIsMobile] = React.useState(false);
+    const [isMobile, setIsMobile] = React.useState(typeof window !== "undefined" ? window.innerWidth < 768 : false);
 
     React.useEffect(() => {
       setIsMobile(isMobileDevice);
@@ -290,7 +290,7 @@ const SidebarTrigger = React.forwardRef<
       }}
       {...props}
     >
-      <HugeiconsIcon icon={MenuCollapseIcon} className="h-[24px!important] w-[24px!important]"/>
+      <HugeiconsIcon icon={MenuCollapseIcon} className="h-[24px!important] w-[24px!important]" />
       <span className="sr-only">Toggle Sidebar</span>
     </Button>
   )
@@ -626,7 +626,7 @@ const SidebarMenuAction = React.forwardRef<
         "peer-data-[size=lg]/menu-button:top-2.5",
         "group-data-[collapsible=icon]:hidden",
         showOnHover &&
-          "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground md:opacity-0",
+        "group-focus-within/menu-item:opacity-100 group-hover/menu-item:opacity-100 data-[state=open]:opacity-100 peer-data-[active=true]/menu-button:text-sidebar-accent-foreground md:opacity-0",
         className
       )}
       {...props}
