@@ -83,24 +83,25 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
     }
   }, [onboardingCompleted, pathname, localCompleted, session?.user?.emailVerified, isMobile]);
 
+  if (onboardingCompleted) return null;
+
   const handleJoyrideCallback = async (data: any) => {
     const { status, action, type, index } = data;
 
     // Aggressively catch any scenario that means the tour is ending/exiting
-    const isFinished = status === "finished" || status === "skipped";
+    const isFinished = status === "finished";
     const isClosed = action === "close" || type === "tour:end";
-    const isLastStepNext = action === "next" && index === steps.length - 1;
+    const isSkipped = action === "skip";
 
-    if (isFinished || isClosed || isLastStepNext) {
+    // Only mark as complete if finished, explicitly closed, or skipped
+    if (isFinished || isClosed || isSkipped) {
       setRun(false);
       setLocalCompleted(true);
 
-      localStorage.setItem("onboardingCompleted", "true");
-      localStorage.removeItem("onboardingSkipCount");
-
-      console.log("Tour ended, calling completeOnboardingAction");
-      const res = await completeOnboardingAction();
-      console.log("completeOnboardingAction result:", res);
+      if (isFinished || isSkipped || action === "close") {
+        console.log("Tour ended, calling completeOnboardingAction");
+        await completeOnboardingAction();
+      }
     }
   };
 
@@ -226,6 +227,14 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
 
   return (
     <>
+      <button
+        onClick={() => setRun(true)}
+        className="fixed bottom-6 right-6 z-[9999] flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full shadow-lg hover:bg-slate-50 transition-all text-xs font-semibold text-slate-700 dark:text-slate-200"
+      >
+        <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+        System Guide
+      </button>
+
       <Joyride
         callback={handleJoyrideCallback}
         continuous
@@ -237,8 +246,9 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
         steps={steps}
         disableScrolling={false}
         disableOverlayClose={true}
-        spotlightClicks={true}
+        spotlightClicks={false}
         disableBeacons={true}
+        disableCloseOnEsc={true}
         tooltipComponent={Tooltip}
         styles={{
           options: {
