@@ -119,7 +119,7 @@ export function UserNav() {
         </DropdownMenuGroup>
         <DropdownMenuSeparator />
         <DropdownMenuItem onClick={async () => {
-          await signOut({ callbackUrl: '/login' });
+          await signOut({ callbackUrl: '/login', redirect: true });
         }}>
           <HugeiconsIcon icon={Logout01Icon} size={24} className="mr-2 h-4 w-4" />
           Log out
