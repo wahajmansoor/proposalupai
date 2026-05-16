@@ -6,6 +6,7 @@ import { Providers } from '@/components/providers';
 import { SpeedInsights } from '@vercel/speed-insights/next';
 import { auth } from '@/auth';
 import { OnboardingTour } from '@/components/onboarding-tour';
+import { LoadingBar } from '@/components/loading-bar';
 
 const outfit = Outfit({
   subsets: ['latin'],
@@ -51,6 +52,7 @@ export default async function RootLayout({
       <head />
       <body suppressHydrationWarning>
         <Providers>
+          <LoadingBar />
           {session && <OnboardingTour onboardingCompleted={!!(session.user as any)?.onboardingCompleted} />}
           {children}
           <Toaster />
