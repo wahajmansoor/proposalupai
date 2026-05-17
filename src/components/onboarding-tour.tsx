@@ -75,7 +75,7 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
       setLocalCompleted(true);
     }
 
-    const shouldShow = !isMobile && !onboardingCompleted && !localCompleted && pathname === "/dashboard" && session?.user?.emailVerified;
+    const shouldShow = false;
 
     if (shouldShow) {
       const timer = setTimeout(() => setRun(true), 1500);
