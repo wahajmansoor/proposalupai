@@ -83,93 +83,93 @@ function ProfileForm({
 }) {
   return (
     <form onSubmit={handleFormSubmit} className="flex flex-col h-full overflow-y-auto">
-        <div className="flex-1 p-6">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                <Label htmlFor="title">Profile Title</Label>
-                <Input id="tour-profile-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., Senior Web Developer" required />
-                </div>
-                <div className="space-y-2">
-                <Label htmlFor="experience">Experience (Years)</Label>
-                <Input id="experience" type="number" value={experience} onChange={(e) => setExperience(e.target.value === '' ? '' : Number(e.target.value))} placeholder="e.g., 5" required />
-                </div>
-                <div className="md:col-span-2 space-y-2">
-                <Label htmlFor="description">Profile Description</Label>
-                <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe your skills and experience for this profile..." className="min-h-[120px]" required />
-                </div>
-                <div className="md:col-span-2 space-y-2">
-                <Label htmlFor="keywords">Keywords</Label>
-                <div className="flex flex-wrap items-center gap-2 p-2 border rounded-md">
-                    {keywords.map((keyword, index) => (
-                        <Badge key={index} variant="secondary" className="gap-1">
-                            {keyword}
-                            <button type="button" onClick={() => removeKeyword(keyword)} className="rounded-full hover:bg-black/10"><X className="h-3 w-3"/></button>
-                        </Badge>
-                    ))}
-                    <Input 
-                        id="keywords" 
-                        value={keywordInput}
-                        onChange={(e) => setKeywordInput(e.target.value)}
-                        onKeyDown={handleKeywordKeyDown}
-                        placeholder="Type keyword..." 
-                        className="flex-1 border-none shadow-none focus-visible:ring-0 h-auto p-0 m-0"
-                    />
-                    <Button type="button" size="sm" variant="outline" onClick={() => {
-                            if (keywordInput.trim() && !keywords.includes(keywordInput.trim())) {
-                                setKeywords([...keywords, keywordInput.trim()]);
-                            }
-                            setKeywordInput('');
-                        }}>Add</Button>
-                </div>
-                </div>
-                <div className="space-y-2">
-                <Label htmlFor="tone">Proposal Tone</Label>
-                <Select value={tone} onValueChange={setTone} required>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                        {tones.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
-                    </SelectContent>
-                </Select>
-                </div>
-                <div className="space-y-2">
-                <Label htmlFor="length">Proposal Length</Label>
-                <Select value={length} onValueChange={setLength} required>
-                    <SelectTrigger><SelectValue /></SelectTrigger>
-                    <SelectContent>
-                        {lengths.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
-                    </SelectContent>
-                </Select>
-                </div>
-                <div className="md:col-span-2 space-y-4">
-                <Label>Portfolio Websites</Label>
-                {links.map((link, index) => (
-                    <div key={index} className="flex items-center gap-2">
-                        <Input 
-                        value={link.url}
-                        onChange={(e) => handleLinkChange(index, e.target.value)}
-                        placeholder="https://example.com"
-                        type="url"
-                        className="flex-1"
-                        />
-                        <Button type="button" variant="ghost" size="icon" onClick={() => removeLink(index)} className="shrink-0">
-                        <Trash2 className="h-4 w-4" />
-                        </Button>
-                    </div>
-                ))}
-                <Button type="button" variant="outline" size="sm" onClick={addLink} className="w-full">
-                    <Plus className="mr-2 h-4 w-4" /> Add Link
-                </Button>
-                </div>
+      <div className="flex-1 p-6">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="space-y-2">
+            <Label htmlFor="title">Profile Title</Label>
+            <Input id="tour-profile-title" value={title} onChange={(e) => setTitle(e.target.value)} placeholder="e.g., Senior Web Developer" required />
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="experience">Experience (Years)</Label>
+            <Input id="experience" type="number" value={experience} onChange={(e) => setExperience(e.target.value === '' ? '' : Number(e.target.value))} placeholder="e.g., 5" required />
+          </div>
+          <div className="md:col-span-2 space-y-2">
+            <Label htmlFor="description">Profile Description</Label>
+            <Textarea id="description" value={description} onChange={(e) => setDescription(e.target.value)} placeholder="Describe your skills and experience for this profile..." className="min-h-[120px]" required />
+          </div>
+          <div className="md:col-span-2 space-y-2">
+            <Label htmlFor="keywords">Keywords</Label>
+            <div className="flex flex-wrap items-center gap-2 p-2 border rounded-md">
+              {keywords.map((keyword, index) => (
+                <Badge key={index} variant="secondary" className="gap-1">
+                  {keyword}
+                  <button type="button" onClick={() => removeKeyword(keyword)} className="rounded-full hover:bg-black/10"><X className="h-3 w-3" /></button>
+                </Badge>
+              ))}
+              <Input
+                id="keywords"
+                value={keywordInput}
+                onChange={(e) => setKeywordInput(e.target.value)}
+                onKeyDown={handleKeywordKeyDown}
+                placeholder="Type keyword..."
+                className="flex-1 border-none shadow-none focus-visible:ring-0 h-auto p-0 m-0"
+              />
+              <Button type="button" size="sm" variant="outline" onClick={() => {
+                if (keywordInput.trim() && !keywords.includes(keywordInput.trim())) {
+                  setKeywords([...keywords, keywordInput.trim()]);
+                }
+                setKeywordInput('');
+              }}>Add</Button>
             </div>
-        </div>
-        <div className="p-6 border-t bg-background">
-            <div className="flex justify-end gap-2">
-                <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>Cancel</Button>
-                <Button type="submit" disabled={isSaving}>
-                    {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Save Profile'}
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="tone">Proposal Tone</Label>
+            <Select value={tone} onValueChange={setTone} required>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {tones.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="space-y-2">
+            <Label htmlFor="length">Proposal Length</Label>
+            <Select value={length} onValueChange={setLength} required>
+              <SelectTrigger><SelectValue /></SelectTrigger>
+              <SelectContent>
+                {lengths.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+              </SelectContent>
+            </Select>
+          </div>
+          <div className="md:col-span-2 space-y-4">
+            <Label>Portfolio Websites</Label>
+            {links.map((link, index) => (
+              <div key={index} className="flex items-center gap-2">
+                <Input
+                  value={link.url}
+                  onChange={(e) => handleLinkChange(index, e.target.value)}
+                  placeholder="https://example.com"
+                  type="url"
+                  className="flex-1"
+                />
+                <Button type="button" variant="ghost" size="icon" onClick={() => removeLink(index)} className="shrink-0">
+                  <Trash2 className="h-4 w-4" />
                 </Button>
-            </div>
+              </div>
+            ))}
+            <Button type="button" variant="outline" size="sm" onClick={addLink} className="w-full">
+              <Plus className="mr-2 h-4 w-4" /> Add Link
+            </Button>
+          </div>
         </div>
+      </div>
+      <div className="p-6 border-t bg-background">
+        <div className="flex justify-end gap-2">
+          <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>Cancel</Button>
+          <Button type="submit" disabled={isSaving}>
+            {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Save Profile'}
+          </Button>
+        </div>
+      </div>
     </form>
   )
 }
@@ -185,7 +185,7 @@ export default function SkillProfilesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
   const [isFormOpen, setIsFormOpen] = useState(false);
-  
+
   // State for the form
   const [editingProfile, setEditingProfile] = useState<SkillProfile | null>(null);
   const [title, setTitle] = useState('');
@@ -275,15 +275,15 @@ export default function SkillProfilesPage() {
         return;
       }
     }
-    
+
     const profileData = {
-        title,
-        description,
-        experience: Number(experience),
-        keywords,
-        links: finalLinks,
-        tone,
-        length,
+      title,
+      description,
+      experience: Number(experience),
+      keywords,
+      links: finalLinks,
+      tone,
+      length,
     };
 
     setIsSaving(true);
@@ -291,11 +291,11 @@ export default function SkillProfilesPage() {
       if (editingProfile) {
         const result = await updateSkillProfileAction(editingProfile.id, profileData);
         if (result.error) throw new Error(result.error);
-        toast({ variant: "success",  title: 'Success', description: 'Profile updated.' });
+        toast({ variant: "success", title: 'Success', description: 'Profile updated.' });
       } else {
         const result = await addSkillProfileAction(profileData as Omit<SkillProfile, 'id' | 'createdAt'>);
         if (result.error) throw new Error(result.error);
-        toast({ variant: "success",  title: 'Success', description: 'Profile created.' });
+        toast({ variant: "success", title: 'Success', description: 'Profile created.' });
       }
       setIsFormOpen(false);
       resetFormState();
@@ -311,7 +311,7 @@ export default function SkillProfilesPage() {
     try {
       const result = await deleteSkillProfileAction(profileId);
       if (result.error) throw new Error(result.error);
-      toast({ variant: "success",  title: "Profile Deleted", description: "The skill profile has been removed." });
+      toast({ variant: "success", title: "Profile Deleted", description: "The skill profile has been removed." });
       if (selectedProfile?.id === profileId) {
         setSelectedProfile(profiles.length > 1 ? profiles.filter(p => p.id !== profileId)[0] : null);
       }
@@ -334,7 +334,7 @@ export default function SkillProfilesPage() {
   const removeKeyword = (keywordToRemove: string) => {
     setKeywords(keywords.filter(keyword => keyword !== keywordToRemove));
   };
-  
+
   const handleLinkChange = (index: number, value: string) => {
     const newLinks = [...links];
     newLinks[index].url = value;
@@ -348,12 +348,12 @@ export default function SkillProfilesPage() {
   const removeLink = (index: number) => {
     const newLinks = links.filter((_, i) => i !== index);
     if (newLinks.length === 0) {
-        setLinks([{ url: '' }]);
+      setLinks([{ url: '' }]);
     } else {
-        setLinks(newLinks);
+      setLinks(newLinks);
     }
   };
-  
+
   const formProps = {
     editingProfile, handleFormSubmit, isSaving, setIsFormOpen,
     title, setTitle,
@@ -387,12 +387,12 @@ export default function SkillProfilesPage() {
                 <div className='flex items-center gap-2'>
                   <CardTitle className="text-lg">Profiles</CardTitle>
                   <TooltipProvider>
-                      <Tooltip>
-                          <TooltipTrigger asChild><button><Info className="h-4 w-4 text-muted-foreground" /></button></TooltipTrigger>
-                          <TooltipContent className="max-w-xs">
-                              <p>Create different profiles for your various skills (e.g., "Web Developer", "Graphic Designer").</p>
-                          </TooltipContent>
-                      </Tooltip>
+                    <Tooltip>
+                      <TooltipTrigger asChild><button><Info className="h-4 w-4 text-muted-foreground" /></button></TooltipTrigger>
+                      <TooltipContent className="max-w-xs">
+                        <p>Create different profiles for your various skills (e.g., "Web Developer", "Graphic Designer").</p>
+                      </TooltipContent>
+                    </Tooltip>
                   </TooltipProvider>
                 </div>
                 <Button id="tour-create-profile-btn" size="sm" onClick={handleCreateClick} className="rounded-full"><Plus className="mr-2 h-4 w-4" />Create</Button>
@@ -402,7 +402,7 @@ export default function SkillProfilesPage() {
                   <ul className="space-y-2">
                     {profiles.map(profile => (
                       <li key={profile.id}>
-                        <button 
+                        <button
                           className={`w-full text-left p-2 rounded-md text-sm ${selectedProfile?.id === profile.id ? 'bg-primary/10 text-primary font-semibold' : 'hover:bg-muted'}`}
                           onClick={() => setSelectedProfile(profile)}
                         >
@@ -426,88 +426,88 @@ export default function SkillProfilesPage() {
           <div className="md:col-span-3">
             {selectedProfile ? (
               <Card>
-                  <CardHeader>
-                      <div className="flex items-start justify-between">
-                          <div>
-                              <CardTitle className="text-2xl">{selectedProfile.title}</CardTitle>
-                          </div>
-                          <div className="flex items-center gap-2">
-                              <Button variant="outline" size="icon" onClick={() => handleEditClick(selectedProfile)} className="rounded-full">
-                                  <Edit className="h-4 w-4" />
-                              </Button>
-                              <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                      <Button variant="destructive" size="icon" className="rounded-full">
-                                          <Trash2 className="h-4 w-4" />
-                                      </Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                      <AlertDialogHeader>
-                                      <AlertDialogTitle>Are you sure?</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                          This will permanently delete the "{selectedProfile.title}" profile. This action cannot be undone.
-                                      </AlertDialogDescription>
-                                      </AlertDialogHeader>
-                                      <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction onClick={() => handleDeleteProfile(selectedProfile.id)} className="bg-destructive hover:bg-destructive/90">
-                                          Delete
-                                      </AlertDialogAction>
-                                      </AlertDialogFooter>
-                                  </AlertDialogContent>
-                              </AlertDialog>
-                          </div>
-                      </div>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                      <p className="text-muted-foreground whitespace-pre-wrap">{selectedProfile.description}</p>
-                      
-                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
-                          <div>
-                              <p className="font-semibold">Experience</p>
-                              <p>{selectedProfile.experience} years</p>
-                          </div>
-                          <div>
-                              <p className="font-semibold">Default Length</p>
-                              <p>{selectedProfile.length}</p>
-                          </div>
-                          <div>
-                              <p className="font-semibold">Default Tone</p>
-                              <p>{selectedProfile.tone}</p>
-                          </div>
-                      </div>
+                <CardHeader>
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <CardTitle className="text-2xl">{selectedProfile.title}</CardTitle>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <Button variant="outline" size="icon" onClick={() => handleEditClick(selectedProfile)} className="rounded-full">
+                        <Edit className="h-4 w-4" />
+                      </Button>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="destructive" size="icon" className="rounded-full">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              This will permanently delete the "{selectedProfile.title}" profile. This action cannot be undone.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Cancel</AlertDialogCancel>
+                            <AlertDialogAction onClick={() => handleDeleteProfile(selectedProfile.id)} className="bg-destructive hover:bg-destructive/90">
+                              Delete
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
+                    </div>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <p className="text-muted-foreground whitespace-pre-wrap">{selectedProfile.description}</p>
 
-                      <div>
-                          <p className="font-semibold mb-2">Keywords</p>
-                          <div className="flex flex-wrap gap-2">
-                          {selectedProfile.keywords.map((keyword, index) => (
-                              <Badge key={index} variant="secondary">{keyword}</Badge>
-                          ))}
-                          </div>
-                      </div>
-                      
-                      <div>
-                          <p className="font-semibold mb-2">Websites</p>
-                          <ul className="space-y-2">
-                            {selectedProfile.links.map((link, index) => (
-                                <li key={index}>
-                                  <a href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
-                                      <LinkIcon className="h-4 w-4" />
-                                      <span>{link.title || link.url}</span>
-                                  </a>
-                                </li>
-                            ))}
-                          </ul>
-                      </div>
-                  </CardContent>
+                  <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-sm">
+                    <div>
+                      <p className="font-semibold">Experience</p>
+                      <p>{selectedProfile.experience} years</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold">Default Length</p>
+                      <p>{selectedProfile.length}</p>
+                    </div>
+                    <div>
+                      <p className="font-semibold">Default Tone</p>
+                      <p>{selectedProfile.tone}</p>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="font-semibold mb-2">Keywords</p>
+                    <div className="flex flex-wrap gap-2">
+                      {selectedProfile.keywords.map((keyword, index) => (
+                        <Badge key={index} variant="secondary">{keyword}</Badge>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="font-semibold mb-2">Websites</p>
+                    <ul className="space-y-2">
+                      {selectedProfile.links.map((link, index) => (
+                        <li key={index}>
+                          <a href={link.url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-2 text-sm text-primary hover:underline">
+                            <LinkIcon className="h-4 w-4" />
+                            <span>{link.title || link.url}</span>
+                          </a>
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </CardContent>
               </Card>
             ) : !isLoading ? (
               <Card className="flex items-center justify-center h-96">
-                  <div className="text-center">
-                      <p className="text-lg font-semibold text-muted-foreground">Select a profile to view its details</p>
-                      <p className="text-sm text-muted-foreground">or create a new one to get started.</p>
-                      <Button className="mt-4 rounded-full" onClick={handleCreateClick}><Plus className="mr-2 h-4 w-4" />Create Your First Profile</Button>
-                  </div>
+                <div className="text-center">
+                  <p className="text-lg font-semibold text-muted-foreground">Select a profile to view its details</p>
+                  <p className="text-sm text-muted-foreground">or create a new one to get started.</p>
+                  <Button className="mt-4 rounded-full" onClick={handleCreateClick}><Plus className="mr-2 h-4 w-4" />Create Your First Profile</Button>
+                </div>
               </Card>
             ) : (
               <Card className="h-96 overflow-hidden">
@@ -539,30 +539,30 @@ export default function SkillProfilesPage() {
           </div>
         </div>
       </div>
-      
+
       {isMobile ? (
         <Drawer open={isFormOpen} onOpenChange={setIsFormOpen}>
-            <DrawerContent className="tour-profile-dialog max-h-[90dvh] flex flex-col">
-                <DrawerHeader className="text-left">
-                    <DrawerTitle className="tour-profile-title">{editingProfile ? 'Edit' : 'Create'} Skill Profile</DrawerTitle>
-                    <DrawerDescription>
-                        Define a profile for a specific skill set to generate tailored proposals.
-                    </DrawerDescription>
-                </DrawerHeader>
-                <ProfileForm {...formProps} />
-            </DrawerContent>
+          <DrawerContent className="tour-profile-dialog max-h-[90dvh] flex flex-col">
+            <DrawerHeader className="text-left">
+              <DrawerTitle className="tour-profile-title">{editingProfile ? 'Edit' : 'Create'} Skill Profile</DrawerTitle>
+              <DrawerDescription>
+                Define a profile for a specific skill set to generate tailored proposals.
+              </DrawerDescription>
+            </DrawerHeader>
+            <ProfileForm {...formProps} />
+          </DrawerContent>
         </Drawer>
       ) : (
         <Dialog open={isFormOpen} onOpenChange={setIsFormOpen}>
-            <DialogContent className="tour-profile-dialog sm:max-w-2xl p-0 h-[80vh] flex flex-col">
-                <DialogHeader className="p-6 pb-0">
-                    <DialogTitle className="tour-profile-title">{editingProfile ? 'Edit' : 'Create'} Skill Profile</DialogTitle>
-                    <DialogDescription>
-                        Define a profile for a specific skill set to generate tailored proposals.
-                    </DialogDescription>
-                </DialogHeader>
-                <ProfileForm {...formProps} />
-            </DialogContent>
+          <DialogContent className="tour-profile-dialog sm:max-w-2xl p-0 h-[85vh] flex flex-col">
+            <DialogHeader className="p-6 pb-0">
+              <DialogTitle className="tour-profile-title">{editingProfile ? 'Edit' : 'Create'} Skill Profile</DialogTitle>
+              <DialogDescription>
+                Define a profile for a specific skill set to generate tailored proposals.
+              </DialogDescription>
+            </DialogHeader>
+            <ProfileForm {...formProps} />
+          </DialogContent>
         </Dialog>
       )}
     </>
