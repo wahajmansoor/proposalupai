@@ -798,12 +798,18 @@ function DashboardContent() {
               </div>
             </div>
             {isTrial && !trialLimitReached && (
-              <div className="text-right">
+              <div className="text-right hidden md:block">
                 <p className="font-semibold text-sm">Trial Usage</p>
                 <p className="text-xs text-muted-foreground">Proposals created: {proposalCount} / 5</p>
               </div>
             )}
           </div>
+          {isTrial && !trialLimitReached && (
+            <div className="md:hidden text-left">
+              <p className="font-semibold text-xs">Trial Usage</p>
+              <p className="text-xs text-muted-foreground">Proposals created: {proposalCount} / 5</p>
+            </div>
+          )}
 
           <Progress value={(currentStep / totalSteps) * 100} className="w-full" />
 
@@ -1393,18 +1399,11 @@ function DashboardContent() {
       </div>
 
 
-      <div className="mt-16 grid grid-cols-1 md:grid-cols-5 gap-8 items-start">
-
-        <div className="md:col-span-3">
-          <div className="bg-card p-6 rounded-lg border shadow-sm">
-            <ProTips />
-          </div>
-        </div>
-        <div className="md:col-span-2">
-          <FeaturedSectionClient />
-        </div>
+      <div className="mt-16 w-full">
+        <FeaturedSectionClient />
       </div>
 
+      <ProTips />
     </>
   );
 }

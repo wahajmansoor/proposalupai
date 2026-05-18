@@ -27,7 +27,11 @@ interface FeaturedUsersCarouselProps {
 }
 
 export function FeaturedUsersCarousel({ users }: FeaturedUsersCarouselProps) {
-  const [emblaRef, emblaApi] = useEmblaCarousel({ loop: true, align: 'start' });
+  const [emblaRef, emblaApi] = useEmblaCarousel({
+    loop: true,
+    align: 'start',
+    slidesToScroll: 1,
+  });
 
   const scrollPrev = React.useCallback(() => {
     if (emblaApi) emblaApi.scrollPrev();
@@ -40,8 +44,8 @@ export function FeaturedUsersCarousel({ users }: FeaturedUsersCarouselProps) {
   if (users.length === 0) return null;
 
   return (
-    <div className="relative group">
-      <div className="flex items-center justify-between mb-4">
+    <div className="w-full relative group">
+      <div className="flex items-center justify-between mb-4 px-4 md:px-0">
         <div className="flex items-center gap-3">
           <div className="flex h-3 w-3 relative">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75"></span>
@@ -76,10 +80,10 @@ export function FeaturedUsersCarousel({ users }: FeaturedUsersCarouselProps) {
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-2xl" ref={emblaRef}>
-        <div className="flex">
+      <div className="overflow-hidden rounded-2xl mx-auto w-full px-4 md:px-0" ref={emblaRef}>
+        <div className="flex -ml-4">
           {users.map((user) => (
-            <div key={user.id} className="flex-[0_0_100%] min-w-0 pl-1">
+            <div key={user.id} className="flex-[0_0_100%] min-w-0 pl-4 md:flex-[0_0_25%]">
               <Card className="border-0 bg-white/70 dark:bg-slate-900/50 backdrop-blur-md shadow-xl shadow-slate-200/50 dark:shadow-none rounded-3xl overflow-hidden h-full border border-slate-100 dark:border-slate-800">
                 <CardContent className="md:p-3 p-0 flex flex-col h-full">
                   <div className="relative h-20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-2xl">

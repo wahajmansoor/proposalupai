@@ -42,21 +42,23 @@ export function FeaturedSectionClient() {
 
   if (users.length === 0) {
     return (
-      <div className="relative p-6 rounded-lg border border-slate-200 dark:border-slate-800 bg-gradient-to-b from-white to-slate-50/50 dark:from-slate-900 dark:to-slate-950 overflow-hidden shadow-sm">
+      <div className="w-full relative p-6 rounded-lg border border-slate-200 dark:border-slate-800 bg-gradient-to-b from-white to-slate-50/50 dark:from-slate-900 dark:to-slate-950 overflow-hidden shadow-sm">
         <div className="absolute top-0 right-0 -mt-20 -mr-20 w-64 h-64 bg-primary/5 dark:bg-primary/10 rounded-full blur-3xl opacity-50" />
-        <div className="relative z-10 space-y-4 text-center py-8">
-          <div className="flex justify-center mb-4">
-            <div className="bg-primary/10 p-3 rounded-full">
+        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex flex-col md:flex-row items-center md:items-center gap-4 text-center md:text-left">
+            <div className="bg-primary/10 p-3 rounded-full shrink-0">
               <Crown className="h-8 w-8 text-primary fill-primary/20" />
             </div>
+            <div>
+              <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
+                Featured Experts Coming Soon
+              </h3>
+              <p className="text-sm text-slate-500 dark:text-slate-400">
+                Become the first to be featured here! Complete your profile and send a request to get noticed by thousands of clients.
+              </p>
+            </div>
           </div>
-          <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-            Featured Experts Coming Soon
-          </h3>
-          <p className="text-sm text-slate-500 dark:text-slate-400 max-w-xs mx-auto">
-            Become the first to be featured here! Complete your profile and send a request to get noticed by thousands of clients.
-          </p>
-          <div className="pt-2">
+          <div className="pt-2 shrink-0">
             <Button asChild className="bg-button-gradient text-primary-foreground hover:opacity-90 active:opacity-80 rounded-full">
               <Link href="/profile">Get Featured</Link>
             </Button>
@@ -67,7 +69,7 @@ export function FeaturedSectionClient() {
   }
 
   return (
-    <div className="relative p-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-gradient-to-b from-white to-slate-50/50 dark:from-slate-900 dark:to-slate-950 overflow-hidden shadow-sm">
+    <div className="w-full p-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-gradient-to-b from-white to-slate-50/50 dark:from-slate-900 dark:to-slate-950 overflow-hidden shadow-sm">
       <div className="absolute top-0 right-0 -mt-20 -mr-20 w-64 h-64 bg-primary/5 dark:bg-primary/10 rounded-full blur-3xl opacity-50" />
       <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-64 h-64 bg-primary/5 dark:bg-primary/10 rounded-full blur-3xl opacity-50" />
 

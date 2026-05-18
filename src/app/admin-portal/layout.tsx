@@ -4,7 +4,7 @@ import { redirect } from 'next/navigation';
 import { Home, Users, LogOut, PanelLeft, Ticket, Search, Bell, UserCircle, Star } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetTrigger, SheetTitle } from '@/components/ui/sheet';
 import { getUsers } from './users/actions';
 import { AdminHeader } from './admin-header';
 
@@ -97,6 +97,7 @@ export default async function AdminLayout({
               </Button>
             </SheetTrigger>
             <SheetContent side="left" className="flex flex-col p-0">
+              <SheetTitle className="sr-only">Admin Navigation</SheetTitle>
               <SidebarNav />
             </SheetContent>
           </Sheet>
