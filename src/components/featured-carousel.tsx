@@ -12,15 +12,15 @@ import { Button } from '@/components/ui/button';
 import { ContactUserForm } from './contact-user-form';
 import type { FeaturedUser } from '@/lib/featured-actions';
 
-const serviceIcons: Record<string, React.ReactNode> = {
-  'Web Development': <Check className="h-3 w-3 text-primary" />,
-  'eCommerce Solution': <ShoppingCart className="h-3 w-3 text-primary" />,
-  'On-Page SEO': <Search className="h-3 w-3 text-primary" />,
-  'Landing Page': <Lightbulb className="h-3 w-3 text-primary" />,
-  'Web Designing': <Globe className="h-3 w-3 text-primary" />,
-  'Email Marketing': <Mail className="h-3 w-3 text-primary" />,
-  'GoHighLevel Funnels': <BarChart2 className="h-3 w-3 text-primary" />,
-};
+// const serviceIcons: Record<string, React.ReactNode> = {
+//   'Web Development': <Check className="h-3 w-3 text-primary" />,
+//   'eCommerce Solution': <ShoppingCart className="h-3 w-3 text-primary" />,
+//   'On-Page SEO': <Search className="h-3 w-3 text-primary" />,
+//   'Landing Page': <Lightbulb className="h-3 w-3 text-primary" />,
+//   'Web Designing': <Globe className="h-3 w-3 text-primary" />,
+//   'Email Marketing': <Mail className="h-3 w-3 text-primary" />,
+//   'GoHighLevel Funnels': <BarChart2 className="h-3 w-3 text-primary" />,
+// };
 
 interface FeaturedUsersCarouselProps {
   users: FeaturedUser[];
@@ -83,7 +83,7 @@ export function FeaturedUsersCarousel({ users }: FeaturedUsersCarouselProps) {
       <div className="overflow-hidden rounded-2xl mx-auto w-full px-4 md:px-0" ref={emblaRef}>
         <div className="flex -ml-4">
           {users.map((user) => (
-            <div key={user.id} className="flex-[0_0_100%] min-w-0 pl-4 md:flex-[0_0_25%]">
+            <div key={user.id} className="flex-[0_0_100%] min-w-0 pl-4 md:flex-[0_0_33.33%]">
               <Card className="border-0 bg-white/70 dark:bg-slate-900/50 backdrop-blur-md shadow-xl shadow-slate-200/50 dark:shadow-none rounded-3xl overflow-hidden h-full border border-slate-100 dark:border-slate-800">
                 <CardContent className="md:p-3 p-0 flex flex-col h-full">
                   <div className="relative h-20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-2xl">
@@ -108,8 +108,8 @@ export function FeaturedUsersCarousel({ users }: FeaturedUsersCarouselProps) {
                       <p className="text-sm text-white bg-button-gradient px-3 py-1.4 inline-flex justify-center items-center rounded-full h-6 w-auto">{user.title || 'Freelancer'}</p>
                     </div>
 
-                    <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
-                      "{user.bio || 'Available for high-quality project collaborations.'}"
+                    <p className="text-md text-slate-600 dark:text-slate-400 leading-relaxed">
+                      {user.bio || 'Available for high-quality project collaborations.'}
                     </p>
 
                     <div className="space-y-3 flex-1">
@@ -120,8 +120,8 @@ export function FeaturedUsersCarousel({ users }: FeaturedUsersCarouselProps) {
                             try {
                               const services = JSON.parse(user.services);
                               return Array.isArray(services) ? services.map((service: string, i: number) => (
-                                <div key={i} className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900/50 px-2 py-1.5 rounded-lg border border-slate-100 dark:border-slate-800 transition-colors">
-                                  {serviceIcons[service] || <Check className="h-4 w-4 text-primary" />}
+                                <div key={i} className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900/50 px-2 py-1.5 rounded-full border border-slate-100 dark:border-slate-800 transition-colors">
+                                  <Check className="h-4 w-4 text-primary" />
                                   <span className="text-[13px] font-medium text-slate-700 dark:text-slate-300">{service}</span>
                                 </div>
                               )) : null;

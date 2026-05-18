@@ -52,11 +52,11 @@ const tips = [
   },
 ];
 
-export function ProTips() {
+export function ProTips({ className }: { className?: string }) {
   return (
     <Dialog>
       <DialogTrigger asChild>
-        <Button className="fixed bottom-16 right-6 z-[9999] flex items-center gap-2 px-4 py-2 bg-button-gradient border border-slate-200 dark:border-slate-800 rounded-full shadow-lg hover:opacity-90 transition-all text-xs font-semibold text-white">
+        <Button className={className || "flex items-center gap-2 px-4 py-2 bg-button-gradient border border-slate-200 dark:border-slate-800 rounded-full shadow-lg hover:opacity-90 transition-all text-xs font-semibold text-white"}>
           <HugeiconsIcon icon={BulbIcon} size={16} className="h-4 w-4" />
           Pro Tips
         </Button>

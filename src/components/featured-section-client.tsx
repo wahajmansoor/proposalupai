@@ -42,12 +42,11 @@ export function FeaturedSectionClient() {
 
   if (users.length === 0) {
     return (
-      <div className="w-full relative p-6 rounded-lg border border-slate-200 dark:border-slate-800 bg-gradient-to-b from-white to-slate-50/50 dark:from-slate-900 dark:to-slate-950 overflow-hidden shadow-sm">
-        <div className="absolute top-0 right-0 -mt-20 -mr-20 w-64 h-64 bg-primary/5 dark:bg-primary/10 rounded-full blur-3xl opacity-50" />
-        <div className="relative z-10 flex flex-col md:flex-row items-center justify-between gap-6">
+      <div className="w-full p-6 rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+        <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex flex-col md:flex-row items-center md:items-center gap-4 text-center md:text-left">
             <div className="bg-primary/10 p-3 rounded-full shrink-0">
-              <Crown className="h-8 w-8 text-primary fill-primary/20" />
+              <Crown className="h-8 w-8 text-primary" />
             </div>
             <div>
               <h3 className="text-xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
@@ -58,8 +57,8 @@ export function FeaturedSectionClient() {
               </p>
             </div>
           </div>
-          <div className="pt-2 shrink-0">
-            <Button asChild className="bg-button-gradient text-primary-foreground hover:opacity-90 active:opacity-80 rounded-full">
+          <div className="shrink-0">
+            <Button asChild className="bg-primary text-primary-foreground hover:opacity-90 rounded-full">
               <Link href="/profile">Get Featured</Link>
             </Button>
           </div>
@@ -69,11 +68,8 @@ export function FeaturedSectionClient() {
   }
 
   return (
-    <div className="w-full p-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-gradient-to-b from-white to-slate-50/50 dark:from-slate-900 dark:to-slate-950 overflow-hidden shadow-sm">
-      <div className="absolute top-0 right-0 -mt-20 -mr-20 w-64 h-64 bg-primary/5 dark:bg-primary/10 rounded-full blur-3xl opacity-50" />
-      <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-64 h-64 bg-primary/5 dark:bg-primary/10 rounded-full blur-3xl opacity-50" />
-
-      <div className="relative z-10 space-y-4">
+    <div className="w-full md:p-6 p-0 rounded-none md:rounded-3xl border-0 md:border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-none md:shadow-sm">
+      <div className="space-y-4">
         <FeaturedUsersCarousel users={users} />
       </div>
     </div>

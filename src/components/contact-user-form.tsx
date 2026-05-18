@@ -98,10 +98,10 @@ export function ContactUserForm({ userName, userEmail }: ContactUserFormProps) {
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
         <Button className="bg-black text-white hover:bg-gray-800 rounded-full px-6">
-          <Calendar className="mr-2 h-4 w-4" /> Contact
+          Contact {userName}
         </Button>
       </DialogTrigger>
-      <DialogContent className="sm:max-w-[425px]">
+      <DialogContent className="sm:max-w-3xl">
         <DialogHeader>
           <DialogTitle>Contact {userName}</DialogTitle>
           <DialogDescription>
@@ -166,7 +166,7 @@ export function ContactUserForm({ userName, userEmail }: ContactUserFormProps) {
                 </FormItem>
               )}
             />
-            <Button type="submit" className="w-full" disabled={isSubmitting}>
+            <Button type="submit" className="text-left" disabled={isSubmitting}>
               {isSubmitting ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" /> Sending...

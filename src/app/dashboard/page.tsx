@@ -797,13 +797,14 @@ function DashboardContent() {
                 <p className="text-muted-foreground">Step {currentStep} of {totalSteps}: {stepTitles[currentStep - 1]}</p>
               </div>
             </div>
-            {isTrial && !trialLimitReached && (
-              <div className="text-right hidden md:block">
-                <p className="font-semibold text-sm">Trial Usage</p>
-                <p className="text-xs text-muted-foreground">Proposals created: {proposalCount} / 5</p>
-              </div>
-            )}
+            <ProTips className="flex items-center gap-2 px-4 py-2 bg-button-gradient border border-slate-200 dark:border-slate-800 rounded-full shadow-lg hover:opacity-90 transition-all text-xs font-semibold text-white" />
           </div>
+          {isTrial && !trialLimitReached && (
+            <div className="text-right hidden md:block">
+              <p className="font-semibold text-sm">Trial Usage</p>
+              <p className="text-xs text-muted-foreground">Proposals created: {proposalCount} / 5</p>
+            </div>
+          )}
           {isTrial && !trialLimitReached && (
             <div className="md:hidden text-left">
               <p className="font-semibold text-xs">Trial Usage</p>
@@ -1403,7 +1404,6 @@ function DashboardContent() {
         <FeaturedSectionClient />
       </div>
 
-      <ProTips />
     </>
   );
 }

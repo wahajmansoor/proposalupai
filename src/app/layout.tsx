@@ -53,7 +53,9 @@ export default async function RootLayout({
       <body suppressHydrationWarning>
         <Providers>
           <LoadingBar />
-          {session && <OnboardingTour onboardingCompleted={!!(session.user as any)?.onboardingCompleted} />}
+          {session ? (
+            <OnboardingTour onboardingCompleted={!!(session.user as any)?.onboardingCompleted} />
+          ) : null}
           {children}
           <Toaster />
           <SpeedInsights />
