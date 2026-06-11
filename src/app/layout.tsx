@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from 'next';
 import { Toaster } from '@/components/ui/toaster';
+import '@/app/globals.css';
 import { Outfit } from 'next/font/google';
 import { Providers } from '@/components/providers';
 import { SpeedInsights } from '@vercel/speed-insights/next';
