@@ -1,23 +1,22 @@
 "use client";
 
-import { usePathname, useSearchParams } from "next/navigation";
+import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 import * as ProgressPrimitive from "@radix-ui/react-progress";
-import { cn } from "@/lib/utils";
 
 export function LoadingBar() {
     const pathname = usePathname();
-    const searchParams = useSearchParams();
     const [progress, setProgress] = useState(0);
     const [loading, setLoading] = useState(false);
 
     useEffect(() => {
+        // Trigger loading animation on pathname change
         setLoading(true);
         setProgress(30);
         const timer = setTimeout(() => setProgress(90), 200);
 
         return () => clearTimeout(timer);
-    }, [pathname, searchParams]);
+    }, [pathname]);
 
     useEffect(() => {
         if (loading) {
