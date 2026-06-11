@@ -161,16 +161,26 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     },
     async jwt({ token, user }: { token: JWT; user?: User }) {
       if (user) {
+        // New login - generate new session ID
         token.sub = user.id;
-
-        // Generate new session ID on login
         const sessionId = Math.random().toString(36).substring(2, 15);
         await prisma.user.update({
           where: { id: user.id },
           data: { currentSessionId: sessionId }
         });
         token.sessionId = sessionId;
+      } else if (token.sub && !token.sessionId) {
+        // Token refresh without sessionId - generate one to maintain continuity
+        // This handles OAuth token refresh for Google users
+        const sessionId = Math.random().toString(36).substring(2, 15);
+        await prisma.user.update({
+          where: { id: token.sub },
+          data: { currentSessionId: sessionId }
+        });
+        token.sessionId = sessionId;
       }
+      // If token.sub exists and token.sessionId exists, keep it as-is for session continuity
+      // This ensures Google OAuth token refreshes don't invalidate the session
       return token;
     },
     async redirect({ url, baseUrl }) {

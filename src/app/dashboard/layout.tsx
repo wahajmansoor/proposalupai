@@ -3,6 +3,7 @@ import prisma from '@/lib/prisma';
 import { redirect } from 'next/navigation';
 import { DashboardClient } from './dashboard-client';
 import { SessionProvider } from 'next-auth/react';
+import { OnboardingTour } from '@/components/onboarding-tour';
 
 export default async function DashboardLayout({
   children,
@@ -27,8 +28,11 @@ export default async function DashboardLayout({
     }
   }
 
+  const onboardingCompleted = session?.user ? !!(session.user as any)?.onboardingCompleted : false;
+
   return (
     <SessionProvider session={session}>
+      <OnboardingTour onboardingCompleted={onboardingCompleted} />
       <DashboardClient onboardingCompleted={Boolean(dbUser?.onboardingCompleted)}>
         {children}
       </DashboardClient>

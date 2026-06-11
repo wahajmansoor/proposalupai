@@ -4,8 +4,6 @@ import { Toaster } from '@/components/ui/toaster';
 import { Outfit } from 'next/font/google';
 import { Providers } from '@/components/providers';
 import { SpeedInsights } from '@vercel/speed-insights/next';
-import { auth } from '@/auth';
-import { OnboardingTour } from '@/components/onboarding-tour';
 import { LoadingBar } from '@/components/loading-bar';
 
 const outfit = Outfit({
@@ -45,17 +43,12 @@ export default async function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
-  const session = await auth();
-
   return (
     <html lang="en" className={outfit.variable} suppressHydrationWarning>
       <head />
       <body suppressHydrationWarning>
         <Providers>
           <LoadingBar />
-          {session ? (
-            <OnboardingTour onboardingCompleted={!!(session.user as any)?.onboardingCompleted} />
-          ) : null}
           {children}
           <Toaster />
           <SpeedInsights />
