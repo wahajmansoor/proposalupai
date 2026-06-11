@@ -2,9 +2,20 @@ import { NextResponse } from "next/server";
 import { headers } from "next/headers";
 import * as bcrypt from "bcryptjs";
 import prisma from "@/lib/prisma";
+import { checkRateLimit } from "@/lib/rate-limit";
+import { getClientIp } from "@/lib/get-client-ip";
 
 export async function POST(req: Request) {
   try {
+    // RATE LIMITING: 5 registrations per 15 minutes per IP
+    const clientIp = await getClientIp();
+    if (clientIp && clientIp !== 'unknown') {
+      const allowed = checkRateLimit(clientIp, 5, 15 * 60 * 1000);
+      if (!allowed) {
+        return new NextResponse("Too many registration attempts. Please try again later.", { status: 429 });
+      }
+    }
+
     const { email: rawEmail, password, name, referralCode } = await req.json();
     const email = rawEmail?.toLowerCase();
 

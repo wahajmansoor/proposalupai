@@ -25,6 +25,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const email = (credentials.email as string)?.toLowerCase();
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user || !user.password) return null;
+
+        // Reject deactivated users
+        if (user.isActive === false) {
+          return null;
+        }
+
         const isPasswordValid = await bcrypt.compare(credentials.password as string, user.password);
         if (!isPasswordValid) return null;
         return user as any;
@@ -117,17 +123,16 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             }
           }
 
-          if (dbUser) {
+if (dbUser) {
             session.user.name = dbUser.name;
             session.user.image = dbUser.image;
             session.user.isFeatured = dbUser.isFeatured;
             session.user.emailVerified = dbUser.emailVerified;
 
-            // Check if user is active
+            // BLOCK DEACTIVATED USERS - invalidate session immediately
             if (dbUser.isActive === false) {
-              (session.user as any).deactivated = {
-                message: dbUser.deactivationReason || "Your profile has been deactivated."
-              };
+              console.log(`SESSION_BLOCK: Deactivated user ${dbUser.email} tried to access`);
+              return null as any;
             }
 
             // SINGLE SESSION CHECK

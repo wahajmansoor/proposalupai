@@ -1,4 +1,3 @@
-
 "use client";
 
 import { useState, useEffect } from 'react';
@@ -32,13 +31,13 @@ function LoginContent() {
   const error = searchParams.get('error');
 
   const [email, setEmail] = useState('');
-
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   useEffect(() => {
+    // Only redirect if fully loaded and actually logged in
     if (!loading && user) {
       router.replace('/dashboard');
     }
@@ -146,7 +145,6 @@ function LoginContent() {
                 </AlertDescription>
               </Alert>
             )}
-
 
             <Button variant="outline" className="w-full mb-6" onClick={handleGoogleSignIn} disabled={isLoading || isGoogleLoading}>
               {isGoogleLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <GoogleIcon className="mr-2 h-4 w-4" />}

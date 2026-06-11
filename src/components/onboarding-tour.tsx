@@ -65,6 +65,9 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
   const { data: session } = useSession();
   const isMobile = useIsMobile();
 
+  // Only show the System Guide button on exact /dashboard route
+  const isDashboardPage = pathname === '/dashboard';
+
   useEffect(() => {
     setIsClient(true);
     let isLocalCompletedStorage = false;
@@ -216,13 +219,15 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
 
   return (
     <>
-      <button
-        onClick={() => setRun(true)}
-        className="fixed bottom-6 right-6 z-[40] hidden md:flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full shadow-lg hover:bg-slate-50 transition-all text-xs font-semibold text-slate-700 dark:text-slate-200"
-      >
-        <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
-        System Guide
-      </button>
+      {isDashboardPage && (
+        <button
+          onClick={() => setRun(true)}
+          className="fixed bottom-6 right-6 z-[40] hidden md:flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full shadow-lg hover:bg-slate-50 transition-all text-xs font-semibold text-slate-700 dark:text-slate-200"
+        >
+          <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
+          System Guide
+        </button>
+      )}
 
       <Joyride
         callback={handleJoyrideCallback}
