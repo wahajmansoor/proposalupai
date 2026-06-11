@@ -54,10 +54,18 @@ export function DashboardClient({
       return;
     }
 
-    // Skip deactivation check for admins
+// Skip deactivation check for admins
     const isAdmin = checkAdmin(user?.email);
-    if (deactivated && !isAdmin) {
-      return; // Let the deactivated UI show
+    
+    // Allow deactivated users to access subscription and pricing pages
+    const isAllowedDeactivatedPage = 
+      pathname === '/dashboard/subscription' || 
+      pathname === '/dashboard/pricing';
+
+    if (deactivated && !isAdmin && !isAllowedDeactivatedPage) {
+      // Show banner but block other pages
+      setIsAuthorized(true);
+      return;
     }
 
     // --- From here, we know user is loaded ---

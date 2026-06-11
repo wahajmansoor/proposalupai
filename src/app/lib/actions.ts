@@ -86,10 +86,27 @@ export const getAuthenticatedUser = cache(async () => {
       paddleCustomerId: true,
       paddleSubscriptionId: true,
       emailVerified: true,
+      isActive: true,
     }
   });
   return user;
 });
+
+// Helper: check if user account is deactivated
+async function checkUserNotDeactivated(userId: string): Promise<{ blocked: boolean; error?: string }> {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { isActive: true }
+  });
+  
+  if (user && user.isActive === false) {
+    return { 
+      blocked: true, 
+      error: 'Your account has been deactivated. Contact an admin to reactivate.' 
+    };
+  }
+  return { blocked: false };
+}
 
 export async function checkSessionStatusAction(clientSessionId: string) {
   const session = await auth();
@@ -145,6 +162,12 @@ export async function analyzeAndSuggestAction(input: z.infer<typeof analyzeAndSu
   const user = await getAuthenticatedUser();
   if (!user) {
     return { error: 'You must be logged in to use this feature.' };
+  }
+
+  // Check if account is deactivated
+  const deactivationCheck = await checkUserNotDeactivated(user.id);
+  if (deactivationCheck.blocked) {
+    return { error: deactivationCheck.error };
   }
 
   if (!user.emailVerified) {
@@ -257,6 +280,12 @@ export async function generateProposalAction(input: z.infer<typeof generatePropo
     return { error: 'You must be logged in to generate a proposal.' };
   }
 
+  // Check if account is deactivated
+  const deactivationCheck = await checkUserNotDeactivated(user.id);
+  if (deactivationCheck.blocked) {
+    return { error: deactivationCheck.error };
+  }
+
   // GATING: Email Verification
   if (!user.emailVerified) {
     return { error: 'Please verify your email to generate proposals. Check your inbox for the verification link.' };
@@ -349,6 +378,12 @@ export async function updateProfileAction(formData: FormData) {
   const session = await auth();
   if (!session?.user?.id) {
     return { error: 'You must be logged in to update your profile.' };
+  }
+
+  // Check if account is deactivated
+  const deactivationCheck = await checkUserNotDeactivated(session.user.id);
+  if (deactivationCheck.blocked) {
+    return { error: deactivationCheck.error };
   }
 
   const servicesRaw = formData.get('services') as string;

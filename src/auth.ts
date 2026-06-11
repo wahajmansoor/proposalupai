@@ -26,10 +26,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         const user = await prisma.user.findUnique({ where: { email } });
         if (!user || !user.password) return null;
 
-        // Reject deactivated users
-        if (user.isActive === false) {
-          return null;
-        }
+        // Allow deactivated users to log in (they will be restricted in session)
 
         const isPasswordValid = await bcrypt.compare(credentials.password as string, user.password);
         if (!isPasswordValid) return null;
@@ -123,16 +120,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
             }
           }
 
-if (dbUser) {
+          if (dbUser) {
             session.user.name = dbUser.name;
             session.user.image = dbUser.image;
             session.user.isFeatured = dbUser.isFeatured;
             session.user.emailVerified = dbUser.emailVerified;
 
-            // BLOCK DEACTIVATED USERS - invalidate session immediately
+            // Store deactivated status in session (user can still log in but is restricted)
             if (dbUser.isActive === false) {
-              console.log(`SESSION_BLOCK: Deactivated user ${dbUser.email} tried to access`);
-              return null as any;
+              (session.user as any).deactivated = {
+                isActive: false,
+                message: dbUser.deactivationReason || "Your profile has been deactivated by an administrator."
+              };
             }
 
             // SINGLE SESSION CHECK

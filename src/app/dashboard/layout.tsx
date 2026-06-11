@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { DashboardClient } from './dashboard-client';
 import { SessionProvider } from 'next-auth/react';
 import { OnboardingTour } from '@/components/onboarding-tour';
+import { DeactivatedAccountBanner } from '@/components/deactivated-account-banner';
 
 export default async function DashboardLayout({
   children,
@@ -33,6 +34,7 @@ export default async function DashboardLayout({
   return (
     <SessionProvider session={session}>
       <OnboardingTour onboardingCompleted={onboardingCompleted} />
+      <DeactivatedAccountBanner />
       <DashboardClient onboardingCompleted={Boolean(dbUser?.onboardingCompleted)}>
         {children}
       </DashboardClient>
