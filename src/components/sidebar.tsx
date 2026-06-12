@@ -113,10 +113,11 @@ function SidebarNav() {
               </SidebarMenuButton>
             </Link>
           </SidebarMenuItem>
-          <SidebarMenuItem>
+<SidebarMenuItem>
             <SidebarMenuButton
               onClick={async () => {
-                await signOut({ callbackUrl: '/login' });
+                await signOut({ redirect: false });
+                window.location.href = '/';
               }}
               tooltip="Logout"
               className="w-full"
