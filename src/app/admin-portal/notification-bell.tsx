@@ -48,7 +48,7 @@ export function NotificationBell({ recentUsers }: { recentUsers: AppUser[] }) {
   return (
     <DropdownMenu onOpenChange={handleOpenChange}>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="icon" className="rounded-full relative">
+        <Button variant="ghost" size="icon" className="rounded-full relative dark:hover:bg-background">
           <Bell className="h-5 w-5" />
           {newUsersCount > 0 && (
             <Badge variant="destructive" className="absolute -top-1 -right-1 h-5 w-5 justify-center p-0">{newUsersCount}</Badge>
@@ -58,10 +58,10 @@ export function NotificationBell({ recentUsers }: { recentUsers: AppUser[] }) {
       </DropdownMenuTrigger>
       <DropdownMenuContent align="end" className="w-80">
         <DropdownMenuLabel>Recent Signups</DropdownMenuLabel>
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator className="dark:bg-background"/>
         {recentUsers.length > 0 ? (
             recentUsers.map(user => (
-                 <DropdownMenuItem key={user.id} asChild>
+                 <DropdownMenuItem className="dark:hover:bg-background" key={user.id} asChild>
                     <Link href={`/admin-portal/users`} className="flex items-center gap-3 cursor-pointer">
                          <Avatar className="h-8 w-8">
                             <AvatarFallback>{getInitials(user.name)}</AvatarFallback>

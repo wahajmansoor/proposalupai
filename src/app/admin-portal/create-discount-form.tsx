@@ -89,8 +89,8 @@ export default function CreateDiscountForm({ onCreated }: { onCreated: () => voi
                                         <SelectTrigger><SelectValue placeholder="Select type" /></SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value="flat">Flat</SelectItem>
-                                        <SelectItem value="percentage">Percentage</SelectItem>
+                                        <SelectItem className="dark:hover:bg-background dark:data-[state=checked]:bg-background cursor-pointer" value="flat">Flat</SelectItem>
+                                        <SelectItem className="dark:hover:bg-background dark:data-[state=checked]:bg-background cursor-pointer" value="percentage">Percentage</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />
@@ -104,12 +104,12 @@ export default function CreateDiscountForm({ onCreated }: { onCreated: () => voi
                                         <SelectTrigger><SelectValue placeholder="All Products (Default)" /></SelectTrigger>
                                     </FormControl>
                                     <SelectContent>
-                                        <SelectItem value="none">All Products</SelectItem>
-                                        <SelectItem value={PADDLE_PRICES.monthly}>Pro Monthly Plan</SelectItem>
-                                        <SelectItem value={PADDLE_PRICES.yearly}>Pro Yearly Plan</SelectItem>
-                                        <SelectItem value={PADDLE_PRICES.credits.ten}>10 Credits Bundle</SelectItem>
-                                        <SelectItem value={PADDLE_PRICES.credits.twentyfive}>25 Credits Bundle</SelectItem>
-                                        <SelectItem value={PADDLE_PRICES.credits.fifty}>50 Credits Bundle</SelectItem>
+                                        <SelectItem className="dark:hover:bg-background dark:data-[state=checked]:bg-background cursor-pointer" value="none">All Products</SelectItem>
+                                        <SelectItem className="dark:hover:bg-background dark:data-[state=checked]:bg-background cursor-pointer" value={PADDLE_PRICES.monthly}>Pro Monthly Plan</SelectItem>
+                                        <SelectItem className="dark:hover:bg-background dark:data-[state=checked]:bg-background cursor-pointer" value={PADDLE_PRICES.yearly}>Pro Yearly Plan</SelectItem>
+                                        <SelectItem className="dark:hover:bg-background dark:data-[state=checked]:bg-background cursor-pointer" value={PADDLE_PRICES.credits.ten}>10 Credits Bundle</SelectItem>
+                                        <SelectItem className="dark:hover:bg-background dark:data-[state=checked]:bg-background cursor-pointer" value={PADDLE_PRICES.credits.twentyfive}>25 Credits Bundle</SelectItem>
+                                        <SelectItem className="dark:hover:bg-background dark:data-[state=checked]:bg-background cursor-pointer" value={PADDLE_PRICES.credits.fifty}>50 Credits Bundle</SelectItem>
                                     </SelectContent>
                                 </Select>
                                 <FormMessage />

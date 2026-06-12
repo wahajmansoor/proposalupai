@@ -47,7 +47,7 @@ export default function DiscountsDashboard() {
                 ) : (
                     <Table>
                         <TableHeader>
-                            <TableRow>
+                            <TableRow className="hover:bg-background">
                                 <TableHead>Code</TableHead>
                                 <TableHead>Description</TableHead>
                                 <TableHead>Amount</TableHead>
@@ -57,7 +57,7 @@ export default function DiscountsDashboard() {
                         </TableHeader>
                         <TableBody>
                             {discounts.map((d) => (
-                                <TableRow key={d.id}>
+                                <TableRow key={d.id} className="hover:bg-background">
                                     <TableCell>{d.code}</TableCell>
                                     <TableCell>{d.description}</TableCell>
                                     <TableCell>${(parseInt(d.amount) / 100).toFixed(2)}</TableCell>

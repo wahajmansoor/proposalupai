@@ -16,19 +16,19 @@ export function AdminHeader({ recentUsers }: { recentUsers: AppUser[] }) {
             <NotificationBell recentUsers={recentUsers} />
             <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                    <Button variant="secondary" size="icon" className="rounded-full">
+                    <Button variant="secondary" size="icon" className="rounded-full bg-background dark:hover:bg-background">
                         <Avatar className="h-8 w-8">
-                            <AvatarFallback>PU</AvatarFallback>
+                            <AvatarFallback className="dark:bg-background">PU</AvatarFallback>
                         </Avatar>
                         <span className="sr-only">Toggle user menu</span>
                     </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
                     <DropdownMenuLabel>Proposal Up Admin</DropdownMenuLabel>
-                    <DropdownMenuSeparator />
+                    <DropdownMenuSeparator className="bg-background"/>
                     <form action={adminLogout}>
                         <DropdownMenuItem asChild>
-                            <button type="submit" className="w-full">Logout</button>
+                            <button type="submit" className="w-full dark:hover:bg-background">Logout</button>
                         </DropdownMenuItem>
                     </form>
                 </DropdownMenuContent>

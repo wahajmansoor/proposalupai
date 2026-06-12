@@ -48,7 +48,7 @@ export function WelcomeDialog({
         </DialogHeader>
         <div className="my-4 space-y-3">
           {isTrialing ? (
-            <div className="flex items-start gap-3 p-3 bg-muted rounded-lg text-left">
+            <div className="flex items-start gap-3 p-3 bg-card rounded-lg text-left">
               <CheckCircle className="h-5 w-5 text-primary mt-0.5 shrink-0" />
               <div>
                 <h4 className="font-semibold">7 Days Free Trial</h4>

@@ -137,7 +137,7 @@ export default function FeaturedPage() {
       </div>
 
       <Tabs defaultValue="requests" className="w-full" onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2 max-w-[400px] mb-6">
+        <TabsList className="grid w-full grid-cols-2 max-w-[400px] mb-6 dark:bg-card">
           <TabsTrigger value="requests" className="relative font-medium">
             Featured Requests
             {requests.length > 0 && (
@@ -150,7 +150,7 @@ export default function FeaturedPage() {
         </TabsList>
 
         <TabsContent value="requests" className="space-y-4">
-<Card className="border-slate-200 dark:border shadow-sm">
+<Card className="dark:border shadow-sm">
             <CardHeader>
               <CardTitle className="text-xl">Pending Applications</CardTitle>
               <CardDescription>
@@ -164,7 +164,9 @@ export default function FeaturedPage() {
                 </div>
               ) : requests.length === 0 ? (
                 <div className="text-center py-12 text-muted-foreground flex flex-col items-center gap-3">
-                  <Bell className="h-10 w-10 opacity-10" />
+                  <div className="h-16 w-16 rounded-full bg-slate-100 dark:bg-background flex items-center justify-center">
+                    <Bell className="h-8 w-8 text-slate-300 dark:text-white" />
+                  </div>
                   <p className="text-sm font-medium">No pending requests found.</p>
                 </div>
               ) : (
@@ -327,10 +329,10 @@ export default function FeaturedPage() {
               <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
             </div>
           ) : featuredUsers.length === 0 ? (
-<Card className="p-20 text-center rounded-lg border bg-card text-card-foreground border-slate-200 dark:border shadow-sm">
+<Card className="p-20 text-center rounded-lg border bg-card text-card-foreground dark:border shadow-sm">
               <div className="flex flex-col items-center gap-4">
-                <div className="h-16 w-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-                  <Crown className="h-8 w-8 text-slate-300 dark:text-slate-700" />
+                <div className="h-16 w-16 rounded-full bg-slate-100 dark:bg-background flex items-center justify-center">
+                  <Crown className="h-8 w-8 text-slate-300 dark:text-white" />
                 </div>
                 <div className="space-y-1">
                   <p className="text-lg font-bold">No Featured Users</p>

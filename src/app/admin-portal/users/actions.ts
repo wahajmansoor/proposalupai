@@ -184,9 +184,21 @@ export async function verifyUserEmail(userId: string): Promise<{ success: boolea
   }
 }
 
+import { forgotPasswordAction } from '@/lib/password-actions';
+
 export async function sendPasswordResetLink(formData: FormData): Promise<{ success: boolean, error?: string }> {
   const email = formData.get('email') as string;
-  // This is a placeholder for actual password reset logic
-  console.log(`Simulating password reset link for ${email}`);
+  
+  if (!email) {
+    return { success: false, error: 'Email is required.' };
+  }
+
+  // Use the existing forgotPasswordAction to send the actual password reset email
+  const result = await forgotPasswordAction(email);
+  
+  if (result.error) {
+    return { success: false, error: result.error };
+  }
+  
   return { success: true };
 }

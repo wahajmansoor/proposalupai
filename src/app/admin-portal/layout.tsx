@@ -20,28 +20,28 @@ function SidebarNav() {
         <div className="px-3 py-4 space-y-1">
           <Link
             href="/admin-portal"
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-foreground hover:bg-muted"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-foreground hover:bg-background"
           >
             <Home className="h-4 w-4" />
             Dashboard
           </Link>
           <Link
             href="/admin-portal/users"
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-foreground hover:bg-muted"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-foreground hover:bg-background"
           >
             <Users className="h-4 w-4" />
             Users
           </Link>
           <Link
             href="/admin-portal/discounts"
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-foreground hover:bg-muted"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-foreground hover:bg-background"
           >
             <Ticket className="h-4 w-4" />
             Discounts
           </Link>
           <Link
             href="/admin-portal/featured"
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-foreground hover:bg-muted"
+            className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-foreground hover:bg-background"
           >
             <Star className="h-4 w-4" />
             Featured
@@ -50,7 +50,7 @@ function SidebarNav() {
       </div>
       <div className="mt-auto p-4 border-t border-border">
         <form action={adminLogout}>
-          <button type="submit" className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-foreground hover:bg-muted">
+          <button type="submit" className="flex w-full items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-foreground hover:bg-background">
             <LogOut className="h-4 w-4" />
             Logout
           </button>

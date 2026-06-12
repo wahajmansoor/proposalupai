@@ -133,9 +133,9 @@ function UserActionsInner({ user }: { user: AppUser }) {
     const formData = new FormData();
     formData.append('email', user.email);
 
-    const result = await sendPasswordResetLink(formData);
+const result = await sendPasswordResetLink(formData);
     if (result.success) {
-      toast({ variant: "success", title: 'Email Action Simulated', description: `In a real app, a password reset email would be sent to ${user.email}.` });
+      toast({ variant: "success", title: 'Password Reset Email Sent', description: `A password reset link has been sent to ${user.email}.` });
     } else {
       toast({ title: 'Error', description: result.error, variant: 'destructive' });
     }
@@ -147,37 +147,36 @@ function UserActionsInner({ user }: { user: AppUser }) {
     <>
       <DropdownMenu>
         <DropdownMenuTrigger asChild>
-          <Button variant="ghost" className="h-8 w-8 p-0">
+          <Button variant="ghost" className="h-8 w-8 p-0 dark:hover:bg-card">
             <span className="sr-only">Open menu</span>
             <MoreHorizontal className="h-4 w-4" />
           </Button>
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end">
-          <DropdownMenuItem onSelect={() => setIsEditDialogOpen(true)}>
+          <DropdownMenuItem className="dark:hover:bg-background" onSelect={() => setIsEditDialogOpen(true)}>
             <Edit className="mr-2 h-4 w-4" />
             Edit User
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setIsCreditsDialogOpen(true)}>
+          <DropdownMenuItem className="dark:hover:bg-background" onSelect={() => setIsCreditsDialogOpen(true)}>
             <Star className="mr-2 h-4 w-4" />
             Manage Credits
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={handleManageBilling} disabled={!user.paddleCustomerId || isManagingBilling}>
+          <DropdownMenuItem className="dark:hover:bg-background" onSelect={handleManageBilling} disabled={!user.paddleCustomerId || isManagingBilling}>
             {isManagingBilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
             Manage Billing
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setIsPasswordResetDialogOpen(true)}>
+          <DropdownMenuItem className="dark:hover:bg-background" onSelect={() => setIsPasswordResetDialogOpen(true)}>
             <Mail className="mr-2 h-4 w-4" />
             Send Password Reset
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setIsVerifyingDialogOpen(true)}>
+          <DropdownMenuItem className="dark:hover:bg-background" onSelect={() => setIsVerifyingDialogOpen(true)}>
             <CheckCircle className="mr-2 h-4 w-4" />
             Verify Email
           </DropdownMenuItem>
-          <DropdownMenuItem onSelect={() => setIsStatusToggleDialogOpen(true)}>
+          <DropdownMenuItem className="dark:hover:bg-background" onSelect={() => setIsStatusToggleDialogOpen(true)}>
             <Power className="mr-2 h-4 w-4" />
             {user.isActive ? 'Deactivate User' : 'Reactivate User'}
           </DropdownMenuItem>
-          <DropdownMenuSeparator />
           <DropdownMenuItem onSelect={() => setIsDeleteDialogOpen(true)} className="text-destructive focus:text-destructive focus:bg-destructive/10">
             <Trash2 className="mr-2 h-4 w-4" />
             Delete User
@@ -311,8 +310,8 @@ function UserActionsInner({ user }: { user: AppUser }) {
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Send Password Reset?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will simulate sending a password reset link to <span className="font-semibold">{user.email}</span>. Are you sure you want to continue?
+<AlertDialogDescription>
+              This will send a password reset link to <span className="font-semibold">{user.email}</span>. Are you sure you want to continue?
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

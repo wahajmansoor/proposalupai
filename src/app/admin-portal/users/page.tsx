@@ -238,10 +238,10 @@ export default function AdminUsersPage() {
                     setStatusFilter(option.value);
                     setCurrentPage(1);
                   }}
-                  className="shrink-0"
+                  className="shrink-0 dark:hover:bg-card"
                 >
                   {option.label}
-                  <Badge variant="secondary" className="ml-2">{statusCounts[option.value]}</Badge>
+                  <Badge variant="secondary" className="ml-2 dark:bg-card">{statusCounts[option.value]}</Badge>
                 </Button>
               ))}
             </div>
@@ -262,7 +262,7 @@ export default function AdminUsersPage() {
               <>
                 <Table>
                   <TableHeader>
-                    <TableRow>
+                    <TableRow className="dark:hover:bg-background">
                       <TableHead>
                         <button onClick={() => requestSort('name')} className="flex items-center">
                           User {getSortIndicator('name')}
@@ -297,7 +297,7 @@ export default function AdminUsersPage() {
                   </TableHeader>
                   <TableBody>
                     {currentUsers.map((user) => (
-                      <TableRow key={user.id} className={cn(user.isActive ? "" : "bg-red-50 dark:bg-red-950/20")}>
+                      <TableRow key={user.id} className={cn(user.isActive ? "dark:hover:bg-background" : "bg-red-50 dark:bg-red-950/50")}>
                         <TableCell>
                           <div className="flex items-center gap-3">
                             <Avatar className="h-9 w-9">
@@ -434,6 +434,7 @@ export default function AdminUsersPage() {
                   <Button
                     variant="outline"
                     size="sm"
+                    className="dark:hover:bg-card"
                     onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                     disabled={currentPage === 1}
                   >
@@ -442,6 +443,7 @@ export default function AdminUsersPage() {
                   <Button
                     variant="outline"
                     size="sm"
+                    className="dark:hover:bg-card"
                     onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                     disabled={currentPage === totalPages}
                   >

@@ -151,7 +151,7 @@ function ProfileForm({
                   type="url"
                   className="flex-1"
                 />
-                <Button type="button" variant="ghost" size="icon" onClick={() => removeLink(index)} className="shrink-0">
+                <Button type="button" variant="ghost" size="icon" onClick={() => removeLink(index)} className="dark:hover:bg-card shrink-0">
                   <Trash2 className="h-4 w-4" />
                 </Button>
               </div>

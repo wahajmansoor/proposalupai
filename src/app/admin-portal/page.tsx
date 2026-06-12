@@ -205,7 +205,7 @@ export default async function AdminDashboardPage() {
               <CardTitle>Recent Signups</CardTitle>
               <CardDescription className="pt-1">The latest users to join your application.</CardDescription>
             </div>
-            <Button asChild variant="outline" size="sm">
+            <Button className="dark:hover:bg-card" asChild variant="outline" size="sm">
               <Link href="/admin-portal/users">
                 View All Users <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
@@ -215,7 +215,7 @@ export default async function AdminDashboardPage() {
             {recentUsers.length > 0 ? (
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="dark:hover:bg-background">
                     <TableHead>User</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Plan</TableHead>
@@ -225,7 +225,7 @@ export default async function AdminDashboardPage() {
                 </TableHeader>
                 <TableBody>
                   {recentUsers.map(user => (
-                    <TableRow key={user.id}>
+                    <TableRow className="dark:hover:bg-background" key={user.id}>
                       <TableCell>
                         <div className="flex items-center gap-3">
                           <Avatar className="h-9 w-9">
@@ -274,7 +274,7 @@ export default async function AdminDashboardPage() {
                 These users still have active access but their subscription will <strong>not renew</strong>. Great time to reach out!
               </CardDescription>
             </div>
-            <Button asChild variant="outline" size="sm">
+            <Button className="dark:hover:bg-card" asChild variant="outline" size="sm">
               <Link href="/admin-portal/users?filter=canceled">
                 View in Users <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
@@ -284,7 +284,7 @@ export default async function AdminDashboardPage() {
             {cancelingSoon.length > 0 ? (
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="dark:hover:bg-background">
                     <TableHead>User</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Plan</TableHead>
@@ -354,7 +354,7 @@ export default async function AdminDashboardPage() {
                 Users who have fully lost access to Pro features.
               </CardDescription>
             </div>
-            <Button asChild variant="outline" size="sm">
+            <Button className="dark:hover:bg-card" asChild variant="outline" size="sm">
               <Link href="/admin-portal/users?filter=canceled">
                 View All <ArrowRight className="ml-2 h-4 w-4" />
               </Link>
@@ -364,7 +364,7 @@ export default async function AdminDashboardPage() {
             {fullyCanceled.length > 0 ? (
               <Table>
                 <TableHeader>
-                  <TableRow>
+                  <TableRow className="dark:hover:bg-background">
                     <TableHead>User</TableHead>
                     <TableHead>Email</TableHead>
                     <TableHead>Was On</TableHead>
