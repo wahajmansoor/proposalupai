@@ -512,7 +512,7 @@ export default function SkillProfilesPage() {
             ) : (
               <Card className="h-80 overflow-hidden">
                 <CardHeader className="space-y-6 md:pb-0">
-                  <Skeleton className="h-8 w-1/2" />
+                  <Skeleton className="h-8 w-1/2 bg-background" />
                 </CardHeader>
                 <CardContent className="space-y-6">
                   <div className="space-y-2">
