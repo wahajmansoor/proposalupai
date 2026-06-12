@@ -361,7 +361,7 @@ export default function ProfilePage() {
                   </div>
                 ))}
                 {services.length < 7 && !isLocked && (
-                  <Button type="button" variant="outline" size="sm" onClick={() => setServices([...services, ''])}>
+                  <Button className="dark:hover:bg-card" type="button" variant="outline" size="sm" onClick={() => setServices([...services, ''])}>
                     <Plus className="mr-2 h-4 w-4" />
                     Add Service
                   </Button>
@@ -396,7 +396,7 @@ export default function ProfilePage() {
             </div>
             <AlertDialog>
               <AlertDialogTrigger asChild>
-                <Button variant="outline" className="rounded-full">Reset Password</Button>
+                <Button variant="outline" className="rounded-full dark:hover:bg-card">Reset Password</Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
                 <AlertDialogHeader>
@@ -406,7 +406,7 @@ export default function ProfilePage() {
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
-                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogCancel className="dark:hover:bg-card">Cancel</AlertDialogCancel>
                   <AlertDialogAction onClick={handlePasswordReset} disabled={isSendingReset}>
                     {isSendingReset ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <KeyRound className="mr-2 h-4 w-4" />}
                     Send Link

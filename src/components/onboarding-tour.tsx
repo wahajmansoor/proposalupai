@@ -163,7 +163,7 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
     skipProps,
     isLastStep,
   }: any) => (
-    <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 p-0 max-w-sm overflow-hidden relative">
+<div className="bg-white dark:bg-card rounded-2xl shadow-2xl border border-slate-200 dark:border p-0 max-w-sm overflow-hidden relative">
       <div className="h-1 bg-gradient-to-r from-primary to-blue-500 w-full" />
 
       <div className="p-6">
@@ -197,7 +197,7 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
         </div>
 
         {/* Footer */}
-        <div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100 dark:border-slate-800">
+<div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100 dark:border">
           <button
             type="button"
             onClick={(e) => { if (skipProps.onClick) skipProps.onClick(e); }}
@@ -222,7 +222,7 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
       {isDashboardPage && (
         <button
           onClick={() => setRun(true)}
-          className="fixed bottom-6 right-6 z-[40] hidden md:flex items-center gap-2 px-4 py-2 bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-full shadow-lg hover:bg-slate-50 transition-all text-xs font-semibold text-slate-700 dark:text-slate-200"
+className="fixed bottom-6 right-6 z-[40] hidden md:flex items-center gap-2 px-4 py-2 bg-white dark:bg-card border dark:border rounded-full shadow-lg hover:bg-slate-50 transition-all text-xs font-semibold"
         >
           <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
           System Guide

@@ -19,7 +19,7 @@ export function Header() {
   const canSeeCredits = user && userProfile?.subscriptionStatus && userProfile.subscriptionStatus !== 'N/A' && userProfile.subscriptionStatus !== null;
 
   return (
-    <header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-background/95 px-4 backdrop-blur-sm sm:px-6">
+<header className="sticky top-0 z-30 flex h-16 items-center gap-4 border-b bg-sidebar/95 px-4 backdrop-blur-sm sm:px-6">
       <SidebarTrigger />
       <div className="w-full flex-1">
         {/* Optional: Add a search bar or other header content here */}

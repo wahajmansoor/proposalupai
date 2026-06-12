@@ -152,7 +152,7 @@ export function DashboardClient({
                   <p className="font-medium text-slate-900 dark:text-slate-100">
                     {deactivated.message}
                   </p>
-                  <div className="p-4 border border-slate-200 dark:border-slate-800 text-sm text-muted-foreground">
+<div className="p-4 border border-slate-200 dark:border text-sm text-muted-foreground">
                     If you want to reactivate your profile, contact an admin. help@proposalupai.com
                   </div>
                 </div>

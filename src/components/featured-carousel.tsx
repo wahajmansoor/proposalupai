@@ -84,7 +84,7 @@ export function FeaturedUsersCarousel({ users }: FeaturedUsersCarouselProps) {
         <div className="flex -ml-4">
           {users.map((user) => (
             <div key={user.id} className="flex-[0_0_100%] min-w-0 pl-4 md:flex-[0_0_33.33%]">
-              <Card className="border-0 bg-white/70 dark:bg-slate-900/50 backdrop-blur-md shadow-xl shadow-slate-200/50 dark:shadow-none rounded-3xl overflow-hidden h-full border border-slate-100 dark:border-slate-800">
+<Card className="border-0 bg-white/70 dark:bg-card/50 backdrop-blur-md shadow-xl shadow-slate-200/50 dark:shadow-none rounded-3xl overflow-hidden h-full border border-slate-100 dark:border">
                 <CardContent className="md:p-3 p-0 flex flex-col h-full">
                   <div className="relative h-20 bg-gradient-to-br from-primary/10 via-primary/5 to-transparent rounded-2xl">
                     <div className="absolute -bottom-10 left-6">
@@ -120,7 +120,7 @@ export function FeaturedUsersCarousel({ users }: FeaturedUsersCarouselProps) {
                             try {
                               const services = JSON.parse(user.services);
                               return Array.isArray(services) ? services.map((service: string, i: number) => (
-                                <div key={i} className="flex items-center gap-1.5 bg-slate-50 dark:bg-slate-900/50 px-2 py-1.5 rounded-full border border-slate-100 dark:border-slate-800 transition-colors">
+<div key={i} className="flex items-center gap-1.5 bg-slate-50 dark:bg-card/50 px-2 py-1.5 rounded-full border border-slate-100 dark:border transition-colors">
                                   <Check className="h-4 w-4 text-primary" />
                                   <span className="text-[13px] font-medium text-slate-700 dark:text-slate-300">{service}</span>
                                 </div>

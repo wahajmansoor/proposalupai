@@ -150,7 +150,7 @@ export default function FeaturedPage() {
         </TabsList>
 
         <TabsContent value="requests" className="space-y-4">
-          <Card className="border-slate-200 dark:border-slate-800 shadow-sm">
+<Card className="border-slate-200 dark:border shadow-sm">
             <CardHeader>
               <CardTitle className="text-xl">Pending Applications</CardTitle>
               <CardDescription>
@@ -327,7 +327,7 @@ export default function FeaturedPage() {
               <Loader2 className="h-10 w-10 animate-spin text-primary opacity-20" />
             </div>
           ) : featuredUsers.length === 0 ? (
-            <Card className="p-20 text-center rounded-lg border bg-card text-card-foreground border-slate-200 dark:border-slate-800 shadow-sm">
+<Card className="p-20 text-center rounded-lg border bg-card text-card-foreground border-slate-200 dark:border shadow-sm">
               <div className="flex flex-col items-center gap-4">
                 <div className="h-16 w-16 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                   <Crown className="h-8 w-8 text-slate-300 dark:text-slate-700" />
@@ -341,7 +341,7 @@ export default function FeaturedPage() {
           ) : (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
               {featuredUsers.map((user) => (
-                <Card key={user.id} className="overflow-hidden flex flex-col h-full border-slate-200 dark:border-slate-800 shadow-sm rounded-3xl bg-white dark:bg-slate-900/40 backdrop-blur-sm">
+<Card key={user.id} className="overflow-hidden flex flex-col h-full border-slate-200 dark:border shadow-sm rounded-3xl bg-white dark:bg-card/50 backdrop-blur-sm">
                   <CardHeader className="p-6 pb-0 md:pb-0">
                     <div className="flex justify-between items-start">
                       <Avatar className="h-20 w-20">
@@ -396,7 +396,7 @@ export default function FeaturedPage() {
                       </div>
                     </div>
                   </CardContent>
-                  <CardFooter className="p-5 border-t bg-slate-50/50 dark:bg-slate-900/50 mt-auto flex justify-center">
+<CardFooter className="p-5 border-t bg-slate-50/50 dark:bg-card/50 mt-auto flex justify-center">
                     <Button
                       variant="destructive"
                       size="sm"

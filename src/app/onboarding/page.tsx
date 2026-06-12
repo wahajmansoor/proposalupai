@@ -58,7 +58,7 @@ function PlanRow({
             className={cn(
                 'cursor-pointer rounded-lg p-6 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 transition-all duration-300 transform hover:scale-[1.02] shadow-lg',
                 isSelected ? 'ring-2 ring-offset-2 ring-primary ring-offset-background' : '',
-                isFeatured ? 'bg-slate-800 text-white featured-plan-pattern' : 'bg-white/80 dark:bg-slate-900/80 text-slate-900 dark:text-white'
+isFeatured ? 'bg-slate-800 text-white featured-plan-pattern' : 'bg-white/80 dark:bg-card/80 text-slate-900 dark:text-white'
             )}
         >
             <div>
@@ -100,7 +100,7 @@ function PlanDetailsCard({
     const priceId = plan.interval === 'monthly' ? PADDLE_PRICES.monthly : PADDLE_PRICES.yearly;
 
     return (
-        <div className="bg-white/80 dark:bg-slate-900/80 text-card-foreground rounded-xl shadow-2xl border w-full">
+<div className="bg-white/80 dark:bg-card/80 text-card-foreground rounded-xl shadow-2xl border w-full">
             <div className="p-6">
                 <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
                     <div>

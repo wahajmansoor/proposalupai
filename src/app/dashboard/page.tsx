@@ -797,7 +797,7 @@ function DashboardContent() {
                 <p className="text-muted-foreground">Step {currentStep} of {totalSteps}: {stepTitles[currentStep - 1]}</p>
               </div>
             </div>
-            <ProTips className="flex items-center gap-2 px-4 py-2 bg-button-gradient border border-slate-200 dark:border-slate-800 rounded-full shadow-lg hover:opacity-90 transition-all text-xs font-semibold text-white" />
+<ProTips className="flex items-center gap-2 px-4 py-2 bg-button-gradient rounded-full shadow-lg hover:opacity-90 transition-all text-xs font-semibold text-white" />
           </div>
           {isTrial && !trialLimitReached && (
             <div className="text-right hidden md:block">
@@ -1200,7 +1200,7 @@ function DashboardContent() {
               </div>
             </CardHeader>
             <CardContent className="min-h-[200px]">
-              <div className="flex items-center gap-2 text-xs text-muted-foreground bg-muted/50 rounded-md px-3 py-2 mb-3">
+              <div className="flex items-center gap-2 text-xs bg-background rounded-md px-3 py-2 mb-3">
                 <AlertCircle className="h-3.5 w-3.5 shrink-0" />
                 <span>AI may make mistakes. Double-check all generated proposals.</span>
               </div>

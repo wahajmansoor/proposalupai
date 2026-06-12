@@ -42,7 +42,7 @@ export function FeaturedSectionClient() {
 
   if (users.length === 0) {
     return (
-      <div className="w-full p-6 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+<div className="w-full p-6 rounded-lg border dark:border bg-white dark:bg-card shadow-sm">
         <div className="flex flex-col md:flex-row items-center justify-between gap-6">
           <div className="flex flex-col md:flex-row items-center md:items-center gap-4 text-center md:text-left">
             <div className="bg-primary/10 p-3 rounded-full shrink-0">
@@ -68,7 +68,7 @@ export function FeaturedSectionClient() {
   }
 
   return (
-    <div className="w-full pt-4 pb-4 pr-0 pl-0 md:pr-4 md:pl-4 rounded-3xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm">
+<div className="w-full pt-4 pb-4 pr-0 pl-0 md:pr-4 md:pl-4 rounded-3xl border border-slate-200 dark:border bg-white dark:bg-card shadow-sm">
       <div className="space-y-4">
         <FeaturedUsersCarousel users={users} />
       </div>

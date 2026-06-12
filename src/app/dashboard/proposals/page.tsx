@@ -160,13 +160,11 @@ export default function SavedProposalsPage() {
           <div className="space-y-6">
             {[1, 2, 3].map((i) => (
               <Card key={i} className="overflow-hidden">
-                <CardHeader className="space-y-2">
+                <CardHeader className="space-y-2 md:pb-0">
                   <Skeleton className="h-6 w-1/3" />
-                  <Skeleton className="h-4 w-1/4" />
                 </CardHeader>
                 <CardContent className="space-y-4">
-                  <Skeleton className="h-10 w-full" />
-                  <div className="space-y-2 pt-4 border-t">
+                  <div className="space-y-2">
                     <Skeleton className="h-4 w-full" />
                     <Skeleton className="h-4 w-full" />
                     <Skeleton className="h-4 w-2/3" />

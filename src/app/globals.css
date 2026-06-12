@@ -33,32 +33,35 @@
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    /* Main background: #1a1a1a */
+    --background: 0 0% 10.2%;
     --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
+/* Card background: #1f1f1f */
+    --card: 0 0% 12.2%;
     --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
+    --popover: 0 0% 12.2%;
     --popover-foreground: 210 40% 98%;
     --primary: 113 72% 51%;
     --primary-foreground: 0 0% 100%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
+--muted: 217.2 32.6% 17.5%;
+    --muted-foreground: 215 0% 100%;
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
+    --border: 0 0% 18%;
     --input: 217.2 32.6% 17.5%;
     --ring: 113 72% 51%;
-    --main-background: 0 0% 2.4%;
-    --auth-panel-background: 222 47% 11%;
+    /* Main background: #1a1a1a */
+    --main-background: 0 0% 10.2%;
+    --auth-panel-background: 0 0% 12.2%;
     
-    /* Custom vars for admin */
-    --admin-background: 224 71% 4%;
-    --sidebar: var(--background);
-    --sidebar-foreground: var(--foreground);
+    /* Custom vars for admin - sidebar: #1f1f1f */
+    --admin-background: 0 0% 12.2%;
+    --sidebar: 0 0% 12.2%;
+    --sidebar-foreground: 210 40% 98%;
   }
 }
 
@@ -102,4 +105,3 @@
         linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
     background-size: 1.5rem 1.5rem;
 }
-    

@@ -66,15 +66,15 @@ export function UserNav() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <Button variant="ghost" className="relative flex items-center gap-2 p-1 h-auto rounded-full border border-transparent hover:border-border focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0">
+        <Button variant="ghost" className="relative flex items-center gap-2 p-1 h-auto rounded-full border border-transparent dark:hover:bg-background hover:border-border focus-visible:bg-transparent focus-visible:ring-0 focus-visible:ring-offset-0">
           <Avatar className="h-9 w-9">
             {photoURL && (
               <AvatarImage src={photoURL} alt={displayName || 'User avatar'} />
             )}
-            <AvatarFallback>{getInitials(displayName)}</AvatarFallback>
+            <AvatarFallback className="dark:bg-card">{getInitials(displayName)}</AvatarFallback>
           </Avatar>
           <div className="hidden sm:flex flex-col text-left">
-            <span className="font-semibold text-sm leading-tight text-foreground">{displayName}</span>
+            <span className="font-semibold text-sm leading-tight text-foreground ">{displayName}</span>
             {isPremium && (
               <Badge variant="premium" className="px-1.5 py-0 h-auto justify-start w-fit">
                 <Star className="mr-1 h-3 w-3" />
@@ -100,16 +100,16 @@ export function UserNav() {
             )}
           </div>
         </DropdownMenuLabel>
-        <DropdownMenuSeparator />
+        <DropdownMenuSeparator className="dark:bg-background"/>
         <DropdownMenuGroup>
-          <DropdownMenuItem asChild>
+          <DropdownMenuItem className="dark:hover:bg-background" asChild>
             <Link href="/profile">
               <HugeiconsIcon icon={UserSettings01Icon} size={24} className="mr-2 h-4 w-4" />
               General Profile
             </Link>
           </DropdownMenuItem>
           {userProfile?.paddleCustomerId && (
-            <DropdownMenuItem asChild>
+            <DropdownMenuItem className="dark:hover:bg-background" asChild>
               <Link href="/subscription">
                 <HugeiconsIcon icon={CreditCardValidationIcon} size={24} className="mr-2 h-4 w-4" />
                 Subscription
@@ -117,8 +117,8 @@ export function UserNav() {
             </DropdownMenuItem>
           )}
         </DropdownMenuGroup>
-        <DropdownMenuSeparator />
-        <DropdownMenuItem onClick={async () => {
+        <DropdownMenuSeparator className="dark:bg-background"/>
+        <DropdownMenuItem className="dark:hover:bg-background" onClick={async () => {
           await signOut({ callbackUrl: '/login', redirect: true });
         }}>
           <HugeiconsIcon icon={Logout01Icon} size={24} className="mr-2 h-4 w-4" />

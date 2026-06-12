@@ -71,7 +71,7 @@ function BuyCredits({ onPurchaseSuccess }: { onPurchaseSuccess: () => void }) {
       </CardHeader>
       <CardContent>
         {isTrialing ? (
-          <div className="flex flex-col items-center justify-center text-center p-4 bg-muted/50 rounded-lg">
+          <div className="flex flex-col items-center justify-center text-center p-4 bg-muted/50 dark:bg-background rounded-lg">
             <Info className="h-8 w-8 text-muted-foreground mb-2" />
             <p className="text-sm font-medium">Credit purchases are available after your trial ends.</p>
             <p className="text-xs text-muted-foreground">Activate a plan to top up your balance.</p>
@@ -106,7 +106,7 @@ function BuyCredits({ onPurchaseSuccess }: { onPurchaseSuccess: () => void }) {
           <Label htmlFor="referral-link" className="sr-only">Your Referral Link</Label>
           <div className="flex items-center gap-2">
             <Input id="referral-link" value={referralLink} readOnly />
-            <Button size="icon" variant="outline" onClick={copyToClipboard} disabled={!referralLink}>
+            <Button className="dark:hover:bg-card" size="icon" variant="outline" onClick={copyToClipboard} disabled={!referralLink}>
               {hasCopied ? <Check className="h-4 w-4 text-green-500" /> : <Copy className="h-4 w-4" />}
             </Button>
           </div>
@@ -174,7 +174,7 @@ function CreditHistory({ onDataRefresh, historyKey }: { onDataRefresh: () => voi
         ) : (
           <div className="space-y-4">
             {history.map((item) => (
-              <div key={item.id} className="flex items-center justify-between p-3 bg-muted/50 rounded-lg">
+              <div key={item.id} className="flex items-center justify-between p-3 bg-muted/50 dark:bg-background rounded-lg">
                 <div className="flex items-center gap-3">
                   <div className="p-2 bg-yellow-400/20 rounded-full">
                     <Star className="h-5 w-5 text-yellow-500" />
@@ -240,7 +240,7 @@ function HistoryTable({ title, description, fetchHistory, historyKey }: { title:
         ) : (
           <Table>
             <TableHeader>
-              <TableRow>
+              <TableRow className="dark:hover:bg-background">
                 <TableHead>Date</TableHead>
                 <TableHead>Description</TableHead>
                 <TableHead>Amount</TableHead>
@@ -249,7 +249,7 @@ function HistoryTable({ title, description, fetchHistory, historyKey }: { title:
             </TableHeader>
             <TableBody>
               {invoices.map((invoice) => (
-                <TableRow key={invoice.id}>
+                <TableRow className="dark:hover:bg-background" key={invoice.id}>
                   <TableCell className="text-xs">{invoice.date}</TableCell>
                   <TableCell className="text-xs font-medium">
                     <div className="flex items-center gap-2">
