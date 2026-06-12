@@ -114,7 +114,7 @@ function ProfileForm({
                 placeholder="Type keyword..."
                 className="flex-1 border-none shadow-none focus-visible:ring-0 h-auto p-0 m-0"
               />
-              <Button type="button" size="sm" variant="outline" onClick={() => {
+              <Button className="dark:hover:bg-card" type="button" size="sm" variant="outline" onClick={() => {
                 if (keywordInput.trim() && !keywords.includes(keywordInput.trim())) {
                   setKeywords([...keywords, keywordInput.trim()]);
                 }
@@ -127,7 +127,7 @@ function ProfileForm({
             <Select value={tone} onValueChange={setTone} required>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {tones.map(t => <SelectItem key={t} value={t}>{t}</SelectItem>)}
+                {tones.map(t => <SelectItem className="dark:hover:bg-background dark:data-[state=checked]:bg-background cursor-pointer" key={t} value={t}>{t}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -136,7 +136,7 @@ function ProfileForm({
             <Select value={length} onValueChange={setLength} required>
               <SelectTrigger><SelectValue /></SelectTrigger>
               <SelectContent>
-                {lengths.map(l => <SelectItem key={l} value={l}>{l}</SelectItem>)}
+                {lengths.map(l => <SelectItem className="dark:hover:bg-background dark:data-[state=checked]:bg-background cursor-pointer" key={l} value={l}>{l}</SelectItem>)}
               </SelectContent>
             </Select>
           </div>
@@ -156,7 +156,7 @@ function ProfileForm({
                 </Button>
               </div>
             ))}
-            <Button type="button" variant="outline" size="sm" onClick={addLink} className="w-full">
+            <Button type="button" variant="outline" size="sm" onClick={addLink} className="w-full dark:hover:bg-card">
               <Plus className="mr-2 h-4 w-4" /> Add Link
             </Button>
           </div>
@@ -164,7 +164,7 @@ function ProfileForm({
       </div>
       <div className="p-6 border-t bg-background">
         <div className="flex justify-end gap-2">
-          <Button type="button" variant="outline" onClick={() => setIsFormOpen(false)}>Cancel</Button>
+          <Button className="dark:hover:bg-card" type="button" variant="outline" onClick={() => setIsFormOpen(false)}>Cancel</Button>
           <Button type="submit" disabled={isSaving}>
             {isSaving ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : 'Save Profile'}
           </Button>
