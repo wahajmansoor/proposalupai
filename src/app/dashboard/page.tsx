@@ -797,7 +797,7 @@ function DashboardContent() {
                 <p className="text-muted-foreground">Step {currentStep} of {totalSteps}: {stepTitles[currentStep - 1]}</p>
               </div>
             </div>
-<ProTips className="flex items-center gap-2 px-4 py-2 bg-button-gradient rounded-full shadow-lg hover:opacity-90 transition-all text-xs font-semibold text-white" />
+<ProTips className="hidden lg:flex items-center gap-2 px-4 py-2 bg-button-gradient rounded-full shadow-lg hover:opacity-90 transition-all text-xs font-semibold text-white" />
           </div>
           {isTrial && !trialLimitReached && (
             <div className="text-right hidden md:block">

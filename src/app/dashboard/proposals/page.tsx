@@ -142,7 +142,7 @@ export default function SavedProposalsPage() {
       <div className="flex flex-col gap-2">
         <div className="flex items-center gap-4">
           <h1 className="text-3xl font-bold tracking-tight">Saved Proposals</h1>
-          <ProTips className="flex items-center gap-2 px-4 py-2 bg-button-gradient border border-slate-200 dark:border-slate-800 rounded-full shadow-lg hover:opacity-90 transition-all text-xs font-semibold text-white" />
+<ProTips className="hidden lg:flex items-center gap-2 px-4 py-2 bg-button-gradient border border-slate-200 dark:border-slate-800 rounded-full shadow-lg hover:opacity-90 transition-all text-xs font-semibold text-white" />
         </div>
         <p className="text-muted-foreground">Search, view, and edit your saved proposals.</p>
       </div>
