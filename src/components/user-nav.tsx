@@ -108,7 +108,7 @@ export function UserNav() {
               General Profile
             </Link>
           </DropdownMenuItem>
-          {userProfile?.paddleCustomerId && (
+          {userProfile?.stripeCustomerId && (
             <DropdownMenuItem className="dark:hover:bg-background" asChild>
               <Link href="/subscription">
                 <HugeiconsIcon icon={CreditCardValidationIcon} size={24} className="mr-2 h-4 w-4" />

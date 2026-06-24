@@ -4,8 +4,7 @@
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 import { z } from 'zod';
-import { addCreditsAction } from '@/lib/paddle-actions';
-import { paddle } from '@/lib/paddle/config';
+import { stripe } from '@/lib/stripe';
 
 export interface AppUser {
   id: string;
@@ -18,7 +17,7 @@ export interface AppUser {
   subscriptionCurrentPeriodEnd: string | null;
   scheduledCancelAt: string | null;
   createdAt: string | null;
-  paddleCustomerId: string | null;
+  stripeCustomerId: string | null;
   referralCode?: string | null;
   appliedCoupon?: string | null;
   signInProvider?: string | null;
@@ -55,7 +54,7 @@ export async function getUsers(): Promise<AppUser[]> {
     subscriptionCurrentPeriodEnd: user.subscriptionCurrentPeriodEnd ? new Date(user.subscriptionCurrentPeriodEnd).toISOString() : null,
     scheduledCancelAt: user.scheduledCancelAt ? new Date(user.scheduledCancelAt).toISOString() : null,
     createdAt: user.createdAt ? new Date(user.createdAt).toISOString() : null,
-    paddleCustomerId: user.paddleCustomerId,
+    stripeCustomerId: user.stripeCustomerId,
     referralCode: user.referralCode,
     appliedCoupon: user.appliedCoupon,
     signInProvider: user.accounts[0]?.provider || null,
@@ -126,7 +125,19 @@ export async function updateUserCredits(formData: FormData): Promise<{ success: 
     const currentCredits = user.proposalCredits || 0;
     const creditsToAdd = newCreditAmount - currentCredits;
 
-    await addCreditsAction(userId, creditsToAdd, reason);
+    await prisma.user.update({
+      where: { id: userId },
+      data: { proposalCredits: { increment: creditsToAdd } }
+    });
+    if (creditsToAdd !== 0) {
+      await prisma.creditHistory.create({
+        data: {
+          userId: userId,
+          amount: creditsToAdd,
+          reason: reason
+        }
+      });
+    }
 
     revalidatePath('/admin-portal/users');
     return { success: true };
@@ -154,15 +165,17 @@ export async function toggleUserStatus(userId: string, isActive: boolean, reason
 }
 
 export async function createAdminCustomerPortalSession(formData: FormData): Promise<{ url?: string, error?: string }> {
-  const paddleCustomerId = formData.get('paddleCustomerId') as string;
+  const stripeCustomerId = formData.get('paddleCustomerId') as string;
 
-  if (!paddleCustomerId) {
-    return { error: "User does not have a Paddle Customer ID." };
+  if (!stripeCustomerId) {
+    return { error: "User does not have a Stripe Customer ID." };
   }
 
   try {
-    const portalSession = await paddle.customerPortalSessions.create(paddleCustomerId, []);
-    return { url: portalSession.urls.general.overview };
+    const portalSession = await stripe.billingPortal.sessions.create({
+      customer: stripeCustomerId,
+    });
+    return { url: portalSession.url };
   } catch (error: any) {
     console.error("Failed to create admin customer portal session:", error);
     return { error: error.message || "Failed to create management session. Ensure the user has an active subscription." };

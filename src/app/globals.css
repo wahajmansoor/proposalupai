@@ -25,7 +25,7 @@
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
     --main-background: 210 20% 98%;
-    --auth-panel-background: 222 47% 11%;
+    --auth-panel-background: 0 0% 10.2%;
 
     /* Custom vars for admin */
     --sidebar: var(--background);
@@ -45,7 +45,7 @@
     --primary-foreground: 0 0% 100%;
     --secondary: 217.2 32.6% 17.5%;
     --secondary-foreground: 210 40% 98%;
---muted: 217.2 32.6% 17.5%;
+    --muted: 217.2 32.6% 17.5%;
     --muted-foreground: 215 0% 100%;
     --accent: 217.2 32.6% 17.5%;
     --accent-foreground: 210 40% 98%;
@@ -62,6 +62,7 @@
     --admin-background: 0 0% 12.2%;
     --sidebar: 0 0% 12.2%;
     --sidebar-foreground: 210 40% 98%;
+
   }
 }
 
@@ -80,6 +81,13 @@
   }
   .dark .onboarding-gradient {
     background-image: radial-gradient(at center center, #1FCD293B 0%, hsl(var(--background)) 67%);
+  }
+  .dark input:-webkit-autofill,
+  .dark textarea:-webkit-autofill,
+  .dark select:-webkit-autofill {
+    -webkit-box-shadow: 0 0 0px 1000px hsl(var(--background)) inset !important;
+    -webkit-text-fill-color: hsl(var(--foreground)) !important;
+    caret-color: hsl(var(--foreground));
   }
 }
 
@@ -105,3 +113,4 @@
         linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
     background-size: 1.5rem 1.5rem;
 }
+

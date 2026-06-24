@@ -12,8 +12,7 @@ import { cn } from '@/lib/utils';
 import { Badge } from '@/components/ui/badge';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { PADDLE_PRICES } from '@/lib/paddle/constants';
-import PaddleCheckout from '@/components/paddle-checkout';
+import { createStripeCheckoutSession } from '@/lib/stripe-actions';
 
 
 const plans = {
@@ -97,7 +96,7 @@ function PlanDetailsCard({
 }) {
     const { toast } = useToast();
     const router = useRouter();
-    const priceId = plan.interval === 'monthly' ? PADDLE_PRICES.monthly : PADDLE_PRICES.yearly;
+    const priceId = plan.interval === 'monthly' ? process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID! : process.env.NEXT_PUBLIC_STRIPE_YEARLY_PRICE_ID!;
 
     return (
 <div className="bg-white/80 dark:bg-card/80 text-card-foreground rounded-xl shadow-2xl border w-full">
@@ -135,17 +134,23 @@ function PlanDetailsCard({
                     ))}
                 </ul>
                  <div className="flex flex-col-reverse sm:flex-row justify-start items-center sm:items-end my-4 gap-4">
-                    <PaddleCheckout 
-                        priceId={priceId}
-                        userId={userId}
-                        userEmail={userEmail}
-                        buttonText="Start a 2-Day Free Trial"
-                        className="w-full sm:w-auto inline-flex items-center justify-center rounded-md text-base font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-8"
-                        onSuccess={() => {
-                            toast({ variant: "success",  title: 'Success!', description: 'Checkout completed. Welcome aboard!' });
-                            if (onSuccess) onSuccess();
+                    <Button 
+                        onClick={async () => {
+                            if (!priceId) {
+                                toast({ variant: "destructive", title: "Error", description: "Price ID not configured." });
+                                return;
+                            }
+                            const result = await createStripeCheckoutSession(priceId, { purchaseType: 'subscription' });
+                            if (result.error) {
+                                toast({ variant: "destructive", title: "Checkout Failed", description: result.error });
+                            } else if (result.url) {
+                                window.location.href = result.url;
+                            }
                         }}
-                    />
+                        className="w-full sm:w-auto inline-flex items-center justify-center rounded-md text-base font-medium bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-8"
+                    >
+                        Start a 2-Day Free Trial
+                    </Button>
                 </div>
             </div>
         </div>

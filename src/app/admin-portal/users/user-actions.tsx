@@ -107,13 +107,13 @@ function UserActionsInner({ user }: { user: AppUser }) {
   };
 
   const handleManageBilling = async () => {
-    if (!user.paddleCustomerId) {
-      toast({ title: 'No Billing Info', description: "This user doesn't have a Paddle customer ID.", variant: 'destructive' });
+    if (!user.stripeCustomerId) {
+      toast({ title: 'No Billing Info', description: "This user doesn't have a Stripe customer ID.", variant: 'destructive' });
       return;
     }
     setIsManagingBilling(true);
     const formData = new FormData();
-    formData.append('paddleCustomerId', user.paddleCustomerId);
+    formData.append('paddleCustomerId', user.stripeCustomerId);
 
     const result = await createAdminCustomerPortalSession(formData);
     if (result.url) {
@@ -161,7 +161,7 @@ const result = await sendPasswordResetLink(formData);
             <Star className="mr-2 h-4 w-4" />
             Manage Credits
           </DropdownMenuItem>
-          <DropdownMenuItem className="dark:hover:bg-background" onSelect={handleManageBilling} disabled={!user.paddleCustomerId || isManagingBilling}>
+          <DropdownMenuItem className="dark:hover:bg-background" onSelect={handleManageBilling} disabled={!user.stripeCustomerId || isManagingBilling}>
             {isManagingBilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
             Manage Billing
           </DropdownMenuItem>
@@ -257,6 +257,18 @@ const result = await sendPasswordResetLink(formData);
           <DialogHeader>
             <DialogTitle>Edit User</DialogTitle>
             <DialogDescription>Update the details for {user.name || user.email}.</DialogDescription>
+            {user.stripeCustomerId && (
+              <div className="pt-2 border-t mt-4">
+                <p className="text-sm font-medium mb-2">Billing Details</p>
+                <div className="grid grid-cols-2 gap-2 text-sm">
+                  <span className="text-muted-foreground">Stripe ID:</span>
+                  <span className="font-mono">{user.stripeCustomerId}</span>
+                  <span className="text-muted-foreground">Status:</span>
+                  {/* @ts-ignore */}
+                  <span className="capitalize">{user.subscriptionStatus || 'None'}</span>
+                </div>
+              </div>
+            )}
           </DialogHeader>
           <form onSubmit={handleUpdate}>
             <input type="hidden" name="id" value={user.id} />

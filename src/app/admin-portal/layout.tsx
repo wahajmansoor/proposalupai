@@ -32,13 +32,7 @@ function SidebarNav() {
             <Users className="h-4 w-4" />
             Users
           </Link>
-          <Link
-            href="/admin-portal/discounts"
-            className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-foreground hover:bg-background"
-          >
-            <Ticket className="h-4 w-4" />
-            Discounts
-          </Link>
+
           <Link
             href="/admin-portal/featured"
             className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-all hover:text-foreground hover:bg-background"

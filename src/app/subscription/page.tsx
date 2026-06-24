@@ -8,9 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { Loader2, CreditCard, ExternalLink, Star, Copy, Check, Info, ShoppingBag } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { createPaddlePortalSession } from '@/lib/paddle-actions';
-import { PADDLE_PRICES } from '@/lib/paddle/constants';
-import PaddleCheckout from '@/components/paddle-checkout';
+import { createStripePortalSession, createStripeCheckoutSession } from '@/lib/stripe-actions';
 import { format, formatDistanceToNow } from 'date-fns';
 import { getBillingHistory, type InvoiceDetails, type CreditHistoryItem, getCreditHistory } from '@/lib/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -23,9 +21,9 @@ import { useRouter } from 'next/navigation';
 
 
 const creditPackages = [
-  { name: "30 Credits", price: 5, credits: 30, priceId: PADDLE_PRICES.credits.ten },
-  { name: "70 Credits", price: 10, credits: 70, priceId: PADDLE_PRICES.credits.twentyfive },
-  { name: "200 Credits", price: 25, credits: 200, priceId: PADDLE_PRICES.credits.fifty }
+  { name: "30 Credits", price: 5, credits: 30, priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_30_PRICE_ID },
+  { name: "70 Credits", price: 10, credits: 70, priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_70_PRICE_ID },
+  { name: "200 Credits", price: 25, credits: 200, priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_200_PRICE_ID }
 ];
 
 function BuyCredits({ onPurchaseSuccess }: { onPurchaseSuccess: () => void }) {
@@ -79,21 +77,26 @@ function BuyCredits({ onPurchaseSuccess }: { onPurchaseSuccess: () => void }) {
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             {creditPackages.map((pkg) => (
-              <div key={pkg.priceId} className="flex flex-col items-center gap-1 p-2 border rounded-lg flex-1">
+              <div key={pkg.name} className="flex flex-col items-center gap-1 p-2 border rounded-lg flex-1">
                 <span className="text-2xl font-bold">${pkg.price}</span>
                 <span className="font-semibold text-muted-foreground text-xs">{pkg.name}</span>
-                <PaddleCheckout
-                  priceId={pkg.priceId}
-                  userId={user?.id || ''}
-                  userEmail={user?.email || ''}
-                  customData={{ purchaseType: 'credits', creditAmount: pkg.credits }}
-                  buttonText="Buy"
-                  className="w-full inline-flex items-center justify-center rounded-full text-xs font-semibold bg-yellow-400 text-yellow-900 hover:bg-yellow-500 h-8 mt-1"
-                  onSuccess={() => {
-                    toast({ variant: "success", title: "Purchase Successful!", description: "Your credits will be added shortly." });
-                    onPurchaseSuccess();
+                <Button
+                  onClick={async () => {
+                    if (!pkg.priceId) {
+                      toast({ variant: "destructive", title: "Error", description: "Price ID not configured." });
+                      return;
+                    }
+                    const result = await createStripeCheckoutSession(pkg.priceId, { purchaseType: 'credits', creditAmount: pkg.credits });
+                    if (result.error) {
+                      toast({ variant: "destructive", title: "Checkout Failed", description: result.error });
+                    } else if (result.url) {
+                      window.location.href = result.url;
+                    }
                   }}
-                />
+                  className="w-full inline-flex items-center justify-center rounded-full text-xs font-semibold bg-yellow-400 text-yellow-900 hover:bg-yellow-500 h-8 mt-1"
+                >
+                  Buy
+                </Button>
               </div>
             ))}
           </div>
@@ -297,7 +300,7 @@ export default function SubscriptionPage() {
     event.preventDefault();
     setIsManagingBilling(true);
 
-    const result = await createPaddlePortalSession();
+    const result = await createStripePortalSession();
 
     if ('error' in result) {
       toast({
@@ -368,7 +371,7 @@ export default function SubscriptionPage() {
                 )}
               </div>
 
-              {userProfile?.paddleCustomerId ? (
+              {userProfile?.stripeCustomerId ? (
                 <form onSubmit={handleBillingSubmit}>
                   <Button type="submit" disabled={isManagingBilling} className="w-full">
                     {isManagingBilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}

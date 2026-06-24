@@ -30,7 +30,7 @@ function SignupPageSkeleton() {
             </div>
           </div>
         </div>
-        <div className="hidden lg:flex flex-col items-center justify-center bg-auth-panel text-white relative">
+        <div className="hidden lg:flex flex-col items-center justify-center bg-background dark:bg-card text-white relative">
           <BgPattern />
           <div className="flex flex-col items-center text-center z-10">
             <Link href="/" className="mb-4">

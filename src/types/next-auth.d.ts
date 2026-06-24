@@ -15,8 +15,8 @@ declare module "next-auth" {
         subscriptionStatus?: string | null;
         proposalCount?: number;
         proposalCredits?: number;
-        paddleCustomerId?: string | null;
-        paddleSubscriptionId?: string | null;
+        stripeCustomerId?: string | null;
+        stripeSubscriptionId?: string | null;
         subscriptionInterval?: string | null;
         subscriptionCurrentPeriodEnd?: Date | null;
         referralCode?: string | null;

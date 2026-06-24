@@ -27,9 +27,7 @@ import { Copy, Check, Star, Info, Loader2 } from 'lucide-react';
 import { ShareIcons } from './icons';
 import Link from 'next/link';
 import { useIsMobile } from '@/hooks/use-mobile';
-import { PADDLE_PRICES } from '@/lib/paddle/constants';
-import PaddleCheckout from './paddle-checkout';
-import { checkUserStatusAction } from '@/lib/paddle-actions';
+import { createStripeCheckoutSession } from '@/lib/stripe-actions';
 
 
 function CreditPopAnimation({ amount }: { amount: number }) {
@@ -43,9 +41,9 @@ function CreditPopAnimation({ amount }: { amount: number }) {
 }
 
 const creditPackages = [
-  { name: "30 Credits", price: 5, credits: 30, priceId: PADDLE_PRICES.credits.ten },
-  { name: "70 Credits", price: 10, credits: 70, priceId: PADDLE_PRICES.credits.twentyfive },
-  { name: "200 Credits", price: 25, credits: 200, priceId: PADDLE_PRICES.credits.fifty }
+  { name: "30 Credits", price: 5, credits: 30, priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_30_PRICE_ID },
+  { name: "70 Credits", price: 10, credits: 70, priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_70_PRICE_ID },
+  { name: "200 Credits", price: 25, credits: 200, priceId: process.env.NEXT_PUBLIC_STRIPE_CREDITS_200_PRICE_ID }
 ];
 
 
@@ -101,30 +99,23 @@ function CreditsDialogContent({
                 <div key={pkg.priceId} className="flex flex-col items-center gap-1 p-2 border rounded-lg flex-1">
                   <span className="text-xl sm:text-2xl font-bold">${pkg.price}</span>
                   <span className="font-semibold text-muted-foreground text-xs">{pkg.name}</span>
-                  <PaddleCheckout
-                    priceId={pkg.priceId}
-                    userId={user?.id || ''}
-                    userEmail={user?.email || ''}
-                    customData={{ purchaseType: 'credits', creditAmount: pkg.credits }}
-                    buttonText="Buy"
-                    className="w-full inline-flex items-center justify-center rounded-full text-xs font-semibold bg-yellow-400 text-yellow-900 hover:bg-yellow-500 h-8 mt-1"
-                    onSuccess={() => {
-                      const addedCredits = pkg.credits;
-                      onSuccess?.(addedCredits);
-                      toast({ variant: "success", title: "Processing...", description: "Verifying your purchase. Please wait." });
-                      const currentCredits = userProfile?.proposalCredits || 0;
-                      let attempts = 0;
-                      const poll = setInterval(async () => {
-                        attempts++;
-                        const res = await checkUserStatusAction();
-                        if (res?.data?.proposalCredits && res.data.proposalCredits > currentCredits || attempts >= 10) {
-                          clearInterval(poll);
-                          await update();
-                          toast({ variant: "success", title: "Purchase Successful!", description: `Credits updated! You received +${addedCredits} credits.` });
-                        }
-                      }, 2000);
+                  <Button
+                    onClick={async () => {
+                      if (!pkg.priceId) {
+                        toast({ variant: "destructive", title: "Error", description: "Price ID not configured." });
+                        return;
+                      }
+                      const result = await createStripeCheckoutSession(pkg.priceId, { purchaseType: 'credits', creditAmount: pkg.credits });
+                      if (result.error) {
+                        toast({ variant: "destructive", title: "Checkout Failed", description: result.error });
+                      } else if (result.url) {
+                        window.location.href = result.url;
+                      }
                     }}
-                  />
+                    className="w-full inline-flex items-center justify-center rounded-full text-xs font-semibold bg-yellow-400 text-yellow-900 hover:bg-yellow-500 h-8 mt-1"
+                  >
+                    Buy
+                  </Button>
                 </div>
               ))}
             </div>

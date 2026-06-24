@@ -5,10 +5,8 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, Loader2, Briefcase, ArrowLeft, Tag, X, AlertTriangle, CreditCard, Sparkles, RefreshCw } from 'lucide-react';
-import { createPaddlePortalSession, checkUserStatusAction } from '@/lib/paddle-actions';
-import { syncSubscriptionFromPaddle } from '@/lib/actions';
-import { PADDLE_PRICES } from '@/lib/paddle/constants';
-import PaddleCheckout from '@/components/paddle-checkout';
+import { createStripePortalSession, createStripeCheckoutSession } from '@/lib/stripe-actions';
+import { syncSubscriptionFromStripe } from '@/lib/actions'; // assuming this exists or remove it if unused
 import { useToast } from '@/hooks/use-toast';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
@@ -26,7 +24,7 @@ const plans = {
     description: "Access all AI-powered features with no limits and craft proposals in seconds.",
     credits: 30,
     creditsDescription: "credits/month",
-    priceId: PADDLE_PRICES.monthly,
+    priceId: process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID,
   },
   yearly: {
     name: "Pro Yearly",
@@ -35,7 +33,7 @@ const plans = {
     description: "The best value for long-term growth with AI-powered features to generate winning proposals in seconds.",
     credits: 400,
     creditsDescription: "credits/year",
-    priceId: PADDLE_PRICES.yearly,
+    priceId: process.env.NEXT_PUBLIC_STRIPE_YEARLY_PRICE_ID,
   }
 };
 
@@ -104,14 +102,14 @@ export default function PricingPage() {
   const handleManageClick = async () => {
     setIsSubmitting(true);
     try {
-      const result = await createPaddlePortalSession();
-      if ('error' in result) {
+      const result = await createStripePortalSession();
+      if (result.error) {
         toast({
           variant: "destructive",
           title: 'Action Failed',
           description: result.error
         });
-      } else if ('url' in result) {
+      } else if (result.url) {
         window.open(result.url, '_blank');
       }
     } catch (error) {
@@ -246,45 +244,28 @@ export default function PricingPage() {
                   Current Plan
                 </Button>
               ) : (
-                <PaddleCheckout
-                  priceId={currentPlan.priceId}
-                  userId={user.id}
-                  userEmail={user.email || ''}
-                  buttonText={getButtonText()}
-                  className="w-full inline-flex items-center justify-center rounded-full text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-8"
-                  onSuccess={async (data) => {
-                    toast({ variant: "success", title: "Payment Successful!", description: "Activating your plan — this may take a few seconds..." });
-                    setIsSyncing(true);
-                    try {
-                      // Import sync function dynamically if needed, or use the imported one
-                      const { syncSubscriptionFromTransaction } = await import('@/lib/actions');
-                      // data.id is the transaction id from Paddle
-                      if (data?.id) {
-                        const result = await syncSubscriptionFromTransaction(data.id);
-                        if (result.status === 'active') {
-                          await update();
-                          toast({ variant: "success", title: "Plan Activated!", description: "You now have full Pro access. Enjoy!" });
-                          router.refresh();
-                        } else {
-                          // Plan not immediately active in API, fallback to showing success and refreshing
-                          await update();
-                          toast({ variant: "success", title: "Payment Received!", description: "Your plan will be fully active momentarily." });
-                          router.refresh();
-                        }
-                      } else {
-                        await update();
-                        toast({ variant: "success", title: "Payment Received!", description: "Your plan will be fully active momentarily." });
-                        router.refresh();
-                      }
-                    } catch (e) {
-                      await update();
-                      toast({ variant: "success", title: "Payment Received!", description: "Your plan will be fully active momentarily." });
-                      router.refresh();
-                    } finally {
-                      setIsSyncing(false);
+                <Button
+                  onClick={async () => {
+                    setIsSubmitting(true);
+                    if (!currentPlan.priceId) {
+                      toast({ variant: "destructive", title: "Error", description: "Price ID not configured." });
+                      setIsSubmitting(false);
+                      return;
+                    }
+                    const result = await createStripeCheckoutSession(currentPlan.priceId, { purchaseType: 'subscription' });
+                    if (result.error) {
+                      toast({ variant: "destructive", title: "Checkout Failed", description: result.error });
+                      setIsSubmitting(false);
+                    } else if (result.url) {
+                      window.location.href = result.url;
                     }
                   }}
-                />
+                  disabled={isSubmitting}
+                  className="w-full inline-flex items-center justify-center rounded-full text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-11 px-8"
+                >
+                  {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                  {getButtonText()}
+                </Button>
               )}
             </div>
 

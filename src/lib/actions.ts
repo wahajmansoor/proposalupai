@@ -381,7 +381,7 @@ export async function updateUserDisplayNameAction(formData: FormData) {
     }
 }
 
-import { paddle } from './paddle/config';
+import { stripe } from './stripe';
 
 export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]; error?: string }> {
     const user = await getAuthenticatedUser();
@@ -389,34 +389,26 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
         return { error: 'You must be logged in to view billing history.' };
     }
 
-    if (!user.paddleCustomerId) {
+    if (!user.stripeCustomerId) {
         return { invoices: [] };
     }
 
     try {
-        const transactionsCollection = paddle.transactions.list({
-            customerId: [user.paddleCustomerId],
+        const invoicesResponse = await stripe.invoices.list({
+            customer: user.stripeCustomerId,
+            limit: 20,
         });
 
-        const invoices: InvoiceDetails[] = [];
-        let count = 0;
-        for await (const t of transactionsCollection) {
-            // Limit to 20 transactions for the history
-            if (count >= 20) break;
-            
-            // Only show completed/billed transactions to users
-            if (t.status !== 'completed' && t.status !== 'billed' && t.status !== 'paid') continue;
-            
-            invoices.push({
+        const invoices: InvoiceDetails[] = invoicesResponse.data
+          .filter(i => i.status === 'paid' || i.status === 'open')
+          .map(t => ({
                 id: t.id,
-                date: new Date(t.billedAt || t.createdAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
-                total: `${(parseInt(t.details?.totals?.grandTotal || '0') / 100).toFixed(2)} ${t.currencyCode}`,
-                status: t.status,
-                invoiceUrl: (t as any).checkout?.url || null,
-                description: t.items?.map((i: any) => i.price?.description || i.price?.name || 'Purchase').join(', ') || 'Subscription'
-            });
-            count++;
-        }
+                date: new Date(t.created * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+                total: `${(t.amount_paid / 100).toFixed(2)} ${t.currency.toUpperCase()}`,
+                status: t.status as string,
+                invoiceUrl: t.hosted_invoice_url || null,
+                description: t.lines.data.map((i: any) => i.price?.nickname || i.description || 'Subscription').join(', ') || 'Subscription'
+            }));
 
         return { invoices };
     } catch (error) {
@@ -432,68 +424,44 @@ export async function getCreditPurchaseHistory(): Promise<{ invoices?: InvoiceDe
     return { invoices: [] };
 }
 
-/**
- * Syncs subscription status directly from Paddle API into the database.
- * This is a fallback for when webhooks are delayed or misconfigured.
- */
-export async function syncSubscriptionFromPaddle(): Promise<{ success?: boolean; status?: string; error?: string }> {
+export async function syncSubscriptionFromStripe(sessionId?: string): Promise<{ success?: boolean; status?: string; error?: string }> {
     const user = await getAuthenticatedUser();
     if (!user) return { error: 'You must be logged in.' };
 
     try {
         let latestSub: any = null;
 
-        // 1. Try by stored subscription ID first (fastest path)
-        if (user.paddleSubscriptionId) {
+        if (user.stripeSubscriptionId) {
             try {
-                latestSub = await paddle.subscriptions.get(user.paddleSubscriptionId);
+                latestSub = await stripe.subscriptions.retrieve(user.stripeSubscriptionId);
             } catch (e) {
-                console.warn('syncSubscription: could not fetch by subscriptionId, falling back to customer search', e);
+                console.warn('syncSubscription: could not fetch by subscriptionId', e);
             }
         }
 
-        // 2. Fall back to listing by customer ID
-        if (!latestSub && user.paddleCustomerId) {
-            const subs = paddle.subscriptions.list({ customerId: [user.paddleCustomerId] });
-            for await (const s of subs) {
-                // Take the most recently created active/trialing one
-                if (!latestSub || new Date(s.createdAt) > new Date(latestSub.createdAt)) {
-                    latestSub = s;
-                }
-            }
-        }
-
-        // 3. Fall back to listing by email
-        if (!latestSub && user.email) {
-            const customers = paddle.customers.list({ email: [user.email] });
-            for await (const c of customers) {
-                const subs = paddle.subscriptions.list({ customerId: [c.id] });
-                for await (const s of subs) {
-                    if (!latestSub || new Date(s.createdAt) > new Date(latestSub.createdAt)) {
-                        latestSub = s;
-                    }
-                }
+        if (!latestSub && user.stripeCustomerId) {
+            const subs = await stripe.subscriptions.list({ customer: user.stripeCustomerId });
+            if (subs.data.length > 0) {
+               latestSub = subs.data[0];
             }
         }
 
         if (!latestSub) {
-            return { error: 'No Paddle subscription found for this account. Please complete a payment first.' };
+            return { error: 'No Stripe subscription found for this account. Please complete a payment first.' };
         }
 
-        const interval = latestSub.items?.[0]?.price?.billingCycle?.interval;
+        const interval = latestSub.items.data[0]?.price?.recurring?.interval;
         const newStatus = latestSub.status;
 
         // Write to DB
         await prisma.user.update({
             where: { id: user.id },
             data: {
-                paddleCustomerId: latestSub.customerId || user.paddleCustomerId || undefined,
-                paddleSubscriptionId: latestSub.id || user.paddleSubscriptionId || undefined,
+                stripeCustomerId: latestSub.customer as string,
+                stripeSubscriptionId: latestSub.id,
                 subscriptionStatus: newStatus,
                 subscriptionInterval: interval,
-                subscriptionCurrentPeriodEnd: latestSub.currentBillingPeriod
-                    ? new Date(latestSub.currentBillingPeriod.endsAt)
-                    : null,
+                subscriptionCurrentPeriodEnd: new Date(latestSub.current_period_end * 1000),
             } as any,
         });
 
@@ -514,12 +482,10 @@ export async function syncSubscriptionFromPaddle(): Promise<{ success?: boolean;
 
         return { success: true, status: newStatus };
     } catch (error: any) {
-        console.error('syncSubscriptionFromPaddle ERROR:', error);
+        console.error('syncSubscriptionFromStripe ERROR:', error);
         return { error: error.message || 'Failed to sync subscription.' };
     }
 }
-
-
 
 export async function getCreditHistory(): Promise<{ history?: CreditHistoryItem[]; error?: string }> {
     const user = await getAuthenticatedUser();
@@ -546,62 +512,6 @@ export async function getCreditHistory(): Promise<{ history?: CreditHistoryItem[
     } catch (error) {
         console.error("CREDIT_HISTORY_ERROR:", error);
         return { error: 'Failed to load credit history.' };
-    }
-}
-
-export async function syncSubscriptionFromTransaction(transactionId: string): Promise<{ success?: boolean; status?: string; error?: string }> {
-    const user = await getAuthenticatedUser();
-    if (!user) return { error: 'You must be logged in.' };
-
-    try {
-        const transaction = await paddle.transactions.get(transactionId);
-        
-        if (!transaction || !transaction.subscriptionId) {
-            // Might be a one-time purchase or invalid transaction
-            return { error: 'No subscription found for this transaction.' };
-        }
-
-        const subscription = await paddle.subscriptions.get(transaction.subscriptionId);
-        if (!subscription) {
-            return { error: 'Subscription details could not be retrieved.' };
-        }
-
-        const interval = subscription.items?.[0]?.price?.billingCycle?.interval;
-        const newStatus = subscription.status;
-
-        // Write to DB
-        await prisma.user.update({
-            where: { id: user.id },
-            data: {
-                paddleCustomerId: subscription.customerId || user.paddleCustomerId || undefined,
-                paddleSubscriptionId: subscription.id || user.paddleSubscriptionId || undefined,
-                subscriptionStatus: newStatus,
-                subscriptionInterval: interval,
-                subscriptionCurrentPeriodEnd: subscription.currentBillingPeriod
-                    ? new Date(subscription.currentBillingPeriod.endsAt)
-                    : null,
-            } as any,
-        });
-
-        // Award credits if now active and none yet awarded
-        if (newStatus === 'active') {
-            const reason = interval === 'year' ? 'Yearly plan activation' : 'Monthly plan activation';
-            const amount = interval === 'year' ? 400 : 30;
-            const existing = await prisma.creditHistory.findFirst({ where: { userId: user.id, reason } });
-            if (!existing) {
-                await prisma.user.update({ where: { id: user.id }, data: { proposalCredits: { increment: amount } } });
-                await prisma.creditHistory.create({ data: { userId: user.id, amount, reason } });
-            }
-        }
-
-        revalidatePath('/dashboard');
-        revalidatePath('/dashboard/pricing');
-        revalidatePath('/subscription');
-
-        return { success: true, status: newStatus };
-    } catch (error: any) {
-        console.error('syncSubscriptionFromTransaction ERROR:', error);
-        return { error: error.message || 'Failed to sync subscription.' };
     }
 }
 

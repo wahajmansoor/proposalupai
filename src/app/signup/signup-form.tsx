@@ -156,7 +156,7 @@ export function SignupForm() {
         <ThemeToggle />
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 min-h-screen">
-        <div className="flex flex-col justify-center p-4 sm:p-12 xl:p-20">
+        <div className="flex flex-col justify-center p-4 sm:p-12 xl:p-20 dark:bg-card">
           <div className="w-full max-w-md mx-auto">
             <Link href="https://www.proposalupai.com/" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground mb-8">
               <ArrowLeft className="h-4 w-4" />
@@ -202,6 +202,7 @@ export function SignupForm() {
                     placeholder="name@domain.com" 
                     required 
                     value={email}
+                    className="dark:selection:bg-background"
                     onChange={(e) => setEmail(e.target.value)}
                     disabled={isLoading || isGoogleLoading}
                   />
@@ -217,7 +218,7 @@ export function SignupForm() {
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
                       disabled={isLoading || isGoogleLoading}
-                      className="pr-10"
+                      className="pr-10 dark:selection:bg-background"
                     />
                     <button
                       type="button"
@@ -258,7 +259,7 @@ export function SignupForm() {
             </div>
           </div>
         </div>
-        <div className="hidden lg:flex flex-col items-center justify-center bg-auth-panel text-white relative">
+        <div className="hidden lg:flex flex-col items-center justify-center bg-auth-panel dark:bg-background text-white relative">
           <BgPattern />
           <div className="flex flex-col items-center text-center z-10">
             <Link href="/" className="mb-4">

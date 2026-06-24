@@ -48,7 +48,7 @@ import type {
   SuggestWordLimitOutput,
 } from '@/ai/flows/suggest-word-limit';
 import { suggestWordLimit } from '@/ai/flows/suggest-word-limit';
-import { paddle } from '@/lib/paddle/config';
+import { stripe } from '@/lib/stripe';
 
 
 export interface InvoiceDetails {
@@ -83,8 +83,8 @@ export const getAuthenticatedUser = cache(async () => {
       subscriptionStatus: true,
       proposalCount: true,
       proposalCredits: true,
-      paddleCustomerId: true,
-      paddleSubscriptionId: true,
+      stripeCustomerId: true,
+      stripeSubscriptionId: true,
       emailVerified: true,
       isActive: true,
     }
@@ -422,36 +422,31 @@ export async function getBillingHistory(): Promise<{ invoices?: InvoiceDetails[]
     return { error: 'User not authenticated.' };
   }
 
-  if (!user.paddleCustomerId) {
+  if (!user.stripeCustomerId) {
     return { invoices: [] };
   }
 
   try {
-    const transactions = paddle.transactions.list({
-      customerId: [user.paddleCustomerId],
-      status: ['completed'],
+    const invoicesResponse = await stripe.invoices.list({
+      customer: user.stripeCustomerId,
+      limit: 20,
     });
 
-    const invoiceDetails: InvoiceDetails[] = [];
-
-    for await (const transaction of transactions) {
-      const totalAmount = transaction.details?.totals?.total;
-      const description = transaction.items[0]?.price?.description || 'Payment';
-
-      invoiceDetails.push({
-        id: transaction.id,
-        date: new Date(transaction.createdAt).toLocaleDateString(),
-        total: totalAmount ? `$${(Number(totalAmount) / 100).toFixed(2)}` : 'N/A',
-        status: transaction.status,
-        invoiceUrl: null, // Paddle handles invoices via emails or customer portal
-        description: description,
-      });
-    }
+    const invoiceDetails: InvoiceDetails[] = invoicesResponse.data
+      .filter(i => i.status === 'paid' || i.status === 'open')
+      .map(t => ({
+        id: t.id,
+        date: new Date(t.created * 1000).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' }),
+        total: `${(t.amount_paid / 100).toFixed(2)} ${t.currency.toUpperCase()}`,
+        status: t.status as string,
+        invoiceUrl: t.hosted_invoice_url || null,
+        description: t.lines.data.map((i: any) => i.price?.nickname || i.description || 'Subscription').join(', ') || 'Subscription'
+    }));
 
     return { invoices: invoiceDetails };
-  } catch (error: any) {
-    console.error('Error fetching billing history from Paddle:', error);
-    return { error: 'Could not retrieve billing history.' };
+  } catch (error) {
+    console.error('Error fetching billing history:', error);
+    return { error: 'Failed to fetch billing history.' };
   }
 }
 
