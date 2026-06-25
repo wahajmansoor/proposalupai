@@ -132,17 +132,42 @@ export async function syncUserSubscription() {
       return { success: false, message: 'Already in sync' };
     }
 
+    const priceId = subscription.items.data[0].price.id;
+    const isNewActivation = user.subscriptionStatus !== 'active' && subscription.status === 'active';
+    let creditsToAdd = 0;
+
+    if (isNewActivation) {
+      if (priceId === process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID) {
+        creditsToAdd = 30;
+      } else if (priceId === process.env.NEXT_PUBLIC_STRIPE_YEARLY_PRICE_ID) {
+        creditsToAdd = 400;
+      }
+    }
+
     // Update database with latest subscription status
     const updatedUser = await prisma.user.update({
       where: { id: user.id },
       data: {
         stripeSubscriptionId: subscription.id,
         subscriptionStatus: subscription.status,
-        stripePriceId: subscription.items.data[0].price.id,
+        stripePriceId: priceId,
         subscriptionCurrentPeriodEnd: periodEndDate,
         subscriptionInterval: subscription.items.data[0].plan.interval,
+        ...(creditsToAdd > 0 ? {
+          proposalCredits: { increment: creditsToAdd }
+        } : {})
       },
     });
+
+    if (isNewActivation && creditsToAdd > 0) {
+      await prisma.creditHistory.create({
+        data: {
+          userId: user.id,
+          amount: creditsToAdd,
+          reason: `Pro Plan Activation (${subscription.items.data[0].plan.interval === 'year' ? 'Yearly' : 'Monthly'})`,
+        }
+      });
+    }
 
     return {
       success: true,

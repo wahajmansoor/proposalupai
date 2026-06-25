@@ -302,16 +302,20 @@ function SubscriptionPageContent() {
     await update(); // This refreshes the next-auth session data from the DB
   }, [update]);
 
+  const [hasSynced, setHasSynced] = useState(false);
+
   // Auto-sync subscription status directly from Stripe on mount
   useEffect(() => {
+    if (hasSynced) return;
     const sync = async () => {
+      setHasSynced(true);
       const res = await syncUserSubscription();
       if (res && 'success' in res && res.success) {
         update(); // Refresh NextAuth session if sync updated the DB
       }
     };
     sync();
-  }, [update]);
+  }, [hasSynced, update]);
 
   useEffect(() => {
     if (processed) return;

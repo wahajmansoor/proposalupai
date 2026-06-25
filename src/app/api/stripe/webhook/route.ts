@@ -70,17 +70,47 @@ export async function POST(req: Request) {
             const periodEndDate = new Date(periodEndRaw * 1000);
             
             if (userId) {
+               // Fetch user to check their status before update
+               const existingUser = await prisma.user.findUnique({
+                 where: { id: userId },
+                 select: { subscriptionStatus: true }
+               });
+
+               const isNewActivation = existingUser?.subscriptionStatus !== 'active' && subscription.status === 'active';
+               const priceId = subscription.items.data[0].price.id;
+               let creditsToAdd = 0;
+               if (isNewActivation) {
+                 if (priceId === process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID) {
+                   creditsToAdd = 30;
+                 } else if (priceId === process.env.NEXT_PUBLIC_STRIPE_YEARLY_PRICE_ID) {
+                   creditsToAdd = 400;
+                 }
+               }
+
                await prisma.user.update({
                  where: { id: userId },
                  data: {
                    stripeSubscriptionId: subscriptionId,
                    stripeCustomerId: customerId,
                    subscriptionStatus: subscription.status,
-                   stripePriceId: subscription.items.data[0].price.id,
+                   stripePriceId: priceId,
                    subscriptionCurrentPeriodEnd: periodEndDate,
                    subscriptionInterval: subscription.items.data[0].plan.interval,
+                   ...(creditsToAdd > 0 ? {
+                     proposalCredits: { increment: creditsToAdd }
+                   } : {})
                  }
                });
+
+               if (isNewActivation && creditsToAdd > 0) {
+                 await prisma.creditHistory.create({
+                   data: {
+                     userId,
+                     amount: creditsToAdd,
+                     reason: `Pro Plan Activation (${subscription.items.data[0].plan.interval === 'year' ? 'Yearly' : 'Monthly'})`,
+                   }
+                 });
+               }
             }
         }
         break;
@@ -93,22 +123,54 @@ export async function POST(req: Request) {
           || (Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60);
         const periodEndDate = new Date(periodEndRaw * 1000);
 
-        await prisma.user.updateMany({
+        // Fetch users that will be updated to check status
+        const usersToUpdate = await prisma.user.findMany({
           where: {
             OR: [
               { stripeSubscriptionId: subscription.id },
               { stripeCustomerId: subscription.customer as string }
             ]
           },
-          data: {
-            stripeSubscriptionId: subscription.id,
-            subscriptionStatus: subscription.status,
-            stripePriceId: subscription.items.data[0].price.id,
-            subscriptionCurrentPeriodEnd: periodEndDate,
-            subscriptionInterval: subscription.items.data[0].plan.interval,
-            scheduledCancelAt: subscription.cancel_at ? new Date(subscription.cancel_at * 1000) : null,
-          }
+          select: { id: true, subscriptionStatus: true }
         });
+
+        for (const user of usersToUpdate) {
+          const isNewActivation = user.subscriptionStatus !== 'active' && subscription.status === 'active';
+          const priceId = subscription.items.data[0].price.id;
+          let creditsToAdd = 0;
+          if (isNewActivation) {
+            if (priceId === process.env.NEXT_PUBLIC_STRIPE_MONTHLY_PRICE_ID) {
+              creditsToAdd = 30;
+            } else if (priceId === process.env.NEXT_PUBLIC_STRIPE_YEARLY_PRICE_ID) {
+              creditsToAdd = 400;
+            }
+          }
+
+          await prisma.user.update({
+            where: { id: user.id },
+            data: {
+              stripeSubscriptionId: subscription.id,
+              subscriptionStatus: subscription.status,
+              stripePriceId: priceId,
+              subscriptionCurrentPeriodEnd: periodEndDate,
+              subscriptionInterval: subscription.items.data[0].plan.interval,
+              scheduledCancelAt: subscription.cancel_at ? new Date(subscription.cancel_at * 1000) : null,
+              ...(creditsToAdd > 0 ? {
+                proposalCredits: { increment: creditsToAdd }
+              } : {})
+            }
+          });
+
+          if (isNewActivation && creditsToAdd > 0) {
+            await prisma.creditHistory.create({
+              data: {
+                userId: user.id,
+                amount: creditsToAdd,
+                reason: `Pro Plan Activation (${subscription.items.data[0].plan.interval === 'year' ? 'Yearly' : 'Monthly'})`,
+              }
+            });
+          }
+        }
         break;
       }
 
