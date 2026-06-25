@@ -183,9 +183,18 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         });
         token.sessionId = sessionId;
       }
-      // If token.sub exists and token.sessionId exists, keep it as-is for session continuity
-      // This ensures Google OAuth token refreshes don't invalidate the session
-      return token;
+
+      // FIX FOR 494 REQUEST_HEADER_TOO_LARGE:
+      // Strip out all the large database fields (like bio, services, etc.) that NextAuth auto-merges from `authorize`
+      // We only keep essential claims. The session callback will fetch the rest from the DB.
+      return {
+        sub: token.sub,
+        email: token.email || (user?.email ?? undefined),
+        sessionId: token.sessionId,
+        iat: token.iat,
+        exp: token.exp,
+        jti: token.jti,
+      } as any;
     },
     async redirect({ url, baseUrl }) {
       // If the url is just the base or dashboard, check for admin
