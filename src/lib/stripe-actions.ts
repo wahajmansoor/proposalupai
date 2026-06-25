@@ -90,3 +90,54 @@ export async function createStripePortalSession() {
     return { error: error.message };
   }
 }
+
+export async function syncUserSubscription() {
+  try {
+    const session = await auth();
+    if (!session?.user?.id) {
+      return { error: 'Not authenticated' };
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+    });
+
+    if (!user || !user.stripeCustomerId) {
+      return { success: false, message: 'No Stripe customer associated yet.' };
+    }
+
+    // List all subscriptions for this customer
+    const subscriptions = await stripe.subscriptions.list({
+      customer: user.stripeCustomerId,
+      status: 'all',
+      limit: 1,
+    });
+
+    if (subscriptions.data.length === 0) {
+      return { success: false, message: 'No subscriptions found in Stripe.' };
+    }
+
+    const subscription = subscriptions.data[0];
+
+    // Update database with latest subscription status
+    const updatedUser = await prisma.user.update({
+      where: { id: user.id },
+      data: {
+        stripeSubscriptionId: subscription.id,
+        subscriptionStatus: subscription.status,
+        stripePriceId: subscription.items.data[0].price.id,
+        // @ts-ignore
+        subscriptionCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
+        subscriptionInterval: subscription.items.data[0].plan.interval,
+      },
+    });
+
+    return {
+      success: true,
+      subscriptionStatus: updatedUser.subscriptionStatus,
+    };
+  } catch (error: any) {
+    console.error('Error syncing subscription status:', error);
+    return { error: error.message };
+  }
+}

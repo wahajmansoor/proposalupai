@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { Loader2, CreditCard, ExternalLink, Star, Copy, Check, Info, ShoppingBag } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { createStripePortalSession, createStripeCheckoutSession } from '@/lib/stripe-actions';
+import { createStripePortalSession, createStripeCheckoutSession, syncUserSubscription } from '@/lib/stripe-actions';
 import { format, formatDistanceToNow } from 'date-fns';
 import { getBillingHistory, type InvoiceDetails, type CreditHistoryItem, getCreditHistory } from '@/lib/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -300,6 +300,17 @@ function SubscriptionPageContent() {
   const reloadData = useCallback(async () => {
     setHistoryKey(prevKey => prevKey + 1);
     await update(); // This refreshes the next-auth session data from the DB
+  }, [update]);
+
+  // Auto-sync subscription status directly from Stripe on mount
+  useEffect(() => {
+    const sync = async () => {
+      const res = await syncUserSubscription();
+      if (res && 'success' in res && res.success) {
+        update(); // Refresh NextAuth session if sync updated the DB
+      }
+    };
+    sync();
   }, [update]);
 
   useEffect(() => {
