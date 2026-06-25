@@ -86,8 +86,14 @@ export async function POST(req: Request) {
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
         await prisma.user.updateMany({
-          where: { stripeSubscriptionId: subscription.id },
+          where: {
+            OR: [
+              { stripeSubscriptionId: subscription.id },
+              { stripeCustomerId: subscription.customer as string }
+            ]
+          },
           data: {
+            stripeSubscriptionId: subscription.id,
             subscriptionStatus: subscription.status,
             stripePriceId: subscription.items.data[0].price.id,
             // @ts-ignore
@@ -102,7 +108,12 @@ export async function POST(req: Request) {
       case 'customer.subscription.deleted': {
         const subscription = event.data.object as Stripe.Subscription;
         await prisma.user.updateMany({
-          where: { stripeSubscriptionId: subscription.id },
+          where: {
+            OR: [
+              { stripeSubscriptionId: subscription.id },
+              { stripeCustomerId: subscription.customer as string }
+            ]
+          },
           data: {
             subscriptionStatus: 'canceled',
           }

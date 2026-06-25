@@ -1,7 +1,7 @@
 
 "use client";
 
-import { useEffect, useState, useCallback, useTransition } from 'react';
+import { useEffect, useState, useCallback, useTransition, Suspense } from 'react';
 import { useSession } from 'next-auth/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,7 +17,7 @@ import Link from 'next/link';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { ShareIcons } from '@/components/icons';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 
 
 const creditPackages = [
@@ -283,18 +283,42 @@ function HistoryTable({ title, description, fetchHistory, historyKey }: { title:
 }
 
 
-export default function SubscriptionPage() {
+function SubscriptionPageContent() {
   const { data: session, update } = useSession();
   const userProfile = session?.user?.profile;
   const { toast } = useToast();
   const [isManagingBilling, setIsManagingBilling] = useState(false);
   const [historyKey, setHistoryKey] = useState(0);
   const router = useRouter();
+  const searchParams = useSearchParams();
+
+  const success = searchParams.get('success');
+  const canceled = searchParams.get('canceled');
 
   const reloadData = useCallback(async () => {
     setHistoryKey(prevKey => prevKey + 1);
     await update(); // This refreshes the next-auth session data from the DB
   }, [update]);
+
+  useEffect(() => {
+    if (success === 'true') {
+      toast({
+        variant: "success",
+        title: "Subscription Activated!",
+        description: "Your subscription has been successfully updated.",
+      });
+      reloadData();
+      // Clean up the URL parameters
+      router.replace('/subscription');
+    } else if (canceled === 'true') {
+      toast({
+        variant: "default",
+        title: "Subscription Canceled",
+        description: "The payment process was canceled.",
+      });
+      router.replace('/subscription');
+    }
+  }, [success, canceled, reloadData, router, toast]);
 
   const handleBillingSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -362,7 +386,7 @@ export default function SubscriptionPage() {
                 {renewalDate && getRenewalText() && (
                   <div className="text-right">
                     <p className="font-semibold text-sm">
-                      {getRenewalText()}
+                       {getRenewalText()}
                     </p>
                     <p className="text-xs text-muted-foreground">
                       {format(new Date(renewalDate), 'MMM d, yyyy')}
@@ -398,5 +422,17 @@ export default function SubscriptionPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function SubscriptionPage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-[400px]">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    }>
+      <SubscriptionPageContent />
+    </Suspense>
   );
 }
