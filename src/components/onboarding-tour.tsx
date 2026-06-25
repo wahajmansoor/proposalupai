@@ -61,6 +61,8 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
   const [lightboxSrc, setLightboxSrc] = useState<string | null>(null);
   const [lightboxAlt, setLightboxAlt] = useState<string>("");
 
+  const [tourKey, setTourKey] = useState(0);
+
   const pathname = usePathname();
   const { data: session } = useSession();
   const isMobile = useIsMobile();
@@ -82,8 +84,9 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
     }
   }, []);
 
+
   const handleJoyrideCallback = useCallback(async (data: any) => {
-    const { status, action, type, index } = data;
+    const { status, action, type } = data;
 
     // Aggressively catch any scenario that means the tour is ending/exiting
     const isFinished = status === "finished";
@@ -94,6 +97,9 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
     if (isFinished || isClosed || isSkipped) {
       setRun(false);
       setLocalCompleted(true);
+      try {
+        localStorage.setItem("onboardingCompleted", "true");
+      } catch (e) {}
 
       if (isFinished || isSkipped || action === "close") {
         console.log("Tour ended, calling completeOnboardingAction");
@@ -102,7 +108,7 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
     }
   }, []);
 
-  if (!isClient || onboardingCompleted) return null;
+  if (!isClient) return null;
 
   const steps = [
     {
@@ -163,7 +169,7 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
     skipProps,
     isLastStep,
   }: any) => (
-<div className="bg-white dark:bg-card rounded-2xl shadow-2xl border border-slate-200 dark:border p-0 max-w-sm overflow-hidden relative">
+    <div className="bg-white dark:bg-background rounded-2xl shadow-2xl border p-0 max-w-sm overflow-hidden relative">
       <div className="h-1 bg-gradient-to-r from-primary to-blue-500 w-full" />
 
       <div className="p-6">
@@ -173,12 +179,12 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
             <span className="flex items-center justify-center w-6 h-6 rounded-full bg-primary/10 text-primary text-xs font-bold">
               {index + 1}
             </span>
-            <span className="text-[10px] uppercase tracking-widest font-bold text-slate-400">System Guide</span>
+            <span className="text-[10px] uppercase tracking-widest font-bold text-muted-foreground">System Guide</span>
           </div>
           <button
             type="button"
             onClick={(e) => { if (skipProps.onClick) skipProps.onClick(e); }}
-            className="text-slate-400 hover:text-slate-600 transition-colors"
+            className="text-muted-foreground hover:text-foreground transition-colors"
           >
             <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
           </button>
@@ -187,21 +193,21 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
         {/* Text */}
         <div className="space-y-2">
           {step.title && (
-            <h3 className="text-xl font-bold text-slate-900 dark:text-white leading-tight">
+            <h3 className="text-xl font-bold text-foreground leading-tight">
               {step.title}
             </h3>
           )}
-          <div className="text-slate-600 dark:text-slate-400 text-sm leading-relaxed">
+          <div className="text-muted-foreground text-sm leading-relaxed">
             {step.content}
           </div>
         </div>
 
         {/* Footer */}
-<div className="flex items-center justify-between mt-6 pt-4 border-t border-slate-100 dark:border">
+        <div className="flex items-center justify-between mt-6 pt-4 border-t border-border">
           <button
             type="button"
             onClick={(e) => { if (skipProps.onClick) skipProps.onClick(e); }}
-            className="text-xs font-semibold text-slate-400 hover:text-slate-600 transition-colors"
+            className="text-xs font-semibold text-muted-foreground hover:text-foreground transition-colors"
           >
             Skip Tour
           </button>
@@ -221,8 +227,11 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
     <>
       {isDashboardPage && (
         <button
-          onClick={() => setRun(true)}
-className="fixed bottom-6 right-6 z-[40] hidden md:flex items-center gap-2 px-4 py-2 bg-white dark:bg-card border dark:border rounded-full shadow-lg hover:bg-slate-50 transition-all text-xs font-semibold"
+          onClick={() => {
+            setTourKey(prev => prev + 1);
+            setRun(true);
+          }}
+          className="fixed bottom-6 right-6 z-[40] hidden md:flex items-center gap-2 px-4 py-2 bg-white dark:bg-background border rounded-full shadow-lg hover:bg-slate-50 dark:hover:bg-[#1a1a1a] text-foreground transition-all text-xs font-semibold"
         >
           <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
           System Guide
@@ -230,6 +239,7 @@ className="fixed bottom-6 right-6 z-[40] hidden md:flex items-center gap-2 px-4 
       )}
 
       <Joyride
+        key={tourKey}
         callback={handleJoyrideCallback}
         continuous
         hideCloseButton

@@ -114,3 +114,8 @@
     background-size: 1.5rem 1.5rem;
 }
 
+.dark .react-joyride__arrow {
+    color: #1a1a1a !important;
+}
+
+
