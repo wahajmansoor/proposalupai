@@ -295,13 +295,18 @@ function SubscriptionPageContent() {
   const success = searchParams.get('success');
   const canceled = searchParams.get('canceled');
 
+  const [processed, setProcessed] = useState(false);
+
   const reloadData = useCallback(async () => {
     setHistoryKey(prevKey => prevKey + 1);
     await update(); // This refreshes the next-auth session data from the DB
   }, [update]);
 
   useEffect(() => {
+    if (processed) return;
+
     if (success === 'true') {
+      setProcessed(true);
       toast({
         variant: "success",
         title: "Subscription Activated!",
@@ -311,6 +316,7 @@ function SubscriptionPageContent() {
       // Clean up the URL parameters
       router.replace('/subscription');
     } else if (canceled === 'true') {
+      setProcessed(true);
       toast({
         variant: "default",
         title: "Subscription Canceled",
@@ -318,7 +324,7 @@ function SubscriptionPageContent() {
       });
       router.replace('/subscription');
     }
-  }, [success, canceled, reloadData, router, toast]);
+  }, [success, canceled, processed, reloadData, router, toast]);
 
   const handleBillingSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
