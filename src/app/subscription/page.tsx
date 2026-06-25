@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Badge } from '@/components/ui/badge';
 import { Loader2, CreditCard, ExternalLink, Star, Copy, Check, Info, ShoppingBag } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { createStripePortalSession, createStripeCheckoutSession, syncUserSubscription } from '@/lib/stripe-actions';
+import { createStripePortalSession, createStripeCheckoutSession, syncUserSubscription, buyCreditsDirectly } from '@/lib/stripe-actions';
 import { format, formatDistanceToNow } from 'date-fns';
 import { getBillingHistory, type InvoiceDetails, type CreditHistoryItem, getCreditHistory } from '@/lib/actions';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -86,6 +86,26 @@ function BuyCredits({ onPurchaseSuccess }: { onPurchaseSuccess: () => void }) {
                       toast({ variant: "destructive", title: "Error", description: "Price ID not configured." });
                       return;
                     }
+
+                    // Try to charge the attached card directly (1-click buy)
+                    const directResult = await buyCreditsDirectly(pkg.priceId);
+
+                    if (directResult && 'success' in directResult && directResult.success) {
+                      toast({
+                        variant: "success",
+                        title: "Credits Purchased!",
+                        description: `Successfully purchased ${pkg.name}. Credits have been added to your account.`,
+                      });
+                      onPurchaseSuccess(); // refresh page data & session
+                      return;
+                    }
+
+                    if (directResult && 'error' in directResult && directResult.error) {
+                      toast({ variant: "destructive", title: "Purchase Failed", description: directResult.error });
+                      return;
+                    }
+
+                    // Fallback to normal checkout redirect if no customer/card on file
                     const result = await createStripeCheckoutSession(pkg.priceId, { purchaseType: 'credits', creditAmount: pkg.credits });
                     if (result.error) {
                       toast({ variant: "destructive", title: "Checkout Failed", description: result.error });

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Check, Loader2, Briefcase, ArrowLeft, Tag, X, AlertTriangle, CreditCard, Sparkles, RefreshCw } from 'lucide-react';
-import { createStripePortalSession, createStripeCheckoutSession } from '@/lib/stripe-actions';
+import { createStripePortalSession, createStripeCheckoutSession, updateSubscriptionPlan } from '@/lib/stripe-actions';
 import { syncSubscriptionFromStripe } from '@/lib/actions'; // assuming this exists or remove it if unused
 import { useToast } from '@/hooks/use-toast';
 import { useSession } from 'next-auth/react';
@@ -252,6 +252,25 @@ export default function PricingPage() {
                       setIsSubmitting(false);
                       return;
                     }
+
+                    // If they are monthly and switching to yearly, update directly!
+                    if (isMonthlyActive && billingInterval === 'yearly') {
+                      const result = await updateSubscriptionPlan(currentPlan.priceId);
+                      if ('error' in result && result.error) {
+                        toast({ variant: "destructive", title: "Upgrade Failed", description: result.error });
+                        setIsSubmitting(false);
+                      } else if ('success' in result && result.success) {
+                        toast({ 
+                          variant: "success", 
+                          title: "Plan Upgraded!", 
+                          description: "You have successfully switched to the Pro Yearly plan. 400 credits have been added to your account!" 
+                        });
+                        await update(); // Refresh NextAuth session
+                        router.push('/subscription');
+                      }
+                      return;
+                    }
+
                     const result = await createStripeCheckoutSession(currentPlan.priceId, { purchaseType: 'subscription' });
                     if (result.error) {
                       toast({ variant: "destructive", title: "Checkout Failed", description: result.error });
