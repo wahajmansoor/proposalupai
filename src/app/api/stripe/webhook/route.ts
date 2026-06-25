@@ -61,30 +61,38 @@ export async function POST(req: Request) {
             });
           }
         } else if (purchaseType === 'subscription') {
-           const subscriptionId = session.subscription as string;
-           const customerId = session.customer as string;
-           const subscription = await stripe.subscriptions.retrieve(subscriptionId);
-           
-           if (userId) {
-              await prisma.user.update({
-                where: { id: userId },
-                data: {
-                  stripeSubscriptionId: subscriptionId,
-                  stripeCustomerId: customerId,
-                  subscriptionStatus: subscription.status,
-                  stripePriceId: subscription.items.data[0].price.id,
-                  // @ts-ignore
-                  subscriptionCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
-                  subscriptionInterval: subscription.items.data[0].plan.interval,
-                }
-              });
-           }
+            const subscriptionId = session.subscription as string;
+            const customerId = session.customer as string;
+            const subscription = await stripe.subscriptions.retrieve(subscriptionId);
+            const periodEndRaw = (subscription as any).current_period_end 
+              || subscription.items.data[0]?.current_period_end 
+              || (Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60);
+            const periodEndDate = new Date(periodEndRaw * 1000);
+            
+            if (userId) {
+               await prisma.user.update({
+                 where: { id: userId },
+                 data: {
+                   stripeSubscriptionId: subscriptionId,
+                   stripeCustomerId: customerId,
+                   subscriptionStatus: subscription.status,
+                   stripePriceId: subscription.items.data[0].price.id,
+                   subscriptionCurrentPeriodEnd: periodEndDate,
+                   subscriptionInterval: subscription.items.data[0].plan.interval,
+                 }
+               });
+            }
         }
         break;
       }
       
       case 'customer.subscription.updated': {
         const subscription = event.data.object as Stripe.Subscription;
+        const periodEndRaw = (subscription as any).current_period_end 
+          || subscription.items.data[0]?.current_period_end 
+          || (Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60);
+        const periodEndDate = new Date(periodEndRaw * 1000);
+
         await prisma.user.updateMany({
           where: {
             OR: [
@@ -96,8 +104,7 @@ export async function POST(req: Request) {
             stripeSubscriptionId: subscription.id,
             subscriptionStatus: subscription.status,
             stripePriceId: subscription.items.data[0].price.id,
-            // @ts-ignore
-            subscriptionCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
+            subscriptionCurrentPeriodEnd: periodEndDate,
             subscriptionInterval: subscription.items.data[0].plan.interval,
             scheduledCancelAt: subscription.cancel_at ? new Date(subscription.cancel_at * 1000) : null,
           }

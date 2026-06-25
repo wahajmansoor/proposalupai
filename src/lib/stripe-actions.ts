@@ -118,6 +118,19 @@ export async function syncUserSubscription() {
     }
 
     const subscription = subscriptions.data[0];
+    const periodEndRaw = (subscription as any).current_period_end 
+      || subscription.items.data[0]?.current_period_end 
+      || (Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60);
+    const periodEndDate = new Date(periodEndRaw * 1000);
+
+    // If subscription is already in sync, skip the DB update and return success: false
+    if (
+      user.stripeSubscriptionId === subscription.id &&
+      user.subscriptionStatus === subscription.status &&
+      user.stripePriceId === subscription.items.data[0].price.id
+    ) {
+      return { success: false, message: 'Already in sync' };
+    }
 
     // Update database with latest subscription status
     const updatedUser = await prisma.user.update({
@@ -126,8 +139,7 @@ export async function syncUserSubscription() {
         stripeSubscriptionId: subscription.id,
         subscriptionStatus: subscription.status,
         stripePriceId: subscription.items.data[0].price.id,
-        // @ts-ignore
-        subscriptionCurrentPeriodEnd: new Date(subscription.current_period_end * 1000),
+        subscriptionCurrentPeriodEnd: periodEndDate,
         subscriptionInterval: subscription.items.data[0].plan.interval,
       },
     });

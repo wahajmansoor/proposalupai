@@ -22,10 +22,9 @@ if (fs.existsSync(envPath)) {
 }
 
 async function main() {
-  // Dynamically import stripe after process.env is set
   const { stripe } = await import('../src/lib/stripe');
 
-  const customerId = "cus_UlmGHAv3mhrSvu"; // ali@gmail.com
+  const customerId = "cus_UlmkwcmFz6KmK5"; // jani@gmail.com
   console.log("Checking customer:", customerId);
   try {
     const customer = await stripe.customers.retrieve(customerId);
