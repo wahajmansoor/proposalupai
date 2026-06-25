@@ -35,13 +35,13 @@ function Lightbox({ src, alt, onClose }: { src: string; alt: string; onClose: ()
         <img
           src={src}
           alt={alt}
-          className="w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl border border-slate-200/60"
+          className="w-full max-h-[80vh] object-contain rounded-2xl shadow-2xl border border-border/60"
         />
         {/* Close button */}
         <button
           type="button"
           onClick={onClose}
-          className="absolute -top-3 -right-3 flex items-center justify-center w-8 h-8 rounded-full bg-white text-slate-800 shadow-lg hover:bg-slate-100 transition-colors"
+          className="absolute -top-3 -right-3 flex items-center justify-center w-8 h-8 rounded-full bg-white text-foreground shadow-lg hover:bg-accent transition-colors"
           aria-label="Close image"
         >
           <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
@@ -231,7 +231,7 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
             setTourKey(prev => prev + 1);
             setRun(true);
           }}
-          className="fixed bottom-6 right-6 z-[40] hidden md:flex items-center gap-2 px-4 py-2 bg-white dark:bg-background border rounded-full shadow-lg hover:bg-slate-50 dark:hover:bg-[#1a1a1a] text-foreground transition-all text-xs font-semibold"
+          className="fixed bottom-6 right-6 z-[40] hidden md:flex items-center gap-2 px-4 py-2 bg-white dark:bg-background border rounded-full shadow-lg hover:bg-accent dark:hover:bg-[#1a1a1a] text-foreground transition-all text-xs font-semibold"
         >
           <span className="w-2 h-2 rounded-full bg-primary animate-pulse" />
           System Guide

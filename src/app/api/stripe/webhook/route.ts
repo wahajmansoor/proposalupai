@@ -24,8 +24,24 @@ export async function POST(req: Request) {
     switch (event.type) {
       case 'checkout.session.completed': {
         const session = event.data.object as Stripe.Checkout.Session;
-        const userId = session.metadata?.userId;
-        const purchaseType = session.metadata?.purchaseType;
+        let userId = session.metadata?.userId;
+        const purchaseType = session.metadata?.purchaseType || (session.mode === 'subscription' ? 'subscription' : 'credits');
+
+        // Robust user lookup if userId is missing from metadata
+        if (!userId) {
+          if (session.customer) {
+            const userByCustomer = await prisma.user.findFirst({
+              where: { stripeCustomerId: session.customer as string }
+            });
+            if (userByCustomer) userId = userByCustomer.id;
+          }
+          if (!userId && session.customer_details?.email) {
+            const userByEmail = await prisma.user.findUnique({
+              where: { email: session.customer_details.email.toLowerCase() }
+            });
+            if (userByEmail) userId = userByEmail.id;
+          }
+        }
 
         if (purchaseType === 'credits') {
           const creditAmount = parseInt(session.metadata?.creditAmount || '0', 10);
