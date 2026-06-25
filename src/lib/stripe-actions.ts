@@ -36,6 +36,8 @@ export async function createStripeCheckoutSession(priceId: string, customData?: 
       });
     }
 
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000').replace(/\/$/, '');
+
     const checkoutSession = await stripe.checkout.sessions.create({
       customer: customerId,
       line_items: [
@@ -45,8 +47,8 @@ export async function createStripeCheckoutSession(priceId: string, customData?: 
         },
       ],
       mode: customData?.purchaseType === 'credits' ? 'payment' : 'subscription',
-      success_url: `${process.env.NEXT_PUBLIC_APP_URL}/subscription?success=true`,
-      cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/subscription?canceled=true`,
+      success_url: `${appUrl}/subscription?success=true`,
+      cancel_url: `${appUrl}/subscription?canceled=true`,
       metadata: {
         userId: user.id,
         ...customData,
@@ -75,9 +77,11 @@ export async function createStripePortalSession() {
       return { error: 'No Stripe customer ID found' };
     }
 
+    const appUrl = (process.env.NEXT_PUBLIC_APP_URL || process.env.NEXTAUTH_URL || 'http://localhost:3000').replace(/\/$/, '');
+
     const portalSession = await stripe.billingPortal.sessions.create({
       customer: user.stripeCustomerId,
-      return_url: `${process.env.NEXT_PUBLIC_APP_URL}/subscription`,
+      return_url: `${appUrl}/subscription`,
     });
 
     return { url: portalSession.url };

@@ -115,7 +115,7 @@ function LoginContent() {
         <ThemeToggle />
       </div>
       <div className="grid grid-cols-1 lg:grid-cols-2 min-h-screen">
-        <div className="flex flex-col justify-center p-4 sm:p-12 xl:p-20">
+        <div className="flex flex-col justify-center p-4 sm:p-12 xl:p-20 dark:bg-card">
           <div className="w-full max-w-md mx-auto">
             <Link href="https://www.proposalupai.com/" className="inline-flex items-center gap-2 text-sm font-medium text-muted-foreground hover:text-foreground mb-8">
               <ArrowLeft className="h-4 w-4" />
@@ -156,7 +156,7 @@ function LoginContent() {
                 <span className="w-full border-t" />
               </div>
               <div className="relative flex justify-center text-xs uppercase">
-                <span className="bg-background px-2 text-muted-foreground">Or</span>
+                <span className="bg-background dark:bg-card px-2 text-muted-foreground">Or</span>
               </div>
             </div>
 
