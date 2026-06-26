@@ -7,6 +7,7 @@ import { signOut, useSession } from "next-auth/react";
 import { HugeiconsIcon } from '@hugeicons/react';
 import { FileEditIcon, BookmarkIcon, Profile02Icon, CreditCardIcon, Logout01Icon, CreditCardValidationIcon, UserSettings01Icon, SecurityCheckIcon } from "@hugeicons/core-free-icons";
 import { isAdmin as checkAdmin } from "@/lib/utils";
+
 import {
   Sidebar as SidebarPrimitive,
   SidebarContent,
@@ -21,10 +22,11 @@ import { ProposalUpLogos } from "./icons";
 
 
 const navItems = [
-  { href: "/dashboard", label: "Create Proposal", icon: FileEditIcon },
-  { href: "/dashboard/proposals", label: "Saved Proposals", icon: BookmarkIcon },
-  { href: "/dashboard/skill-profiles", label: "Skill Profiles", icon: Profile02Icon },
-  { href: "/dashboard/pricing", label: "Plans & Pricing", icon: CreditCardIcon },
+  { href: "/dashboard", label: "Dashboard", icon: Profile02Icon },
+  { href: "/create-proposal", label: "Create Proposal", icon: FileEditIcon },
+  { href: "/proposals", label: "Saved Proposals", icon: BookmarkIcon },
+  { href: "/skill-profiles", label: "Skill Profiles", icon: Profile02Icon },
+  { href: "/pricing", label: "Plans & Pricing", icon: CreditCardIcon },
 ];
 
 function SidebarNav() {
@@ -51,8 +53,8 @@ function SidebarNav() {
             <SidebarMenuItem
               key={item.href}
               id={
-                item.href === '/dashboard/skill-profiles' ? 'tour-sidebar-profiles' :
-                  item.href === '/dashboard/pricing' ? 'tour-sidebar-pricing' :
+                item.href === '/skill-profiles' ? 'tour-sidebar-profiles' :
+                  item.href === '/pricing' ? 'tour-sidebar-pricing' :
                     undefined
               }
             >
@@ -115,10 +117,7 @@ function SidebarNav() {
           </SidebarMenuItem>
 <SidebarMenuItem>
             <SidebarMenuButton
-              onClick={async () => {
-                await signOut({ redirect: false });
-                window.location.href = '/';
-              }}
+              onClick={async () => { await signOut({ redirect: false }); window.location.href = '/login'; }}
               tooltip="Logout"
               className="w-full"
             >

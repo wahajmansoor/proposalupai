@@ -477,7 +477,7 @@ export async function syncSubscriptionFromStripe(sessionId?: string): Promise<{ 
         }
 
         revalidatePath('/dashboard');
-        revalidatePath('/dashboard/pricing');
+        revalidatePath('/pricing');
         revalidatePath('/subscription');
 
         return { success: true, status: newStatus };

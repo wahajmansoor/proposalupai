@@ -12,19 +12,19 @@
     --popover-foreground: 222.2 84% 4.9%;
     --primary: 113 72% 51%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 215.4 16.3% 46.9%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
+    --secondary: 0 0% 96.1%;
+    --secondary-foreground: 0 0% 45.1%;
+    --muted: 0 0% 96.1%;
+    --muted-foreground: 0 0% 45.1%;
+    --accent: 0 0% 96.1%;
     --accent-foreground: 222.2 47.4% 11.2%;
     --destructive: 0 84.2% 60.2%;
     --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
+    --border: 0 0% 89.8%;
+    --input: 0 0% 89.8%;
     --ring: 222.2 84% 4.9%;
     --radius: 0.5rem;
-    --main-background: 210 20% 98%;
+    --main-background: 0 0% 98%;
     --auth-panel-background: 0 0% 10.2%;
 
     /* Custom vars for admin */
@@ -36,23 +36,23 @@
     /* Main background: #1a1a1a */
     --background: 0 0% 10.2%;
     --foreground: 210 40% 98%;
-/* Card background: #1f1f1f */
+    /* Card background: #1f1f1f */
     --card: 0 0% 12.2%;
     --card-foreground: 210 40% 98%;
     --popover: 0 0% 12.2%;
     --popover-foreground: 210 40% 98%;
     --primary: 113 72% 51%;
     --primary-foreground: 0 0% 100%;
-    --secondary: 217.2 32.6% 17.5%;
+    --secondary: 0 0% 14.9%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 0% 100%;
-    --accent: 0 0% 10.2%;
+    --muted: 0 0% 14.9%;
+    --muted-foreground: 0 0% 63.9%;
+    --accent: 0 0% 14.9%;
     --accent-foreground: 210 40% 98%;
     --destructive: 0 72% 51%;
     --destructive-foreground: 210 40% 98%;
     --border: 0 0% 18%;
-    --input: 217.2 32.6% 17.5%;
+    --input: 0 0% 18%;
     --ring: 113 72% 51%;
     /* Main background: #1a1a1a */
     --main-background: 0 0% 10.2%;
@@ -62,7 +62,6 @@
     --admin-background: 0 0% 12.2%;
     --sidebar: 0 0% 12.2%;
     --sidebar-foreground: 210 40% 98%;
-
   }
 }
 

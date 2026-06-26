@@ -65,12 +65,12 @@ export default function SavedProposalsPage() {
   }, [toast]);
 
   useEffect(() => {
-    if (session) {
+    if (status === 'authenticated') {
       fetchProposals();
-    } else if (!authLoading) {
+    } else if (status === 'unauthenticated') {
       setIsLoading(false);
     }
-  }, [session, authLoading, fetchProposals]);
+  }, [status, fetchProposals]);
 
   useEffect(() => {
     const lowercasedFilter = searchTerm.toLowerCase();

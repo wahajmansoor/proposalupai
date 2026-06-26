@@ -2,7 +2,7 @@
 
 import { useEffect, useState, useCallback } from "react";
 import dynamic from "next/dynamic";
-import { completeOnboardingAction } from "@/app/dashboard/onboarding-action";
+import { completeOnboardingAction } from "./onboarding-action";
 import { usePathname } from "next/navigation";
 import { useSession } from "next-auth/react";
 import { createPortal } from "react-dom";
@@ -119,40 +119,40 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
       disableBeacon: true,
     },
     {
-      target: "#tour-sidebar-profiles",
-      title: "1. Create Your Skill Profiles",
-      content: "Your first real mission! You need to create at least one Skill Profile so the AI knows your expertise and can write tailored proposals that sell.",
-      placement: "right",
+      target: "#tour-dashboard-profiles",
+      title: "1. Your Skill Profiles",
+      content: "Your first mission! The AI needs to know your expertise. Set up your skill profiles here so the AI can write tailored proposals that sell.",
+      placement: "bottom",
+    },
+    {
+      target: "#tour-dashboard-create",
+      title: "2. The Magic Generator",
+      content: "Start here to create a proposal! Paste any job description, and our AI will use your profiles to craft a high-converting proposal in seconds.",
+      placement: "bottom",
+    },
+    {
+      target: "#tour-dashboard-saved",
+      title: "3. Saved Proposals",
+      content: "Access all your generated proposals here anytime you need to reference or reuse them.",
+      placement: "bottom",
+    },
+    {
+      target: "#tour-header-credits",
+      title: "4. Credits & Fuel",
+      content: "Each proposal improvement uses 1 credit. Keep an eye on your balance here and top up anytime to keep winning.",
+      placement: "bottom",
     },
     {
       target: "#tour-sidebar-pricing",
-      title: "2. Plans & Pricing",
-      content: "Upgrade your account to unlock more credits, custom tones, and priority AI generation. We have plans for every stage of your career.",
-      placement: "right",
-    },
-    {
-      target: "#tour-sidebar-general",
-      title: "3. General Profile",
-      content: "Manage your personal details and account settings. Keep your information up-to-date for a professional appearance.",
+      title: "5. Plans & Pricing",
+      content: "Need more credits or custom tones? Check out our pricing plans to upgrade your account and unlock priority AI generation.",
       placement: "right",
     },
     {
       target: "#tour-sidebar-subscription",
-      title: "4. Your Subscription",
-      content: "View and manage your current plan, billing history, and upcoming renewals all in one place.",
+      title: "6. Your Subscription",
+      content: "If you upgrade, you can view and manage your current plan, billing history, and upcoming renewals right here.",
       placement: "right",
-    },
-    {
-      target: "#tour-header-credits",
-      title: "5. Credits & Fuel",
-      content: "Each proposal improvement uses a 1 credit. Keep an eye on your credits here and top up anytime to keep improving and winning.",
-      placement: "bottom",
-    },
-    {
-      target: "#tour-proposal-form",
-      title: "6. The Magic Generator",
-      content: "This is where the magic happens! Paste any job description here. Our AI will use your profiles to craft a high-converting proposal in seconds.",
-      placement: "top",
     },
     {
       target: "body",

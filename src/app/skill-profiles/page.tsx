@@ -176,7 +176,7 @@ function ProfileForm({
 
 
 export default function SkillProfilesPage() {
-  const { data: session } = useSession();
+  const { data: session, status } = useSession();
   const { toast } = useToast();
   const isMobile = useIsMobile();
 
@@ -223,12 +223,12 @@ export default function SkillProfilesPage() {
   }, [toast, selectedProfile?.id]);
 
   useEffect(() => {
-    if (session) {
+    if (status === 'authenticated') {
       fetchProfiles();
-    } else {
+    } else if (status === 'unauthenticated') {
       setIsLoading(false);
     }
-  }, [session, fetchProfiles]);
+  }, [status, fetchProfiles]);
 
   const searchParams = useSearchParams();
 

@@ -46,7 +46,7 @@ export default auth(async (req) => {
   }
 
 // Rule 3: Basic Dashboard Protection
-  const isProtectedPath = pathname.startsWith('/dashboard') || pathname.startsWith('/profile');
+  const isProtectedPath = pathname.startsWith('/dashboard') || pathname.startsWith('/profile') || pathname.startsWith('/pricing') || pathname.startsWith('/proposals') || pathname.startsWith('/skill-profiles') || pathname.startsWith('/create-proposal') || pathname.startsWith('/subscription');
   const isAuthPath = pathname.startsWith('/forgot-password') || pathname.startsWith('/new-password') || pathname.startsWith('/login');
 
   // Allow /login page for unauthenticated users (prevents redirect loops after logout)

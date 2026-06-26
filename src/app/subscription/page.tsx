@@ -445,7 +445,7 @@ function SubscriptionPageContent() {
                 </form>
               ) : (
                 <Button asChild className="w-full">
-                  <Link href="/dashboard/pricing">Upgrade to Pro</Link>
+                  <Link href="/pricing">Upgrade to Pro</Link>
                 </Button>
               )}
             </CardContent>

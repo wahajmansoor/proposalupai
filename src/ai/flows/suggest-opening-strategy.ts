@@ -45,10 +45,13 @@ export async function suggestOpeningStrategy(
 
   Your goal is to choose the strategy ID that will create the most compelling and tailored opening hook. 
   
-  CRITICAL INSTRUCTION: DO NOT default to generic strategies like 'none' or 'extensiveExperience'. You must actively look for reasons to use more creative and engaging strategies like 'strategicQuestions', 'helpWithTask', 'freeSample', 'similarProject', or 'congratulations'. For example:
-  - If the job is very brief or lacks details, 'strategicQuestions' is an excellent way to engage the client.
-  - If the client describes a very specific pain point, 'helpWithTask' or 'freeSample' are highly effective.
-  - If the client mentions a new launch, use 'congratulations'.
+  CRITICAL INSTRUCTION: Do not lazily default to the same strategy every time. Evaluate the job description holistically and choose the most appropriate hook:
+  - Use 'strategicQuestions' if the job description is brief, ambiguous, or lacks key details.
+  - Use 'similarProject' if the job requires specialized experience or is a standard project type where proving past success is the strongest hook.
+  - Use 'helpWithTask' ONLY if the client describes a highly specific, technical, or unique pain point where you could offer an immediate "quick win" or actionable advice.
+  - Use 'freeSample' if it's a large project or ongoing role where a small initial audit/sample is standard practice to build trust.
+  - Use 'recentNews' or 'congratulations' ONLY if the job post explicitly mentions a recent company milestone, launch, or news event.
+  - Use 'none' if the job post demands a highly direct, no-nonsense approach without fluff.
 
   Project Title: ${input.projectTitle}
   Summary: ${input.summary}

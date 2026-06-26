@@ -59,8 +59,8 @@ export function DashboardClient({
     
     // Allow deactivated users to access subscription and pricing pages
     const isAllowedDeactivatedPage = 
-      pathname === '/dashboard/subscription' || 
-      pathname === '/dashboard/pricing';
+      pathname === '/subscription' || 
+      pathname === '/pricing';
 
     if (deactivated && !isAdmin && !isAllowedDeactivatedPage) {
       // Show banner but block other pages
@@ -71,7 +71,7 @@ export function DashboardClient({
     // --- From here, we know user is loaded ---
 
     const subscriptionStatus = userProfile?.subscriptionStatus;
-    const isAllowedPricing = pathname === '/dashboard/pricing';
+    const isAllowedPricing = pathname === '/pricing';
     const isAllowedRoot = pathname === '/';
 
     if (isAllowedRoot) {
@@ -84,7 +84,7 @@ export function DashboardClient({
 
     if (userProfile && !isActiveOrTrial && !isAdmin) {
       if (!isAllowedPricing && pathname !== '/subscription') {
-        router.replace('/dashboard/pricing');
+        router.replace('/pricing');
         return;
       }
     }
@@ -94,19 +94,31 @@ export function DashboardClient({
 
   }, [user, userProfile, authLoading, router, pathname]);
 
-  // Background session check
+  // Background session check on window focus instead of aggressive polling
   useEffect(() => {
     if (!user || !isAuthorized || sessionMismatch) return;
 
-    const interval = setInterval(async () => {
+    const checkSession = async () => {
       const result = await checkSessionStatusAction((session as any).sessionId);
       if (result.status === 'invalidated') {
         setSessionMismatch(true);
-        clearInterval(interval);
       }
-    }, 30000); // Check every 30 seconds
+    };
 
-    return () => clearInterval(interval);
+    const handleFocus = () => {
+      // Only check if document is visible and tab is focused
+      if (document.visibilityState === 'visible') {
+        checkSession();
+      }
+    };
+
+    window.addEventListener('focus', handleFocus);
+    document.addEventListener('visibilitychange', handleFocus);
+
+    return () => {
+      window.removeEventListener('focus', handleFocus);
+      document.removeEventListener('visibilitychange', handleFocus);
+    };
   }, [user, isAuthorized, session, sessionMismatch]);
 
   // Handle countdown
@@ -117,10 +129,7 @@ export function DashboardClient({
       const timer = setTimeout(() => setCountdown(countdown - 1), 1000);
       return () => clearTimeout(timer);
     } else {
-      // Force logout and redirect
-      signOut({ redirect: false }).then(() => {
-        router.push('/login?error=ConcurrentLogin');
-      });
+      signOut({ redirect: false }).then(() => { window.location.href = '/login?error=ConcurrentLogin'; });
     }
   }, [sessionMismatch, countdown, router]);
 
@@ -159,7 +168,7 @@ export function DashboardClient({
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter className="sm:justify-center">
-              <Button onClick={() => signOut({ callbackUrl: '/login' })} className="gap-2 text-white bg-red-700">
+              <Button onClick={async () => { await signOut({ redirect: false }); window.location.href = '/login'; }} className="gap-2 text-white bg-red-700">
                 <LogOut className="h-4 w-4" />
                 Sign Out
               </Button>

@@ -3,7 +3,7 @@
 
 import { z } from 'zod';
 import { headers } from 'next/headers';
-import { auth } from '@/auth';
+import { auth, signOut as authSignOut } from '@/auth';
 import prisma from '@/lib/prisma';
 import { revalidatePath } from 'next/cache';
 
@@ -497,3 +497,6 @@ export async function resendVerificationEmailAction(): Promise<{ success?: boole
   }
 }
 
+export async function logoutAction(callbackUrl: string = '/login') {
+  await authSignOut({ redirectTo: callbackUrl });
+}

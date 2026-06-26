@@ -1,3 +1,4 @@
+"use client";
 
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Button } from '@/components/ui/button';
@@ -118,12 +119,7 @@ export function UserNav() {
           )}
         </DropdownMenuGroup>
         <DropdownMenuSeparator className="dark:bg-background"/>
-<DropdownMenuItem className="dark:hover:bg-background" onClick={async () => {
-          // Sign out without redirect first to clear the session, then redirect
-          await signOut({ redirect: false });
-          // Use window.location to do a full page redirect to home
-          window.location.href = '/';
-        }}>
+<DropdownMenuItem className="dark:hover:bg-background" onClick={async () => { await signOut({ redirect: false }); window.location.href = '/login'; }}>
           <HugeiconsIcon icon={Logout01Icon} size={24} className="mr-2 h-4 w-4" />
           Log out
         </DropdownMenuItem>

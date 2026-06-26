@@ -5,6 +5,7 @@ const nextConfig = {
     serverActions: {
       maxDuration: 120, // Increase timeout to 2 minutes for AI operations
     },
+    optimizePackageImports: ['lucide-react', '@hugeicons/react'],
   },
   output: 'standalone',
   typescript: {

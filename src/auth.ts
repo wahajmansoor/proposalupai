@@ -75,6 +75,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               currentSessionId: true,
               isActive: true,
               deactivationReason: true,
+              onboardingCompleted: true,
             }
           });
 
@@ -154,6 +155,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
               referralCode: dbUser.referralCode,
               country: dbUser.countryCode ? { code: dbUser.countryCode, name: dbUser.countryName || '' } : null,
               isActive: dbUser.isActive,
+              onboardingCompleted: dbUser.onboardingCompleted,
             };
           }
         } catch (error) {
