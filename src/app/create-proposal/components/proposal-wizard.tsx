@@ -815,8 +815,8 @@ export function ProposalWizard() {
           </CardHeader>
         </Card>
       )}
-      <div id="tour-proposal-form" className="grid gap-8 items-start transition-all duration-500 grid-cols-1 lg:grid-cols-2 w-full">
-        <div className="space-y-6">
+      <div id="tour-proposal-form" className="grid gap-4 md:gap-8 items-start transition-all duration-500 grid-cols-1 lg:grid-cols-2 w-full">
+        <div className="space-y-4 md:space-y-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-3">
               <HugeiconsIcon icon={File01Icon} size={24} className="h-6 w-6 text-primary" />
@@ -840,7 +840,7 @@ export function ProposalWizard() {
             </div>
           )}
 
-          <div className="flex items-center justify-between pt-6 pb-12 relative w-full px-2 sm:px-6">
+          <div className="hidden md:flex items-center justify-between pt-6 pb-12 relative w-full px-2 sm:px-6">
             <div className="absolute left-6 right-6 top-10 w-[calc(100%-3rem)] h-1 bg-neutral-200 dark:bg-neutral-800 rounded-full z-0" />
             <div 
               className="absolute left-6 top-10 h-1 bg-primary rounded-full z-0 transition-all duration-500 ease-in-out"
@@ -974,7 +974,7 @@ export function ProposalWizard() {
             </motion.div>
           </AnimatePresence>
 
-          <div className="flex justify-between items-center mt-8">
+          <div className="flex justify-between items-center mt-6 md:mt-8">
             <div>
               {currentStep > 1 && (
                 <Button variant="outline" onClick={prevStep}>
@@ -999,7 +999,7 @@ export function ProposalWizard() {
             </div>
           </div>
         </div>
-        <div className="space-y-6 lg:sticky lg:top-24">
+        <div className="space-y-4 md:space-y-6 lg:sticky lg:top-24">
 
 
             <Card className="shadow-lg border-primary/20">
@@ -1220,7 +1220,7 @@ export function ProposalWizard() {
       </div>
 
       {generatedProposal && (
-        <div className="mt-8 pt-8 border-t w-full">
+        <div className="mt-6 pt-6 md:mt-8 md:pt-8 border-t w-full">
           <Button variant="outline" size="lg" className="w-full py-8 text-lg font-semibold" onClick={handleResetForm}>
             <RefreshCcw className="mr-2 h-6 w-6" />
             Create a New Proposal

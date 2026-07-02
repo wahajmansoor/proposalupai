@@ -38,7 +38,7 @@ export function Step2Profile({
           <CardTitle className="text-lg">Your Profile</CardTitle>
         </div>
       </CardHeader>
-      <CardContent className="space-y-6">
+      <CardContent className="space-y-4 md:space-y-6">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="skillProfile">Skill Profile</Label>
