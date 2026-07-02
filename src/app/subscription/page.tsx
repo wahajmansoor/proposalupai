@@ -438,7 +438,7 @@ function SubscriptionPageContent() {
 
               {userProfile?.stripeCustomerId ? (
                 <form onSubmit={handleBillingSubmit}>
-                  <Button type="submit" disabled={isManagingBilling} className="w-full">
+                  <Button type="submit" disabled={isManagingBilling}>
                     {isManagingBilling ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <CreditCard className="mr-2 h-4 w-4" />}
                     Manage Subscription
                   </Button>

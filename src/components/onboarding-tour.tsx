@@ -99,7 +99,7 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
       setLocalCompleted(true);
       try {
         localStorage.setItem("onboardingCompleted", "true");
-      } catch (e) {}
+      } catch (e) { }
 
       if (isFinished || isSkipped || action === "close") {
         console.log("Tour ended, calling completeOnboardingAction");
@@ -114,7 +114,7 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
     {
       target: "body",
       title: "Welcome to Proposal Up AI!",
-      content: "The most powerful AI tool for winning freelance jobs. Let's take a 1-minute tour of your new command center.",
+      content: "The most powerful AI tool for winning freelance jobs. Let's take a 30-second tour of your new AI proposal writing tool.",
       placement: "center",
       disableBeacon: true,
     },
@@ -133,7 +133,7 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
     {
       target: "#tour-dashboard-saved",
       title: "3. Saved Proposals",
-      content: "Access all your generated proposals here anytime you need to reference or reuse them.",
+      content: "Access all your generated saved proposals here anytime, you can edit and resend to your clients as well.",
       placement: "bottom",
     },
     {
@@ -145,7 +145,7 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
     {
       target: "#tour-sidebar-pricing",
       title: "5. Plans & Pricing",
-      content: "Need more credits or custom tones? Check out our pricing plans to upgrade your account and unlock priority AI generation.",
+      content: "Need more credits? Check out our pricing plans to upgrade your account.",
       placement: "right",
     },
     {
@@ -157,7 +157,7 @@ export function OnboardingTour({ onboardingCompleted }: OnboardingTourProps) {
     {
       target: "body",
       title: "You're Ready to Win!",
-      content: "That's it! You're now equipped with the ultimate freelance weapon. Go ahead and start your journey!",
+      content: "That's it! You're now equipped with the ultimate AI proposal writing tool. Go ahead and start your journey!",
       placement: "center",
     }
   ];

@@ -856,7 +856,19 @@ export function ProposalWizard() {
                 <button 
                   key={title} 
                   type="button"
-                  onClick={() => setCurrentStep(stepNum)}
+                  onClick={() => {
+                    if (stepNum > 1) {
+                      if (!projectDetails.projectTitle || !projectDetails.summary) {
+                        toast({ title: 'Missing Information', description: 'Please provide both Project Title and Summary.', variant: 'destructive' });
+                        return;
+                      }
+                      if (!suggestion) {
+                        toast({ title: 'Analysis Required', description: 'Please analyze the project summary before proceeding.', variant: 'destructive' });
+                        return;
+                      }
+                    }
+                    setCurrentStep(stepNum);
+                  }}
                   className="relative z-10 flex flex-col items-center cursor-pointer group focus:outline-none"
                 >
                   <div className={cn(
